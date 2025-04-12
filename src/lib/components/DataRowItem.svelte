@@ -43,16 +43,17 @@
 		<div class="my-1 mr-2 border-r-2">
 			<div class="flex flex-col text-center text-base">
 				<div class="justify-left flex flex-row">
-					<b class="ml-4 text-sm">{device.name}</b>
+					<b class="ml-4 text-sm text-surface-content">{device.name}</b>
 				</div>
 				<div class="flex flex-row justify-center">
 					{#if device.latest_data}
 						<p class="m-auto justify-center">
-							<span>
+							<span class="text-surface-content">
 								{nameToEmoji(device.cw_device_type.primary_data_v2 ?? '')}
 								<TweenedValue
 									value={device.latest_data[device.cw_device_type.primary_data_v2]}
 									format="decimal"
+									class="text-accent-500 font-medium"
 								/>
 							</span>
 							<small>
@@ -60,12 +61,13 @@
 							</small>
 						</p>
 						<p class="m-auto justify-center">
-							<span>
+							<span class="text-surface-content">
 								{#if device.cw_device_type.secondary_data_v2}
 									{nameToEmoji(device.cw_device_type.secondary_data_v2 ?? '')}
 									<TweenedValue
 										value={device.latest_data[device.cw_device_type.secondary_data_v2]}
 										format="decimal"
+										class="text-accent-500 font-medium"
 									/>
 								{/if}
 							</span>

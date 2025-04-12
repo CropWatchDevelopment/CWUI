@@ -30,7 +30,7 @@
 		{device.latest_data?.created_at === null ? 'opacity-50' : ''}"
 >
 	<div class="flex px-3">
-		<h3 class="mb-2 basis-1/3 text-lg font-medium">{nameToJapaneseName('Details')}</h3>
+		<h3 class="mb-2 basis-1/3 text-lg font-medium text-surface-content">{nameToJapaneseName('Details')}</h3>
 	</div>
 
 	{#each dataPoints as dataPointKey, index}
@@ -39,11 +39,11 @@
 				<div class="flex items-center justify-between">
 					<div class="flex items-center">
 						<p class="text-base text-primary">{nameToEmoji(dataPointKey)}</p>
-						<p class="ml-1 text-right">{nameToJapaneseName(dataPointKey)}</p>
+						<p class="text-surface-content ml-1 text-right">{nameToJapaneseName(dataPointKey)}</p>
 					</div>
 					<div class="flex items-center">
 						{#if dataPointKey === 'created_at'}
-							<p class="flex flex-row items-center text-base">
+							<p class="flex flex-row items-center text-base text-surface-content">
 								<Duration
 									start={device.latest_data.created_at}
 									totalUnits={2}
@@ -53,9 +53,9 @@
 							</p>
 						{:else if device.latest_data[dataPointKey] !== null}
 							<div class="flex items-center">
-								<TweenedValue 
+								<TweenedValue
 									value={device.latest_data[dataPointKey]} 
-									format="decimal" 
+									format="decimal"
 									class="text-accent-500 font-medium"
 								/>
 								<small class="ml-1">

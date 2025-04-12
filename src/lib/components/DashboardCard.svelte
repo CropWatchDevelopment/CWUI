@@ -67,13 +67,13 @@
 	</div>
 
 	<h2 class="my-3 mx-3 flex flex-row items-center overflow-hidden text-xl text-ellipsis">
-		<p class="text-xl">{location.name}</p>
+		<p class="text-xl text-surface-content">{location.name}</p>
 		<span class="flex flex-grow"></span>
 		<Button variant="fill" color="primary" icon={mdiArrowRight} on:click={handleNavigate} />
 	</h2>
-	<div class="text-primary-text flex flex-col gap-1 px-1 pb-4 text-sm">
+	<div class="flex flex-col gap-1 px-1 pb-4 text-sm text-surface-content">
 		{#if location.cw_devices.length === 0}
-			<p class="w-full text-center">No devices found</p>
+			<p class="w-full text-center text-surface-content">No devices found</p>
 		{:else if customDeviceContent && renderDeviceItems}
 			{@render renderDeviceItems()}
 		{:else}
