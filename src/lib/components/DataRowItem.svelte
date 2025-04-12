@@ -1,18 +1,17 @@
 <script lang="ts">
 	import { Button, Collapse, TweenedValue } from 'svelte-ux';
 	import { goto } from '$app/navigation';
-	import { mdiArrowRight, mdiTimerSand } from '@mdi/js';
+	import { mdiArrowRight } from '@mdi/js';
 	import moment from 'moment';
+	import { nameToEmoji } from '$lib/utilities/NameToEmoji.js';
+	import { m } from '$lib/paraglide/messages.js';
 	import DeviceDataList from './DeviceDataList.svelte';
-	import { nameToEmoji } from '$lib/utilities/NameToEmoji';
-	import { m } from '$lib/paraglide/messages';
-	import type { ICWDevice } from '$lib/interfaces/ILocation.interface';
 
 	let {
 		device,
 		location = null
 	}: {
-		device: ICWDevice;
+		device: any,
 		location?: any;
 	} = $props();
 	let isActive = $derived(
@@ -94,29 +93,8 @@
 				class="mb-1 w-full"
 				icon={mdiArrowRight}
 			>
-				{m.component_dataRowItem_detail_button()}
+				Details
 			</Button>
 		{/if}
 	</div>
 </Collapse>
-
-<!-- <style>
-	.text-shadow {
-		text-shadow: black 5px 5px 3px;
-	}
-	.custom-bg::before {
-		content: ' ';
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		background-image: url($lib/images/weather/sunny_clouds.png);
-		background-size: cover;
-		background-position: center;
-		-webkit-border-radius: 15px;
-		-moz-border-radius: 15px;
-		border-radius: 15px;
-		filter: blur(1px) grayscale(20%);
-	}
-</style> -->

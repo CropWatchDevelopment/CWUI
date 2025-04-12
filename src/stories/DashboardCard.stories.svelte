@@ -1,21 +1,33 @@
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
   import DashboardCard from '$lib/components/DashboardCard.svelte';
+  import DataRowItem from '$lib/components/DataRowItem.svelte';
   import { fn } from '@storybook/test';
+  import { nameToEmoji } from '$lib/utilities/NameToEmoji.js';
   
-  // Mock the utility functions if they're not already available in Storybook
-  import { nameToEmoji } from '$lib/utilities/NameToEmoji';
-  import { nameToNotation } from '$lib/utilities/NameToNotation';
-  import { nameToJapaneseName } from '$lib/utilities/nameToJapanese';
-  import { convertObject } from '$lib/utilities/ConvertSensorDataObject';
+  // Import utility functions
   
-  // Mock paraglide messages
-  import { m } from '$lib/paraglide/messages';
-  if (!m.component_dataRowItem_detail_button) {
-    m.component_dataRowItem_detail_button = () => 'Details';
-  }
-
-  // Create sample data that matches the updated component requirements
+  // We need to mock the m function for internationalization
+  // This approach avoids trying to modify the component directly
+  // Instead, we'll wrap the import with a module context mock
+  
+  // Create a mock for the messages
+  const mockMessages = {
+    component_dataRowItem_detail_button: () => 'Details'
+  };
+  
+  // Set up a mock for the $lib/paraglide/messages.js module
+  // This will be used by Storybook instead of the actual module
+  const messagesModuleMock = {
+    m: (key) => {
+      if (mockMessages[key]) {
+        return mockMessages[key]();
+      }
+      return key;
+    }
+  };
+  
+  // Create sample data that matches the component requirements
   const sampleLocation = {
     location_id: '123',
     name: 'Farmland Alpha',
@@ -142,6 +154,12 @@
     },
     args: {
       onNavigate: fn()
+    },
+    // Add this to provide the mock to components
+    parameters: {
+      moduleContext: {
+        '$lib/paraglide/messages.js': messagesModuleMock
+      }
     }
   });
 </script>

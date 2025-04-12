@@ -1,13 +1,12 @@
 <script lang="ts">
+	import { nameToJapaneseName } from '$lib/utilities/nameToJapanese.js';
+	import { convertObject } from '$lib/utilities/ConvertSensorDataObject.js';
+	import { nameToEmoji } from '$lib/utilities/NameToEmoji.js';
 	import { Duration, TweenedValue } from 'svelte-ux';
-	import { DurationUnits } from '@layerstack/utils';
-	import { convertObject } from '$lib/utilities/ConvertSensorDataObject';
-	import { nameToEmoji } from '$lib/utilities/NameToEmoji';
-	import { nameToNotation } from '$lib/utilities/NameToNotation';
-	import type { ICWDevice } from '$lib/interfaces/ILocation.interface';
-	import { nameToJapaneseName } from '$lib/utilities/nameToJapanese';
+	import { nameToNotation } from '$lib/utilities/NameToNotation.js';
+    import { DurationUnits } from '@layerstack/utils';
 
-	let { device, isActive }: { device: ICWDevice, isActive: boolean } = $props();
+	let { device, isActive } = $props();
 
 	// 1. Convert the latest_data to an object
 	let convertedData = convertObject(device.latest_data);

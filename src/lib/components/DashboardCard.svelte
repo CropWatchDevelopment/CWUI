@@ -1,8 +1,7 @@
 <script lang="ts">
 	import DataRowItem from './DataRowItem.svelte';
 	import { Avatar, Button, Icon } from 'svelte-ux';
-	import { mdiAlert, mdiArrowRight, mdiCheck, mdiClose, mdiMailboxUp } from '@mdi/js';
-	import type { ILocation } from '$lib/interfaces/ILocation.interface';
+	import { mdiAlert, mdiMailboxUp, mdiCheck, mdiClose, mdiArrowRight } from '@mdi/js';
 	import moment from 'moment';
 
 	let {
@@ -11,7 +10,7 @@
 		customDeviceContent = false,
 		renderDeviceItems = null
 	}: {
-		location: ILocation;
+		location,
 		onNavigate?: (locationId: string | number) => void;
 		customDeviceContent?: boolean;
 		renderDeviceItems?: any;
