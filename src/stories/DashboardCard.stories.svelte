@@ -1,7 +1,7 @@
-<script>
-  import { Meta, Story } from '@storybook/addon-svelte-csf';
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
   import DashboardCard from '$lib/components/DashboardCard.svelte';
-  import { mdiArrowRight } from '@mdi/js';
+  import { fn } from '@storybook/test';
 
   // Create sample data that matches the ILocation interface
   const sampleLocation = {
@@ -37,43 +37,80 @@
       }
     ]
   };
+
+  const emptyLocation = {
+    ...sampleLocation,
+    cw_devices: []
+  };
+
+  // Function to create a render function for custom device items
+  function createRenderDeviceItems() {
+    return () => ({
+      c() {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'custom-devices';
+        
+        sampleLocation.cw_devices.forEach((device, index) => {
+          const deviceDiv = document.createElement('div');
+          deviceDiv.className = 'p-2 bg-surface-200 rounded mb-2';
+          
+          const title = document.createElement('strong');
+          title.textContent = `Device ${index + 1}`;
+          
+          const lastUpdate = document.createElement('p');
+          lastUpdate.className = 'text-xs';
+          lastUpdate.textContent = `Last update: ${new Date(device.latest_data?.created_at).toLocaleTimeString()}`;
+          
+          deviceDiv.appendChild(title);
+          deviceDiv.appendChild(lastUpdate);
+          
+          if (device.cw_rules.length > 0) {
+            const badge = document.createElement('span');
+            badge.className = 'inline-block px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full';
+            badge.textContent = 'Has rules';
+            deviceDiv.appendChild(badge);
+          }
+          
+          wrapper.appendChild(deviceDiv);
+        });
+        
+        return wrapper;
+      }
+    });
+  }
+
+  const { Story } = defineMeta({
+    title: 'CropWatch/DashboardCard',
+    component: DashboardCard,
+    tags: ['autodocs'],
+    argTypes: {
+      onNavigate: { action: 'navigated' }
+    },
+    args: {
+      onNavigate: fn()
+    }
+  });
 </script>
 
-<Meta
-  title="CropWatch/DashboardCard"
-  component={DashboardCard}
-  argTypes={{
-    location: { control: 'object' },
-    onNavigate: { action: 'navigated' }
+<Story 
+  name="Default" 
+  args={{
+    location: sampleLocation
   }}
 />
 
 <Story 
-  name="Default"
+  name="No Devices" 
   args={{
-    location: sampleLocation,
-    onNavigate: (id) => console.log(`Navigate to: ${id}`)
+    location: emptyLocation
   }}
->
-  <div class="p-4 max-w-md bg-surface-100">
-    <DashboardCard 
-      location={sampleLocation} 
-      onNavigate={(id) => console.log(`Navigate to: ${id}`)}
-    />
-  </div>
-</Story>
+/>
 
 <Story 
-  name="No Devices"
+  name="With Custom Device Content" 
   args={{
-    location: {...sampleLocation, cw_devices: []},
-    onNavigate: (id) => console.log(`Navigate to: ${id}`)
+    location: sampleLocation,
+    customDeviceContent: true,
+    renderDeviceItems: createRenderDeviceItems()
   }}
->
-  <div class="p-4 max-w-md bg-surface-100">
-    <DashboardCard 
-      location={{...sampleLocation, cw_devices: []}}
-      onNavigate={(id) => console.log(`Navigate to: ${id}`)}
-    />
-  </div>
-</Story>
+/>
