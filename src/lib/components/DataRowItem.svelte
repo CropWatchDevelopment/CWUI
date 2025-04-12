@@ -4,7 +4,6 @@
 	import { mdiArrowRight } from '@mdi/js';
 	import moment from 'moment';
 	import { nameToEmoji } from '$lib/utilities/NameToEmoji.js';
-	import { m } from '$lib/paraglide/messages.js';
 	import DeviceDataList from './DeviceDataList.svelte';
 
 	let {

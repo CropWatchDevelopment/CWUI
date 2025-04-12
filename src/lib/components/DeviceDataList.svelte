@@ -4,7 +4,7 @@
 	import { nameToEmoji } from '$lib/utilities/NameToEmoji.js';
 	import { Duration, TweenedValue } from 'svelte-ux';
 	import { nameToNotation } from '$lib/utilities/NameToNotation.js';
-    import { DurationUnits } from '@layerstack/utils';
+	import { DurationUnits } from '@layerstack/utils';
 
 	let { device, isActive } = $props();
 
@@ -25,12 +25,13 @@
 
 <div
 	class="mr-2 border-l-8
-        {isActive ? 'border-l-green-500'
-				: 'border-l-red-500'}
+        {isActive ? 'border-l-green-500' : 'border-l-red-500'}
 		{device.latest_data?.created_at === null ? 'opacity-50' : ''}"
 >
 	<div class="flex px-3">
-		<h3 class="mb-2 basis-1/3 text-lg font-medium text-surface-content">{nameToJapaneseName('Details')}</h3>
+		<h3 class="text-surface-content mb-2 basis-1/3 text-lg font-medium">
+			{nameToJapaneseName('Details')}
+		</h3>
 	</div>
 
 	{#each dataPoints as dataPointKey, index}
@@ -38,12 +39,12 @@
 			<div class="py-1">
 				<div class="flex items-center justify-between">
 					<div class="flex items-center">
-						<p class="text-base text-primary">{nameToEmoji(dataPointKey)}</p>
+						<p class="text-primary text-base">{nameToEmoji(dataPointKey)}</p>
 						<p class="text-surface-content ml-1 text-right">{nameToJapaneseName(dataPointKey)}</p>
 					</div>
 					<div class="flex items-center">
 						{#if dataPointKey === 'created_at'}
-							<p class="flex flex-row items-center text-base text-surface-content">
+							<p class="text-surface-content flex flex-row items-center text-base">
 								<Duration
 									start={device.latest_data.created_at}
 									totalUnits={2}
@@ -53,11 +54,13 @@
 							</p>
 						{:else if device.latest_data[dataPointKey] !== null}
 							<div class="flex items-center">
-								<TweenedValue
-									value={device.latest_data[dataPointKey]} 
-									format="decimal"
-									class="text-accent-500 font-medium"
-								/>
+								<p>
+									<TweenedValue
+										value={device.latest_data[dataPointKey]}
+										format="decimal"
+										class="text-accent-500 font-medium"
+									/>
+								</p>
 								<small class="ml-1">
 									<sup class="text-accent-300">{nameToNotation(dataPointKey)}</sup>
 								</small>
