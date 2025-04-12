@@ -14,6 +14,9 @@ importers:
       '@layerstack/tailwind':
         specifier: 2.0.0-next.2
         version: 2.0.0-next.2
+      '@layerstack/utils':
+        specifier: ^1.0.0
+        version: 1.0.0
       '@mdi/js':
         specifier: ^7.4.47
         version: 7.4.47
@@ -515,6 +518,9 @@ packages:
 
   '@layerstack/tailwind@2.0.0-next.2':
     resolution: {integrity: sha512-ApSF+4CqczFS7rqPJ7aEOaloEPageatc1je/K6cj7nO8IPZJqynGBkQ5sJ0M5DrGDJr7x9qmfLE842oCszh6ZA==}
+
+  '@layerstack/utils@1.0.0':
+    resolution: {integrity: sha512-kIH8lo4MEzPGtdxQRacy8RsSVhMQwe62ckuev62xQDE5QcUJ4wB9EMaRWaQK8CfEOpUERGPgkMPMbMqPhdp0gw==}
 
   '@layerstack/utils@1.1.0-next.0':
     resolution: {integrity: sha512-xDUHUhI8CALTYvpTlJ9P0Eo8qKIoga9w1px6GFY7aSccKjLStOFjdCFCyLe0L/EUHDODpcP1o8Vl/HaBiHP6hg==}
@@ -3534,6 +3540,12 @@ snapshots:
       lodash-es: 4.17.21
       tailwind-merge: 3.2.0
       tailwindcss: 4.1.3
+
+  '@layerstack/utils@1.0.0':
+    dependencies:
+      d3-array: 3.2.4
+      date-fns: 4.1.0
+      lodash-es: 4.17.21
 
   '@layerstack/utils@1.1.0-next.0':
     dependencies:

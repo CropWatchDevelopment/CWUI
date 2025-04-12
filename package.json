@@ -85,6 +85,7 @@
 	"dependencies": {
 		"@inlang/paraglide-js": "^2.0.0",
 		"@layerstack/tailwind": "2.0.0-next.2",
+		"@layerstack/utils": "^1.0.0",
 		"@mdi/js": "^7.4.47",
 		"moment": "^2.30.1",
 		"svelte-ux": "2.0.0-next.4"

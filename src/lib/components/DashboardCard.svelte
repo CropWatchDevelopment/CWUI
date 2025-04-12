@@ -84,7 +84,7 @@
 			{@render renderDeviceItems()}
 		{:else}
 			{#each location.cw_devices as device}
-				<DataRowItem {device} />
+				<DataRowItem {device} location={location} />
 			{/each}
 		{/if}
 	{/if}
