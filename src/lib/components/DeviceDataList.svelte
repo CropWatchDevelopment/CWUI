@@ -36,25 +36,34 @@
 	{#each dataPoints as dataPointKey, index}
 		{#if device.latest_data[dataPointKey] !== null}
 			<div class="py-1">
-				<div class="flex">
-					<p class="text-base text-primary">{nameToEmoji(dataPointKey)}</p>
-					<p class="ml-1 text-right">{nameToJapaneseName(dataPointKey)}</p>
-					<span class="flex-grow"></span>
-
-					{#if dataPointKey === 'created_at'}
-						<p class="flex flex-row align-bottom text-base">
-							<Duration
-								start={device.latest_data.created_at}
-								totalUnits={2}
-								minUnits={DurationUnits.Second}
-							/>&nbsp;ago
-						</p>
-					{:else if device.latest_data[dataPointKey] !== null}
-						<TweenedValue value={device.latest_data[dataPointKey]} format="decimal" />
-						<small >
-							<sup class="text-accent-300">{nameToNotation(dataPointKey)}</sup>
-						</small>
-					{/if}
+				<div class="flex items-center justify-between">
+					<div class="flex items-center">
+						<p class="text-base text-primary">{nameToEmoji(dataPointKey)}</p>
+						<p class="ml-1 text-right">{nameToJapaneseName(dataPointKey)}</p>
+					</div>
+					<div class="flex items-center">
+						{#if dataPointKey === 'created_at'}
+							<p class="flex flex-row items-center text-base">
+								<Duration
+									start={device.latest_data.created_at}
+									totalUnits={2}
+									minUnits={DurationUnits.Second}
+									class="text-accent-500"
+								/>&nbsp;ago
+							</p>
+						{:else if device.latest_data[dataPointKey] !== null}
+							<div class="flex items-center">
+								<TweenedValue 
+									value={device.latest_data[dataPointKey]} 
+									format="decimal" 
+									class="text-accent-500 font-medium"
+								/>
+								<small class="ml-1">
+									<sup class="text-accent-300">{nameToNotation(dataPointKey)}</sup>
+								</small>
+							</div>
+						{/if}
+					</div>
 				</div>
 
 				{#if dataPoints.length - 1 !== index}

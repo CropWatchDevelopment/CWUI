@@ -1,6 +1,6 @@
 <script lang="ts">
 	import DataRowItem from './DataRowItem.svelte';
-	import { Avatar, Button, Icon } from 'svelte-ux';
+	import { Avatar, Button, Card, Icon } from 'svelte-ux';
 	import { mdiAlert, mdiMailboxUp, mdiCheck, mdiClose, mdiArrowRight } from '@mdi/js';
 	import moment from 'moment';
 
@@ -10,12 +10,12 @@
 		customDeviceContent = false,
 		renderDeviceItems = null
 	}: {
-		location,
+		location;
 		onNavigate?: (locationId: string | number) => void;
 		customDeviceContent?: boolean;
 		renderDeviceItems?: any;
 	} = $props();
-	
+
 	let activeDevices = $derived(
 		location.cw_devices
 			.map((device) => {
@@ -33,62 +33,57 @@
 	}
 </script>
 
-<div>
-	<div class="border-[rgb(121 121 121)] rounded-2xl border-[0.1em] bg-slate-600 p-0.5">
-		<div
-			class="custom-bg relative h-20 w-full rounded-4xl bg-cover bg-bottom bg-no-repeat p-1 bg-blend-overlay"
-		>
+<Card class="min-w-64 rounded-2xl bg-surface-200/50 shadow-md">
+	<div>
+		<div class="border-[rgb(121 121 121)] rounded-t-2xl border-[0.1em] bg-slate-600 pb-0.5">
 			<div
-				class="absolute top-0 right-0 flex h-full w-1/2 flex-row items-center justify-end rounded-2xl"
+				class="custom-bg relative h-20 w-full bg-cover bg-bottom bg-no-repeat p-1"
 			>
-				{#if location.cw_devices.some((device) => device?.cw_rules.length > 0)}
-					<Avatar size="lg" class="absolute top-3 flex flex-row rounded-full bg-red-300">
-						<Icon class="text-3xl text-white" path={mdiMailboxUp} />
-					</Avatar>
-				{/if}
+				<div
+					class="absolute top-0 right-0 flex h-full w-1/2 flex-row items-center justify-end rounded-2xl"
+				>
+					{#if location.cw_devices.some((device) => device?.cw_rules.length > 0)}
+						<Avatar size="lg" class="absolute top-3 flex flex-row rounded-full bg-red-300">
+							<Icon class="text-3xl text-white" path={mdiMailboxUp} />
+						</Avatar>
+					{/if}
+				</div>
+				<Avatar
+					size="lg"
+					class="absolute top-3 flex flex-row {activeDevices == location.cw_devices.length
+						? 'bg-success'
+						: 'bg-warning-600'}{activeDevices === 0 ? ' bg-danger-500' : ''} rounded-full"
+				>
+					{#if activeDevices === location.cw_devices.length}
+						<Icon class="absolute text-3xl text-white" path={mdiCheck} />
+					{:else if activeDevices > 0}
+						<Icon class="absolute text-3xl text-white" path={mdiAlert} />
+					{:else if activeDevices === 0}
+						<Icon class="absolute text-3xl text-white" path={mdiClose} />
+					{/if}
+				</Avatar>
 			</div>
-			<Avatar
-				size="lg"
-				class="absolute top-3 flex flex-row {activeDevices == location.cw_devices.length
-					? 'bg-success'
-					: 'bg-warning-600'}{activeDevices === 0 ? ' bg-danger-500' : ''} rounded-full"
-			>
-				{#if activeDevices === location.cw_devices.length}
-					<Icon class="absolute text-3xl text-white" path={mdiCheck} />
-				{:else if activeDevices > 0}
-					<Icon class="absolute text-3xl text-white" path={mdiAlert} />
-				{:else if activeDevices === 0}
-					<Icon class="absolute text-3xl text-white" path={mdiClose} />
-				{/if}
-			</Avatar>
 		</div>
 	</div>
-</div>
 
-<h2 class="my-3 flex flex-row items-center overflow-hidden text-xl text-ellipsis">
-	<p class="text-xl">{location.name}</p>
-	<span class="flex flex-grow"></span>
-	<Button
-		variant="fill"
-		color="primary"
-		icon={mdiArrowRight}
-		on:click={handleNavigate}
-	/>
-</h2>
-<div class="text-primary-text flex flex-col gap-1 px-1 pb-4 text-sm">
-	{#if location.cw_devices.length === 0}
-		<p>No devices found</p>
-	{:else}
-		{#if customDeviceContent && renderDeviceItems}
+	<h2 class="my-3 mx-3 flex flex-row items-center overflow-hidden text-xl text-ellipsis">
+		<p class="text-xl">{location.name}</p>
+		<span class="flex flex-grow"></span>
+		<Button variant="fill" color="primary" icon={mdiArrowRight} on:click={handleNavigate} />
+	</h2>
+	<div class="text-primary-text flex flex-col gap-1 px-1 pb-4 text-sm">
+		{#if location.cw_devices.length === 0}
+			<p class="w-full text-center">No devices found</p>
+		{:else if customDeviceContent && renderDeviceItems}
 			{@render renderDeviceItems()}
 		{:else}
 			{#each location.cw_devices as device}
-				<DataRowItem {device} location={location} />
+				<DataRowItem {device} {location} />
 			{/each}
 		{/if}
-	{/if}
-	<span class="flex flex-grow"></span>
-</div>
+		<span class="flex flex-grow"></span>
+	</div>
+</Card>
 
 <style>
 	.custom-bg {
@@ -146,7 +141,8 @@
 			20px 35px,
 			0 0,
 			20px 35px;
-		border-radius: 15px;
+		border-top-left-radius: 15px;
+		border-top-right-radius: 15px;
 		opacity: 0.9; /* Increased from 0.7 to make the pattern more visible */
 	}
 </style>
