@@ -12,14 +12,6 @@
   --color-secondary: var(--color-blue-500);
 }
 
-/*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
 @layer base {
 	*,
 	::after,
@@ -31,7 +23,7 @@
 	}
   }
   
-  html {
+  /* html {
 	@apply bg-surface-200 accent-primary;
   }
   
@@ -56,7 +48,7 @@
   }
   
   main :is(h1, h2, h3):not(.prose *, .related *, .ApiDocs *) {
-	scroll-margin-top: calc(var(--headerHeight) + 148px); /* app header + docs header */
+	scroll-margin-top: calc(var(--headerHeight) + 148px);
   }
   
   main h1:not(.prose *, .related *, .ApiDocs *) {
@@ -81,8 +73,7 @@
   .TableOfContents small {
 	@apply hidden;
   }
-  
-  /* Code/Preview backgrounds */
+
   pre[class*='language-'] {
 	@apply bg-surface-content;
   }
@@ -102,4 +93,4 @@
 
   div:has(> .Header) {
     @apply border-b border-surface-300;
-  }
+  } */

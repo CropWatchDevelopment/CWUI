@@ -8,12 +8,14 @@
 		location,
 		onNavigate = (locationId: string | number) => {},
 		customDeviceContent = false,
-		renderDeviceItems = null
+		renderDeviceItems = null,
+		children = null
 	}: {
 		location;
 		onNavigate?: (locationId: string | number) => void;
 		customDeviceContent?: boolean;
 		renderDeviceItems?: any;
+		children?: any;
 	} = $props();
 
 	let activeDevices = $derived(
@@ -30,6 +32,17 @@
 
 	function handleNavigate() {
 		onNavigate(location.location_id);
+	}
+
+	// Default content renderer function
+	function defaultRenderer() {
+		return {
+			t: location.cw_devices.map(device => `
+				<div class="mb-2">
+					<svelte:component this={DataRowItem} device={${JSON.stringify(device)}} location={${JSON.stringify(location)}} />
+				</div>
+			`).join('')
+		};
 	}
 </script>
 
@@ -75,11 +88,12 @@
 		{#if location.cw_devices.length === 0}
 			<p class="w-full text-center text-surface-content">No devices found</p>
 		{:else if customDeviceContent && renderDeviceItems}
-			{@render renderDeviceItems()}
+			{@render renderDeviceItems?.()}
+		{:else if children}
+			{@render children?.()}
 		{:else}
-			{#each location.cw_devices as device}
-				<DataRowItem {device} {location} />
-			{/each}
+			<!-- Default content if no children or renderDeviceItems provided -->
+			{@render defaultRenderer()}
 		{/if}
 		<span class="flex flex-grow"></span>
 	</div>
