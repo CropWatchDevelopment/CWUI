@@ -74,10 +74,15 @@
 				</div>
 				<Avatar
 					size="lg"
-					class="absolute top-3 flex flex-row {activeDevices == location.cw_devices.length
-						? 'bg-success'
-						: 'bg-warning-600'}{activeDevices === 0 ? ' bg-danger-500' : ''} rounded-full"
+					class={`absolute top-3 flex flex-row rounded-full ${
+						activeDevices === location.cw_devices.length
+							? 'bg-success'
+							: activeDevices > 0
+							? 'bg-warning-600'
+							: 'bg-danger-500'
+					}`}
 				>
+
 					{#if activeDevices === location.cw_devices.length}
 						<Icon class="absolute text-3xl text-white" path={iconPaths.check} />
 					{:else if activeDevices > 0}
