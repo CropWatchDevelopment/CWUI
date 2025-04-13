@@ -1,6 +1,6 @@
 {
 	"name": "@cropwatchdevelopment/cwui",
-	"version": "0.0.4",
+	"version": "0.0.6",
 	"publishConfig": {
 		"registry": "https://npm.pkg.github.com"
 	},
@@ -47,7 +47,9 @@
 		}
 	},
 	"peerDependencies": {
-		"svelte": "^5.0.0"
+		"svelte": "^5.0.0",
+		"@mdi/js": "^7.0.0",
+		"svelte-ux": "^2.0.0-next.4"
 	},
 	"devDependencies": {
 		"@chromatic-com/storybook": "^3",

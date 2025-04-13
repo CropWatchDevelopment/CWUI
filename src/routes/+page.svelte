@@ -318,7 +318,7 @@
 	];
 </script>
 
-aaa
+
 {#each locations as location}
 	<DashboardCard {location} {onNavigate}>
 		{#each location.cw_devices as device}

@@ -7,10 +7,10 @@
 @source '../node_modules/svelte-ux/dist';
 @plugin '@tailwindcss/typography';
 
-:root {
+/* :root {
   --color-primary: var(--color-emerald-600);
   --color-secondary: var(--color-blue-500);
-}
+} */
 
 @layer base {
 	*,
