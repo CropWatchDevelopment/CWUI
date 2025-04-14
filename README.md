@@ -1,22 +1,68 @@
-# Svelte library
+# CropWatch UI Library
 
-Everything you need to build a Svelte library, powered by [`sv`](https://npmjs.com/package/sv).
+A unified UI component library for CropWatch applications.
 
-Read more about creating a library [in the docs](https://svelte.dev/docs/kit/packaging).
-
-## Creating a project
-
-If you're seeing this, you've probably already done this step. Congrats!
+## Installation
 
 ```bash
-# create a new project in the current directory
-npx sv create
+# Using npm
+npm install @cropwatchdevelopment/cwui
 
-# create a new project in my-app
-npx sv create my-app
+# Using pnpm
+pnpm add @cropwatchdevelopment/cwui
+
+# Using yarn
+yarn add @cropwatchdevelopment/cwui
 ```
 
-## Developing
+## Usage
+
+### Importing Components
+
+```svelte
+<script>
+  import { DashboardCard, DataRowItem, CustomAvatar } from '@cropwatchdevelopment/cwui';
+</script>
+```
+
+### Importing Styles
+
+To use the CWUI styles in your application, you need to import the CSS file:
+
+```js
+// In your main JS/TS file
+import '@cropwatchdevelopment/cwui/styles.css';
+```
+
+Or in a Svelte file:
+
+```svelte
+<script>
+  import '@cropwatchdevelopment/cwui/styles.css';
+</script>
+```
+
+### TailwindCSS Configuration
+
+This library uses TailwindCSS with the @layerstack configuration. If you're using TailwindCSS in your project, make sure to add the following to your tailwind.config.js:
+
+```js
+module.exports = {
+  // ... your other config
+  content: [
+    // ... your other content paths
+    './node_modules/@cropwatchdevelopment/cwui/**/*.{js,svelte}',
+  ],
+  // Optional: if you want to use the same theme settings
+  theme: {
+    extend: {
+      // Your theme extensions
+    },
+  },
+}
+```
+
+## Development
 
 Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
 
@@ -45,14 +91,11 @@ npm run build
 
 You can preview the production build with `npm run preview`.
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
-
 ## Publishing
 
-Go into the `package.json` and give your package the desired name through the `"name"` option. Also consider adding a `"license"` field and point it to a `LICENSE` file which you can create from a template (one popular option is the [MIT license](https://opensource.org/license/mit/)).
-
-To publish your library to [npm](https://www.npmjs.com):
+To publish your library to GitHub Packages:
 
 ```bash
+npm run build
 npm publish
 ```

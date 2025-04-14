@@ -1,0 +1,22 @@
+/* CWUI Component Library Styles */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+@import '@layerstack/tailwind/core.css';
+@import '@layerstack/tailwind/utils.css';
+@import '@layerstack/tailwind/themes/all.css';
+
+/* Include any custom styles needed for components */
+@layer base {
+	*,
+	::after,
+	::before,
+	::backdrop,
+	::file-selector-button {
+	  border-color: color-mix(in oklab, var(--color-surface-content) 20%, transparent);
+	  outline-color: color-mix(in oklab, var(--color-surface-content) 20%, transparent);
+	}
+}
+
+/* Component-specific styles can be added here */

@@ -1,6 +1,6 @@
 {
 	"name": "@cropwatchdevelopment/cwui",
-	"version": "0.0.7",
+	"version": "0.0.12",
 	"publishConfig": {
 		"registry": "https://npm.pkg.github.com"
 	},
@@ -43,7 +43,11 @@
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
-			"svelte": "./dist/index.js"
+			"svelte": "./dist/index.js",
+			"default": "./dist/index.js"
+		},
+		"./styles.css": {
+			"default": "./dist/styles.css"
 		}
 	},
 	"peerDependencies": {
