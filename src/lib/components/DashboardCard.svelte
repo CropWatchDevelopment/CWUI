@@ -32,37 +32,36 @@
 	} = $props();
 </script>
 
-<Card class="bg-surface-200/50 min-w-64 rounded-2xl shadow-md">
-	<div>
-		<div class="border-[rgb(121 121 121)] rounded-t-2xl border-[0.1em] bg-slate-600 pb-0.5">
-			<div class="custom-bg relative h-20 w-full bg-cover bg-bottom bg-no-repeat p-1">
-				{#if activeDevices.length === 0}
-					<div
-						class="bg-warning absolute top-3 flex h-12 w-12 flex-row items-center justify-center rounded-full"
-					>
-						<Icon class="absolute text-3xl text-white" path={iconPaths.alert} />
-					</div>
-				{:else}
-					<div
-						class="
-						{allActive ? 'bg-success' : allInactive ? 'bg-danger' : 'bg-warning'}
+<Card class="bg-surface-200/50 min-w-64 justify-start rounded-2xl shadow-md">
+	<div class="border-[rgb(121 121 121)] rounded-t-2xl border-[0.1em] bg-slate-600 pb-0.5">
+		<div class="custom-bg relative h-20 w-full bg-cover bg-bottom bg-no-repeat p-1">
+			{#if activeDevices.length === 0}
+				<div
+					class="bg-warning absolute top-3 flex h-12 w-12 flex-row items-center justify-center rounded-full"
+				>
+					<Icon class="absolute text-3xl text-white" path={iconPaths.alert} />
+				</div>
+			{:else}
+				<div
+					class="{allActive ? 'bg-success' : allInactive ? 'bg-danger' : 'bg-warning'}
 						absolute top-3 flex h-12 w-12 flex-row items-center justify-center rounded-full"
-					>
-						<Icon
-							class="absolute text-3xl text-white"
-							path={allActive ? iconPaths.check : allInactive ? iconPaths.close : iconPaths.alert}
-						/>
-					</div>
-				{/if}
-			</div>
+				>
+					<Icon
+						class="absolute text-3xl text-white"
+						path={allActive ? iconPaths.check : allInactive ? iconPaths.close : iconPaths.alert}
+					/>
+				</div>
+			{/if}
+		</div>
+		<div
+			class="mx-3 my-3 flex flex-row items-center justify-start overflow-hidden text-xl text-ellipsis"
+		>
+			<p class="text-surface-content text-xl font-bold">{location.name}</p>
+			<span class="flex flex-grow"></span>
+			<Button variant="fill" color="primary" icon={iconPaths.arrowRight} {href} />
 		</div>
 	</div>
 
-	<h2 class="mx-3 my-3 flex flex-row items-center overflow-hidden text-xl text-ellipsis">
-		<p class="text-surface-content text-xl">{location.name}</p>
-		<span class="flex flex-grow"></span>
-		<Button variant="fill" color="primary" icon={iconPaths.arrowRight} {href} />
-	</h2>
 	<div class="text-surface-content flex flex-col gap-1 px-1 pb-4 text-sm">
 		{#if location.cw_devices.length === 0}
 			<p class="text-surface-content w-full text-center">No devices found</p>

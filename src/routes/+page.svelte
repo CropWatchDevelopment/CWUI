@@ -66,30 +66,45 @@
 
 		return { activeDevices, allActive, allInactive };
 	}
+
+	function getContainerClass(viewType: string): string {
+		switch (viewType) {
+			case 'grid':
+				return 'grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5';
+			case 'mozaic':
+				return 'columns-[20rem] gap-4 space-y-4';
+			case 'list':
+				return 'flex flex-col gap-4';
+			default:
+				return 'grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5';
+		}
+	}
 </script>
 
-{#each sampleLocations as location}
-	{@const { activeDevices, allActive, allInactive } = getLocationActiveStatus(location)}
-	<DashboardCard {location} href="#" {activeDevices} {allActive} {allInactive}>
-		{#snippet content()}
-			{#each location.cw_devices as device}
-				{@const deviceKey = device.dev_eui}
-				{@const isActive = getDeviceActiveStatus(deviceKey)}
+<div class={getContainerClass('grid')}>
+	{#each sampleLocations as location}
+		{@const { activeDevices, allActive, allInactive } = getLocationActiveStatus(location)}
+		<DashboardCard {location} href="#" {activeDevices} {allActive} {allInactive}>
+			{#snippet content()}
+				{#each location.cw_devices as device}
+					{@const deviceKey = device.dev_eui}
+					{@const isActive = getDeviceActiveStatus(deviceKey)}
 
-				<DataRowItem
-					{device}
-					{isActive}
-					dataPointPrimary={device.latest_data?.temperatureC}
-					primaryNotation={device.cw_device_type.primary_data_notation}
-					dataPointSecondary={device.latest_data?.humidity}
-					secondaryNotation={device.cw_device_type.secondary_data_notation}
-					detailHref={`/device/${device.dev_eui}`}
-				>
-					{#snippet children()}
-						<DeviceDataList {device} {isActive} />
-					{/snippet}
-				</DataRowItem>
-			{/each}
-		{/snippet}
-	</DashboardCard>
-{/each}
+					<DataRowItem
+						{device}
+						{isActive}
+						dataPointPrimary={device.latest_data?.temperatureC}
+						primaryNotation={device.cw_device_type.primary_data_notation}
+						dataPointSecondary={device.latest_data?.humidity}
+						secondaryNotation={device.cw_device_type.secondary_data_notation}
+						detailHref={`/device/${device.dev_eui}`}
+					>
+						{#snippet children()}
+							<DeviceDataList {device} {isActive} />
+						{/snippet}
+					</DataRowItem>
+				{/each}
+			{/snippet}
+		</DashboardCard>
+	{/each}
+</div>
