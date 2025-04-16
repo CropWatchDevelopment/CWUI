@@ -1,10 +1,7 @@
 <script lang="ts">
 	import { Button, Card, Icon } from 'svelte-ux';
 	import { mdiAlert, mdiMailboxUp, mdiCheck, mdiClose, mdiArrowRight } from '@mdi/js';
-	import { createActiveTimer } from '$lib/utilities/ActiveTimer.js';
-	import { onDestroy } from 'svelte';
-	import { untrack } from 'svelte';
-	import DataRowItem from './DataRowItem.svelte';
+	import type { Snippet } from 'svelte';
 
 	// Define paths directly as fallback in case the import fails
 	const iconPaths = {
@@ -20,135 +17,29 @@
 	let {
 		location,
 		href = '#',
-		customDeviceContent = false,
-		renderDeviceItems = null,
-		children = null
+		content = undefined,
+		// Receive active status from parent component
+		activeDevices = [],
+		allActive = false,
+		allInactive = false
 	}: {
-		location;
+		location: any;
 		href?: string;
-		customDeviceContent?: boolean;
-		renderDeviceItems?: any;
-		children?: any;
+		content?: Snippet;
+		activeDevices?: (boolean | null)[];
+		allActive?: boolean;
+		allInactive?: boolean;
 	} = $props();
-
-
-
-// 		// Create the active timer store
-// 		const activeTimer = createActiveTimer(last_updated, update_interval);
-
-// // Get the active status from the timer - state can be true, false, or null
-// let isactive: boolean | null = $state(null);
-
-// // Subscribe to the timer store
-// const unsubscribe = activeTimer.subscribe((value: boolean | null) => {
-// 	isactive = value;
-// });
-
-// // Update the timer when props change
-// $effect(() => {
-// 	activeTimer.update(last_updated, update_interval);
-// });
-
-// // Clean up subscription when component is destroyed
-// onDestroy(() => {
-// 	unsubscribe();
-// });
-
-
-
-
-
-	// Create a map to store active status for each device
-	let deviceActiveStatus = $state(new Map<string, boolean | null>());
-	
-	// Store unsubscribe functions for cleanup
-	let unsubscribers: (() => void)[] = [];
-
-	// Initialize active timers for each device
-	$effect(() => {
-		if (location && location.cw_devices) {
-			// Clear previous timers
-			unsubscribers.forEach(unsub => unsub());
-			unsubscribers = [];
-			
-			// Create new timers for each device
-			location.cw_devices.forEach(device => {
-				// Use a unique key for each device
-				const deviceKey = device.dev_eui || device.id;
-				
-				// Set initial value
-				deviceActiveStatus.set(deviceKey, null);
-				
-				// Create an active timer for this device
-				const activeTimer = createActiveTimer(
-					device.latest_data?.created_at, 
-					device.cw_device_type.default_upload_interval
-				);
-				
-				// Subscribe to the timer and update our status map
-				const unsubscribe = activeTimer.subscribe((isActive) => {
-					// Use untrack to prevent infinite loops when updating the Map
-					untrack(() => {
-						deviceActiveStatus.set(deviceKey, isActive);
-					});
-				});
-				
-				// Store the unsubscribe function for cleanup
-				unsubscribers.push(unsubscribe);
-			});
-		}
-	});
-
-	// Cleanup on destroy
-	onDestroy(() => {
-		unsubscribers.forEach(unsub => unsub());
-		unsubscribers = [];
-	});
-
-	// Derive an array of active statuses for the top indicator
-	const activeDevices = $derived(
-		!location || !location.cw_devices
-			? null
-			: Array.from(deviceActiveStatus.values())
-	);
-
-	// Determine if all devices are active, inactive, or mixed
-	let allActive = $derived(activeDevices?.every(status => status === true) ?? false);
-	let allInactive = $derived(activeDevices?.every(status => status === false) ?? false);
-	let mixedStatus = $derived(!allActive && !allInactive && activeDevices !== null && activeDevices.length > 0);
-	
-	// Default content renderer function - now passing isActive to each DataRowItem
-	function defaultRenderer() {
-		return {
-			t: location.cw_devices
-				.map(
-					(device) => {
-						const deviceKey = device.dev_eui || device.id;
-						const isActive = deviceActiveStatus.get(deviceKey);
-						
-						return `
-						<div class="mb-2">
-							<svelte:component 
-								this={DataRowItem} 
-								device={${JSON.stringify(device)}}
-								location={${JSON.stringify(location)}}
-								isActive={${isActive}}
-							/>
-						</div>
-						`;
-					}
-				)
-				.join('')
-		};
-	}
 </script>
 
 <Card class="bg-surface-200/50 min-w-64 rounded-2xl shadow-md">
 	<div>
 		<div class="border-[rgb(121 121 121)] rounded-t-2xl border-[0.1em] bg-slate-600 pb-0.5">
 			<div class="custom-bg relative h-20 w-full bg-cover bg-bottom bg-no-repeat p-1">
-				{#if activeDevices === null || activeDevices.length === 0}
-					<div class="absolute top-3 flex h-12 w-12 flex-row items-center justify-center rounded-full bg-warning">
+				{#if activeDevices.length === 0}
+					<div
+						class="bg-warning absolute top-3 flex h-12 w-12 flex-row items-center justify-center rounded-full"
+					>
 						<Icon class="absolute text-3xl text-white" path={iconPaths.alert} />
 					</div>
 				{:else}
@@ -159,11 +50,7 @@
 					>
 						<Icon
 							class="absolute text-3xl text-white"
-							path={allActive
-								? iconPaths.check
-								: allInactive
-									? iconPaths.close
-									: iconPaths.alert}
+							path={allActive ? iconPaths.check : allInactive ? iconPaths.close : iconPaths.alert}
 						/>
 					</div>
 				{/if}
@@ -179,13 +66,18 @@
 	<div class="text-surface-content flex flex-col gap-1 px-1 pb-4 text-sm">
 		{#if location.cw_devices.length === 0}
 			<p class="text-surface-content w-full text-center">No devices found</p>
-		{:else if customDeviceContent && renderDeviceItems}
-			{@render renderDeviceItems?.()}
-		{:else if children}
-			{@render children?.()}
+		{:else if content}
+			{@render content()}
 		{:else}
-			<!-- Default content if no children or renderDeviceItems provided -->
-			{@render defaultRenderer()}
+			<!-- Default content when no content snippet is provided -->
+			{#each location.cw_devices as device}
+				<div class="mb-2 rounded border p-2">
+					<div class="flex items-center">
+						<div class="mr-2 h-3 w-3 rounded-full"></div>
+						<div>{device.name || device.dev_eui}</div>
+					</div>
+				</div>
+			{/each}
 		{/if}
 		<span class="flex flex-grow"></span>
 	</div>

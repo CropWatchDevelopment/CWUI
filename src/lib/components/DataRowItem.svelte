@@ -3,35 +3,27 @@
 	import { mdiArrowRight } from '@mdi/js';
 	import { nameToEmoji } from '$lib/utilities/NameToEmoji.js';
 	import { browser } from '$app/environment';
+	import type { Snippet } from 'svelte';
 
 	let {
 		device,
-		isActive = null, // New prop that will be passed from DashboardCard
-
+		isActive = null,
 		dataPointPrimary = null,
 		primaryNotation = '',
-
 		dataPointSecondary = null,
 		secondaryNotation = '',
-
 		detailHref = '#',
-		children = null
+		children = undefined
 	}: {
 		device: any;
-		update_interval?: number;
-		last_updated?: Date;
-		isActive?: boolean | null; // Add the type for the new prop
+		isActive?: boolean | null;
 		dataPointPrimary?: number | null;
 		primaryNotation?: string;
-		primaryIcon?: string | null;
 		dataPointSecondary?: number | null;
 		secondaryNotation?: string;
-		secondaryIcon?: string | null;
 		detailHref?: string;
-		children?: any;
+		children?: Snippet;
 	} = $props();
-
-	// No need for the active timer logic anymore since we're receiving isActive from parent
 
 	let localStorageOpenState = browser
 		? localStorage.getItem(`${device.dev_eui}-collapseState`)
@@ -70,11 +62,7 @@
 						<p class="m-auto justify-center">
 							<span class="text-surface-content">
 								{nameToEmoji(device.cw_device_type.primary_data_v2 ?? '')}
-								<TweenedValue
-									value={dataPointPrimary}
-									format="decimal"
-									class="text-accent-500 font-medium"
-								/>
+								<TweenedValue value={dataPointPrimary} format="decimal" />
 							</span>
 							<small>
 								<sup class="text-accent-300">{primaryNotation}</sup>
@@ -102,7 +90,7 @@
 	</div>
 	{#if device.latest_data}
 		{#if children}
-			{@render children?.()}
+			{@render children()}
 		{:else}
 			<p>No Data Points</p>
 		{/if}

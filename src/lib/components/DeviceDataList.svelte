@@ -41,7 +41,7 @@
 					</div>
 					<div class="flex items-center">
 						{#if dataPointKey === 'created_at'}
-							<p class="text-surface-content flex flex-row items-center text-base">
+							<p class="{isActive ? 'text-surface-content' : 'text-danger'} flex flex-row items-center text-base">
 								<Duration
 									start={device.latest_data.created_at}
 									totalUnits={2}

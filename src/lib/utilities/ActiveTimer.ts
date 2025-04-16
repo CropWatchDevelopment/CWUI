@@ -20,7 +20,14 @@ export function createActiveTimer(lastUpdated: Date | null | undefined, interval
   function checkActive(date: Date | null | undefined, interval: number): boolean | null {
     if (interval <= 0) return null;
     if (date === null || date === undefined) return false;
-    return moment().diff(moment(date), 'minutes') < interval;
+    
+    // Use milliseconds for more precise calculation to avoid truncation issues
+    // Convert interval to milliseconds (minutes * 60 * 1000)
+    const now = new Date();
+    const timeDiffMs = now.getTime() - new Date(date).getTime();
+    const intervalMs = interval * 60 * 1000;
+    
+    return timeDiffMs < intervalMs;
   }
 
   // Function to notify all subscribers

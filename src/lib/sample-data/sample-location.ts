@@ -13,7 +13,7 @@ export const sampleLocations = [
         map_zoom: 18,
         cw_devices: [
             {
-                isActive: null,
+                
                 lat: 0,
                 long: 0,
                 name: 'テスト2',
@@ -26,7 +26,7 @@ export const sampleLocations = [
                 installed_at: '2025-03-23',
                 serial_number: null,
                 latest_data: {
-                    created_at: moment().subtract(3, 'minutes').toDate(),
+                    created_at: moment().subtract(9.5, 'minutes').toDate(),
                     temperatureC: 25.0,
                     humidity: 60.0,
                     soilMoisture: 30.0,
