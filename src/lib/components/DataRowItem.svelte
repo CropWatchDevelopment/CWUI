@@ -1,16 +1,12 @@
 <script lang="ts">
 	import { Button, Collapse, TweenedValue } from 'svelte-ux';
-	import { goto } from '$app/navigation';
 	import { mdiArrowRight } from '@mdi/js';
 	import { nameToEmoji } from '$lib/utilities/NameToEmoji.js';
 	import { browser } from '$app/environment';
-	import { createActiveTimer } from '$lib/utilities/ActiveTimer.js';
-	import { onDestroy } from 'svelte';
 
 	let {
 		device,
-		update_interval = -1,
-		last_updated,
+		isActive = null, // New prop that will be passed from DashboardCard
 
 		dataPointPrimary = null,
 		primaryNotation = '',
@@ -24,6 +20,7 @@
 		device: any;
 		update_interval?: number;
 		last_updated?: Date;
+		isActive?: boolean | null; // Add the type for the new prop
 		dataPointPrimary?: number | null;
 		primaryNotation?: string;
 		primaryIcon?: string | null;
@@ -34,26 +31,7 @@
 		children?: any;
 	} = $props();
 
-	// Create the active timer store
-	const activeTimer = createActiveTimer(last_updated, update_interval);
-	
-	// Get the active status from the timer - state can be true, false, or null
-	let isactive: boolean | null = $state(null);
-	
-	// Subscribe to the timer store
-	const unsubscribe = activeTimer.subscribe((value: boolean | null) => {
-		isactive = value;
-	});
-	
-	// Update the timer when props change
-	$effect(() => {
-		activeTimer.update(last_updated, update_interval);
-	});
-	
-	// Clean up subscription when component is destroyed
-	onDestroy(() => {
-		unsubscribe();
-	});
+	// No need for the active timer logic anymore since we're receiving isActive from parent
 
 	let localStorageOpenState = browser
 		? localStorage.getItem(`${device.dev_eui}-collapseState`)
@@ -68,7 +46,6 @@
 			localStorage.setItem(`${device.dev_eui}-collapseState`, JSON.stringify(e.detail.open));
 		}
 	}
-
 </script>
 
 <Collapse
@@ -78,9 +55,10 @@
 >
 	<div
 		slot="trigger"
-		class="flex-1 border-l-8 {isactive
-			? '!border-l-green-500'
-			: 'border-l-red-500'} {isactive === null ? '!border-l-yellow-400' : ''}"
+		class="flex-1 border-l-8 {isActive ? '!border-l-green-500' : 'border-l-red-500'} {isActive ===
+		null
+			? '!border-l-yellow-400'
+			: ''}"
 	>
 		<div class="my-1 mr-2 border-r-2">
 			<div class="flex flex-col text-center text-base">
@@ -129,14 +107,13 @@
 			<p>No Data Points</p>
 		{/if}
 	{/if}
-	<div class="border-l-8 pl-1 {isactive ? '!border-l-green-500' : 'border-l-red-500'}">
-		<Button
-			href={detailHref}
-			variant="fill"
-			color="info"
-			class="mb-1 w-full"
-			icon={mdiArrowRight}
-		>
+	<div
+		class="border-l-8 pl-1 {isActive ? '!border-l-green-500' : 'border-l-red-500'} {isActive ===
+		null
+			? '!border-l-yellow-400'
+			: ''}"
+	>
+		<Button href={detailHref} variant="fill" color="info" class="mb-1 w-full" icon={mdiArrowRight}>
 			Details
 		</Button>
 	</div>

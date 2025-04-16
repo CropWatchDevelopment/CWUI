@@ -1,9 +1,10 @@
 <script lang="ts">
-	import DataRowItem from './DataRowItem.svelte';
 	import { Button, Card, Icon } from 'svelte-ux';
-	import CustomAvatar from './CustomAvatar.svelte';
 	import { mdiAlert, mdiMailboxUp, mdiCheck, mdiClose, mdiArrowRight } from '@mdi/js';
-	import moment from 'moment';
+	import { createActiveTimer } from '$lib/utilities/ActiveTimer.js';
+	import { onDestroy } from 'svelte';
+	import { untrack } from 'svelte';
+	import DataRowItem from './DataRowItem.svelte';
 
 	// Define paths directly as fallback in case the import fails
 	const iconPaths = {
@@ -12,53 +13,130 @@
 		close:
 			mdiClose ||
 			'M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z',
-		mailboxUp:
-			mdiMailboxUp ||
-			'M17,4H7A5,5 0 0,0 2,9V20H4V9A3,3 0 0,1 7,6H17A3,3 0 0,1 20,9V20H22V9A5,5 0 0,0 17,4M10,18H6V16H10V18M15,12H9V10H15V12M12,9L7,14H17L12,9Z',
 		arrowRight:
 			mdiArrowRight || 'M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z'
 	};
 
 	let {
 		location,
-		onNavigate = (locationId: string | number) => {},
+		href = '#',
 		customDeviceContent = false,
 		renderDeviceItems = null,
 		children = null
 	}: {
 		location;
-		onNavigate?: (locationId: string | number) => void;
+		href?: string;
 		customDeviceContent?: boolean;
 		renderDeviceItems?: any;
 		children?: any;
 	} = $props();
 
-	let activeDevices = $derived(
-		location.cw_devices
-			.map((device) => {
-				if (device.cw_device_type.default_upload_interval === -1) return true;
-				const dev =
-					moment().diff(moment(device.latest_data?.created_at), 'minutes', false) <
-					device.cw_device_type.default_upload_interval;
-				return dev;
-			})
-			.filter(Boolean).length
+
+
+// 		// Create the active timer store
+// 		const activeTimer = createActiveTimer(last_updated, update_interval);
+
+// // Get the active status from the timer - state can be true, false, or null
+// let isactive: boolean | null = $state(null);
+
+// // Subscribe to the timer store
+// const unsubscribe = activeTimer.subscribe((value: boolean | null) => {
+// 	isactive = value;
+// });
+
+// // Update the timer when props change
+// $effect(() => {
+// 	activeTimer.update(last_updated, update_interval);
+// });
+
+// // Clean up subscription when component is destroyed
+// onDestroy(() => {
+// 	unsubscribe();
+// });
+
+
+
+
+
+	// Create a map to store active status for each device
+	let deviceActiveStatus = $state(new Map<string, boolean | null>());
+	
+	// Store unsubscribe functions for cleanup
+	let unsubscribers: (() => void)[] = [];
+
+	// Initialize active timers for each device
+	$effect(() => {
+		if (location && location.cw_devices) {
+			// Clear previous timers
+			unsubscribers.forEach(unsub => unsub());
+			unsubscribers = [];
+			
+			// Create new timers for each device
+			location.cw_devices.forEach(device => {
+				// Use a unique key for each device
+				const deviceKey = device.dev_eui || device.id;
+				
+				// Set initial value
+				deviceActiveStatus.set(deviceKey, null);
+				
+				// Create an active timer for this device
+				const activeTimer = createActiveTimer(
+					device.latest_data?.created_at, 
+					device.cw_device_type.default_upload_interval
+				);
+				
+				// Subscribe to the timer and update our status map
+				const unsubscribe = activeTimer.subscribe((isActive) => {
+					// Use untrack to prevent infinite loops when updating the Map
+					untrack(() => {
+						deviceActiveStatus.set(deviceKey, isActive);
+					});
+				});
+				
+				// Store the unsubscribe function for cleanup
+				unsubscribers.push(unsubscribe);
+			});
+		}
+	});
+
+	// Cleanup on destroy
+	onDestroy(() => {
+		unsubscribers.forEach(unsub => unsub());
+		unsubscribers = [];
+	});
+
+	// Derive an array of active statuses for the top indicator
+	const activeDevices = $derived(
+		!location || !location.cw_devices
+			? null
+			: Array.from(deviceActiveStatus.values())
 	);
 
-	function handleNavigate() {
-		onNavigate(location.location_id);
-	}
-
-	// Default content renderer function
+	// Determine if all devices are active, inactive, or mixed
+	let allActive = $derived(activeDevices?.every(status => status === true) ?? false);
+	let allInactive = $derived(activeDevices?.every(status => status === false) ?? false);
+	let mixedStatus = $derived(!allActive && !allInactive && activeDevices !== null && activeDevices.length > 0);
+	
+	// Default content renderer function - now passing isActive to each DataRowItem
 	function defaultRenderer() {
 		return {
 			t: location.cw_devices
 				.map(
-					(device) => `
-				<div class="mb-2">
-					<svelte:component this={DataRowItem} device={${JSON.stringify(device)}} location={${JSON.stringify(location)}} />
-				</div>
-			`
+					(device) => {
+						const deviceKey = device.dev_eui || device.id;
+						const isActive = deviceActiveStatus.get(deviceKey);
+						
+						return `
+						<div class="mb-2">
+							<svelte:component 
+								this={DataRowItem} 
+								device={${JSON.stringify(device)}}
+								location={${JSON.stringify(location)}}
+								isActive={${isActive}}
+							/>
+						</div>
+						`;
+					}
 				)
 				.join('')
 		};
@@ -69,38 +147,26 @@
 	<div>
 		<div class="border-[rgb(121 121 121)] rounded-t-2xl border-[0.1em] bg-slate-600 pb-0.5">
 			<div class="custom-bg relative h-20 w-full bg-cover bg-bottom bg-no-repeat p-1">
-				<!-- <div
-					class="absolute top-0 right-0 flex h-full w-1/2 flex-row items-center justify-end rounded-2xl"
-				>
-					{#if location.cw_devices.some((device) => device?.cw_rules.length > 0)}
-						<CustomAvatar 
-							size="lg" 
-							class="absolute top-3 flex flex-row rounded-full bg-red-300"
-							iconPath={iconPaths.mailboxUp}
-						>
-						</CustomAvatar>
-					{/if}
-				</div> -->
-				<div
-					class="bg-success absolute top-3 flex h-12 w-12 flex-row items-center justify-center rounded-full"
-				>
-					<Icon class="absolute text-3xl text-white" path={mdiCheck} />
-				</div>
-				<!-- <CustomAvatar
-					size="lg"
-					class="absolute top-3 flex flex-row rounded-full"
-					isSuccess={activeDevices === location.cw_devices.length}
-					isWarning={activeDevices < location.cw_devices.length && activeDevices > 0}
-					isDanger={activeDevices === 0}
-					iconPath={
-						activeDevices === location.cw_devices.length 
-							? iconPaths.check 
-							: activeDevices > 0 
-								? iconPaths.alert 
-								: iconPaths.close
-					}
-				>
-				</CustomAvatar> -->
+				{#if activeDevices === null || activeDevices.length === 0}
+					<div class="absolute top-3 flex h-12 w-12 flex-row items-center justify-center rounded-full bg-warning">
+						<Icon class="absolute text-3xl text-white" path={iconPaths.alert} />
+					</div>
+				{:else}
+					<div
+						class="
+						{allActive ? 'bg-success' : allInactive ? 'bg-danger' : 'bg-warning'}
+						absolute top-3 flex h-12 w-12 flex-row items-center justify-center rounded-full"
+					>
+						<Icon
+							class="absolute text-3xl text-white"
+							path={allActive
+								? iconPaths.check
+								: allInactive
+									? iconPaths.close
+									: iconPaths.alert}
+						/>
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -108,7 +174,7 @@
 	<h2 class="mx-3 my-3 flex flex-row items-center overflow-hidden text-xl text-ellipsis">
 		<p class="text-surface-content text-xl">{location.name}</p>
 		<span class="flex flex-grow"></span>
-		<Button variant="fill" color="primary" icon={iconPaths.arrowRight} on:click={handleNavigate} />
+		<Button variant="fill" color="primary" icon={iconPaths.arrowRight} {href} />
 	</h2>
 	<div class="text-surface-content flex flex-col gap-1 px-1 pb-4 text-sm">
 		{#if location.cw_devices.length === 0}
@@ -136,6 +202,12 @@
 	}
 	.bg-success {
 		background-color: var(--color-success) /* hsl(160 100% 30%) = #009966 */;
+	}
+	.bg-danger {
+		background-color: var(--color-danger-500, #ef4444);
+	}
+	.bg-warning {
+		background-color: var(--color-warning-600, #d97706);
 	}
 	.custom-bg::before {
 		content: ' ';
@@ -192,6 +264,4 @@
 		border-top-right-radius: 15px;
 		opacity: 0.9; /* Increased from 0.7 to make the pattern more visible */
 	}
-
-	
 </style>
