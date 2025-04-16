@@ -1,5 +1,4 @@
 import { browser } from '$app/environment';
-import moment from 'moment';
 
 // Type for the callback function
 type SubscriberCallback = (value: boolean | null) => void;
