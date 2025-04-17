@@ -86,7 +86,7 @@
 		}
 	}
 </script>
-
+<h1>CropWatch Dashboard Displays</h1>
 <div class={getContainerClass('grid')}>
 	{#each sampleLocations as location}
 		{@const { activeDevices, allActive, allInactive } = getLocationActiveStatus(location)}
