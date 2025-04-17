@@ -12,7 +12,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm test
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run tests
+        run: pnpm test
 
   publish-gpr:
     needs: build
@@ -26,6 +32,20 @@ jobs:
         with:
           node-version: 20
           registry-url: https://npm.pkg.github.com/
-      - run: npm publish
+          scope: '@cropwatch'
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - name: Install dependencies
+        run: pnpm install
+      - name: Configure package for GitHub registry
+        run: |
+          # Get repository owner from GitHub context
+          OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d '/' -f 1 | tr '[:upper:]' '[:lower:]')
+          # Update package.json for GitHub Packages
+          echo "Setting package name scope to @$OWNER"
+          npm pkg set name="@$OWNER/$(npm pkg get name | tr -d '"')"
+      - name: Publish package
+        run: pnpm publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
