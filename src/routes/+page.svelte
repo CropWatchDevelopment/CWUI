@@ -23,6 +23,12 @@
 			location.cw_devices.forEach((device) => {
 				const deviceKey: string = device.dev_eui;
 
+				 // If upload_interval is null, set the status to null directly
+				if (device.upload_interval === null) {
+					deviceActiveStatus[deviceKey] = null;
+					return;
+				}
+
 				// Create an active timer for this device with explicit Date conversion
 				const activeTimer = createActiveTimer(
 					new Date(device.latest_data?.created_at),

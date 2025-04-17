@@ -1,5 +1,5 @@
 // Reexport your entry components here
-import './styles.css';
+// import './styles.css';
 
 export { default as DashboardCard } from './components/DashboardCard.svelte';
 export { default as DataRowItem } from './components/DataRowItem.svelte';
