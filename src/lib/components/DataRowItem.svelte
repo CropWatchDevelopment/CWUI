@@ -2,7 +2,7 @@
 	import { Button, Collapse, TweenedValue } from 'svelte-ux';
 	import { mdiArrowRight } from '@mdi/js';
 	import { nameToEmoji } from '$lib/utilities/NameToEmoji.js';
-	import { browser } from '$app/environment';
+	import { BROWSER } from 'esm-env';
 	import type { Snippet } from 'svelte';
 
 	let {
@@ -25,7 +25,7 @@
 		children?: Snippet;
 	} = $props();
 
-	let localStorageOpenState = browser
+	let localStorageOpenState = BROWSER
 		? localStorage.getItem(`${device.dev_eui}-collapseState`)
 		: null;
 	let defaultCollapse: boolean = $state(
@@ -34,7 +34,7 @@
 
 	function collapseStateChange(e: CustomEvent) {
 		defaultCollapse = e.detail.open;
-		if (browser) {
+		if (BROWSER) {
 			localStorage.setItem(`${device.dev_eui}-collapseState`, JSON.stringify(e.detail.open));
 		}
 	}

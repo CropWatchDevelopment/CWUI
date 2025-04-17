@@ -35,19 +35,16 @@ jobs:
         with:
           node-version: 20
           registry-url: https://npm.pkg.github.com/
-          scope: '@cropwatch'
       - uses: pnpm/action-setup@v2
         with:
           version: 8
       - name: Install dependencies
         run: pnpm install
-      - name: Configure package for GitHub registry
+      - name: Fix package.json for publishing
         run: |
-          # Get repository owner from GitHub context
-          OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d '/' -f 1 | tr '[:upper:]' '[:lower:]')
-          # Update package.json for GitHub Packages
-          echo "Setting package name scope to @$OWNER"
-          npm pkg set name="@$OWNER/$(npm pkg get name | tr -d '"')"
+          # The package name is already correctly scoped in package.json as @cropwatchdevelopment/cwui
+          # Update dependencies to fix SvelteKit issues
+          npm pkg set peerDependencies.@sveltejs/kit="^2.16.0"
       - name: Publish package
         run: pnpm publish --no-git-checks
         env:

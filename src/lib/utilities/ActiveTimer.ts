@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { BROWSER } from 'esm-env';
 
 // Type for the callback function
 type SubscriberCallback = (value: boolean | null) => void;
@@ -38,7 +38,7 @@ export function createActiveTimer(lastUpdated: Date | null | undefined, interval
   }
 
   // Start the timer if we're in a browser environment
-  if (browser) {
+  if (BROWSER) {
     // Calculate appropriate update interval based on the interval minutes
     const updateFrequency = Math.min(30, Math.max(1, Math.floor(intervalMinutes / 10))) * 1000;
 
@@ -62,7 +62,7 @@ export function createActiveTimer(lastUpdated: Date | null | undefined, interval
       return () => {
         subscribers = subscribers.filter(sub => sub !== callback);
         // If no more subscribers and we have an interval, clear it
-        if (subscribers.length === 0 && intervalId !== undefined && browser) {
+        if (subscribers.length === 0 && intervalId !== undefined && BROWSER) {
           clearInterval(intervalId);
         }
       };
@@ -80,7 +80,7 @@ export function createActiveTimer(lastUpdated: Date | null | undefined, interval
       }
 
       // If we're in a browser environment, update the interval frequency
-      if (browser && intervalId !== undefined) {
+      if (BROWSER && intervalId !== undefined) {
         clearInterval(intervalId);
 
         // Calculate appropriate update interval based on the new interval minutes
