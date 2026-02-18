@@ -120,6 +120,8 @@
 <style>
 	.cw-dialog {
 		position: fixed;
+		inset: 0;
+		margin: auto;
 		border: none;
 		padding: 0;
 		background: transparent;

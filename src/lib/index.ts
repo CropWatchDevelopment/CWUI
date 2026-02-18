@@ -11,6 +11,7 @@ export { default as CwHeader } from './components/CwHeader.svelte';
 export { default as CwSearchInput } from './components/CwSearchInput.svelte';
 export { default as CwDataTable } from './components/CwDataTable.svelte';
 export { default as CwLineChart } from './components/CwLineChart.svelte';
+export { default as CwDeviceLineChartSection } from './components/CwDeviceLineChartSection.svelte';
 export { default as CwDonutChart } from './components/CwDonutChart.svelte';
 export { default as CwDateTimeRangePicker } from './components/CwDateTimeRangePicker.svelte';
 export { default as CwThemePicker } from './components/CwThemePicker.svelte';
@@ -19,6 +20,8 @@ export { default as CwProfileMenu } from './components/CwProfileMenu.svelte';
 export { default as CwSeparator } from './components/CwSeparator.svelte';
 export { default as CwSideNav } from './components/CwSideNav.svelte';
 export { default as CwTooltip } from './components/CwTooltip.svelte';
+export { default as CwCalendar } from './components/CwCalendar.svelte';
+export { default as CwCopy } from './components/CwCopy.svelte';
 
 // ── Toast system ────────────────────────────────────────────
 export { default as CwToastContainer } from './components/CwToastContainer.svelte';
@@ -35,6 +38,8 @@ export type {
 	CwTableResult,
 	CwColumnDef,
 	CwLineSeries,
+	CwLineChartDataPoint,
+	CwLineChartSecondaryDataPoint,
 	CwDonutSegment,
 	CwToastItem,
 	CwDatePickerMode,

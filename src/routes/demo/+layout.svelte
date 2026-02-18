@@ -28,7 +28,8 @@
 		sidenav: 'M2 2h12v12H2V2zm4 0v12',
 		drawer: 'M2 2h12v12H2V2zm0 8h12',
 		header: 'M2 2h12v3H2V2zm0 7h12v5H2V9z',
-		tooltip: 'M8 2a6 6 0 110 12A6 6 0 018 2zm0 7v-3m0 5h.01'
+		tooltip: 'M8 2a6 6 0 110 12A6 6 0 018 2zm0 7v-3m0 5h.01',
+		copy: 'M5 3h8a1 1 0 011 1v10a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1zM3 5v8a1 1 0 001 1h6'
 	};
 
 	const navItems: CwSideNavItem[] = [
@@ -51,7 +52,9 @@
 		{ id: 'sidenav', label: 'Side Nav', icon: icons.sidenav, href: '/demo/sidenav' },
 		{ id: 'drawer', label: 'Drawer', icon: icons.drawer, href: '/demo/drawer' },
 		{ id: 'header', label: 'Header', icon: icons.header, href: '/demo/header' },
-		{ id: 'tooltip', label: 'Tooltip', icon: icons.tooltip, href: '/demo/tooltip' }
+		{ id: 'tooltip', label: 'Tooltip', icon: icons.tooltip, href: '/demo/tooltip' },
+		{ id: 'calendar', label: 'Calendar', icon: icons.calendar, href: '/demo/calendar' },
+		{ id: 'copy', label: 'Copy', icon: icons.copy, href: '/demo/copy' }
 	];
 
 	let sideNavMode = $state<CwSideNavMode>('open');

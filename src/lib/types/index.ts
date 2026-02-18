@@ -50,10 +50,26 @@ export interface CwColumnDef<T> {
 
 /* ── Chart types ───────────────────────────────────────── */
 
+/** @deprecated Use CwLineChartDataPoint instead */
 export interface CwLineSeries {
 	label: string;
 	data: { x: number | string; y: number }[];
 	color?: string;
+}
+
+export interface CwLineChartDataPoint {
+	timestamp: string | Date;
+	value: number;
+	alert?: {
+		id: string;
+		message: string;
+		severity?: 'warning' | 'critical';
+	};
+}
+
+export interface CwLineChartSecondaryDataPoint {
+	timestamp: string | Date;
+	value: number;
 }
 
 export interface CwDonutSegment {
