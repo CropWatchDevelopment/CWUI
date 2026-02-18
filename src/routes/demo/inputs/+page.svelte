@@ -6,10 +6,14 @@
 	let emailVal = $state('');
 	let passVal = $state('');
 	let euiVal = $state('');
+	let ccVal = $state('');
+	let expVal = $state('');
+	let limitVal = $state('');
+	let clearVal = $state('Type something then clear');
 </script>
 
 <h2>CwInput</h2>
-<p class="demo-desc">All input types, validation states, icon slots, and DevEUI formatting.</p>
+<p class="demo-desc">All input types, validation states, icon slots, clear button, and DevEUI/credit-card formatting.</p>
 
 <div class="demo-grid">
 	<CwInput label="Text" type="text" placeholder="Type here…" bind:value={textVal} />
@@ -18,6 +22,23 @@
 	<CwInput label="Password" type="password" placeholder="••••••••" bind:value={passVal} />
 	<CwInput label="DevEUI" type="devEui" placeholder="XX:XX:XX:XX:XX:XX:XX:XX" bind:value={euiVal} />
 </div>
+
+<section class="demo-section">
+	<h3>Credit Card Types</h3>
+	<div class="demo-grid">
+		<CwInput label="Card Number" type="creditCard" placeholder="1234 5678 9012 3456" bind:value={ccVal} clearable />
+		<CwInput label="Expiry (MM/YY)" type="cardExpiry" placeholder="MM/YY" bind:value={expVal} />
+	</div>
+</section>
+
+<section class="demo-section">
+	<h3>Max Length &amp; Clear Button</h3>
+	<p class="demo-hint">The clear button appears when <code>clearable</code> is set and the input has a value.</p>
+	<div class="demo-grid">
+		<CwInput label="Max 10 chars" type="text" placeholder="Limited to 10" maxlength={10} bind:value={limitVal} clearable />
+		<CwInput label="Clearable" type="text" bind:value={clearVal} clearable />
+	</div>
+</section>
 
 <section class="demo-section">
 	<h3>Validation States</h3>
@@ -63,4 +84,5 @@
 	.demo-hint { color: var(--cw-text-muted); font-size: var(--cw-text-xs); margin-bottom: var(--cw-space-2); }
 	.demo-section { margin-top: var(--cw-space-6); }
 	.demo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: var(--cw-space-4); }
+	code { font-family: var(--cw-font-mono); font-size: var(--cw-text-xs); color: var(--cw-accent); }
 </style>

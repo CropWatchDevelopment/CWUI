@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
-	type InputType = 'text' | 'numeric' | 'email' | 'password' | 'devEui';
+	type InputType = 'text' | 'numeric' | 'email' | 'password' | 'devEui' | 'creditCard' | 'cardExpiry';
 
 	interface Props {
 		type?: InputType;
@@ -11,6 +11,8 @@
 		valid?: boolean;
 		disabled?: boolean;
 		placeholder?: string;
+		maxlength?: number;
+		clearable?: boolean;
 		leftSlot?: Snippet;
 		rightSlot?: Snippet;
 		oninput?: (e: Event) => void;
@@ -25,6 +27,8 @@
 		valid = false,
 		disabled = false,
 		placeholder,
+		maxlength,
+		clearable = false,
 		leftSlot,
 		rightSlot,
 		oninput,
@@ -34,18 +38,27 @@
 	const uid = $props.id();
 
 	const nativeType = $derived(
-		type === 'numeric' ? 'text' : type === 'devEui' ? 'text' : type
+		type === 'numeric' || type === 'devEui' || type === 'creditCard' || type === 'cardExpiry'
+			? 'text'
+			: type
 	);
 
 	const inputMode = $derived<'text' | 'numeric' | 'email'>(
-		type === 'numeric' ? 'numeric' : type === 'email' ? 'email' : 'text'
+		type === 'numeric' || type === 'creditCard' || type === 'cardExpiry'
+			? 'numeric'
+			: type === 'email'
+				? 'email'
+				: 'text'
 	);
 
 	/** Whether a validation icon is rendered on the right */
 	const hasValidationIcon = $derived(!!error || (valid && !error));
 
-	/** Whether _anything_ occupies the right side (slot or validation icon) */
-	const hasRight = $derived(!!rightSlot || hasValidationIcon);
+	/** Whether the clear button should show */
+	const showClear = $derived(clearable && value.length > 0 && !disabled);
+
+	/** Whether _anything_ occupies the right side (slot, clear btn, or validation icon) */
+	const hasRight = $derived(!!rightSlot || hasValidationIcon || showClear);
 
 	function handleInput(e: Event) {
 		const target = e.target as HTMLInputElement;
@@ -55,6 +68,14 @@
 			raw = raw.replace(/[^0-9.\-]/g, '');
 		} else if (type === 'devEui') {
 			raw = normalizeDevEui(raw);
+		} else if (type === 'creditCard') {
+			raw = formatCreditCard(raw);
+		} else if (type === 'cardExpiry') {
+			raw = formatCardExpiry(raw);
+		}
+
+		if (maxlength !== undefined && raw.length > maxlength) {
+			raw = raw.slice(0, maxlength);
 		}
 
 		value = raw;
@@ -62,9 +83,26 @@
 		oninput?.(e);
 	}
 
+	function clear() {
+		value = '';
+	}
+
 	function normalizeDevEui(input: string): string {
 		const hex = input.replace(/[^0-9a-fA-F]/g, '').toUpperCase().slice(0, 16);
 		return hex.match(/.{1,2}/g)?.join(':') ?? hex;
+	}
+
+	function formatCreditCard(input: string): string {
+		const digits = input.replace(/\D/g, '').slice(0, 16);
+		return digits.match(/.{1,4}/g)?.join(' ') ?? digits;
+	}
+
+	function formatCardExpiry(input: string): string {
+		const digits = input.replace(/\D/g, '').slice(0, 4);
+		if (digits.length >= 3) {
+			return digits.slice(0, 2) + '/' + digits.slice(2);
+		}
+		return digits;
 	}
 </script>
 
@@ -95,15 +133,30 @@
 			{value}
 			{disabled}
 			{placeholder}
+			maxlength={maxlength ?? undefined}
 			oninput={handleInput}
 			onchange={onchange}
 			aria-invalid={error ? 'true' : undefined}
 			aria-describedby={error ? `${uid}-error` : undefined}
 		/>
 
-		<!-- Right-side content: user slot + validation icon -->
+		<!-- Right-side content: clear button, user slot, validation icon -->
 		{#if hasRight}
 			<span class="cw-input__slot cw-input__slot--right">
+				{#if showClear}
+					<!-- svelte-ignore a11y_consider_explicit_label -->
+					<button
+						type="button"
+						class="cw-input__clear"
+						aria-label="Clear"
+						onclick={clear}
+						tabindex="-1"
+					>
+						<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+						</svg>
+					</button>
+				{/if}
 				{#if rightSlot}
 					{@render rightSlot()}
 				{/if}
@@ -201,6 +254,32 @@
 
 	.cw-input__slot--right {
 		right: var(--cw-space-3);
+	}
+
+	/* ── Clear button ────────────────────── */
+	.cw-input__clear {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 1rem;
+		height: 1rem;
+		padding: 0;
+		border: none;
+		background: none;
+		color: var(--cw-text-muted);
+		cursor: pointer;
+		pointer-events: auto;
+		border-radius: var(--cw-radius-full);
+		transition: color var(--cw-duration-fast) var(--cw-ease-default);
+	}
+
+	.cw-input__clear:hover {
+		color: var(--cw-text-primary);
+	}
+
+	.cw-input__clear svg {
+		width: 0.875rem;
+		height: 0.875rem;
 	}
 
 	/* ── Validation icons ────────────────── */
