@@ -5,7 +5,7 @@ A production-ready **Svelte 5** component library built with pure CSS custom pro
 [![GitHub Packages](https://img.shields.io/badge/package-GitHub%20Packages-blue?logo=github)](https://github.com/CropWatchDevelopment/CWUI/packages)
 [![Svelte 5](https://img.shields.io/badge/svelte-5-FF3E00?logo=svelte&logoColor=white)](https://svelte.dev)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
-
+[![Publish to GitHub Packages](https://github.com/CropWatchDevelopment/CWUI/actions/workflows/publish.yml/badge.svg)](https://github.com/CropWatchDevelopment/CWUI/actions/workflows/publish.yml)
 ---
 
 ## Table of Contents
