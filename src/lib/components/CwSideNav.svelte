@@ -39,6 +39,18 @@
 	/** Track whether user has manually overridden the mode */
 	let userOverride = $state(false);
 
+	/** Track phone-sized viewport for close button vs toggle */
+	let isPhone = $state(false);
+
+	/** Detect viewport width for phone detection (always) */
+	$effect(() => {
+		if (typeof window === 'undefined') return;
+		const check = () => { isPhone = window.innerWidth < 640; };
+		check();
+		window.addEventListener('resize', check);
+		return () => window.removeEventListener('resize', check);
+	});
+
 	/** Detect viewport and set mode when responsive is enabled */
 	$effect(() => {
 		if (!responsive || typeof window === 'undefined') return;
@@ -68,6 +80,16 @@
 		return () => window.removeEventListener('resize', handleResize);
 	});
 
+	/** Toggle the sidenav: close on phone, open/mini on tablet+ */
+	function toggleNav() {
+		userOverride = true;
+		if (isPhone) {
+			mode = 'hidden';
+		} else {
+			mode = mode === 'open' ? 'mini' : 'open';
+		}
+	}
+
 	function handleItemClick(item: CwSideNavItem) {
 		if (item.disabled) return;
 		onselect?.(item);
@@ -96,15 +118,38 @@
 	<!-- Header / Logo -->
 	{#if mode === 'open' && header}
 		<div class="cw-sidenav__header">
-			{@render header()}
+			<div class="cw-sidenav__header-row">
+				<div class="cw-sidenav__header-content">
+					{@render header()}
+				</div>
+				<button
+					class="cw-sidenav__toggle"
+					type="button"
+					onclick={toggleNav}
+					aria-label={isPhone ? 'Close navigation' : 'Collapse navigation'}
+				>
+					<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						{#if isPhone}
+							<path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+						{:else}
+							<path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+						{/if}
+					</svg>
+				</button>
+			</div>
 		</div>
 	{:else if mode === 'mini'}
 		<div class="cw-sidenav__header cw-sidenav__header--mini">
-			{#if headerMini}
-				{@render headerMini()}
-			{:else if header}
-				{@render header()}
-			{/if}
+			<button
+				class="cw-sidenav__toggle cw-sidenav__toggle--mini"
+				type="button"
+				onclick={toggleNav}
+				aria-label="Expand navigation"
+			>
+				<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<path d="M3 4h10M3 8h10M3 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+				</svg>
+			</button>
 		</div>
 	{/if}
 
@@ -230,6 +275,64 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+	}
+
+	/* ── Header row (open mode) ────────────── */
+	.cw-sidenav__header-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		width: 100%;
+	}
+
+	.cw-sidenav__header-content {
+		min-width: 0;
+		flex: 1;
+	}
+
+	/* ── Toggle button ─────────────────────── */
+	.cw-sidenav__toggle {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.75rem;
+		height: 1.75rem;
+		padding: 0;
+		background: none;
+		border: none;
+		border-radius: var(--cw-radius-md);
+		color: var(--cw-text-muted);
+		cursor: pointer;
+		flex-shrink: 0;
+		transition:
+			color var(--cw-duration-fast) var(--cw-ease-default),
+			background-color var(--cw-duration-fast) var(--cw-ease-default);
+	}
+
+	.cw-sidenav__toggle:hover {
+		background-color: var(--cw-bg-muted);
+		color: var(--cw-text-primary);
+	}
+
+	.cw-sidenav__toggle:focus-visible {
+		outline: none;
+		box-shadow: inset 0 0 0 2px
+			color-mix(in srgb, var(--cw-focus-ring-color) 40%, transparent);
+	}
+
+	.cw-sidenav__toggle svg {
+		width: 1rem;
+		height: 1rem;
+	}
+
+	.cw-sidenav__toggle--mini {
+		width: 2rem;
+		height: 2rem;
+	}
+
+	.cw-sidenav__toggle--mini svg {
+		width: 1.125rem;
+		height: 1.125rem;
 	}
 
 	/* ── Items list ───────────────────────── */
