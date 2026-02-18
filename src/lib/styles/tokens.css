@@ -1,0 +1,165 @@
+/* ============================================================
+   CropWatch UI — Design Tokens (CSS Custom Properties)
+   ============================================================
+   These are the "raw" palette + scale tokens. Semantic tokens
+   in theme-dark.css / theme-light.css map onto these.
+   ============================================================ */
+
+:root {
+	/* ── Palette: Neutrals (slate / navy-tinted) ─────── */
+	--cw-gray-50: #f8fafc;
+	--cw-gray-100: #f1f5f9;
+	--cw-gray-200: #e2e8f0;
+	--cw-gray-300: #cbd5e1;
+	--cw-gray-400: #94a3b8;
+	--cw-gray-500: #64748b;
+	--cw-gray-600: #475569;
+	--cw-gray-700: #334155;
+	--cw-gray-800: #1e293b;
+	--cw-gray-850: #172033;
+	--cw-gray-900: #0f172b;
+	--cw-gray-950: #020618;
+
+	/* ── Palette: Brand / Primary (bright teal-cyan) ──── */
+	--cw-primary-50: #e6fffa;
+	--cw-primary-100: #b2f5ea;
+	--cw-primary-200: #81e6d9;
+	--cw-primary-300: #4fd1c5;
+	--cw-primary-400: #38b2ac;
+	--cw-primary-500: #00d4aa;
+	--cw-primary-600: #00b894;
+	--cw-primary-700: #00997a;
+	--cw-primary-800: #007a62;
+	--cw-primary-900: #05433a;
+
+	/* ── Palette: Secondary (slate-blue) ───────────────── */
+	--cw-secondary-50: #f8fafc;
+	--cw-secondary-100: #f1f5f9;
+	--cw-secondary-200: #e2e8f0;
+	--cw-secondary-300: #cbd5e1;
+	--cw-secondary-400: #94a3b8;
+	--cw-secondary-500: #64748b;
+	--cw-secondary-600: #475569;
+	--cw-secondary-700: #334155;
+	--cw-secondary-800: #1e293b;
+	--cw-secondary-900: #0f172a;
+
+	/* ── Palette: Info (sky) ───────────────────────────── */
+	--cw-info-50: #f0f9ff;
+	--cw-info-100: #e0f2fe;
+	--cw-info-200: #bae6fd;
+	--cw-info-300: #7dd3fc;
+	--cw-info-400: #38bdf8;
+	--cw-info-500: #0ea5e9;
+	--cw-info-600: #0284c7;
+	--cw-info-700: #0369a1;
+	--cw-info-800: #075985;
+	--cw-info-900: #0c4a6e;
+
+	/* ── Palette: Warning (amber) ──────────────────────── */
+	--cw-warning-50: #fffbeb;
+	--cw-warning-100: #fef3c7;
+	--cw-warning-200: #fde68a;
+	--cw-warning-300: #fcd34d;
+	--cw-warning-400: #fbbf24;
+	--cw-warning-500: #f59e0b;
+	--cw-warning-600: #d97706;
+	--cw-warning-700: #b45309;
+	--cw-warning-800: #92400e;
+	--cw-warning-900: #78350f;
+
+	/* ── Palette: Danger (red) ─────────────────────────── */
+	--cw-danger-50: #fef2f2;
+	--cw-danger-100: #fee2e2;
+	--cw-danger-200: #fecaca;
+	--cw-danger-300: #fca5a5;
+	--cw-danger-400: #f87171;
+	--cw-danger-500: #ef4444;
+	--cw-danger-600: #dc2626;
+	--cw-danger-700: #b91c1c;
+	--cw-danger-800: #991b1b;
+	--cw-danger-900: #7f1d1d;
+
+	/* ── Palette: Success (emerald) ────────────────────── */
+	--cw-success-50: #ecfdf5;
+	--cw-success-100: #d1fae5;
+	--cw-success-200: #a7f3d0;
+	--cw-success-300: #6ee7b7;
+	--cw-success-400: #34d399;
+	--cw-success-500: #10b981;
+	--cw-success-600: #059669;
+	--cw-success-700: #047857;
+	--cw-success-800: #065f46;
+	--cw-success-900: #064e3b;
+
+	/* ── Scale: Spacing ────────────────────────────────── */
+	--cw-space-0: 0;
+	--cw-space-1: 0.25rem;
+	--cw-space-2: 0.5rem;
+	--cw-space-3: 0.75rem;
+	--cw-space-4: 1rem;
+	--cw-space-5: 1.25rem;
+	--cw-space-6: 1.5rem;
+	--cw-space-8: 2rem;
+	--cw-space-10: 2.5rem;
+	--cw-space-12: 3rem;
+	--cw-space-16: 4rem;
+
+	/* ── Scale: Typography ─────────────────────────────── */
+	--cw-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+		Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+	--cw-font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+	--cw-text-xs: 0.75rem;
+	--cw-text-sm: 0.875rem;
+	--cw-text-base: 1rem;
+	--cw-text-lg: 1.125rem;
+	--cw-text-xl: 1.25rem;
+	--cw-text-2xl: 1.5rem;
+	--cw-text-3xl: 1.875rem;
+
+	--cw-leading-tight: 1.25;
+	--cw-leading-normal: 1.5;
+	--cw-leading-relaxed: 1.625;
+
+	--cw-font-normal: 400;
+	--cw-font-medium: 500;
+	--cw-font-semibold: 600;
+	--cw-font-bold: 700;
+
+	/* ── Scale: Radii ──────────────────────────────────── */
+	--cw-radius-sm: 0.25rem;
+	--cw-radius-md: 0.375rem;
+	--cw-radius-lg: 0.5rem;
+	--cw-radius-xl: 0.75rem;
+	--cw-radius-2xl: 1rem;
+	--cw-radius-full: 9999px;
+
+	/* ── Scale: Shadows ────────────────────────────────── */
+	--cw-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.15);
+	--cw-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.25),
+		0 2px 4px -2px rgb(0 0 0 / 0.15);
+	--cw-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3),
+		0 4px 6px -4px rgb(0 0 0 / 0.2);
+	--cw-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.35),
+		0 8px 10px -6px rgb(0 0 0 / 0.2);
+
+	/* ── Scale: Motion ─────────────────────────────────── */
+	--cw-duration-fast: 100ms;
+	--cw-duration-normal: 200ms;
+	--cw-duration-slow: 300ms;
+	--cw-ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+	--cw-ease-in: cubic-bezier(0.4, 0, 1, 1);
+	--cw-ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+	/* ── Scale: Z-index ────────────────────────────────── */
+	--cw-z-dropdown: 100;
+	--cw-z-sticky: 200;
+	--cw-z-overlay: 300;
+	--cw-z-modal: 400;
+	--cw-z-toast: 500;
+
+	/* ── Focus ring ────────────────────────────────────── */
+	--cw-focus-ring-width: 2px;
+	--cw-focus-ring-offset: 2px;
+}

@@ -1,0 +1,93 @@
+/* ============================================================
+   CropWatch UI — Dark Theme (canonical parity baseline)
+   ============================================================
+   Maps semantic tokens to raw palette values for dark mode.
+   Applied via [data-theme="dark"] or as default.
+   ============================================================ */
+
+:root,
+[data-theme='dark'] {
+	color-scheme: dark;
+
+	/* ── Surface / Background ──────────────────────────── */
+	--cw-bg-base: var(--cw-gray-950);
+	--cw-bg-surface: var(--cw-gray-900);
+	--cw-bg-elevated: var(--cw-gray-800);
+	--cw-bg-overlay: var(--cw-gray-700);
+	--cw-bg-muted: var(--cw-gray-850);
+	--cw-bg-subtle: var(--cw-gray-700);
+
+	/* ── Text ──────────────────────────────────────────── */
+	--cw-text-primary: var(--cw-gray-50);
+	--cw-text-secondary: var(--cw-gray-300);
+	--cw-text-muted: var(--cw-gray-400);
+	--cw-text-disabled: var(--cw-gray-600);
+	--cw-text-inverse: var(--cw-gray-950);
+
+	/* ── Border ────────────────────────────────────────── */
+	--cw-border-default: var(--cw-gray-700);
+	--cw-border-muted: var(--cw-gray-800);
+	--cw-border-strong: var(--cw-gray-600);
+
+	/* ── Accent / Primary ──────────────────────────────── */
+	--cw-accent: var(--cw-primary-500);
+	--cw-accent-hover: var(--cw-primary-400);
+	--cw-accent-active: var(--cw-primary-600);
+	--cw-accent-bg: var(--cw-primary-900);
+	--cw-accent-text: var(--cw-primary-300);
+
+	/* ── Tone: Primary ─────────────────────────────────── */
+	--cw-tone-primary-bg: var(--cw-primary-900);
+	--cw-tone-primary-bg-subtle: color-mix(in srgb, var(--cw-primary-900) 40%, transparent);
+	--cw-tone-primary-text: var(--cw-primary-300);
+	--cw-tone-primary-border: var(--cw-primary-700);
+	--cw-tone-primary-solid-bg: var(--cw-primary-600);
+	--cw-tone-primary-solid-text: #fff;
+
+	/* ── Tone: Secondary ───────────────────────────────── */
+	--cw-tone-secondary-bg: var(--cw-secondary-800);
+	--cw-tone-secondary-bg-subtle: color-mix(in srgb, var(--cw-secondary-800) 40%, transparent);
+	--cw-tone-secondary-text: var(--cw-secondary-300);
+	--cw-tone-secondary-border: var(--cw-secondary-600);
+	--cw-tone-secondary-solid-bg: var(--cw-secondary-600);
+	--cw-tone-secondary-solid-text: #fff;
+
+	/* ── Tone: Info ─────────────────────────────────────── */
+	--cw-tone-info-bg: var(--cw-info-900);
+	--cw-tone-info-bg-subtle: color-mix(in srgb, var(--cw-info-900) 40%, transparent);
+	--cw-tone-info-text: var(--cw-info-300);
+	--cw-tone-info-border: var(--cw-info-700);
+	--cw-tone-info-solid-bg: var(--cw-info-600);
+	--cw-tone-info-solid-text: #fff;
+
+	/* ── Tone: Warning ─────────────────────────────────── */
+	--cw-tone-warning-bg: var(--cw-warning-900);
+	--cw-tone-warning-bg-subtle: color-mix(in srgb, var(--cw-warning-900) 40%, transparent);
+	--cw-tone-warning-text: var(--cw-warning-300);
+	--cw-tone-warning-border: var(--cw-warning-700);
+	--cw-tone-warning-solid-bg: var(--cw-warning-600);
+	--cw-tone-warning-solid-text: #fff;
+
+	/* ── Tone: Danger ──────────────────────────────────── */
+	--cw-tone-danger-bg: var(--cw-danger-900);
+	--cw-tone-danger-bg-subtle: color-mix(in srgb, var(--cw-danger-900) 40%, transparent);
+	--cw-tone-danger-text: var(--cw-danger-300);
+	--cw-tone-danger-border: var(--cw-danger-700);
+	--cw-tone-danger-solid-bg: var(--cw-danger-600);
+	--cw-tone-danger-solid-text: #fff;
+
+	/* ── Tone: Success ─────────────────────────────────── */
+	--cw-tone-success-bg: var(--cw-success-900);
+	--cw-tone-success-bg-subtle: color-mix(in srgb, var(--cw-success-900) 40%, transparent);
+	--cw-tone-success-text: var(--cw-success-300);
+	--cw-tone-success-border: var(--cw-success-700);
+	--cw-tone-success-solid-bg: var(--cw-success-600);
+	--cw-tone-success-solid-text: #fff;
+
+	/* ── Focus ─────────────────────────────────────────── */
+	--cw-focus-ring-color: var(--cw-primary-500);
+
+	/* ── Scrollbar ─────────────────────────────────────── */
+	--cw-scrollbar-thumb: var(--cw-gray-700);
+	--cw-scrollbar-track: var(--cw-gray-950);
+}
