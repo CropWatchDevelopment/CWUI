@@ -78,6 +78,13 @@ export interface CwDonutSegment {
 	color?: string;
 }
 
+export interface CwHeatmapDataPoint {
+	/** ISO string or Date. */
+	timestamp: string | Date;
+	/** Numeric value (e.g. temperature). */
+	value: number;
+}
+
 /* ── Toast types ───────────────────────────────────────── */
 
 export interface CwToastItem {
@@ -172,4 +179,6 @@ export interface CwSideNavItem {
 	disabled?: boolean;
 	/** Visual separator before this item */
 	separator?: boolean;
+	/** Group label — items with the same group are grouped together with a heading */
+	group?: string;
 }

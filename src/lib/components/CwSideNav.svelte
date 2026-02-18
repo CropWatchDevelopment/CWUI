@@ -155,9 +155,18 @@
 
 	<!-- Navigation items -->
 	<div class="cw-sidenav__items" role="list">
-		{#each items as item (item.id)}
-			{#if item.separator}
-				<CwSeparator />
+		{#each items as item, i (item.id)}
+			{@const prevGroup = i > 0 ? items[i - 1].group : undefined}
+			{@const showGroup = item.group && item.group !== prevGroup}
+
+			{#if item.separator || showGroup}
+				{#if i > 0}
+					<CwSeparator />
+				{/if}
+			{/if}
+
+			{#if showGroup && mode === 'open'}
+				<span class="cw-sidenav__group-label">{item.group}</span>
 			{/if}
 
 			{#if item.href}
@@ -271,6 +280,7 @@
 	}
 
 	.cw-sidenav__header--mini {
+        height: 5rem;
 		padding: var(--cw-space-3);
 		display: flex;
 		align-items: center;
@@ -286,6 +296,7 @@
 	}
 
 	.cw-sidenav__header-content {
+        height: 3rem;
 		min-width: 0;
 		flex: 1;
 	}
@@ -344,6 +355,17 @@
 		flex-direction: column;
 		gap: 1px;
 		padding: var(--cw-space-1);
+	}
+
+	/* ── Group label ──────────────────────── */
+	.cw-sidenav__group-label {
+		padding: var(--cw-space-2) var(--cw-space-3) var(--cw-space-1);
+		font-size: 0.625rem;
+		font-weight: var(--cw-font-bold);
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		color: var(--cw-text-muted);
+		user-select: none;
 	}
 
 	/* ── Individual item ──────────────────── */

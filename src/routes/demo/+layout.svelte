@@ -29,32 +29,43 @@
 		drawer: 'M2 2h12v12H2V2zm0 8h12',
 		header: 'M2 2h12v3H2V2zm0 7h12v5H2V9z',
 		tooltip: 'M8 2a6 6 0 110 12A6 6 0 018 2zm0 7v-3m0 5h.01',
-		copy: 'M5 3h8a1 1 0 011 1v10a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1zM3 5v8a1 1 0 001 1h6'
+		copy: 'M5 3h8a1 1 0 011 1v10a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1zM3 5v8a1 1 0 001 1h6',
+		expand: 'M3 3h10a1 1 0 011 1v8a1 1 0 01-1 1H3a1 1 0 01-1-1V4a1 1 0 011-1zm1 3h8M6 9l2 2 2-2',
+		heatmap: 'M2 2h3v3H2V2zm4 0h3v3H6V2zm4 0h3v3h-3V2zM2 6h3v3H2V6zm4 0h3v3H6V6zm4 0h3v3h-3V6zM2 10h3v3H2v-3zm4 0h3v3H6v-3zm4 0h3v3h-3v-3z'
 	};
 
 	const navItems: CwSideNavItem[] = [
-		{ id: 'buttons', label: 'Button', icon: icons.button, href: '/demo/buttons' },
-		{ id: 'chips', label: 'Chip', icon: icons.chip, href: '/demo/chips' },
-		{ id: 'cards', label: 'Card', icon: icons.card, href: '/demo/cards' },
-		{ id: 'inputs', label: 'Input', icon: icons.input, href: '/demo/inputs' },
-		{ id: 'dropdown', label: 'Dropdown', icon: icons.dropdown, href: '/demo/dropdown' },
-		{ id: 'dialog', label: 'Dialog', icon: icons.dialog, href: '/demo/dialog' },
-		{ id: 'toast', label: 'Toast', icon: icons.toast, href: '/demo/toast' },
-		{ id: 'duration', label: 'Duration', icon: icons.duration, href: '/demo/duration' },
-		{ id: 'search', label: 'Search Input', icon: icons.search, href: '/demo/search' },
-		{ id: 'datatable', label: 'Data Table', icon: icons.table, href: '/demo/datatable', separator: true },
-		{ id: 'linechart', label: 'Line Chart', icon: icons.linechart, href: '/demo/linechart' },
-		{ id: 'donutchart', label: 'Donut Chart', icon: icons.donut, href: '/demo/donutchart' },
-		{ id: 'datepicker', label: 'Date Picker', icon: icons.calendar, href: '/demo/datepicker', separator: true },
-		{ id: 'themepicker', label: 'Theme Picker', icon: icons.theme, href: '/demo/themepicker' },
-		{ id: 'listbox', label: 'List Box', icon: icons.listbox, href: '/demo/listbox' },
-		{ id: 'profilemenu', label: 'Profile Menu', icon: icons.profile, href: '/demo/profilemenu' },
-		{ id: 'sidenav', label: 'Side Nav', icon: icons.sidenav, href: '/demo/sidenav' },
-		{ id: 'drawer', label: 'Drawer', icon: icons.drawer, href: '/demo/drawer' },
-		{ id: 'header', label: 'Header', icon: icons.header, href: '/demo/header' },
-		{ id: 'tooltip', label: 'Tooltip', icon: icons.tooltip, href: '/demo/tooltip' },
-		{ id: 'calendar', label: 'Calendar', icon: icons.calendar, href: '/demo/calendar' },
-		{ id: 'copy', label: 'Copy', icon: icons.copy, href: '/demo/copy' }
+		// ── Structure ──
+		{ id: 'header', label: 'Header', icon: icons.header, href: '/demo/header', group: 'Structure' },
+		{ id: 'sidenav', label: 'Side Nav', icon: icons.sidenav, href: '/demo/sidenav', group: 'Structure' },
+		{ id: 'drawer', label: 'Drawer', icon: icons.drawer, href: '/demo/drawer', group: 'Structure' },
+		{ id: 'expand', label: 'Expand Panel', icon: icons.expand, href: '/demo/expand', group: 'Structure' },
+
+		// ── Charts ──
+		{ id: 'linechart', label: 'Line Chart', icon: icons.linechart, href: '/demo/linechart', group: 'Charts' },
+		{ id: 'donutchart', label: 'Donut Chart', icon: icons.donut, href: '/demo/donutchart', group: 'Charts' },
+		{ id: 'heatmap', label: 'Heatmap', icon: icons.heatmap, href: '/demo/heatmap', group: 'Charts' },
+
+		// ── Components ──
+		{ id: 'buttons', label: 'Button', icon: icons.button, href: '/demo/buttons', group: 'Components' },
+		{ id: 'chips', label: 'Chip', icon: icons.chip, href: '/demo/chips', group: 'Components' },
+		{ id: 'cards', label: 'Card', icon: icons.card, href: '/demo/cards', group: 'Components' },
+		{ id: 'inputs', label: 'Input', icon: icons.input, href: '/demo/inputs', group: 'Components' },
+		{ id: 'dropdown', label: 'Dropdown', icon: icons.dropdown, href: '/demo/dropdown', group: 'Components' },
+		{ id: 'dialog', label: 'Dialog', icon: icons.dialog, href: '/demo/dialog', group: 'Components' },
+		{ id: 'toast', label: 'Toast', icon: icons.toast, href: '/demo/toast', group: 'Components' },
+		{ id: 'datatable', label: 'Data Table', icon: icons.table, href: '/demo/datatable', group: 'Components' },
+		{ id: 'datepicker', label: 'Date Picker', icon: icons.calendar, href: '/demo/datepicker', group: 'Components' },
+		{ id: 'calendar', label: 'Calendar', icon: icons.calendar, href: '/demo/calendar', group: 'Components' },
+		{ id: 'listbox', label: 'List Box', icon: icons.listbox, href: '/demo/listbox', group: 'Components' },
+		{ id: 'profilemenu', label: 'Profile Menu', icon: icons.profile, href: '/demo/profilemenu', group: 'Components' },
+		{ id: 'search', label: 'Search Input', icon: icons.search, href: '/demo/search', group: 'Components' },
+
+		// ── Helpers ──
+		{ id: 'tooltip', label: 'Tooltip', icon: icons.tooltip, href: '/demo/tooltip', group: 'Helpers' },
+		{ id: 'copy', label: 'Copy', icon: icons.copy, href: '/demo/copy', group: 'Helpers' },
+		{ id: 'duration', label: 'Duration', icon: icons.duration, href: '/demo/duration', group: 'Helpers' },
+		{ id: 'themepicker', label: 'Theme Picker', icon: icons.theme, href: '/demo/themepicker', group: 'Helpers' },
 	];
 
 	let sideNavMode = $state<CwSideNavMode>('open');

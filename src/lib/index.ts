@@ -22,6 +22,8 @@ export { default as CwSideNav } from './components/CwSideNav.svelte';
 export { default as CwTooltip } from './components/CwTooltip.svelte';
 export { default as CwCalendar } from './components/CwCalendar.svelte';
 export { default as CwCopy } from './components/CwCopy.svelte';
+export { default as CwExpandPanel } from './components/CwExpandPanel.svelte';
+export { default as CwHeatmap } from './components/CwHeatmap.svelte';
 
 // ── Toast system ────────────────────────────────────────────
 export { default as CwToastContainer } from './components/CwToastContainer.svelte';
@@ -52,5 +54,6 @@ export type {
 	CwProfileMenuItem,
 	CwSideNavMode,
 	CwSideNavSide,
-	CwSideNavItem
+	CwSideNavItem,
+	CwHeatmapDataPoint
 } from './types/index.js';
