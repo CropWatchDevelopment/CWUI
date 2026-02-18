@@ -28,6 +28,9 @@ jobs:
 
       - run: pnpm run package
 
+      - name: Configure npm auth for GitHub Packages
+        run: |
+          echo "@cropwatchdevelopment:registry=https://npm.pkg.github.com" > ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+
       - run: pnpm publish --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
