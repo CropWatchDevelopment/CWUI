@@ -16,6 +16,7 @@
 		itemIcon?: Snippet<[CwListBoxItem<T>]>;
 		/** Optional snippet to render custom content on the right side */
 		itemEnd?: Snippet<[CwListBoxItem<T>]>;
+		class?: string;
 	}
 
 	let {
@@ -24,7 +25,8 @@
 		heading,
 		onselect,
 		itemIcon,
-		itemEnd
+		itemEnd,
+		class: className = ''
 	}: Props = $props();
 
 	function select(item: CwListBoxItem<T>) {
@@ -41,7 +43,7 @@
 	}
 </script>
 
-<div class="cw-listbox" role="listbox" aria-label={heading ?? 'List'}>
+<div class="cw-listbox {className}" role="listbox" aria-label={heading ?? 'List'}>
 	{#if heading}
 		<div class="cw-listbox__heading">{heading}</div>
 	{/if}

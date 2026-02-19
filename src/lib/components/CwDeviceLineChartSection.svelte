@@ -18,6 +18,7 @@
 		airTemperatureChartData?: CwLineChartDataPoint[];
 		airHumidityChartData?: CwLineChartSecondaryDataPoint[];
 		airTemperatureThreshold?: number;
+		class?: string;
 	}
 
 	let {
@@ -31,7 +32,8 @@
 		soilEcThreshold,
 		airTemperatureChartData = [],
 		airHumidityChartData = [],
-		airTemperatureThreshold
+		airTemperatureThreshold,
+		class: className = ''
 	}: Props = $props();
 
 	const hasData = $derived(
@@ -43,7 +45,7 @@
 	const title = $derived(isSoilDevice ? 'Soil telemetry' : 'Temperature & Humidity');
 </script>
 
-<section class="cw-chart-section">
+<section class="cw-chart-section {className}">
 	<div class="cw-chart-section__header">
 		<div class="cw-chart-section__header-text">
 			<p class="cw-chart-section__eyebrow">Line chart</p>

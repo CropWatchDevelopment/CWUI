@@ -22,6 +22,7 @@
 		rowActions?: Snippet<[T]>;
 		/** Header text for the actions column (default: empty) */
 		actionsHeader?: string;
+		class?: string;
 	}
 
 	let {
@@ -36,7 +37,8 @@
 		searchable = true,
 		toolbarActions,
 		rowActions,
-		actionsHeader = ''
+		actionsHeader = '',
+		class: className = ''
 	}: Props = $props();
 
 	/** Total column count including the optional actions column (for colspan) */
@@ -141,7 +143,7 @@
 	});
 </script>
 
-<div class="cw-data-table">
+<div class="cw-data-table {className}">
 	<div class="cw-data-table__toolbar">
 		{#if searchable}
 			<div class="cw-data-table__search-wrapper">

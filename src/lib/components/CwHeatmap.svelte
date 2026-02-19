@@ -21,6 +21,7 @@
 		colors?: [string, string, string];
 		/** Called when a cell is clicked. */
 		onCellClick?: (point: { date: string; hour: number; value: number | null }) => void;
+		class?: string;
 	}
 
 	let {
@@ -32,7 +33,8 @@
 		title = 'Temperature Heatmap',
 		rowHeight = 24,
 		colors = ['#3b82f6', '#facc15', '#ef4444'],
-		onCellClick
+		onCellClick,
+		class: className = ''
 	}: Props = $props();
 
 	/* ── Build grid: columns = days, rows = 24 hours ────────── */
@@ -135,7 +137,7 @@
 	const hours = Array.from({ length: 24 }, (_, i) => i);
 </script>
 
-<div class="cw-heatmap" bind:this={containerEl}>
+<div class="cw-heatmap {className}" bind:this={containerEl}>
 	{#if title}
 		<h3 class="cw-heatmap__title">{title}</h3>
 	{/if}

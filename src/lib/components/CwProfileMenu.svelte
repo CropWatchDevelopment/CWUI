@@ -16,6 +16,7 @@
 		onselect?: (item: CwProfileMenuItem) => void;
 		/** Custom avatar snippet */
 		avatar?: Snippet;
+		class?: string;
 	}
 
 	let {
@@ -24,7 +25,8 @@
 		avatarUrl,
 		menuItems = [],
 		onselect,
-		avatar
+		avatar,
+		class: className = ''
 	}: Props = $props();
 
 	let open = $state(false);
@@ -55,7 +57,7 @@
 {/if}
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="cw-profile-menu" onkeydown={handleKeydown}>
+<div class="cw-profile-menu {className}" onkeydown={handleKeydown}>
 	<button
 		type="button"
 		class="cw-profile-menu__trigger"

@@ -4,9 +4,10 @@
 		from: Date | string | number;
 		/** Tick interval in ms */
 		tickMs?: number;
+		class?: string;
 	}
 
-	let { from, tickMs = 1000 }: Props = $props();
+	let { from, tickMs = 1000, class: className = '' }: Props = $props();
 
 	let now = $state(Date.now());
 
@@ -50,7 +51,7 @@
 	});
 </script>
 
-<time class="cw-duration" datetime="PT{Math.floor(elapsed / 1000)}S" aria-live="polite" aria-atomic="true">
+<time class="cw-duration {className}" datetime="PT{Math.floor(elapsed / 1000)}S" aria-live="polite" aria-atomic="true">
 	{display}
 </time>
 

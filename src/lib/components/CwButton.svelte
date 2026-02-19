@@ -10,6 +10,7 @@
 		disabled?: boolean;
 		fullWidth?: boolean;
 		children?: Snippet;
+		class?: string;
 	}
 
 	let {
@@ -18,6 +19,7 @@
 		loading = false,
 		disabled = false,
 		fullWidth = false,
+		class: className = '',
 		children,
 		...rest
 	}: Props = $props();
@@ -26,7 +28,7 @@
 </script>
 
 <button
-	class="cw-button cw-button--{variant} cw-button--{size}"
+	class="cw-button cw-button--{variant} cw-button--{size} {className}"
 	class:cw-button--full={fullWidth}
 	class:cw-button--loading={loading}
 	disabled={isDisabled}

@@ -9,6 +9,7 @@
 		children?: Snippet;
 		actions?: Snippet;
 		onclose?: () => void;
+		class?: string;
 	}
 
 	let {
@@ -18,7 +19,8 @@
 		closeOnEscape = true,
 		children,
 		actions,
-		onclose
+		onclose,
+		class: className = ''
 	}: Props = $props();
 
 	const uid = $props.id();
@@ -86,7 +88,7 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <dialog
 	bind:this={dialogRef}
-	class="cw-dialog"
+	class="cw-dialog {className}"
 	aria-labelledby={title ? `${uid}-title` : undefined}
 	onclick={handleBackdropClick}
 	onkeydown={handleKeydown}

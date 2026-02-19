@@ -14,6 +14,7 @@
 		children?: Snippet;
 		/** Fired when the panel is toggled. */
 		onToggle?: (open: boolean) => void;
+		class?: string;
 	}
 
 	let {
@@ -22,7 +23,8 @@
 		disabled = false,
 		header,
 		children,
-		onToggle
+		onToggle,
+		class: className = ''
 	}: Props = $props();
 
 	function toggle() {
@@ -39,7 +41,7 @@
 	}
 </script>
 
-<div class="cw-expand" class:cw-expand--open={open} class:cw-expand--disabled={disabled}>
+<div class="cw-expand {className}" class:cw-expand--open={open} class:cw-expand--disabled={disabled}>
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="cw-expand__header"

@@ -21,6 +21,7 @@
 		height?: number;
 		/** Show grid lines */
 		showGrid?: boolean;
+		class?: string;
 	}
 
 	let {
@@ -32,7 +33,8 @@
 		primaryUnit = '',
 		secondaryUnit = '',
 		height = 300,
-		showGrid = true
+		showGrid = true,
+		class: className = ''
 	}: Props = $props();
 
 	/* ── Refs & state ─────────────────────────────────── */
@@ -235,7 +237,7 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class="cw-lchart"
+	class="cw-lchart {className}"
 	bind:this={chartContainer}
 	onmousemove={handleMouseMove}
 	onmouseleave={handleMouseLeave}

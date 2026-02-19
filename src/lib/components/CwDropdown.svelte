@@ -1,4 +1,6 @@
 <script lang="ts">
+	import type { HTMLInputAttributes } from 'svelte/elements';
+
 	interface Option {
 		label: string;
 		value: string;
@@ -8,21 +10,29 @@
 	interface Props {
 		options: Option[];
 		value?: string;
+		name?: string;
+		required?: boolean;
 		placeholder?: string;
+		autocomplete?: HTMLInputAttributes['autocomplete'];
 		disabled?: boolean;
 		error?: string;
 		label?: string;
 		onchange?: (value: string) => void;
+		class?: string;
 	}
 
 	let {
 		options,
 		value = $bindable(''),
+		name,
+		required = false,
 		placeholder = 'Select…',
+		autocomplete,
 		disabled = false,
 		error,
 		label,
-		onchange
+		onchange,
+		class: className = ''
 	}: Props = $props();
 
 	const uid = $props.id();
@@ -121,9 +131,23 @@
 	<div class="cw-dropdown__backdrop" onclick={handleBackdropClick} onkeydown={() => {}}></div>
 {/if}
 
-<div class="cw-dropdown" class:cw-dropdown--error={!!error} class:cw-dropdown--disabled={disabled}>
+<div class="cw-dropdown {className}" class:cw-dropdown--error={!!error} class:cw-dropdown--disabled={disabled}>
 	{#if label}
 		<label class="cw-dropdown__label" id="{uid}-label">{label}</label>
+	{/if}
+
+	{#if name || required}
+		<input
+			class="cw-dropdown__native-input"
+			type="text"
+			{name}
+			value={value}
+			required={required && !disabled}
+			{autocomplete}
+			{disabled}
+			tabindex="-1"
+			aria-hidden="true"
+		/>
 	{/if}
 
 	<button
@@ -198,6 +222,17 @@
 		font-size: var(--cw-text-sm);
 		font-weight: var(--cw-font-medium);
 		color: var(--cw-text-secondary);
+	}
+
+	.cw-dropdown__native-input {
+		position: absolute;
+		inset: 0;
+		opacity: 0;
+		pointer-events: none;
+		width: 0;
+		height: 0;
+		padding: 0;
+		border: 0;
 	}
 
 	.cw-dropdown__trigger {

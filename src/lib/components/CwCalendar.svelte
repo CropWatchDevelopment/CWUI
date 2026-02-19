@@ -18,6 +18,7 @@
 		onDateClick?: (date: Date) => void;
 		/** Fired when month navigation arrows are used */
 		onMonthChange?: (year: number, month: number) => void;
+		class?: string;
 	}
 
 	const now = new Date();
@@ -30,7 +31,8 @@
 		dayTrailing,
 		dayContent,
 		onDateClick,
-		onMonthChange
+		onMonthChange,
+		class: className = ''
 	}: Props = $props();
 
 	/* ── Calendar math ───────────────────── */
@@ -100,7 +102,7 @@
 	}
 </script>
 
-<div class="cw-calendar">
+<div class="cw-calendar {className}">
 	<!-- Month header with nav -->
 	<div class="cw-calendar__nav">
 		<button type="button" class="cw-calendar__nav-btn" onclick={prevMonth} aria-label="Previous month">

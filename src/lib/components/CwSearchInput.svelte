@@ -1,26 +1,36 @@
 <script lang="ts">
+	import type { HTMLInputAttributes } from 'svelte/elements';
+
 	interface Props {
 		value?: string;
+		name?: string;
+		required?: boolean;
 		minChars?: number;
 		debounceMs?: number;
 		fetchSuggestions: (query: string, signal: AbortSignal) => Promise<unknown[]>;
 		mapSuggestionToLabel?: (item: unknown) => string;
 		mapSuggestionToValue?: (item: unknown) => string;
 		placeholder?: string;
+		autocomplete?: HTMLInputAttributes['autocomplete'];
 		label?: string;
 		onselect?: (value: string, item: unknown) => void;
+		class?: string;
 	}
 
 	let {
 		value = $bindable(''),
+		name,
+		required = false,
 		minChars = 3,
 		debounceMs = 250,
 		fetchSuggestions,
 		mapSuggestionToLabel = (item: unknown) => String(item),
 		mapSuggestionToValue = (item: unknown) => String(item),
 		placeholder = 'Search…',
+		autocomplete = 'off',
 		label,
-		onselect
+		onselect,
+		class: className = ''
 	}: Props = $props();
 
 	const uid = $props.id();
@@ -112,7 +122,7 @@
 	}
 </script>
 
-<div class="cw-search-input">
+<div class="cw-search-input {className}">
 	{#if label}
 		<label class="cw-search-input__label" for="{uid}-input">{label}</label>
 	{/if}
@@ -138,6 +148,8 @@
 			class="cw-search-input__field"
 			type="text"
 			role="combobox"
+			{name}
+			{required}
 			{placeholder}
 			value={query}
 			oninput={handleInput}
@@ -146,7 +158,7 @@
 			aria-expanded={open}
 			aria-controls="{uid}-listbox"
 			aria-activedescendant={activeIndex >= 0 ? `${uid}-option-${activeIndex}` : undefined}
-			autocomplete="off"
+			{autocomplete}
 		/>
 	</div>
 

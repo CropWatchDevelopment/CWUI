@@ -2,12 +2,13 @@
 	interface Props {
 		/** Horizontal spacing (margin-inline) — defaults to cw-space-2 */
 		spacing?: string;
+		class?: string;
 	}
 
-	let { spacing = 'var(--cw-space-2)' }: Props = $props();
+	let { spacing = 'var(--cw-space-2)', class: className = '' }: Props = $props();
 </script>
 
-<div class="cw-separator" style:margin-inline={spacing}></div>
+<div class="cw-separator {className}" style:margin-inline={spacing}></div>
 
 <style>
 	.cw-separator {

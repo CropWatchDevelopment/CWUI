@@ -18,6 +18,7 @@
 		children?: Snippet;
 		/** Custom snippet rendered in the collapsed bar instead of the default items row */
 		collapsed?: Snippet;
+		class?: string;
 	}
 
 	let {
@@ -27,7 +28,8 @@
 		label = '',
 		icon,
 		children,
-		collapsed
+		collapsed,
+		class: className = ''
 	}: Props = $props();
 
 	function toggle() {
@@ -46,7 +48,7 @@
 </script>
 
 <div
-	class="cw-drawer"
+	class="cw-drawer {className}"
 	class:cw-drawer--open={open}
 >
 	<!-- Collapsed header bar — always visible -->

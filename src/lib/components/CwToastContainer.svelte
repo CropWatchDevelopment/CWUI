@@ -2,11 +2,16 @@
 	import { useCwToast } from './cwToastContext.svelte.js';
 	import CwToastItem from './CwToastItem.svelte';
 
+	interface Props {
+		class?: string;
+	}
+
 	const toast = useCwToast();
+	let { class: className = '' }: Props = $props();
 </script>
 
 {#if toast.items.length > 0}
-	<div class="cw-toast-container" aria-label="Notifications" role="region">
+	<div class="cw-toast-container {className}" aria-label="Notifications" role="region">
 		{#each toast.items as item (item.id)}
 			<CwToastItem {item} ondismiss={toast.dismiss} />
 		{/each}

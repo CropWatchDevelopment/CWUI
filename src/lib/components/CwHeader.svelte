@@ -13,6 +13,7 @@
         onToggleNav?: () => void;
         /** Extra content rendered on the right side of the header (e.g. profile menu, theme picker) */
         actions?: Snippet;
+        class?: string;
     }
 
     let {
@@ -21,6 +22,7 @@
         sideNavMode = $bindable<CwSideNavMode>("open"),
         onToggleNav,
         actions,
+        class: className = "",
     }: Props = $props();
 
     function handleHamburger() {
@@ -39,7 +41,7 @@
     }
 </script>
 
-<header class="cw-header">
+<header class="cw-header {className}">
     <!-- Hamburger button — hidden on desktop when nav is open/mini, shown on tablet/phone -->
     <button
         type="button"

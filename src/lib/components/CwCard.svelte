@@ -4,8 +4,10 @@
 	interface Props {
 		title?: string;
 		subtitle?: string;
+		titleAlign?: 'left' | 'center' | 'right';
 		padded?: boolean;
 		elevated?: boolean;
+		class?: string;
 		children?: Snippet;
 		header?: Snippet;
 		actions?: Snippet;
@@ -14,8 +16,10 @@
 	let {
 		title,
 		subtitle,
+		titleAlign = 'left',
 		padded = true,
 		elevated = false,
+		class: className = '',
 		children,
 		header,
 		actions
@@ -23,7 +27,7 @@
 </script>
 
 <div
-	class="cw-card"
+	class="cw-card {className}"
 	class:cw-card--padded={padded}
 	class:cw-card--elevated={elevated}
 >
@@ -32,7 +36,7 @@
 			{#if header}
 				{@render header()}
 			{:else}
-				<div class="cw-card__titles">
+				<div class="cw-card__titles cw-card__titles--{titleAlign}">
 					{#if title}
 						<h3 class="cw-card__title">{title}</h3>
 					{/if}
@@ -83,6 +87,18 @@
 	.cw-card__titles {
 		flex: 1;
 		min-width: 0;
+	}
+
+	.cw-card__titles--left {
+		text-align: left;
+	}
+
+	.cw-card__titles--center {
+		text-align: center;
+	}
+
+	.cw-card__titles--right {
+		text-align: right;
 	}
 
 	.cw-card__title {

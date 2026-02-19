@@ -34,6 +34,18 @@
 		{/snippet}
 	</CwCard>
 
+	<CwCard title="Centered Title" titleAlign="center">
+		{#snippet children()}
+			<p>Center-aligned title support.</p>
+		{/snippet}
+	</CwCard>
+
+	<CwCard title="Right Aligned" titleAlign="right">
+		{#snippet children()}
+			<p>Right-aligned title support.</p>
+		{/snippet}
+	</CwCard>
+
 	<CwCard padded={false}>
 		{#snippet children()}
 			<div style="padding: var(--cw-space-4);">

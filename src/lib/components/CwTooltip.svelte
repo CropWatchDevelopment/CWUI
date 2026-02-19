@@ -13,13 +13,15 @@
 		tone?: CwTone;
 		/** Wrapped trigger content */
 		children: Snippet;
+		class?: string;
 	}
 
 	let {
 		value,
 		position = 'top',
 		tone = 'info',
-		children
+		children,
+		class: className = ''
 	}: Props = $props();
 
 	let visible = $state(false);
@@ -34,7 +36,7 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <span
-	class="cw-tooltip"
+	class="cw-tooltip {className}"
 	onpointerenter={show}
 	onpointerleave={hide}
 	onfocusin={show}

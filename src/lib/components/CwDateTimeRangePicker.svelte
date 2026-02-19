@@ -1,13 +1,19 @@
 <script lang="ts">
 	import type { CwDatePickerMode, CwDateGranularity, CwDateValue, CwSingleDateValue, CwRangeDateValue } from '../types/index.js';
+	import type { HTMLInputAttributes } from 'svelte/elements';
 
 	interface Props {
 		mode?: CwDatePickerMode;
 		granularity?: CwDateGranularity;
 		includeTime?: boolean;
 		value?: CwDateValue;
+		name?: string;
+		required?: boolean;
+		placeholder?: string;
+		autocomplete?: HTMLInputAttributes['autocomplete'];
 		maxDate?: Date;
 		onchange?: (value: CwDateValue) => void;
+		class?: string;
 	}
 
 	let {
@@ -15,8 +21,13 @@
 		granularity = 'day',
 		includeTime = false,
 		value = $bindable<CwDateValue | undefined>(undefined),
+		name,
+		required = false,
+		placeholder = 'Select date…',
+		autocomplete,
 		maxDate = new Date(),
-		onchange
+		onchange,
+		class: className = ''
 	}: Props = $props();
 
 	const uid = $props.id();
@@ -263,13 +274,42 @@
 	function nextYear() { viewYear++; }
 
 	const displayValue = $derived.by(() => {
-		if (!value) return 'Select date…';
+		if (!value) return placeholder;
 		if ('start' in value) {
 			const rv = value as CwRangeDateValue;
 			return `${formatDate(rv.start)} – ${formatDate(rv.end)}`;
 		}
 		const sv = value as CwSingleDateValue;
 		return formatDate(sv.date);
+	});
+
+	function pad2(n: number): string {
+		return String(n).padStart(2, '0');
+	}
+
+	function encodeValueForForm(date: Date, time?: { hours: number; minutes: number }): string {
+		if (includeTime && time) {
+			const d = new Date(date);
+			d.setHours(time.hours, time.minutes, 0, 0);
+			return d.toISOString();
+		}
+		if (granularity === 'year') {
+			return String(date.getFullYear());
+		}
+		if (granularity === 'month') {
+			return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}`;
+		}
+		return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+	}
+
+	const formValue = $derived.by(() => {
+		if (!value) return '';
+		if ('start' in value) {
+			const rv = value as CwRangeDateValue;
+			return `${encodeValueForForm(rv.start, rv.startTime)}|${encodeValueForForm(rv.end, rv.endTime)}`;
+		}
+		const sv = value as CwSingleDateValue;
+		return encodeValueForForm(sv.date, sv.time);
 	});
 
 	function formatDate(d: Date): string {
@@ -302,7 +342,7 @@
 	<div class="cw-date-picker__backdrop" onclick={handleOutsideClick} onkeydown={() => {}}></div>
 {/if}
 
-<div class="cw-date-picker">
+<div class="cw-date-picker {className}">
 	<button
 		type="button"
 		class="cw-date-picker__trigger"
@@ -319,6 +359,19 @@
 		</svg>
 		<span>{displayValue}</span>
 	</button>
+
+	{#if name || required}
+		<input
+			class="cw-date-picker__native-input"
+			type="text"
+			{name}
+			value={formValue}
+			{required}
+			{autocomplete}
+			tabindex="-1"
+			aria-hidden="true"
+		/>
+	{/if}
 
 	{#if open}
 		<div class="cw-date-picker__dropdown" role="dialog" aria-label="Date picker">
@@ -512,6 +565,17 @@
 		height: 1rem;
 		flex-shrink: 0;
 		color: var(--cw-text-muted);
+	}
+
+	.cw-date-picker__native-input {
+		position: absolute;
+		inset: 0;
+		opacity: 0;
+		pointer-events: none;
+		width: 0;
+		height: 0;
+		padding: 0;
+		border: 0;
 	}
 
 	/* ── Dropdown panel ──────────────────── */

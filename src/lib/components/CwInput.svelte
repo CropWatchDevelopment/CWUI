@@ -1,38 +1,47 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import type { HTMLInputAttributes } from 'svelte/elements';
 
 	type InputType = 'text' | 'numeric' | 'email' | 'password' | 'devEui' | 'creditCard' | 'cardExpiry';
 
 	interface Props {
 		type?: InputType;
 		value?: string;
+		name?: string;
+		required?: boolean;
 		label?: string;
 		error?: string;
 		valid?: boolean;
 		disabled?: boolean;
 		placeholder?: string;
+		autocomplete?: HTMLInputAttributes['autocomplete'];
 		maxlength?: number;
 		clearable?: boolean;
 		leftSlot?: Snippet;
 		rightSlot?: Snippet;
 		oninput?: (e: Event) => void;
 		onchange?: (e: Event) => void;
+		class?: string;
 	}
 
 	let {
 		type = 'text',
 		value = $bindable(''),
+		name,
+		required = false,
 		label,
 		error,
 		valid = false,
 		disabled = false,
 		placeholder,
+		autocomplete,
 		maxlength,
 		clearable = false,
 		leftSlot,
 		rightSlot,
 		oninput,
 		onchange,
+		class: className = '',
 	}: Props = $props();
 
 	const uid = $props.id();
@@ -107,7 +116,7 @@
 </script>
 
 <div
-	class="cw-input"
+	class="cw-input {className}"
 	class:cw-input--error={!!error}
 	class:cw-input--valid={valid && !error}
 	class:cw-input--disabled={disabled}
@@ -131,8 +140,11 @@
 			type={nativeType}
 			inputmode={inputMode}
 			{value}
+			{name}
+			{required}
 			{disabled}
 			{placeholder}
+			{autocomplete}
 			maxlength={maxlength ?? undefined}
 			oninput={handleInput}
 			onchange={onchange}

@@ -4,9 +4,10 @@
 	interface Props {
 		item: CwToastItem;
 		ondismiss: (id: string) => void;
+		class?: string;
 	}
 
-	let { item, ondismiss }: Props = $props();
+	let { item, ondismiss, class: className = '' }: Props = $props();
 
 	// Auto-dismiss timer
 	$effect(() => {
@@ -19,7 +20,7 @@
 </script>
 
 <div
-	class="cw-toast cw-toast--{item.tone}"
+	class="cw-toast cw-toast--{item.tone} {className}"
 	role="alert"
 	aria-live="assertive"
 	aria-atomic="true"

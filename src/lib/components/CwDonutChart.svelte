@@ -6,13 +6,15 @@
 		size?: number;
 		thickness?: number;
 		showLegend?: boolean;
+		class?: string;
 	}
 
 	let {
 		segments,
 		size = 200,
 		thickness = 40,
-		showLegend = true
+		showLegend = true,
+		class: className = ''
 	}: Props = $props();
 
 	const uid = $props.id();
@@ -70,7 +72,7 @@
 	const hoveredSegment = $derived(hoveredIndex !== null ? segments[hoveredIndex] : null);
 </script>
 
-<div class="cw-donut-chart" role="img" aria-label="Donut chart">
+<div class="cw-donut-chart {className}" role="img" aria-label="Donut chart">
 	<div class="cw-donut-chart__chart">
 		<svg viewBox="0 0 {size} {size}" width={size} height={size}>
 			{#each arcs as arc, i}

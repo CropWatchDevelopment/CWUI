@@ -9,6 +9,7 @@
 		disabled?: boolean;
 		ondismiss?: () => void;
 		label: string;
+		class?: string;
 	}
 
 	let {
@@ -18,7 +19,8 @@
 		dismissible = false,
 		disabled = false,
 		ondismiss,
-		label
+		label,
+		class: className = ''
 	}: Props = $props();
 
 	function handleDismiss() {
@@ -34,7 +36,7 @@
 </script>
 
 <span
-	class="cw-chip cw-chip--{tone} cw-chip--{variant} cw-chip--{size}"
+	class="cw-chip cw-chip--{tone} cw-chip--{variant} cw-chip--{size} {className}"
 	class:cw-chip--disabled={disabled}
 	class:cw-chip--interactive={dismissible}
 	role={dismissible ? 'group' : undefined}

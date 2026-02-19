@@ -13,6 +13,7 @@
 		children?: Snippet;
 		/** Callback fired after a successful copy. */
 		onCopy?: (value: string) => void;
+		class?: string;
 	}
 
 	let {
@@ -20,7 +21,8 @@
 		size = 'md',
 		feedbackDuration = 1500,
 		children,
-		onCopy
+		onCopy,
+		class: className = ''
 	}: Props = $props();
 
 	let copied = $state(false);
@@ -51,7 +53,7 @@
 	}
 </script>
 
-<span class="cw-copy cw-copy--{size}" class:cw-copy--copied={copied}>
+<span class="cw-copy cw-copy--{size} {className}" class:cw-copy--copied={copied}>
 	{#if children}
 		<span class="cw-copy__content">{@render children()}</span>
 	{/if}

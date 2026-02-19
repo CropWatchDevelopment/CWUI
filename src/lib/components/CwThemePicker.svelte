@@ -5,11 +5,13 @@
 		/** Current theme. Bind to persist externally. */
 		theme?: Theme;
 		onchange?: (theme: Theme) => void;
+		class?: string;
 	}
 
 	let {
 		theme = $bindable<Theme>('dark'),
-		onchange
+		onchange,
+		class: className = ''
 	}: Props = $props();
 
 	let open = $state(false);
@@ -64,7 +66,7 @@
 {/if}
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="cw-theme-picker" onkeydown={handleKeydown}>
+<div class="cw-theme-picker {className}" onkeydown={handleKeydown}>
 	<button
 		type="button"
 		class="cw-theme-picker__trigger"

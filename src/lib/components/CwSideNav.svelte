@@ -22,6 +22,7 @@
 		footer?: Snippet;
 		/** Compact footer for mini mode */
 		footerMini?: Snippet;
+		class?: string;
 	}
 
 	let {
@@ -33,7 +34,8 @@
 		header,
 		headerMini,
 		footer,
-		footerMini
+		footerMini,
+		class: className = ''
 	}: Props = $props();
 
 	/** Track whether user has manually overridden the mode */
@@ -108,7 +110,7 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <nav
-	class="cw-sidenav"
+	class="cw-sidenav {className}"
 	class:cw-sidenav--open={mode === 'open'}
 	class:cw-sidenav--mini={mode === 'mini'}
 	class:cw-sidenav--hidden={mode === 'hidden'}
