@@ -437,8 +437,21 @@
 		vertical-align: middle;
 	}
 
+	.cw-data-table__row {
+		background-color: var(--cw-bg-table-row);
+		transition: background-color var(--cw-duration-fast) var(--cw-ease-default);
+	}
+
 	.cw-data-table__row:nth-child(even) {
-		background-color: var(--cw-bg-muted);
+		background-color: var(--cw-bg-table-row-alt);
+	}
+
+	.cw-data-table__row:hover {
+		background-color: var(--cw-bg-table-row-hover);
+	}
+
+	.cw-data-table__row:nth-child(even):hover {
+		background-color: var(--cw-bg-table-row-alt-hover);
 	}
 
 	.cw-data-table__row:last-child .cw-data-table__td {
@@ -447,11 +460,6 @@
 
 	.cw-data-table__row--clickable {
 		cursor: pointer;
-		transition: background-color var(--cw-duration-fast) var(--cw-ease-default);
-	}
-
-	.cw-data-table__row--clickable:hover {
-		background-color: var(--cw-bg-elevated);
 	}
 
 	/* ── Actions column ───────────────────── */

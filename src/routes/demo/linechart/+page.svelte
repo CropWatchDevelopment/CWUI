@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { CwLineChart, CwDeviceLineChartSection } from '$lib/index.js';
 	import type { CwLineChartDataPoint, CwLineChartSecondaryDataPoint } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	/* ── Helper: generate time-series data ─── */
 	function genPrimary(count: number, base: number, amplitude: number, unit: string): CwLineChartDataPoint[] {
@@ -38,6 +39,19 @@
 	const soilTemp = genPrimary(40, 18, 4, '°C');
 	const soilMoisture = genPrimary(40, 35, 12, '%');
 	const soilEc = genPrimary(40, 1.2, 0.5, 'mS/cm');
+	const lineChartExample = `<CwLineChart
+\tdata={tempData}
+\tthreshold={28}
+\tprimaryLabel="Temperature"
+\tprimaryUnit="°C"
+\theight={350}
+/>`;
+	const deviceLineChartExample = `<CwDeviceLineChartSection
+\tisSoilDevice={false}
+\thairTemperatureChartData={tempData}
+\thairHumidityChartData={humidityData}
+\thairTemperatureThreshold={28}
+/>`;
 </script>
 
 <h2>CwLineChart</h2>
@@ -52,6 +66,7 @@
 		primaryUnit="°C"
 		height={350}
 	/>
+	<DemoCodeExample code={lineChartExample} title="CwLineChart example" />
 </section>
 
 <section class="demo-section">
@@ -90,6 +105,7 @@
 		airHumidityChartData={humidityData}
 		airTemperatureThreshold={28}
 	/>
+	<DemoCodeExample code={deviceLineChartExample} title="CwDeviceLineChartSection example" />
 </section>
 
 <section class="demo-section">

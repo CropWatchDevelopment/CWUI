@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { CwChip } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	const tones = ['primary', 'secondary', 'info', 'warning', 'danger', 'success'] as const;
 	const variants = ['solid', 'soft', 'outline'] as const;
+	const chipExample = `<CwChip tone="success" variant="soft" label="Online" dismissible />`;
 </script>
 
 <h2>CwChip</h2>
@@ -35,6 +37,7 @@
 		<CwChip tone="primary" label="Medium" size="md" />
 		<CwChip tone="primary" label="Large" size="lg" />
 	</div>
+	<DemoCodeExample code={chipExample} title="CwChip example" />
 </section>
 
 <style>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { CwProfileMenu } from '$lib/index.js';
 	import type { CwProfileMenuItem } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	const menuItems: CwProfileMenuItem[] = [
 		{ id: 'profile', label: 'My Profile' },
@@ -8,6 +9,12 @@
 		{ id: 'api-keys', label: 'API Keys' },
 		{ id: 'signout', label: 'Sign Out', separator: true, danger: true }
 	];
+	const profileMenuExample = `<CwProfileMenu
+\tname="kevin@cropwatch.io"
+\tsubtitle="Administrator"
+\t{menuItems}
+\tonselect={(item) => console.log(item.id)}
+/>`;
 </script>
 
 <h2>CwProfileMenu</h2>
@@ -23,6 +30,7 @@
 			onselect={(item) => console.log('Menu:', item.id)}
 		/>
 	</div>
+	<DemoCodeExample code={profileMenuExample} title="CwProfileMenu example" />
 </section>
 
 <section class="demo-section">

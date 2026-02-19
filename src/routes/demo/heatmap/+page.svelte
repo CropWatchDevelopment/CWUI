@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { CwHeatmap } from '$lib/index.js';
 	import type { CwHeatmapDataPoint } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	/* ── Generate fake temperature data for the last 7 days ── */
 	function generateData(days: number): CwHeatmapDataPoint[] {
@@ -30,6 +31,11 @@
 	const twoWeekData = generateData(14);
 
 	let clicked = $state<string>('');
+	const heatmapExample = `<CwHeatmap
+\tdata={weekData}
+\tunit="°C"
+\ttitle="Field Temperature – Last 7 Days"
+/>`;
 </script>
 
 <h2>CwHeatmap</h2>
@@ -46,6 +52,7 @@
 	{#if clicked}
 		<p class="demo-click">Clicked: <strong>{clicked}</strong></p>
 	{/if}
+	<DemoCodeExample code={heatmapExample} title="CwHeatmap example" />
 </section>
 
 <section class="demo-section">

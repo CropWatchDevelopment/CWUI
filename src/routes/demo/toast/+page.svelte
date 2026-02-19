@@ -1,10 +1,18 @@
 <script lang="ts">
 	import { CwToastContainer, CwButton, createCwToastContext, useCwToast } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	createCwToastContext();
 	const toast = useCwToast();
 
 	const tones = ['primary', 'info', 'warning', 'danger', 'success'] as const;
+	const toastExample = `createCwToastContext();
+const toast = useCwToast();
+
+<CwToastContainer />
+<CwButton onclick={() => toast.add({ tone: 'success', message: 'Saved!' })}>
+\tShow toast
+</CwButton>`;
 </script>
 
 <CwToastContainer />
@@ -31,6 +39,7 @@
 	>
 		10s Toast
 	</CwButton>
+	<DemoCodeExample code={toastExample} title="CwToast example" />
 </section>
 
 <style>

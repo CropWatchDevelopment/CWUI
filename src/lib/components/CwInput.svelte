@@ -45,12 +45,18 @@
 	}: Props = $props();
 
 	const uid = $props.id();
+	let inputRef = $state<HTMLInputElement | null>(null);
+	let showPassword = $state(false);
 
-	const nativeType = $derived(
-		type === 'numeric' || type === 'devEui' || type === 'creditCard' || type === 'cardExpiry'
+	const isPassword = $derived(type === 'password');
+	const nativeType = $derived.by(() => {
+		if (type === 'password') {
+			return showPassword ? 'text' : 'password';
+		}
+		return type === 'numeric' || type === 'devEui' || type === 'creditCard' || type === 'cardExpiry'
 			? 'text'
-			: type
-	);
+			: type;
+	});
 
 	const inputMode = $derived<'text' | 'numeric' | 'email'>(
 		type === 'numeric' || type === 'creditCard' || type === 'cardExpiry'
@@ -66,8 +72,11 @@
 	/** Whether the clear button should show */
 	const showClear = $derived(clearable && value.length > 0 && !disabled);
 
+	/** Whether the password visibility toggle should show */
+	const showPasswordToggle = $derived(isPassword);
+
 	/** Whether _anything_ occupies the right side (slot, clear btn, or validation icon) */
-	const hasRight = $derived(!!rightSlot || hasValidationIcon || showClear);
+	const hasRight = $derived(!!rightSlot || hasValidationIcon || showClear || showPasswordToggle);
 
 	function handleInput(e: Event) {
 		const target = e.target as HTMLInputElement;
@@ -94,6 +103,11 @@
 
 	function clear() {
 		value = '';
+	}
+
+	function togglePasswordVisibility() {
+		showPassword = !showPassword;
+		inputRef?.focus();
 	}
 
 	function normalizeDevEui(input: string): string {
@@ -133,6 +147,7 @@
 		{/if}
 
 		<input
+			bind:this={inputRef}
 			id="{uid}-input"
 			class="cw-input__field"
 			class:cw-input__field--has-left={!!leftSlot}
@@ -167,6 +182,29 @@
 						<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
 							<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
 						</svg>
+					</button>
+				{/if}
+				{#if showPasswordToggle}
+					<button
+						type="button"
+						class="cw-input__password-toggle"
+						aria-label={showPassword ? 'Hide password' : 'Show password'}
+						aria-pressed={showPassword}
+						disabled={disabled}
+						onclick={togglePasswordVisibility}
+					>
+						{#if showPassword}
+							<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+								<path d="M2 2l12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+								<path d="M6 6.5A2.2 2.2 0 018 6c1.2 0 2.2 1 2.2 2.2 0 .3-.1.7-.3 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+								<path d="M1.8 8s2.2-3.5 6.2-3.5c4 0 6.2 3.5 6.2 3.5-.4.6-1.1 1.5-2.1 2.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+							</svg>
+						{:else}
+							<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+								<path d="M1.8 8s2.2-3.5 6.2-3.5 6.2 3.5 6.2 3.5-2.2 3.5-6.2 3.5S1.8 8 1.8 8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+								<circle cx="8" cy="8" r="2.2" stroke="currentColor" stroke-width="1.5" />
+							</svg>
+						{/if}
 					</button>
 				{/if}
 				{#if rightSlot}
@@ -298,6 +336,36 @@
 	}
 
 	.cw-input__clear svg {
+		width: 0.875rem;
+		height: 0.875rem;
+	}
+
+	.cw-input__password-toggle {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 1rem;
+		height: 1rem;
+		padding: 0;
+		border: none;
+		background: none;
+		color: var(--cw-text-muted);
+		cursor: pointer;
+		pointer-events: auto;
+		border-radius: var(--cw-radius-full);
+		transition: color var(--cw-duration-fast) var(--cw-ease-default);
+	}
+
+	.cw-input__password-toggle:hover:not(:disabled) {
+		color: var(--cw-text-primary);
+	}
+
+	.cw-input__password-toggle:disabled {
+		cursor: not-allowed;
+		opacity: 0.65;
+	}
+
+	.cw-input__password-toggle svg {
 		width: 0.875rem;
 		height: 0.875rem;
 	}

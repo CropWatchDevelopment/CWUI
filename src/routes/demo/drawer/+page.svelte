@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { CwDrawer, CwCard, CwChip, CwDonutChart } from '$lib/index.js';
 	import type { CwDrawerItem, CwDonutSegment } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	let drawerOpen = $state(false);
 
@@ -40,6 +41,14 @@
 		{ id: 'a5', icon: '🔔', name: '冷蔵', reported: '10/16/2025, 11:46:16 PM' },
 		{ id: 'a6', icon: '🔔', name: 'TEST RULE', reported: '1/28/2026, 5:32:35 PM' }
 	];
+	const drawerExample = `<CwDrawer
+\tbind:open={open}
+\tlabel="Alerts"
+\titems={items}
+\theight="18rem"
+>
+\t<div>Drawer content goes here</div>
+</CwDrawer>`;
 </script>
 
 <h2>CwDrawer</h2>
@@ -122,6 +131,8 @@
 		</div>
 	</CwDrawer>
 </section>
+
+<DemoCodeExample code={drawerExample} title="CwDrawer example" />
 
 <style>
 	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }

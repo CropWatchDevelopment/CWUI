@@ -1,10 +1,14 @@
 <script lang="ts">
 	import { CwCopy } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	const apiKey = 'sk-proj-abc123def456ghi789';
 	const shortText = 'Hello, CropWatch!';
 	const longText = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkNyb3BXYXRjaCJ9';
 	let copyCount = $state(0);
+	const copyExample = `<CwCopy value="sk-proj-abc123def456">
+\t<code>sk-proj-abc123def456</code>
+</CwCopy>`;
 </script>
 
 <h2>CwCopy</h2>
@@ -25,6 +29,7 @@
 	<CwCopy value={apiKey}>
 		<code class="demo-code">{apiKey}</code>
 	</CwCopy>
+	<DemoCodeExample code={copyExample} title="CwCopy example" />
 </section>
 
 <section class="demo-section">

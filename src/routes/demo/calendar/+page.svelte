@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { CwCalendar } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	let selectedDate = $state<Date | null>(null);
 
@@ -39,6 +40,10 @@
 	function getEvents(date: Date) {
 		return events[fmt(date)] ?? [];
 	}
+
+	const calendarExample = `<CwCalendar
+\tonDateClick={(date) => (selectedDate = date)}
+/>`;
 </script>
 
 <h2>CwCalendar</h2>
@@ -79,6 +84,7 @@
 <section class="demo-section">
 	<h3>Minimal (no slots)</h3>
 	<CwCalendar />
+	<DemoCodeExample code={calendarExample} title="CwCalendar example" />
 </section>
 
 <section class="demo-section">

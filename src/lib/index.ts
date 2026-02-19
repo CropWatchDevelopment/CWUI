@@ -3,6 +3,7 @@ export { default as CwButton } from './components/CwButton.svelte';
 export { default as CwChip } from './components/CwChip.svelte';
 export { default as CwCard } from './components/CwCard.svelte';
 export { default as CwInput } from './components/CwInput.svelte';
+export { default as CwSwitch } from './components/CwSwitch.svelte';
 export { default as CwDropdown } from './components/CwDropdown.svelte';
 export { default as CwDialog } from './components/CwDialog.svelte';
 export { default as CwDrawer } from './components/CwDrawer.svelte';

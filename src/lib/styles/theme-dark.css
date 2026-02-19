@@ -16,6 +16,10 @@
 	--cw-bg-overlay: var(--cw-gray-700);
 	--cw-bg-muted: var(--cw-gray-850);
 	--cw-bg-subtle: var(--cw-gray-700);
+	--cw-bg-table-row: color-mix(in srgb, var(--cw-info-700) 16%, var(--cw-bg-surface));
+	--cw-bg-table-row-hover: color-mix(in srgb, var(--cw-info-700) 42%, var(--cw-bg-surface));
+	--cw-bg-table-row-alt: color-mix(in srgb, var(--cw-info-700) 30%, var(--cw-bg-surface));
+	--cw-bg-table-row-alt-hover: color-mix(in srgb, var(--cw-info-700) 46%, var(--cw-bg-surface));
 
 	/* ── Text ──────────────────────────────────────────── */
 	--cw-text-primary: var(--cw-gray-50);

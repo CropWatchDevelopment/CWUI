@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { CwDataTable, CwButton } from '$lib/index.js';
 	import type { CwColumnDef, CwTableQuery, CwTableResult } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	interface Device {
 		id: string;
@@ -50,6 +51,14 @@
 	function handleDelete(device: Device) {
 		alert(`Delete: ${device.name}`);
 	}
+
+	const dataTableExample = `<CwDataTable
+\tcolumns={columns}
+\tloadData={loadData}
+\trowKey="id"
+\tsearchable
+\tpageSize={10}
+/>`;
 </script>
 
 <h2>CwDataTable</h2>
@@ -74,6 +83,8 @@
 		</div>
 	{/snippet}
 </CwDataTable>
+
+<DemoCodeExample code={dataTableExample} title="CwDataTable example" />
 
 <style>
 	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }

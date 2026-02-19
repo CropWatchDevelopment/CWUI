@@ -1,6 +1,7 @@
 <script lang="ts">
     import { CwHeader, CwSideNav, CwButton, CwChip, CwProfileMenu } from "$lib/index.js";
     import type { CwSideNavItem, CwSideNavMode, CwProfileMenuItem } from "$lib/index.js";
+    import DemoCodeExample from "../_components/DemoCodeExample.svelte";
 
     let sideNavMode = $state<CwSideNavMode>("open");
 
@@ -34,6 +35,12 @@
     const itemsWithActive = $derived(
         demoItems.map((item) => ({ ...item, active: item.id === activeId })),
     );
+
+    const headerExample = `<CwHeader title=\"My Application\" bind:sideNavMode>
+\t{#snippet actions()}
+\t\t<CwButton size=\"sm\" variant=\"ghost\">Help</CwButton>
+\t{/snippet}
+</CwHeader>`;
 </script>
 
 <h2>CwHeader</h2>
@@ -130,6 +137,8 @@
         </div>
     </div>
 </div>
+
+<DemoCodeExample code={headerExample} title="CwHeader example" />
 
 <h3>Manual mode control</h3>
 <div class="mode-controls">

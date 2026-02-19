@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { CwThemePicker } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
+
+	const themePickerExample = `<CwThemePicker onchange={(theme) => console.log(theme)} />`;
 </script>
 
 <h2>CwThemePicker</h2>
@@ -18,6 +21,7 @@
 		<span class="demo-toolbar__title">Settings</span>
 		<CwThemePicker onchange={(t) => console.log('Theme:', t)} />
 	</div>
+	<DemoCodeExample code={themePickerExample} title="CwThemePicker example" />
 </section>
 
 <style>

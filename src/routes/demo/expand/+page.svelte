@@ -1,8 +1,12 @@
 <script lang="ts">
 	import { CwExpandPanel } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	let controlled = $state(true);
 	let lastToggle = $state<string>('');
+	const expandExample = `<CwExpandPanel title="Sensor Configuration" open>
+\t<p>Configure thresholds and reporting intervals.</p>
+</CwExpandPanel>`;
 </script>
 
 <h2>CwExpandPanel</h2>
@@ -23,6 +27,7 @@
 			<p>Export historical sensor data as CSV or JSON for offline analysis.</p>
 		</CwExpandPanel>
 	</div>
+	<DemoCodeExample code={expandExample} title="CwExpandPanel example" />
 </section>
 
 <section class="demo-section">
@@ -70,7 +75,6 @@
 	.demo-desc { color: var(--cw-text-muted); font-size: var(--cw-text-sm); margin-bottom: var(--cw-space-6); }
 	.demo-hint { color: var(--cw-text-muted); font-size: var(--cw-text-xs); margin-bottom: var(--cw-space-2); }
 	.demo-hint strong { color: var(--cw-accent); }
-	.demo-hint code { background: var(--cw-bg-muted); padding: 0.1rem 0.3rem; border-radius: var(--cw-radius-sm); }
 	.demo-section { margin-bottom: var(--cw-space-8); }
 	.demo-section p { font-size: var(--cw-text-sm); color: var(--cw-text-secondary); }
 	.demo-section code { background: var(--cw-bg-muted); padding: 0.1rem 0.3rem; border-radius: var(--cw-radius-sm); font-size: var(--cw-text-xs); }

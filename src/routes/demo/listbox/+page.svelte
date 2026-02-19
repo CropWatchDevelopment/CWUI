@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { CwListBox } from '$lib/index.js';
 	import type { CwListBoxItem } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	// Groups (like the screenshot sidebar)
 	const groups: CwListBoxItem<string>[] = [
@@ -38,6 +39,11 @@
 	];
 
 	let selectedNav = $state<string | null>('home');
+	const listBoxExample = `<CwListBox
+\theading="Groups"
+\titems={groups}
+\tbind:value={selectedGroup}
+/>`;
 </script>
 
 <h2>CwListBox</h2>
@@ -73,6 +79,8 @@
 		</div>
 	</div>
 </div>
+
+<DemoCodeExample code={listBoxExample} title="CwListBox example" />
 
 <style>
 	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }

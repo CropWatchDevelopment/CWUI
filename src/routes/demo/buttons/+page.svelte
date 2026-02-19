@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { CwButton } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
+
+	const buttonExample = `<CwButton variant="primary">Save Changes</CwButton>`;
 </script>
 
 <h2>CwButton</h2>
@@ -33,6 +36,7 @@
 		<CwButton loading>Loading</CwButton>
 		<CwButton fullWidth>Full Width</CwButton>
 	</div>
+	<DemoCodeExample code={buttonExample} title="CwButton example" />
 </section>
 
 <style>

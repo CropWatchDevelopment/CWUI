@@ -1,8 +1,17 @@
 <script lang="ts">
 	import { CwDialog, CwButton } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	let dialogOpen = $state(false);
 	let backdropDialog = $state(false);
+	const dialogExample = `let open = $state(false);
+
+<CwButton onclick={() => (open = true)}>Open Dialog</CwButton>
+<CwDialog bind:open={open} title="Confirm Action">
+\t{#snippet children()}
+\t\t<p>Are you sure you want to proceed?</p>
+\t{/snippet}
+</CwDialog>`;
 </script>
 
 <h2>CwDialog</h2>
@@ -31,6 +40,8 @@
 		<CwButton onclick={() => (backdropDialog = false)}>Close</CwButton>
 	{/snippet}
 </CwDialog>
+
+<DemoCodeExample code={dialogExample} title="CwDialog example" />
 
 <style>
 	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }

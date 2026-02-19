@@ -1,11 +1,18 @@
 <script lang="ts">
 	import { CwDateTimeRangePicker } from '$lib/index.js';
 	import type { CwDateValue } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	let singleVal = $state<CwDateValue | undefined>(undefined);
 	let rangeVal = $state<CwDateValue | undefined>(undefined);
 	let monthVal = $state<CwDateValue | undefined>(undefined);
 	let timeVal = $state<CwDateValue | undefined>(undefined);
+	const datePickerExample = `<CwDateTimeRangePicker
+\tmode="range"
+\tgranularity="day"
+\tincludeTime
+\tbind:value={value}
+/>`;
 </script>
 
 <h2>CwDateTimeRangePicker</h2>
@@ -63,6 +70,8 @@
 		{/if}
 	</div>
 </div>
+
+<DemoCodeExample code={datePickerExample} title="CwDateTimeRangePicker example" />
 
 <style>
 	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }

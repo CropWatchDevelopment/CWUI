@@ -1,5 +1,10 @@
 <script lang="ts">
 	import { CwTooltip, CwButton } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
+
+	const tooltipExample = `<CwTooltip value="Tooltip on top" position="top">
+\t<CwButton variant="secondary">Top</CwButton>
+</CwTooltip>`;
 </script>
 
 <h2>CwTooltip</h2>
@@ -21,6 +26,7 @@
 			<CwButton variant="secondary">Right</CwButton>
 		</CwTooltip>
 	</div>
+	<DemoCodeExample code={tooltipExample} title="CwTooltip example" />
 </section>
 
 <section class="demo-section">

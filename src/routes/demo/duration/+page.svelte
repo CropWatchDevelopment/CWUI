@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { CwDuration } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	const now = new Date();
 	const tenSec = new Date(now.getTime() - 10 * 1000);
 	const fiveMin = new Date(now.getTime() - 5 * 60 * 1000);
 	const threeHr = new Date(now.getTime() - 3 * 60 * 60 * 1000);
 	const twoDays = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+	const durationExample = `<CwDuration from={new Date(Date.now() - 5 * 60 * 1000)} />`;
 </script>
 
 <h2>CwDuration</h2>
@@ -29,6 +31,8 @@
 		<CwDuration from={twoDays} />
 	</div>
 </div>
+
+<DemoCodeExample code={durationExample} title="CwDuration example" />
 
 <style>
 	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { CwInput } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	let textVal = $state('');
 	let numVal = $state('');
@@ -10,6 +11,13 @@
 	let expVal = $state('');
 	let limitVal = $state('');
 	let clearVal = $state('Type something then clear');
+	const inputExample = `<CwInput
+\tlabel="Email"
+\ttype="email"
+\tplaceholder="user@example.com"
+\tbind:value={email}
+\tclearable
+/>`;
 </script>
 
 <h2>CwInput</h2>
@@ -22,6 +30,8 @@
 	<CwInput label="Password" type="password" placeholder="••••••••" bind:value={passVal} />
 	<CwInput label="DevEUI" type="devEui" placeholder="XX:XX:XX:XX:XX:XX:XX:XX" bind:value={euiVal} />
 </div>
+
+<DemoCodeExample code={inputExample} title="CwInput example" />
 
 <section class="demo-section">
 	<h3>Credit Card Types</h3>

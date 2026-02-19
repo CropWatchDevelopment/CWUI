@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { CwSearchInput } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	const fruits = [
 		'Apple', 'Apricot', 'Avocado', 'Banana', 'Blackberry', 'Blueberry',
@@ -17,6 +18,12 @@
 	}
 
 	let val = $state('');
+	const searchInputExample = `<CwSearchInput
+\tlabel="Search fruits"
+\tplaceholder="Type at least 3 chars…"
+\tfetchSuggestions={fetchSuggestions}
+\tbind:value={value}
+/>`;
 </script>
 
 <h2>CwSearchInput</h2>
@@ -33,6 +40,8 @@
 		onselect={(v) => console.log('Selected:', v)}
 	/>
 </div>
+
+<DemoCodeExample code={searchInputExample} title="CwSearchInput example" />
 
 {#if val}
 	<p class="demo-selected">Selected: <strong>{val}</strong></p>

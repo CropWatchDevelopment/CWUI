@@ -1,5 +1,12 @@
 <script lang="ts">
 	import { CwCard, CwButton } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
+
+	const cardExample = `<CwCard title="Device Summary" subtitle="Greenhouse 7">
+\t{#snippet children()}
+\t\t<p>All systems nominal.</p>
+\t{/snippet}
+</CwCard>`;
 </script>
 
 <h2>CwCard</h2>
@@ -54,6 +61,8 @@
 		{/snippet}
 	</CwCard>
 </div>
+
+<DemoCodeExample code={cardExample} title="CwCard example" />
 
 <style>
 	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { CwDonutChart } from '$lib/index.js';
 	import type { CwDonutSegment } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	const segments: CwDonutSegment[] = [
 		{ label: 'Wheat', value: 340 },
@@ -9,6 +10,7 @@
 		{ label: 'Cotton', value: 120 },
 		{ label: 'Rice', value: 70 }
 	];
+	const donutExample = `<CwDonutChart segments={segments} size={280} thickness={30} />`;
 </script>
 
 <h2>CwDonutChart</h2>
@@ -28,6 +30,8 @@
 		<CwDonutChart {segments} showLegend={false} size={160} />
 	</div>
 </div>
+
+<DemoCodeExample code={donutExample} title="CwDonutChart example" />
 
 <style>
 	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }
