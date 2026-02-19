@@ -18,6 +18,8 @@
 		searchable?: boolean;
 		/** Snippet rendered at the right side of the toolbar for custom action buttons */
 		toolbarActions?: Snippet;
+		/** Optional custom cell snippet for any table column. Receives row, column, and default string value. */
+		cell?: Snippet<[T, CwColumnDef<T>, string]>;
 		/** Snippet rendered in the Actions column for each row. Receives the row data. */
 		rowActions?: Snippet<[T]>;
 		/** Header text for the actions column (default: empty) */
@@ -36,6 +38,7 @@
 		pageSizeOptions = [10, 20, 50, 100],
 		searchable = true,
 		toolbarActions,
+		cell,
 		rowActions,
 		actionsHeader = '',
 		class: className = ''
@@ -281,7 +284,11 @@
 									class:cw-data-table__td--hide-lg={col.hideBelow === 'lg'}
 									style:text-align={col.align ?? 'left'}
 								>
-									{getCellValue(row, col)}
+									{#if cell}
+										{@render cell(row, col, getCellValue(row, col))}
+									{:else}
+										{getCellValue(row, col)}
+									{/if}
 								</td>
 							{/each}
 							{#if rowActions}

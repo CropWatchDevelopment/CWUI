@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CwDataTable, CwButton } from '$lib/index.js';
+	import { CwDataTable, CwButton, CwDuration } from '$lib/index.js';
 	import type { CwColumnDef, CwTableQuery, CwTableResult } from '$lib/index.js';
 	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
@@ -58,11 +58,19 @@
 \trowKey="id"
 \tsearchable
 \tpageSize={10}
-/>`;
+>
+\t{#snippet cell(row, col, defaultValue)}
+\t\t{#if col.key === 'lastSeen'}
+\t\t\t<CwDuration from={row.lastSeen} />
+\t\t{:else}
+\t\t\t{defaultValue}
+\t\t{/if}
+\t{/snippet}
+</CwDataTable>`;
 </script>
 
 <h2>CwDataTable</h2>
-<p class="demo-desc">Async data loading, search, sort, pagination, zebra rows, page-size picker, toolbar actions, and per-row action buttons.</p>
+<p class="demo-desc">Async data loading, search, sort, pagination, zebra rows, custom cell rendering (e.g. <code>CwDuration</code>), page-size picker, toolbar actions, and per-row action buttons.</p>
 
 <CwDataTable
 	{columns}
@@ -81,6 +89,13 @@
 			<CwButton size="sm" variant="ghost" onclick={() => handleEdit(row)}>Edit</CwButton>
 			<CwButton size="sm" variant="danger" onclick={() => handleDelete(row)}>Delete</CwButton>
 		</div>
+	{/snippet}
+	{#snippet cell(row: Device, col: CwColumnDef<Device>, defaultValue: string)}
+		{#if col.key === 'lastSeen'}
+			<CwDuration from={row.lastSeen} />
+		{:else}
+			{defaultValue}
+		{/if}
 	{/snippet}
 </CwDataTable>
 
