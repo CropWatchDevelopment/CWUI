@@ -201,9 +201,11 @@
 	}
 
 	.cw-input__label {
-		font-size: var(--cw-text-sm);
+		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-medium);
-		color: var(--cw-text-secondary);
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--cw-text-muted);
 	}
 
 	.cw-input__wrapper {
@@ -214,29 +216,35 @@
 
 	.cw-input__field {
 		width: 100%;
-		padding: var(--cw-space-2) var(--cw-space-3);
+		padding: 0.625rem var(--cw-space-3);
 		font-family: var(--cw-font-family);
 		font-size: var(--cw-text-sm);
 		color: var(--cw-text-primary);
-		background-color: var(--cw-bg-surface);
-		border: 1px solid var(--cw-border-strong);
-		border-radius: var(--cw-radius-md);
+		background-color: color-mix(in srgb, var(--cw-bg-elevated) 60%, transparent);
+		border: 1px solid var(--cw-border-default);
+		border-radius: var(--cw-radius-xl);
 		outline: none;
 		transition:
 			border-color var(--cw-duration-fast) var(--cw-ease-default),
+			background-color var(--cw-duration-fast) var(--cw-ease-default),
 			box-shadow var(--cw-duration-fast) var(--cw-ease-default);
-		min-height: 2.375rem;
+		min-height: 2.625rem;
 	}
 
 	.cw-input__field::placeholder {
 		color: var(--cw-text-muted);
 	}
 
-	.cw-input__field:focus {
-		border-color: var(--cw-focus-ring-color);
+	.cw-input__field:hover:not(:disabled) {
+		border-color: color-mix(in srgb, var(--cw-border-default) 75%, var(--cw-info-500));
+	}
+
+	.cw-input__field:focus,
+	.cw-input__field:focus-visible {
+		border-color: var(--cw-info-500);
 		box-shadow:
-			0 0 0 var(--cw-focus-ring-width) color-mix(in srgb, var(--cw-focus-ring-color) 35%, transparent),
-			0 0 8px color-mix(in srgb, var(--cw-focus-ring-color) 15%, transparent);
+			0 0 0 2px color-mix(in srgb, var(--cw-info-500) 40%, transparent),
+			0 0 10px color-mix(in srgb, var(--cw-info-500) 18%, transparent);
 	}
 
 	.cw-input__field--has-left {
@@ -329,9 +337,9 @@
 	}
 
 	.cw-input--disabled .cw-input__field {
-		opacity: 0.5;
+		opacity: 0.55;
 		cursor: not-allowed;
-		background-color: var(--cw-bg-muted);
+		background-color: color-mix(in srgb, var(--cw-bg-muted) 80%, transparent);
 	}
 
 	.cw-input--disabled .cw-input__label {

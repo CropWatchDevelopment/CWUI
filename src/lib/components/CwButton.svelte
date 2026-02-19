@@ -174,6 +174,14 @@
 		height: 1em;
 	}
 
+	.cw-button__label {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		gap: var(--cw-space-2);
+	}
+
 	.cw-button__label--hidden {
 		visibility: hidden;
 		width: 0;
