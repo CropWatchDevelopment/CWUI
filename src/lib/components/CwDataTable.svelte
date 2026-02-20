@@ -10,6 +10,10 @@
 		loadData: (query: CwTableQuery) => Promise<CwTableResult<T>>;
 		rowKey: keyof T & string;
 		onRowClick?: (row: T) => void;
+		/** Fired when the user moves to the next page from the pagination controls. */
+		onPageNext?: () => void;
+		/** Fired when the user moves to the previous page from the pagination controls. */
+		onPagePrevious?: () => void;
 		/** Fired when the page size changes. */
 		onPageSizeChanged?: (pageSize: number) => void;
 		/** Fired when sorting changes. Receives null when sort is cleared. */
@@ -40,6 +44,8 @@
 		loadData,
 		rowKey,
 		onRowClick,
+		onPageNext,
+		onPagePrevious,
 		onPageSizeChanged,
 		onSort,
 		onSearch,
@@ -137,8 +143,17 @@
 		fetchData();
 	}
 
-	function goToPage(p: number) {
-		page = Math.max(1, Math.min(p, totalPages));
+	function handlePreviousPage() {
+		if (page <= 1) return;
+		page -= 1;
+		onPagePrevious?.();
+		fetchData();
+	}
+
+	function handleNextPage() {
+		if (page >= totalPages) return;
+		page += 1;
+		onPageNext?.();
 		fetchData();
 	}
 
@@ -338,7 +353,7 @@
 					variant="secondary"
 					size="sm"
 					disabled={page <= 1}
-					onclick={() => goToPage(page - 1)}
+					onclick={handlePreviousPage}
 					aria-label="Previous page"
 				>
 					<svg viewBox="0 0 16 16" fill="none" aria-hidden="true" style="width:1rem;height:1rem">
@@ -350,7 +365,7 @@
 					variant="secondary"
 					size="sm"
 					disabled={page >= totalPages}
-					onclick={() => goToPage(page + 1)}
+					onclick={handleNextPage}
 					aria-label="Next page"
 				>
 					<svg viewBox="0 0 16 16" fill="none" aria-hidden="true" style="width:1rem;height:1rem">
