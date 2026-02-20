@@ -18,6 +18,8 @@
 		header?: Snippet;
 		/** Compact header for mini mode (falls back to header if not provided) */
 		headerMini?: Snippet;
+		/** Snippet for content above the navigation items (e.g. user profile) */
+		aboveContent?: Snippet;
 		/** Snippet for the bottom area (e.g. a button, version text, user info) */
 		footer?: Snippet;
 		/** Compact footer for mini mode */
@@ -33,6 +35,7 @@
 		onselect,
 		header,
 		headerMini,
+		aboveContent,
 		footer,
 		footerMini,
 		class: className = ''
@@ -154,6 +157,7 @@
 					onclick={toggleNav}
 					aria-label={isPhone ? 'Close navigation' : 'Collapse navigation'}
 				>
+				
 					<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
 						{#if isPhone}
 							<path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
@@ -179,6 +183,11 @@
 		</div>
 	{/if}
 
+	{#if aboveContent && displayMode !== 'mini'}
+		<div class="cw-sidenav__above-content">
+			{@render aboveContent()}
+		</div>
+	{/if}
 	<!-- Navigation items -->
 	<div class="cw-sidenav__items" role="list">
 		{#each items as item, i (item.id)}
@@ -259,7 +268,7 @@
 		display: flex;
 		flex-direction: column;
 		height: 100%;
-		background-color: var(--cw-bg-surface);
+		background-color: #0f172b;
 		border-color: var(--cw-border-muted);
 		border-style: solid;
 		border-width: 0;
@@ -282,7 +291,7 @@
 
 	/* ── Mode: open ──────────────────────── */
 	.cw-sidenav--open {
-		width: 14rem;
+		width: 20rem;
 		flex-shrink: 0;
 	}
 

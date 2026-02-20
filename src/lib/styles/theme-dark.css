@@ -12,6 +12,7 @@
 	/* ── Surface / Background ──────────────────────────── */
 	--cw-bg-base: var(--cw-gray-950);
 	--cw-bg-surface: var(--cw-gray-900);
+	--cw-bg-surface-elevated: var(red);
 	--cw-bg-elevated: var(--cw-gray-800);
 	--cw-bg-overlay: var(--cw-gray-700);
 	--cw-bg-muted: var(--cw-gray-850);
