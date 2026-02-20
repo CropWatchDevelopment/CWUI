@@ -2,6 +2,8 @@
 	interface Props {
 		/** Start date/time — ISO string, epoch ms, or Date */
 		from: Date | string | number;
+		/** Show remaining time to `from` when true. Defaults to elapsed mode (false). */
+		countDown?: boolean;
 		/** Tick interval in ms */
 		tickMs?: number;
 		class?: string;
@@ -15,6 +17,7 @@
 
 	let {
 		from,
+		countDown = false,
 		tickMs = 1000,
 		class: className = '',
 		alarmAfterMinutes,
@@ -28,7 +31,17 @@
 		from instanceof Date ? from.getTime() : typeof from === 'string' ? new Date(from).getTime() : from
 	);
 
-	const elapsed = $derived(Math.max(0, now - fromMs));
+	const elapsed = $derived.by(() => {
+		const diff = now - fromMs;
+		return Number.isFinite(diff) ? Math.max(0, diff) : 0;
+	});
+
+	const remaining = $derived.by(() => {
+		const diff = fromMs - now;
+		return Number.isFinite(diff) ? Math.max(0, diff) : 0;
+	});
+
+	const durationMs = $derived(countDown ? remaining : elapsed);
 	const alarmAfterMs = $derived(
 		typeof alarmAfterMinutes === 'number' && Number.isFinite(alarmAfterMinutes) && alarmAfterMinutes >= 0
 			? alarmAfterMinutes * 60_000
@@ -37,7 +50,7 @@
 	let alarmTriggered = $state(false);
 
 	const display = $derived.by(() => {
-		const totalSec = Math.floor(elapsed / 1000);
+		const totalSec = Math.floor(durationMs / 1000);
 		const sec = totalSec % 60;
 		const totalMin = Math.floor(totalSec / 60);
 		const min = totalMin % 60;
@@ -83,14 +96,20 @@
 
 	$effect(() => {
 		const interval = setInterval(() => {
-			now = Date.now();
+			const nextNow = Date.now();
+			if (countDown && Number.isFinite(fromMs) && nextNow >= fromMs) {
+				now = fromMs;
+				clearInterval(interval);
+				return;
+			}
+			now = nextNow;
 		}, tickMs);
 
 		return () => clearInterval(interval);
 	});
 </script>
 
-<time class="cw-duration {className}" datetime="PT{Math.floor(elapsed / 1000)}S" aria-live="polite" aria-atomic="true">
+<time class="cw-duration {className}" datetime="PT{Math.floor(durationMs / 1000)}S" aria-live="polite" aria-atomic="true">
 	{display}
 </time>
 

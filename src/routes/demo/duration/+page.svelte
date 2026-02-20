@@ -7,10 +7,15 @@
 	const fiveMin = new Date(now.getTime() - 5 * 60 * 1000);
 	const threeHr = new Date(now.getTime() - 3 * 60 * 60 * 1000);
 	const twoDays = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+	const oneMinCountdown = new Date(now.getTime() + 60 * 1000);
 	const alarmStart = new Date();
 	let alarmTriggered = $state(false);
-	const durationExample = `let alarmTriggered = $state(false);
+	const durationExample = `<CwDuration
+\tfrom={new Date(Date.now() + 60 * 1000)}
+\tcountDown={true}
+/>
 
+let alarmTriggered = $state(false);
 <CwDuration
 \tfrom={new Date()}
 \talarmAfterMinutes={1}
@@ -20,7 +25,7 @@
 </script>
 
 <h2>CwDuration</h2>
-<p class="demo-desc">Live-ticking duration from a past timestamp with adaptive formatting.</p>
+<p class="demo-desc">Live-ticking duration from a timestamp with adaptive formatting and optional countdown mode.</p>
 
 <div class="demo-grid">
 	<div class="demo-card">
@@ -38,6 +43,10 @@
 	<div class="demo-card">
 		<span class="demo-label">&ge; 1 day</span>
 		<CwDuration from={twoDays} />
+	</div>
+	<div class="demo-card">
+		<span class="demo-label">Countdown to zero (1 minute)</span>
+		<CwDuration from={oneMinCountdown} countDown={true} />
 	</div>
 	<div class="demo-card demo-card--alarm">
 		<div class="demo-card__alarm-head">
