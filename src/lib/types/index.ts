@@ -11,6 +11,12 @@ export type CwButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'in
 /** Component size scale */
 export type CwSize = 'sm' | 'md' | 'lg';
 
+/** Badge anchor position */
+export type CwBadgePosition = 'top_left' | 'top_right' | 'bottom_left' | 'bottom_right';
+
+/** Status dot semantic state */
+export type CwStatusDotStatus = 'online' | 'offline' | 'loading';
+
 /** Chip visual variant */
 export type CwChipVariant = 'solid' | 'soft' | 'outline';
 

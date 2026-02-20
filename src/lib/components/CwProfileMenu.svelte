@@ -14,6 +14,8 @@
 		menuItems?: CwProfileMenuItem[];
 		/** Called when a menu item is clicked */
 		onselect?: (item: CwProfileMenuItem) => void;
+		/** Optional custom icon rendered in the trigger button */
+		icon?: Snippet;
 		/** Custom avatar snippet */
 		avatar?: Snippet;
 		class?: string;
@@ -25,6 +27,7 @@
 		avatarUrl,
 		menuItems = [],
 		onselect,
+		icon,
 		avatar,
 		class: className = ''
 	}: Props = $props();
@@ -85,6 +88,12 @@
 			{/if}
 		</span>
 
+		{#if icon}
+			<span class="cw-profile-menu__icon" aria-hidden="true">
+				{@render icon()}
+			</span>
+		{/if}
+
 		<!-- Chevron -->
 		<svg class="cw-profile-menu__chevron" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 			<path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -138,32 +147,57 @@
 		display: flex;
 		align-items: center;
 		gap: var(--cw-space-2);
-		padding: var(--cw-space-1) var(--cw-space-3) var(--cw-space-1) var(--cw-space-1);
-		background-color: var(--cw-bg-muted);
-		border: 1px solid var(--cw-border-muted);
-		border-radius: var(--cw-radius-md);
+		padding: var(--cw-space-2) var(--cw-space-3) var(--cw-space-2) var(--cw-space-2);
+		background: linear-gradient(
+			180deg,
+			color-mix(in srgb, #1f293e 86%, #3a4f73) 0%,
+			#1f293e 100%
+		);
+		border: 1px solid #40567a;
+		border-radius: var(--cw-radius-xl);
 		cursor: pointer;
-		color: var(--cw-text-primary);
+		color: #f2f6ff;
 		font-family: var(--cw-font-family);
 		transition:
 			background-color var(--cw-duration-fast) var(--cw-ease-default),
-			border-color var(--cw-duration-fast) var(--cw-ease-default);
+			border-color var(--cw-duration-fast) var(--cw-ease-default),
+			color var(--cw-duration-fast) var(--cw-ease-default),
+			box-shadow var(--cw-duration-fast) var(--cw-ease-default),
+			transform var(--cw-duration-fast) var(--cw-ease-default);
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, #ffffff 9%, transparent),
+			0 6px 16px color-mix(in srgb, #050a16 52%, transparent);
 	}
 
 	.cw-profile-menu__trigger:hover {
-		background-color: var(--cw-bg-elevated);
-		border-color: var(--cw-border-default);
+		background: linear-gradient(
+			180deg,
+			color-mix(in srgb, #2f4568 72%, #496695) 0%,
+			#2a3f60 100%
+		);
+		border-color: #5b78a8;
+		color: #ffffff;
 	}
 
 	.cw-profile-menu__trigger--open {
-		background-color: var(--cw-bg-elevated);
-		border-color: var(--cw-border-default);
+		background: linear-gradient(
+			180deg,
+			color-mix(in srgb, #314a72 70%, #4d6ea3) 0%,
+			#2c4265 100%
+		);
+		border-color: #6282b8;
+		color: #ffffff;
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, #ffffff 14%, transparent),
+			0 8px 20px color-mix(in srgb, #050a16 58%, transparent);
 	}
 
 	.cw-profile-menu__trigger:focus-visible {
 		outline: none;
-		box-shadow: 0 0 0 var(--cw-focus-ring-width)
-			color-mix(in srgb, var(--cw-focus-ring-color) 25%, transparent);
+		box-shadow:
+			0 0 0 var(--cw-focus-ring-width)
+				color-mix(in srgb, var(--cw-focus-ring-color) 36%, transparent),
+			0 0 0 calc(var(--cw-focus-ring-width) + 2px) var(--cw-bg-surface);
 	}
 
 	/* ── Avatar ───────────────────────────── */
@@ -175,7 +209,8 @@
 		height: 2rem;
 		border-radius: var(--cw-radius-full);
 		overflow: hidden;
-		background-color: var(--cw-accent);
+		background: linear-gradient(180deg, #2c4265 0%, #1f293e 100%);
+		border: 1px solid #4e6f9e;
 		flex-shrink: 0;
 	}
 
@@ -203,7 +238,7 @@
 	.cw-profile-menu__name {
 		font-size: var(--cw-text-sm);
 		font-weight: var(--cw-font-medium);
-		color: var(--cw-text-primary);
+		color: currentColor;
 		line-height: var(--cw-leading-tight);
 		white-space: nowrap;
 		overflow: hidden;
@@ -220,10 +255,27 @@
 	}
 
 	/* ── Chevron ──────────────────────────── */
+	.cw-profile-menu__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1rem;
+		height: 1rem;
+		color: currentColor;
+		opacity: 0.9;
+		flex-shrink: 0;
+	}
+
+	.cw-profile-menu__icon :global(svg) {
+		width: 100%;
+		height: 100%;
+	}
+
 	.cw-profile-menu__chevron {
 		width: 1rem;
 		height: 1rem;
-		color: var(--cw-text-muted);
+		color: currentColor;
+		opacity: 0.72;
 		flex-shrink: 0;
 		transition: transform var(--cw-duration-fast) var(--cw-ease-default);
 	}

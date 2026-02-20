@@ -60,7 +60,7 @@
 		justify-content: center;
 		gap: var(--cw-space-2);
 		border: 1px solid transparent;
-		border-radius: var(--cw-radius-md);
+		border-radius: var(--cw-radius-xl);
 		font-family: var(--cw-font-family);
 		font-weight: var(--cw-font-medium);
 		line-height: 1;
@@ -94,29 +94,51 @@
 
 	/* ── Variants ────────────────────────── */
 	.cw-button--primary {
-		background-color: var(--cw-accent);
-		color: var(--cw-text-inverse);
-		border-color: var(--cw-accent);
+		background: linear-gradient(
+			180deg,
+			color-mix(in srgb, #1f293e 86%, #3a4f73) 0%,
+			#1f293e 100%
+		);
+		color: #f2f6ff;
+		border-color: #40567a;
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, #ffffff 9%, transparent),
+			0 5px 14px color-mix(in srgb, #050a16 42%, transparent);
 	}
 	.cw-button--primary:hover:not(:disabled) {
-		background-color: var(--cw-accent-hover);
-		border-color: var(--cw-accent-hover);
+		background: linear-gradient(
+			180deg,
+			color-mix(in srgb, #2f4568 72%, #496695) 0%,
+			#2a3f60 100%
+		);
+		border-color: #5b78a8;
+		color: #ffffff;
 	}
 	.cw-button--primary:active:not(:disabled) {
-		background-color: var(--cw-accent-active);
+		background: linear-gradient(180deg, #2a3f60 0%, #233550 100%);
+		border-color: #53709e;
 	}
 
 	.cw-button--secondary {
-		background-color: var(--cw-bg-elevated);
-		color: var(--cw-text-primary);
-		border-color: var(--cw-border-default);
+		background: linear-gradient(180deg, #314a72 0%, #2c4265 100%);
+		color: #f4f8ff;
+		border-color: #6282b8;
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, #ffffff 12%, transparent),
+			0 5px 14px color-mix(in srgb, #050a16 44%, transparent);
 	}
 	.cw-button--secondary:hover:not(:disabled) {
-		background-color: var(--cw-bg-overlay);
-		border-color: var(--cw-border-strong);
+		background: linear-gradient(
+			180deg,
+			color-mix(in srgb, #3e5f92 78%, #5479ad) 0%,
+			#35537f 100%
+		);
+		border-color: #7fa2dc;
+		color: #ffffff;
 	}
 	.cw-button--secondary:active:not(:disabled) {
-		background-color: var(--cw-bg-subtle);
+		background: linear-gradient(180deg, #2e486e 0%, #273d5c 100%);
+		border-color: #5775a4;
 	}
 
 	.cw-button--ghost {

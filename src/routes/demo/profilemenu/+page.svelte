@@ -9,9 +9,17 @@
 		{ id: 'api-keys', label: 'API Keys' },
 		{ id: 'signout', label: 'Sign Out', separator: true, danger: true }
 	];
-	const profileMenuExample = `<CwProfileMenu
+	const profileMenuExample = `{#snippet refreshIcon()}
+  <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d="M13 8a5 5 0 1 1-1.28-3.36" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+    <path d="M13 3.5v3.2H9.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+{/snippet}
+
+<CwProfileMenu
 \tname="kevin@cropwatch.io"
 \tsubtitle="Administrator"
+\ticon={refreshIcon}
 \t{menuItems}
 \tonselect={(item) => console.log(item.id)}
 />`;
@@ -23,9 +31,16 @@
 <section class="demo-section">
 	<h3>With initials (no avatar image)</h3>
 	<div class="demo-row">
+		{#snippet refreshIcon()}
+			<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+				<path d="M13 8a5 5 0 1 1-1.28-3.36" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+				<path d="M13 3.5v3.2H9.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+			</svg>
+		{/snippet}
 		<CwProfileMenu
 			name="kevin@cropwatch.io"
 			subtitle="Administrator"
+			icon={refreshIcon}
 			{menuItems}
 			onselect={(item) => console.log('Menu:', item.id)}
 		/>
@@ -86,7 +101,7 @@
 	.demo-topbar__brand {
 		font-size: var(--cw-text-lg);
 		font-weight: var(--cw-font-bold);
-		color: var(--cw-accent);
+		color: #8eb0e6;
 	}
 	.demo-topbar__spacer { flex: 1; }
 </style>

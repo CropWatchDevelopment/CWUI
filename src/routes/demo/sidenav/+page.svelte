@@ -72,6 +72,7 @@
 <p class="demo-desc">
 	Collapsible side navigation with open, mini, and hidden modes. Supports
 	left/right positioning, header, footer, and icon-only mini mode.
+	In mini mode, hover temporarily expands it until mouseout.
 </p>
 
 <div class="demo-controls">

@@ -43,6 +43,12 @@
 
 	/** Track phone-sized viewport for close button vs toggle */
 	let isPhone = $state(false);
+	/** Temporary expansion state when hovering mini mode */
+	let hoverExpanded = $state(false);
+
+	const displayMode = $derived.by<CwSideNavMode>(() =>
+		mode === 'mini' && hoverExpanded ? 'open' : mode
+	);
 
 	/** Detect viewport width for phone detection (always) */
 	$effect(() => {
@@ -104,6 +110,22 @@
 		}
 	}
 
+	function handleNavMouseEnter() {
+		if (mode === 'mini') {
+			hoverExpanded = true;
+		}
+	}
+
+	function handleNavMouseLeave() {
+		hoverExpanded = false;
+	}
+
+	$effect(() => {
+		if (mode !== 'mini' && hoverExpanded) {
+			hoverExpanded = false;
+		}
+	});
+
 	/** Default placeholder icon (circle) when none is provided */
 	const defaultIcon = 'M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2';
 </script>
@@ -111,14 +133,16 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <nav
 	class="cw-sidenav {className}"
-	class:cw-sidenav--open={mode === 'open'}
-	class:cw-sidenav--mini={mode === 'mini'}
-	class:cw-sidenav--hidden={mode === 'hidden'}
+	class:cw-sidenav--open={displayMode === 'open'}
+	class:cw-sidenav--mini={displayMode === 'mini'}
+	class:cw-sidenav--hidden={displayMode === 'hidden'}
 	class:cw-sidenav--right={side === 'right'}
+	onmouseenter={handleNavMouseEnter}
+	onmouseleave={handleNavMouseLeave}
 	aria-label="Side navigation"
 >
 	<!-- Header / Logo -->
-	{#if mode === 'open' && header}
+	{#if displayMode === 'open' && header}
 		<div class="cw-sidenav__header">
 			<div class="cw-sidenav__header-row">
 				<div class="cw-sidenav__header-content">
@@ -140,7 +164,7 @@
 				</button>
 			</div>
 		</div>
-	{:else if mode === 'mini'}
+	{:else if displayMode === 'mini'}
 		<div class="cw-sidenav__header cw-sidenav__header--mini">
 			<button
 				class="cw-sidenav__toggle cw-sidenav__toggle--mini"
@@ -167,7 +191,7 @@
 				{/if}
 			{/if}
 
-			{#if showGroup && mode === 'open'}
+			{#if showGroup && displayMode === 'open'}
 				<span class="cw-sidenav__group-label">{item.group}</span>
 			{/if}
 
@@ -179,13 +203,13 @@
 					href={item.href}
 					role="listitem"
 					aria-current={item.active ? 'page' : undefined}
-					title={mode === 'mini' ? item.label : undefined}
+					title={displayMode === 'mini' ? item.label : undefined}
 					onclick={() => handleItemClick(item)}
 				>
 					<svg class="cw-sidenav__icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 						<path d={item.icon ?? defaultIcon} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
 					</svg>
-					{#if mode === 'open'}
+					{#if displayMode === 'open'}
 						<span class="cw-sidenav__label">{item.label}</span>
 					{/if}
 				</a>
@@ -197,7 +221,7 @@
 					class:cw-sidenav__item--disabled={item.disabled}
 					role="listitem"
 					aria-current={item.active ? 'page' : undefined}
-					title={mode === 'mini' ? item.label : undefined}
+					title={displayMode === 'mini' ? item.label : undefined}
 					disabled={item.disabled}
 					onclick={() => handleItemClick(item)}
 					onkeydown={(e) => handleItemKeydown(e, item)}
@@ -205,7 +229,7 @@
 					<svg class="cw-sidenav__icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 						<path d={item.icon ?? defaultIcon} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
 					</svg>
-					{#if mode === 'open'}
+					{#if displayMode === 'open'}
 						<span class="cw-sidenav__label">{item.label}</span>
 					{/if}
 				</button>
@@ -214,11 +238,11 @@
 	</div>
 
 	<!-- Footer -->
-	{#if mode === 'open' && footer}
+	{#if displayMode === 'open' && footer}
 		<div class="cw-sidenav__footer">
 			{@render footer()}
 		</div>
-	{:else if mode === 'mini'}
+	{:else if displayMode === 'mini'}
 		<div class="cw-sidenav__footer cw-sidenav__footer--mini">
 			{#if footerMini}
 				{@render footerMini()}

@@ -1,14 +1,17 @@
 // ── Components ──────────────────────────────────────────────
 export { default as CwButton } from './components/CwButton.svelte';
+export { default as CwBadge } from './components/CwBadge.svelte';
 export { default as CwChip } from './components/CwChip.svelte';
 export { default as CwCard } from './components/CwCard.svelte';
 export { default as CwInput } from './components/CwInput.svelte';
 export { default as CwSwitch } from './components/CwSwitch.svelte';
+export { default as CwStatusDot } from './components/CwStatusDot.svelte';
 export { default as CwDropdown } from './components/CwDropdown.svelte';
 export { default as CwDialog } from './components/CwDialog.svelte';
 export { default as CwDrawer } from './components/CwDrawer.svelte';
 export { default as CwDuration } from './components/CwDuration.svelte';
 export { default as CwHeader } from './components/CwHeader.svelte';
+export { default as CwOfflineOverlay } from './components/CwOfflineOverlay.svelte';
 export { default as CwSearchInput } from './components/CwSearchInput.svelte';
 export { default as CwDataTable } from './components/CwDataTable.svelte';
 export { default as CwLineChart } from './components/CwLineChart.svelte';
@@ -35,6 +38,8 @@ export { createCwToastContext, useCwToast } from './components/cwToastContext.sv
 export type {
 	CwTone,
 	CwButtonVariant,
+	CwBadgePosition,
+	CwStatusDotStatus,
 	CwSize,
 	CwChipVariant,
 	CwTableQuery,
