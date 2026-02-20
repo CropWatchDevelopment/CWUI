@@ -9,6 +9,8 @@
 		columns: CwColumnDef<T>[];
 		loadData: (query: CwTableQuery) => Promise<CwTableResult<T>>;
 		rowKey: keyof T & string;
+		/** When true, hides table content and shows a centered loading badge. */
+		loading?: boolean;
 		onRowClick?: (row: T) => void;
 		/** Fired when the user moves to the next page from the pagination controls. */
 		onPageNext?: () => void;
@@ -43,6 +45,7 @@
 		columns,
 		loadData,
 		rowKey,
+		loading = false,
 		onRowClick,
 		onPageNext,
 		onPagePrevious,
@@ -81,7 +84,7 @@
 	let page = $state(1);
 	let search = $state('');
 	let sort = $state<{ column: string; direction: 'asc' | 'desc' } | null>(null);
-	let loading = $state(false);
+	let loadingState = $state(false);
 	let error = $state<string | null>(null);
 
 	let abortController: AbortController | null = null;
@@ -93,7 +96,7 @@
 		if (abortController) abortController.abort();
 		abortController = new AbortController();
 
-		loading = true;
+		loadingState = true;
 		error = null;
 
 		try {
@@ -116,7 +119,7 @@
 			rows = [];
 			total = typeof totalItems === 'number' ? Math.max(0, totalItems) : 0;
 		} finally {
-			loading = false;
+			loadingState = false;
 		}
 	}
 
@@ -187,197 +190,209 @@
 </script>
 
 <div class="cw-data-table {className}">
-	<div class="cw-data-table__toolbar">
-		{#if searchable}
-			<div class="cw-data-table__search-wrapper">
-				<CwInput
-					value={search}
-					placeholder="Search\u2026"
-					oninput={handleSearch}
-				>
-					{#snippet leftSlot()}
-						<svg viewBox="0 0 16 16" fill="none" aria-hidden="true" style="width:1rem;height:1rem;color:var(--cw-text-muted)">
-							<circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5" />
-							<path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+	{#if loading}
+		<div class="cw-data-table__loading-container" role="status" aria-live="polite">
+			<div class="cw-data-table__loading-badge">
+				<svg viewBox="0 0 24 24" fill="none" class="cw-spin" aria-hidden="true">
+					<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity="0.25" />
+					<path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+				</svg>
+				Loading...
+			</div>
+		</div>
+	{:else}
+		<div class="cw-data-table__toolbar">
+			{#if searchable}
+				<div class="cw-data-table__search-wrapper">
+					<CwInput
+						value={search}
+						placeholder="Search\u2026"
+						oninput={handleSearch}
+					>
+						{#snippet leftSlot()}
+							<svg viewBox="0 0 16 16" fill="none" aria-hidden="true" style="width:1rem;height:1rem;color:var(--cw-text-muted)">
+								<circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5" />
+								<path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+							</svg>
+						{/snippet}
+					</CwInput>
+				</div>
+			{/if}
+
+			<span class="cw-data-table__toolbar-spacer"></span>
+
+			<div class="cw-data-table__toolbar-end">
+				<div class="cw-data-table__page-size">
+					<CwDropdown
+						options={pageSizeOptions.map((n) => ({ label: `${n} rows`, value: String(n) }))}
+						value={pageSizeStr}
+						onchange={handlePageSizeChange}
+					/>
+				</div>
+
+				{#if toolbarActions}
+					<div class="cw-data-table__toolbar-actions">
+						{@render toolbarActions()}
+					</div>
+				{/if}
+			</div>
+		</div>
+
+		<div class="cw-data-table__scroll">
+			<table class="cw-data-table__table" role="grid">
+				<thead>
+					<tr>
+						{#each columns as col (col.key)}
+							<th
+								class="cw-data-table__th"
+								class:cw-data-table__th--sortable={col.sortable}
+								class:cw-data-table__th--hide-sm={col.hideBelow === 'sm'}
+								class:cw-data-table__th--hide-md={col.hideBelow === 'md'}
+								class:cw-data-table__th--hide-lg={col.hideBelow === 'lg'}
+								style:width={col.width}
+								style:text-align={col.align ?? 'left'}
+								aria-sort={sort?.column === col.key
+									? sort.direction === 'asc'
+										? 'ascending'
+										: 'descending'
+									: undefined}
+							>
+								{#if col.sortable}
+									<button
+										type="button"
+										class="cw-data-table__sort-btn"
+										onclick={() => handleSort(col)}
+									>
+										{col.header}
+										<span class="cw-data-table__sort-icon" aria-hidden="true">
+											{#if sort?.column === col.key}
+												{sort.direction === 'asc' ? '↑' : '↓'}
+											{:else}
+												↕
+											{/if}
+										</span>
+									</button>
+								{:else}
+									{col.header}
+								{/if}
+							</th>
+						{/each}
+						{#if rowActions}
+							<th class="cw-data-table__th cw-data-table__th--actions" style:text-align="right">
+								{actionsHeader}
+							</th>
+						{/if}
+					</tr>
+				</thead>
+				<tbody>
+					{#if loadingState && rows.length === 0}
+						<tr>
+						<td colspan={colCount} class="cw-data-table__status">
+								<div class="cw-data-table__loading">
+									<svg viewBox="0 0 24 24" fill="none" class="cw-spin" aria-hidden="true">
+										<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity="0.25" />
+										<path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+									</svg>
+									Loading...
+								</div>
+							</td>
+						</tr>
+					{:else if error}
+						<tr>
+						<td colspan={colCount} class="cw-data-table__status">
+								{#if errorState}
+									{@render errorState(error)}
+								{:else}
+									<div class="cw-data-table__error">
+										<p>Error: {error}</p>
+										<CwButton variant="secondary" size="sm" onclick={fetchData}>Retry</CwButton>
+									</div>
+								{/if}
+							</td>
+						</tr>
+					{:else if rows.length === 0}
+						<tr>
+						<td colspan={colCount} class="cw-data-table__status">
+								{#if emptyState}
+									{@render emptyState()}
+								{:else}
+									<p class="cw-data-table__empty">No data available</p>
+								{/if}
+							</td>
+						</tr>
+					{:else}
+						{#each rows as row (row[rowKey])}
+							<tr
+								class="cw-data-table__row"
+								class:cw-data-table__row--clickable={!!onRowClick}
+								onclick={() => handleRowClick(row)}
+								onkeydown={(e) => handleRowKeydown(e, row)}
+								tabindex={onRowClick ? 0 : undefined}
+								role={onRowClick ? 'button' : undefined}
+							>
+								{#each columns as col (col.key)}
+									<td
+										class="cw-data-table__td"
+										class:cw-data-table__td--hide-sm={col.hideBelow === 'sm'}
+										class:cw-data-table__td--hide-md={col.hideBelow === 'md'}
+										class:cw-data-table__td--hide-lg={col.hideBelow === 'lg'}
+										style:text-align={col.align ?? 'left'}
+									>
+										{#if cell}
+											{@render cell(row, col, getCellValue(row, col))}
+										{:else}
+											{getCellValue(row, col)}
+										{/if}
+									</td>
+								{/each}
+								{#if rowActions}
+									<td class="cw-data-table__td cw-data-table__td--actions" style:text-align="right">
+										{@render rowActions(row)}
+									</td>
+								{/if}
+							</tr>
+						{/each}
+					{/if}
+				</tbody>
+			</table>
+		</div>
+
+		{#if totalPages > 1}
+			<div class="cw-data-table__pagination">
+				<span class="cw-data-table__page-info">
+					{(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total}
+				</span>
+				<div class="cw-data-table__page-controls">
+					<CwButton
+						variant="secondary"
+						size="sm"
+						disabled={page <= 1}
+						onclick={handlePreviousPage}
+						aria-label="Previous page"
+					>
+						<svg viewBox="0 0 16 16" fill="none" aria-hidden="true" style="width:1rem;height:1rem">
+							<path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
 						</svg>
-					{/snippet}
-				</CwInput>
+					</CwButton>
+					<span class="cw-data-table__page-num">Page {page} of {totalPages}</span>
+					<CwButton
+						variant="secondary"
+						size="sm"
+						disabled={page >= totalPages}
+						onclick={handleNextPage}
+						aria-label="Next page"
+					>
+						<svg viewBox="0 0 16 16" fill="none" aria-hidden="true" style="width:1rem;height:1rem">
+							<path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
+					</CwButton>
+				</div>
 			</div>
 		{/if}
 
-		<span class="cw-data-table__toolbar-spacer"></span>
-
-		<div class="cw-data-table__toolbar-end">
-			<div class="cw-data-table__page-size">
-				<CwDropdown
-					options={pageSizeOptions.map((n) => ({ label: `${n} rows`, value: String(n) }))}
-					value={pageSizeStr}
-					onchange={handlePageSizeChange}
-				/>
-			</div>
-
-			{#if toolbarActions}
-				<div class="cw-data-table__toolbar-actions">
-					{@render toolbarActions()}
-				</div>
-			{/if}
-		</div>
-	</div>
-
-	<div class="cw-data-table__scroll">
-		<table class="cw-data-table__table" role="grid">
-			<thead>
-				<tr>
-					{#each columns as col}
-						<th
-							class="cw-data-table__th"
-							class:cw-data-table__th--sortable={col.sortable}
-							class:cw-data-table__th--hide-sm={col.hideBelow === 'sm'}
-							class:cw-data-table__th--hide-md={col.hideBelow === 'md'}
-							class:cw-data-table__th--hide-lg={col.hideBelow === 'lg'}
-							style:width={col.width}
-							style:text-align={col.align ?? 'left'}
-							aria-sort={sort?.column === col.key
-								? sort.direction === 'asc'
-									? 'ascending'
-									: 'descending'
-								: undefined}
-						>
-							{#if col.sortable}
-								<button
-									type="button"
-									class="cw-data-table__sort-btn"
-									onclick={() => handleSort(col)}
-								>
-									{col.header}
-									<span class="cw-data-table__sort-icon" aria-hidden="true">
-										{#if sort?.column === col.key}
-											{sort.direction === 'asc' ? '↑' : '↓'}
-										{:else}
-											↕
-										{/if}
-									</span>
-								</button>
-							{:else}
-								{col.header}
-							{/if}
-						</th>
-					{/each}
-					{#if rowActions}
-						<th class="cw-data-table__th cw-data-table__th--actions" style:text-align="right">
-							{actionsHeader}
-						</th>
-					{/if}
-				</tr>
-			</thead>
-			<tbody>
-				{#if loading && rows.length === 0}
-					<tr>
-					<td colspan={colCount} class="cw-data-table__status">
-							<div class="cw-data-table__loading">
-								<svg viewBox="0 0 24 24" fill="none" class="cw-spin" aria-hidden="true">
-									<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity="0.25" />
-									<path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
-								</svg>
-								Loading…
-							</div>
-						</td>
-					</tr>
-				{:else if error}
-					<tr>
-					<td colspan={colCount} class="cw-data-table__status">
-							{#if errorState}
-								{@render errorState(error)}
-							{:else}
-								<div class="cw-data-table__error">
-									<p>Error: {error}</p>
-									<CwButton variant="secondary" size="sm" onclick={fetchData}>Retry</CwButton>
-								</div>
-							{/if}
-						</td>
-					</tr>
-				{:else if rows.length === 0}
-					<tr>
-					<td colspan={colCount} class="cw-data-table__status">
-							{#if emptyState}
-								{@render emptyState()}
-							{:else}
-								<p class="cw-data-table__empty">No data available</p>
-							{/if}
-						</td>
-					</tr>
-				{:else}
-					{#each rows as row (row[rowKey])}
-						<tr
-							class="cw-data-table__row"
-							class:cw-data-table__row--clickable={!!onRowClick}
-							onclick={() => handleRowClick(row)}
-							onkeydown={(e) => handleRowKeydown(e, row)}
-							tabindex={onRowClick ? 0 : undefined}
-							role={onRowClick ? 'button' : undefined}
-						>
-							{#each columns as col}
-								<td
-									class="cw-data-table__td"
-									class:cw-data-table__td--hide-sm={col.hideBelow === 'sm'}
-									class:cw-data-table__td--hide-md={col.hideBelow === 'md'}
-									class:cw-data-table__td--hide-lg={col.hideBelow === 'lg'}
-									style:text-align={col.align ?? 'left'}
-								>
-									{#if cell}
-										{@render cell(row, col, getCellValue(row, col))}
-									{:else}
-										{getCellValue(row, col)}
-									{/if}
-								</td>
-							{/each}
-							{#if rowActions}
-								<td class="cw-data-table__td cw-data-table__td--actions" style:text-align="right">
-									{@render rowActions(row)}
-								</td>
-							{/if}
-						</tr>
-					{/each}
-				{/if}
-			</tbody>
-		</table>
-	</div>
-
-	{#if totalPages > 1}
-		<div class="cw-data-table__pagination">
-			<span class="cw-data-table__page-info">
-				{(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total}
-			</span>
-			<div class="cw-data-table__page-controls">
-				<CwButton
-					variant="secondary"
-					size="sm"
-					disabled={page <= 1}
-					onclick={handlePreviousPage}
-					aria-label="Previous page"
-				>
-					<svg viewBox="0 0 16 16" fill="none" aria-hidden="true" style="width:1rem;height:1rem">
-						<path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-					</svg>
-				</CwButton>
-				<span class="cw-data-table__page-num">Page {page} of {totalPages}</span>
-				<CwButton
-					variant="secondary"
-					size="sm"
-					disabled={page >= totalPages}
-					onclick={handleNextPage}
-					aria-label="Next page"
-				>
-					<svg viewBox="0 0 16 16" fill="none" aria-hidden="true" style="width:1rem;height:1rem">
-						<path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-					</svg>
-				</CwButton>
-			</div>
-		</div>
-	{/if}
-
-	{#if loading && rows.length > 0}
-		<div class="cw-data-table__overlay" aria-hidden="true"></div>
+		{#if loadingState && rows.length > 0}
+			<div class="cw-data-table__overlay" aria-hidden="true"></div>
+		{/if}
 	{/if}
 </div>
 
@@ -393,6 +408,32 @@
 	}
 
 	/* ── Toolbar ─────────────────────────── */
+	.cw-data-table__loading-container {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: var(--cw-space-10) var(--cw-space-4);
+		min-height: 14rem;
+	}
+
+	.cw-data-table__loading-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--cw-space-2);
+		padding: var(--cw-space-2) var(--cw-space-4);
+		border-radius: var(--cw-radius-pill);
+		border: 1px solid var(--cw-border-default);
+		background: var(--cw-bg-muted);
+		color: var(--cw-text-secondary);
+		font-size: var(--cw-text-sm);
+		font-weight: var(--cw-font-medium);
+	}
+
+	.cw-data-table__loading-badge svg {
+		width: 1rem;
+		height: 1rem;
+	}
+
 	.cw-data-table__toolbar {
 		display: flex;
 		align-items: center;
