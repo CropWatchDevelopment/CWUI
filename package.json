@@ -3,7 +3,7 @@
 	"version": "0.1.10",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/CropWatchDevelopment/CWUI.git"
+		"url": "git+https://github.com/CropWatchDevelopment/CWUI.git"
 	},
 	"publishConfig": {
 		"registry": "https://npm.pkg.github.com"
