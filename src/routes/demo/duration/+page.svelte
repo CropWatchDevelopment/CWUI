@@ -7,7 +7,16 @@
 	const fiveMin = new Date(now.getTime() - 5 * 60 * 1000);
 	const threeHr = new Date(now.getTime() - 3 * 60 * 60 * 1000);
 	const twoDays = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
-	const durationExample = `<CwDuration from={new Date(Date.now() - 5 * 60 * 1000)} />`;
+	const alarmStart = new Date();
+	let alarmTriggered = $state(false);
+	const durationExample = `let alarmTriggered = $state(false);
+
+<CwDuration
+\tfrom={new Date()}
+\talarmAfterMinutes={1}
+\talarmCallback={() => (alarmTriggered = true)}
+/>
+`;
 </script>
 
 <h2>CwDuration</h2>
@@ -30,6 +39,19 @@
 		<span class="demo-label">&ge; 1 day</span>
 		<CwDuration from={twoDays} />
 	</div>
+	<div class="demo-card demo-card--alarm">
+		<div class="demo-card__alarm-head">
+			<span class="demo-label">Alarm after 1 minute</span>
+			{#if alarmTriggered}
+				<span class="demo-alarm-mark" aria-label="Alarm triggered">!</span>
+			{/if}
+		</div>
+		<CwDuration
+			from={alarmStart}
+			alarmAfterMinutes={1}
+			alarmCallback={() => (alarmTriggered = true)}
+		/>
+	</div>
 </div>
 
 <DemoCodeExample code={durationExample} title="CwDuration example" />
@@ -48,4 +70,22 @@
 		border-radius: var(--cw-radius-md);
 	}
 	.demo-label { font-size: var(--cw-text-xs); color: var(--cw-text-muted); }
+	.demo-card__alarm-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+	.demo-alarm-mark {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.125rem;
+		height: 1.125rem;
+		border-radius: var(--cw-radius-full);
+		background: color-mix(in srgb, var(--cw-danger-500) 25%, transparent);
+		color: var(--cw-danger-500);
+		font-size: var(--cw-text-sm);
+		font-weight: var(--cw-font-bold);
+		line-height: 1;
+	}
 </style>

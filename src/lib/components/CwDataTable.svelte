@@ -10,9 +10,17 @@
 		loadData: (query: CwTableQuery) => Promise<CwTableResult<T>>;
 		rowKey: keyof T & string;
 		onRowClick?: (row: T) => void;
+		/** Fired when the page size changes. */
+		onPageSizeChanged?: (pageSize: number) => void;
+		/** Fired when sorting changes. Receives null when sort is cleared. */
+		onSort?: (sort: { column: string; direction: 'asc' | 'desc' } | null) => void;
+		/** Fired when the search text changes. */
+		onSearch?: (query: string) => void;
 		emptyState?: Snippet;
 		errorState?: Snippet<[string]>;
 		pageSize?: number;
+		/** Optional externally-provided total count (e.g. SQL COUNT(*)) used for pagination. */
+		totalItems?: number;
 		/** Available page-size options shown in the toolbar dropdown */
 		pageSizeOptions?: number[];
 		searchable?: boolean;
@@ -32,9 +40,13 @@
 		loadData,
 		rowKey,
 		onRowClick,
+		onPageSizeChanged,
+		onSort,
+		onSearch,
 		emptyState,
 		errorState,
 		pageSize = $bindable(20),
+		totalItems,
 		pageSizeOptions = [10, 20, 50, 100],
 		searchable = true,
 		toolbarActions,
@@ -51,8 +63,10 @@
 	let pageSizeStr = $derived(String(pageSize));
 
 	function handlePageSizeChange(val: string) {
-		pageSize = Number(val);
+		const nextPageSize = Number(val);
+		pageSize = nextPageSize;
 		page = 1;
+		onPageSizeChanged?.(nextPageSize);
 		fetchData();
 	}
 
@@ -86,12 +100,15 @@
 				signal: abortController.signal
 			});
 			rows = result.rows;
-			total = result.total;
+			const nextTotal = typeof totalItems === 'number' ? totalItems : result.total;
+			total = typeof nextTotal === 'number' && Number.isFinite(nextTotal)
+				? Math.max(0, nextTotal)
+				: rows.length;
 		} catch (err) {
 			if (err instanceof DOMException && err.name === 'AbortError') return;
 			error = err instanceof Error ? err.message : 'An error occurred';
 			rows = [];
-			total = 0;
+			total = typeof totalItems === 'number' ? Math.max(0, totalItems) : 0;
 		} finally {
 			loading = false;
 		}
@@ -101,6 +118,7 @@
 		const target = e.target as HTMLInputElement;
 		search = target.value;
 		page = 1;
+		onSearch?.(search);
 		if (debounceTimer) clearTimeout(debounceTimer);
 		debounceTimer = setTimeout(fetchData, 250);
 	}
@@ -115,6 +133,7 @@
 			sort = { column: col.key, direction: 'asc' };
 		}
 		page = 1;
+		onSort?.(sort);
 		fetchData();
 	}
 
@@ -143,6 +162,12 @@
 	// Initial load
 	$effect(() => {
 		fetchData();
+	});
+
+	$effect(() => {
+		if (typeof totalItems === 'number' && Number.isFinite(totalItems)) {
+			total = Math.max(0, totalItems);
+		}
 	});
 </script>
 

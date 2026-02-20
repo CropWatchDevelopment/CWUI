@@ -27,7 +27,8 @@ export interface CwTableQuery {
 
 export interface CwTableResult<T> {
 	rows: T[];
-	total: number;
+	/** Optional total row count. Can be omitted when the table receives `totalItems` prop externally. */
+	total?: number;
 	facets?: Record<string, string[]>;
 }
 

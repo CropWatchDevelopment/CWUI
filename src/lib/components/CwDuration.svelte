@@ -5,9 +5,22 @@
 		/** Tick interval in ms */
 		tickMs?: number;
 		class?: string;
+		/** Trigger alarm once when elapsed minutes reaches/exceeds this threshold. */
+		alarmAfterMinutes?: number;
+		/** Called once when the alarm threshold is reached. */
+		alarmCallback?: () => void;
+		/** Called when elapsed drops back under the alarm threshold. */
+		alarmResetCallback?: () => void;
 	}
 
-	let { from, tickMs = 1000, class: className = '' }: Props = $props();
+	let {
+		from,
+		tickMs = 1000,
+		class: className = '',
+		alarmAfterMinutes,
+		alarmCallback,
+		alarmResetCallback
+	}: Props = $props();
 
 	let now = $state(Date.now());
 
@@ -16,6 +29,12 @@
 	);
 
 	const elapsed = $derived(Math.max(0, now - fromMs));
+	const alarmAfterMs = $derived(
+		typeof alarmAfterMinutes === 'number' && Number.isFinite(alarmAfterMinutes) && alarmAfterMinutes >= 0
+			? alarmAfterMinutes * 60_000
+			: null
+	);
+	let alarmTriggered = $state(false);
 
 	const display = $derived.by(() => {
 		const totalSec = Math.floor(elapsed / 1000);
@@ -41,6 +60,26 @@
 	function pad(n: number): string {
 		return n.toString().padStart(2, '0');
 	}
+
+	$effect(() => {
+		if (alarmAfterMs === null) {
+			if (alarmTriggered) {
+				alarmTriggered = false;
+				alarmResetCallback?.();
+			}
+			return;
+		}
+
+		const isOverThreshold = elapsed >= alarmAfterMs;
+
+		if (isOverThreshold && !alarmTriggered) {
+			alarmTriggered = true;
+			alarmCallback?.();
+		} else if (!isOverThreshold && alarmTriggered) {
+			alarmTriggered = false;
+			alarmResetCallback?.();
+		}
+	});
 
 	$effect(() => {
 		const interval = setInterval(() => {
