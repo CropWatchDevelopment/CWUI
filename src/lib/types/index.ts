@@ -2,6 +2,8 @@
    CropWatch UI — Shared Types
    ============================================================ */
 
+import type { Snippet } from 'svelte';
+
 /** Standard tone palette used across chips, toasts, buttons, etc. */
 export type CwTone = 'primary' | 'secondary' | 'info' | 'warning' | 'danger' | 'success';
 
@@ -172,14 +174,18 @@ export type CwSideNavMode = 'open' | 'mini' | 'hidden';
 export type CwSideNavSide = 'left' | 'right';
 
 export interface CwSideNavItem {
-	/** Unique identifier / route href */
+	/** Unique identifier */
 	id: string;
-	/** Display label (shown in open mode) */
+	/** Display label (shown in open mode). Kept for backwards compatibility. */
 	label: string;
+	/** Optional title alias for label */
+	title?: string;
 	/** SVG path data for a 16×16 viewBox icon, or raw SVG string */
 	icon?: string;
 	/** Link href — if provided the item renders as an <a> */
 	href?: string;
+	/** Alternative navigation target. String values behave like href, function values run on click. */
+	goto?: string | (() => void | Promise<void>);
 	/** Whether this item is currently active */
 	active?: boolean;
 	/** Whether the item is disabled */
@@ -188,4 +194,8 @@ export interface CwSideNavItem {
 	separator?: boolean;
 	/** Group label — items with the same group are grouped together with a heading */
 	group?: string;
+	/** Optional lightweight trailing content (number/text badge) */
+	trailing?: string | number;
+	/** Optional per-item trailing snippet rendered at the right side in open mode */
+	trailingSnippet?: Snippet;
 }

@@ -20,6 +20,8 @@
 		headerMini?: Snippet;
 		/** Snippet for content above the navigation items (e.g. user profile) */
 		aboveContent?: Snippet;
+		/** Optional right-side renderer for each item in open mode */
+		itemTrailing?: Snippet<[CwSideNavItem]>;
 		/** Snippet for the bottom area (e.g. a button, version text, user info) */
 		footer?: Snippet;
 		/** Compact footer for mini mode */
@@ -36,6 +38,7 @@
 		header,
 		headerMini,
 		aboveContent,
+		itemTrailing,
 		footer,
 		footerMini,
 		class: className = ''
@@ -101,16 +104,32 @@
 		}
 	}
 
-	function handleItemClick(item: CwSideNavItem) {
+	function resolveItemLabel(item: CwSideNavItem) {
+		return item.title ?? item.label;
+	}
+
+	function resolveItemHref(item: CwSideNavItem) {
+		if (item.href) return item.href;
+		return typeof item.goto === 'string' ? item.goto : undefined;
+	}
+
+	async function runItemGoto(item: CwSideNavItem) {
+		if (typeof item.goto !== 'function') return;
+		await item.goto();
+	}
+
+	async function handleItemClick(item: CwSideNavItem) {
 		if (item.disabled) return;
+		await runItemGoto(item);
 		onselect?.(item);
 	}
 
-	function handleItemKeydown(e: KeyboardEvent, item: CwSideNavItem) {
-		if (e.key === 'Enter' || e.key === ' ') {
-			e.preventDefault();
-			handleItemClick(item);
+	function handleAnchorClick(event: MouseEvent, item: CwSideNavItem) {
+		if (item.disabled) {
+			event.preventDefault();
+			return;
 		}
+		onselect?.(item);
 	}
 
 	function handleNavMouseEnter() {
@@ -189,60 +208,73 @@
 		</div>
 	{/if}
 	<!-- Navigation items -->
-	<div class="cw-sidenav__items" role="list">
+	<div class="cw-sidenav__items">
 		{#each items as item, i (item.id)}
 			{@const prevGroup = i > 0 ? items[i - 1].group : undefined}
 			{@const showGroup = item.group && item.group !== prevGroup}
+			{@const itemHref = resolveItemHref(item)}
+			{@const itemLabel = resolveItemLabel(item)}
+			{@const hasTrailing = itemTrailing || item.trailingSnippet || item.trailing !== undefined}
 
-			{#if item.separator || showGroup}
-				{#if i > 0}
-					<CwSeparator />
-				{/if}
+			{#if (item.separator || showGroup) && i > 0}
+				<CwSeparator spacing="var(--cw-space-3)" />
 			{/if}
 
 			{#if showGroup && displayMode === 'open'}
 				<span class="cw-sidenav__group-label">{item.group}</span>
 			{/if}
 
-			{#if item.href}
-				<a
-					class="cw-sidenav__item"
-					class:cw-sidenav__item--active={item.active}
-					class:cw-sidenav__item--disabled={item.disabled}
-					href={item.href}
-					role="listitem"
-					aria-current={item.active ? 'page' : undefined}
-					title={displayMode === 'mini' ? item.label : undefined}
-					onclick={() => handleItemClick(item)}
-				>
-					<svg class="cw-sidenav__icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-						<path d={item.icon ?? defaultIcon} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-					</svg>
-					{#if displayMode === 'open'}
-						<span class="cw-sidenav__label">{item.label}</span>
-					{/if}
-				</a>
-			{:else}
-				<button
-					type="button"
-					class="cw-sidenav__item"
-					class:cw-sidenav__item--active={item.active}
-					class:cw-sidenav__item--disabled={item.disabled}
-					role="listitem"
-					aria-current={item.active ? 'page' : undefined}
-					title={displayMode === 'mini' ? item.label : undefined}
-					disabled={item.disabled}
-					onclick={() => handleItemClick(item)}
-					onkeydown={(e) => handleItemKeydown(e, item)}
-				>
-					<svg class="cw-sidenav__icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-						<path d={item.icon ?? defaultIcon} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-					</svg>
-					{#if displayMode === 'open'}
-						<span class="cw-sidenav__label">{item.label}</span>
-					{/if}
-				</button>
-			{/if}
+			<div
+				class="cw-sidenav__item-row"
+				class:cw-sidenav__item-row--active={item.active}
+				class:cw-sidenav__item-row--disabled={item.disabled}
+			>
+				{#if itemHref}
+					<a
+						class="cw-sidenav__item"
+						href={itemHref}
+						aria-current={item.active ? 'page' : undefined}
+						aria-disabled={item.disabled ? 'true' : undefined}
+						tabindex={item.disabled ? -1 : undefined}
+						title={displayMode === 'mini' ? itemLabel : undefined}
+						onclick={(event) => handleAnchorClick(event, item)}
+					>
+						<svg class="cw-sidenav__icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<path d={item.icon ?? defaultIcon} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
+						{#if displayMode === 'open'}
+							<span class="cw-sidenav__label">{itemLabel}</span>
+						{/if}
+					</a>
+				{:else}
+					<button
+						type="button"
+						class="cw-sidenav__item"
+						title={displayMode === 'mini' ? itemLabel : undefined}
+						disabled={item.disabled}
+						onclick={() => handleItemClick(item)}
+					>
+						<svg class="cw-sidenav__icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<path d={item.icon ?? defaultIcon} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
+						{#if displayMode === 'open'}
+							<span class="cw-sidenav__label">{itemLabel}</span>
+						{/if}
+					</button>
+				{/if}
+
+				{#if displayMode === 'open' && hasTrailing}
+					<div class="cw-sidenav__trailing">
+						{#if itemTrailing}
+							{@render itemTrailing(item)}
+						{:else if item.trailingSnippet}
+							{@render item.trailingSnippet()}
+						{:else if item.trailing !== undefined}
+							<span class="cw-sidenav__trailing-pill">{item.trailing}</span>
+						{/if}
+					</div>
+				{/if}
+			</div>
 		{/each}
 	</div>
 
@@ -263,12 +295,13 @@
 </nav>
 
 <style>
-	/* ── Container ────────────────────────── */
 	.cw-sidenav {
 		display: flex;
 		flex-direction: column;
 		height: 100%;
-		background-color: #0f172b;
+		background:
+			radial-gradient(120% 70% at 0% 0%, color-mix(in srgb, #4c6ca0 22%, transparent), transparent 70%),
+			linear-gradient(180deg, #0f172b 0%, #0c1326 100%);
 		border-color: var(--cw-border-muted);
 		border-style: solid;
 		border-width: 0;
@@ -279,50 +312,43 @@
 			transform var(--cw-duration-slow) var(--cw-ease-default);
 	}
 
-	/* Side: left (default) gets right border */
 	.cw-sidenav:not(.cw-sidenav--right) {
 		border-right-width: 1px;
 	}
 
-	/* Side: right gets left border */
 	.cw-sidenav--right {
 		border-left-width: 1px;
 	}
 
-	/* ── Mode: open ──────────────────────── */
 	.cw-sidenav--open {
-		width: 20rem;
+		width: 17.5rem;
 		flex-shrink: 0;
 	}
 
-	/* ── Mode: mini ──────────────────────── */
 	.cw-sidenav--mini {
 		width: 3.5rem;
 		flex-shrink: 0;
 	}
 
-	/* ── Mode: hidden ────────────────────── */
 	.cw-sidenav--hidden {
 		width: 0;
 		border-width: 0;
 		overflow: hidden;
 	}
 
-	/* ── Header ───────────────────────────── */
 	.cw-sidenav__header {
 		padding: var(--cw-space-4);
 		flex-shrink: 0;
 	}
 
 	.cw-sidenav__header--mini {
-        height: 5rem;
+		height: 5rem;
 		padding: var(--cw-space-3);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
 
-	/* ── Header row (open mode) ────────────── */
 	.cw-sidenav__header-row {
 		display: flex;
 		align-items: center;
@@ -331,12 +357,11 @@
 	}
 
 	.cw-sidenav__header-content {
-        height: 3rem;
+		height: 3rem;
 		min-width: 0;
 		flex: 1;
 	}
 
-	/* ── Toggle button ─────────────────────── */
 	.cw-sidenav__toggle {
 		display: flex;
 		align-items: center;
@@ -362,8 +387,7 @@
 
 	.cw-sidenav__toggle:focus-visible {
 		outline: none;
-		box-shadow: inset 0 0 0 2px
-			color-mix(in srgb, var(--cw-focus-ring-color) 40%, transparent);
+		box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--cw-focus-ring-color) 40%, transparent);
 	}
 
 	.cw-sidenav__toggle svg {
@@ -381,101 +405,146 @@
 		height: 1.125rem;
 	}
 
-	/* ── Items list ───────────────────────── */
+	.cw-sidenav__above-content {
+		padding: 0 var(--cw-space-3) var(--cw-space-2);
+		border-bottom: 1px solid color-mix(in srgb, var(--cw-border-muted) 65%, transparent);
+	}
+
 	.cw-sidenav__items {
 		flex: 1;
 		overflow-y: auto;
 		overflow-x: hidden;
 		display: flex;
 		flex-direction: column;
-		gap: 1px;
-		padding: var(--cw-space-1);
+		gap: var(--cw-space-1);
+		padding: var(--cw-space-2);
 	}
 
-	/* ── Group label ──────────────────────── */
 	.cw-sidenav__group-label {
-		padding: var(--cw-space-2) var(--cw-space-3) var(--cw-space-1);
+		padding: var(--cw-space-2) var(--cw-space-2) var(--cw-space-1);
 		font-size: 0.625rem;
 		font-weight: var(--cw-font-bold);
 		text-transform: uppercase;
-		letter-spacing: 0.06em;
+		letter-spacing: 0.075em;
 		color: var(--cw-text-muted);
 		user-select: none;
 	}
 
-	/* ── Individual item ──────────────────── */
-	.cw-sidenav__item {
+	.cw-sidenav__item-row {
 		display: flex;
 		align-items: center;
-		gap: var(--cw-space-3);
-		width: 100%;
-		padding: var(--cw-space-2) var(--cw-space-3);
-		font-family: var(--cw-font-family);
-		font-size: var(--cw-text-sm);
-		color: var(--cw-text-secondary);
-		background: none;
-		border: none;
+		gap: var(--cw-space-2);
 		border-radius: var(--cw-radius-md);
-		cursor: pointer;
-		text-align: left;
-		text-decoration: none;
-		white-space: nowrap;
+		color: var(--cw-text-secondary);
 		transition:
 			background-color var(--cw-duration-fast) var(--cw-ease-default),
 			color var(--cw-duration-fast) var(--cw-ease-default);
 	}
 
-	/* Mini mode: center the icon */
-	.cw-sidenav--mini .cw-sidenav__item {
-		justify-content: center;
-		padding: var(--cw-space-2);
-	}
-
-	.cw-sidenav__item:hover:not(.cw-sidenav__item--disabled) {
-		background-color: var(--cw-bg-muted);
+	.cw-sidenav__item-row:hover:not(.cw-sidenav__item-row--disabled) {
+		background-color: color-mix(in srgb, #42597e 24%, transparent);
 		color: var(--cw-text-primary);
 	}
 
-	.cw-sidenav__item--active {
-		background-color: color-mix(in srgb, var(--cw-accent) 12%, transparent);
-		color: var(--cw-accent-text);
+	.cw-sidenav__item-row--active {
+		background-color: color-mix(in srgb, #4f72aa 24%, transparent);
+		color: #e9f1ff;
 	}
 
-	.cw-sidenav__item--active:hover {
-		background-color: color-mix(in srgb, var(--cw-accent) 18%, transparent);
+	.cw-sidenav__item-row--active:hover {
+		background-color: color-mix(in srgb, #4f72aa 34%, transparent);
 	}
 
-	.cw-sidenav__item--disabled {
+	.cw-sidenav__item-row--disabled {
 		color: var(--cw-text-disabled);
+	}
+
+	.cw-sidenav__item {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--cw-space-3);
+		flex: 1;
+		min-width: 0;
+		padding: var(--cw-space-2) var(--cw-space-2);
+		font-family: var(--cw-font-family);
+		font-size: var(--cw-text-sm);
+		color: inherit;
+		background: none;
+		border: none;
+		cursor: pointer;
+		text-align: left;
+		text-decoration: none;
+		white-space: nowrap;
+	}
+
+	.cw-sidenav__item[aria-disabled='true'] {
+		pointer-events: none;
+	}
+
+	.cw-sidenav__item:disabled {
 		cursor: not-allowed;
 	}
 
 	.cw-sidenav__item:focus-visible {
 		outline: none;
-		box-shadow: inset 0 0 0 2px
-			color-mix(in srgb, var(--cw-focus-ring-color) 40%, transparent);
+		box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--cw-focus-ring-color) 40%, transparent);
+		border-radius: var(--cw-radius-md);
 	}
 
-	/* ── Icon ─────────────────────────────── */
 	.cw-sidenav__icon {
 		width: 1.125rem;
 		height: 1.125rem;
 		flex-shrink: 0;
 	}
 
-	/* ── Label ────────────────────────────── */
 	.cw-sidenav__label {
-		flex: 1;
 		min-width: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
 
-	/* ── Footer ───────────────────────────── */
+	.cw-sidenav__trailing {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		margin-right: var(--cw-space-2);
+		flex-shrink: 0;
+	}
+
+	.cw-sidenav__trailing-pill {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 1.35rem;
+		height: 1.35rem;
+		padding: 0 var(--cw-space-2);
+		border-radius: var(--cw-radius-full);
+		border: 1px solid color-mix(in srgb, #7ea0d8 42%, transparent);
+		background: color-mix(in srgb, #46689a 22%, transparent);
+		color: #dce8ff;
+		font-size: 0.6875rem;
+		font-weight: var(--cw-font-semibold);
+		line-height: 1;
+	}
+
+	.cw-sidenav__item-row--active .cw-sidenav__trailing-pill {
+		border-color: color-mix(in srgb, #8fb4f3 58%, transparent);
+		background: color-mix(in srgb, #5f84c0 28%, transparent);
+	}
+
+	.cw-sidenav--mini .cw-sidenav__item-row {
+		justify-content: center;
+	}
+
+	.cw-sidenav--mini .cw-sidenav__item {
+		justify-content: center;
+		padding: var(--cw-space-2);
+	}
+
 	.cw-sidenav__footer {
 		flex-shrink: 0;
 		padding: var(--cw-space-3) var(--cw-space-4);
-		border-top: 1px solid var(--cw-border-muted);
+		border-top: 1px solid color-mix(in srgb, var(--cw-border-muted) 65%, transparent);
 		margin-top: auto;
 	}
 

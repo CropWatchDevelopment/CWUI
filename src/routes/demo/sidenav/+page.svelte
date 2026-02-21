@@ -17,33 +17,54 @@
 	const demoItems: CwSideNavItem[] = [
 		{
 			id: "home",
+			title: "Dashboard",
 			label: "Dashboard",
 			icon: icons.home,
-			href: "#",
+			href: "#dashboard",
 			active: true,
+			group: "Main",
 		},
-		{ id: "analytics", label: "Analytics", icon: icons.chart, href: "#" },
-		{ id: "users", label: "Users", icon: icons.users, href: "#" },
+		{
+			id: "analytics",
+			label: "Analytics",
+			icon: icons.chart,
+			href: "#analytics",
+			group: "Main",
+			trailing: 4,
+		},
+		{
+			id: "users",
+			label: "Users",
+			icon: icons.users,
+			goto: () => console.log("goto -> users"),
+			group: "Main",
+			trailing: 18,
+		},
 		{
 			id: "notifications",
 			label: "Notifications",
 			icon: icons.bell,
-			href: "#",
+			href: "#notifications",
 			separator: true,
+			group: "Main",
+			trailing: 12,
 		},
-		{ id: "files", label: "Files", icon: icons.folder, href: "#" },
+		{ id: "files", label: "Files", icon: icons.folder, href: "#files", group: "Library" },
 		{
 			id: "settings",
 			label: "Settings",
 			icon: icons.settings,
-			href: "#",
+			href: "#settings",
 			separator: true,
+			group: "Library",
 		},
 		{
 			id: "disabled",
 			label: "Archived",
 			icon: icons.folder,
 			disabled: true,
+			group: "Library",
+			trailing: 2,
 		},
 	];
 
@@ -64,14 +85,19 @@
 \titems={items}
 \tbind:mode={mode}
 \tside="left"
-\tonselect={(item) => (activeId = item.id)}
-/>`;
+\tonselect={(item) => (activeId = item.id)}>
+\t{#snippet itemTrailing(item)}
+\t\t{#if item.id === "settings"}
+\t\t\t<CwButton size="sm" variant="ghost">Open</CwButton>
+\t\t{/if}
+\t{/snippet}
+</CwSideNav>`;
 </script>
 
 <h2>CwSideNav</h2>
 <p class="demo-desc">
 	Collapsible side navigation with open, mini, and hidden modes. Supports
-	left/right positioning, header, footer, and icon-only mini mode.
+	left/right positioning, groups, separators, per-item href/goto, and right-aligned item content.
 	In mini mode, hover temporarily expands it until mouseout.
 </p>
 
@@ -141,6 +167,36 @@
 		{/snippet}
 		{#snippet footerMini()}
 			<span class="demo-version" title="v0.1.0">v</span>
+		{/snippet}
+		{#snippet itemTrailing(item)}
+			{#if item.id === "settings"}
+				<CwButton
+					size="sm"
+					variant="ghost"
+					class="demo-trail-btn"
+					onclick={(event) => {
+						event.preventDefault();
+						event.stopPropagation();
+					}}
+				>
+					Open
+				</CwButton>
+			{:else if item.id === "notifications"}
+				<svg
+					class="demo-trail-icon"
+					viewBox="0 0 16 16"
+					fill="none"
+					aria-hidden="true"
+				>
+					<path
+						d="M8 2v6M5.5 5.5L8 8l2.5-2.5"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					/>
+				</svg>
+			{/if}
 		{/snippet}
 	</CwSideNav>
 
@@ -226,5 +282,17 @@
 	.demo-version {
 		font-size: var(--cw-text-xs);
 		color: var(--cw-text-muted);
+	}
+
+	:global(.demo-trail-btn) {
+		padding: 0.15rem 0.4rem;
+		min-height: 1.3rem;
+		font-size: 0.675rem;
+	}
+
+	.demo-trail-icon {
+		width: 0.9rem;
+		height: 0.9rem;
+		color: #8eb0e6;
 	}
 </style>

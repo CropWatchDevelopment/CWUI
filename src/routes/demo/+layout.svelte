@@ -1,7 +1,7 @@
 <script lang="ts">
 	import "../../lib/styles/base.css";
 	import type { Snippet } from "svelte";
-	import { CwSideNav, CwHeader } from "$lib/index.js";
+	import { CwSideNav, CwHeader, CwButton, CwStatusDot } from "$lib/index.js";
 	import type { CwSideNavItem, CwSideNavMode } from "$lib/index.js";
 	import { page } from "$app/state";
 	import CwSearchInput from "$lib/components/CwSearchInput.svelte";
@@ -83,6 +83,7 @@
 			icon: icons.linechart,
 			href: "/demo/linechart",
 			group: "Charts",
+			trailing: 2,
 		},
 		{
 			id: "donutchart",
@@ -90,6 +91,7 @@
 			icon: icons.donut,
 			href: "/demo/donutchart",
 			group: "Charts",
+			trailing: 1,
 		},
 		{
 			id: "heatmap",
@@ -155,6 +157,7 @@
 			icon: icons.offline,
 			href: "/demo/offline",
 			group: "Components",
+			separator: true,
 		},
 		{
 			id: "dropdown",
@@ -176,6 +179,7 @@
 			icon: icons.toast,
 			href: "/demo/toast",
 			group: "Components",
+			trailing: 3,
 		},
 		{
 			id: "datatable",
@@ -183,6 +187,7 @@
 			icon: icons.table,
 			href: "/demo/datatable",
 			group: "Components",
+			trailing: 12,
 		},
 		{
 			id: "datepicker",
@@ -218,6 +223,7 @@
 			icon: icons.search,
 			href: "/demo/search",
 			group: "Components",
+			separator: true,
 		},
 
 		// ── Helpers ──
@@ -241,6 +247,7 @@
 			icon: icons.duration,
 			href: "/demo/duration",
 			group: "Helpers",
+			trailing: "new",
 		},
 		{
 			id: "themepicker",
@@ -257,7 +264,9 @@
 	const itemsWithActive = $derived(
 		navItems.map((item) => ({
 			...item,
-			active: page.url.pathname === item.href,
+			active:
+				page.url.pathname ===
+				(item.href ?? (typeof item.goto === "string" ? item.goto : undefined)),
 		})),
 	);
 
@@ -292,13 +301,30 @@
 			</div>
 		{/snippet}
 		{#snippet aboveContent()}
-			<div style="padding: var(--cw-space-4);">
+			<div>
 				<CwSearchInput
 					placeholder="Search components..."
 					onselect={() => {}}
 					fetchSuggestions={(query: string) => Promise.resolve([])}
 				/>
 			</div>
+		{/snippet}
+		{#snippet itemTrailing(item)}
+			{#if item.id === "offline"}
+				<CwStatusDot status="loading" size="sm" />
+			{:else if item.id === "search"}
+				<CwButton
+					size="sm"
+					variant="ghost"
+					class="demo-shell__quick-btn"
+					onclick={(event) => {
+						event.preventDefault();
+						event.stopPropagation();
+					}}
+				>
+					Go
+				</CwButton>
+			{/if}
 		{/snippet}
 		{#snippet headerMini()}
 			<img
@@ -364,5 +390,11 @@
 		font-size: var(--cw-text-lg);
 		font-weight: var(--cw-font-bold);
 		color: #8eb0e6;
+	}
+
+	:global(.demo-shell__quick-btn) {
+		padding: 0.2rem 0.45rem;
+		min-height: 1.35rem;
+		font-size: 0.6875rem;
 	}
 </style>
