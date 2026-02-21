@@ -9,6 +9,7 @@
 		eui: string;
 		status: string;
 		lastSeen: string;
+		textSize: string;
 	}
 
 	const mockDevices: Device[] = Array.from({ length: 47 }, (_, i) => ({
@@ -16,7 +17,8 @@
 		name: `Sensor ${String(i + 1).padStart(3, '0')}`,
 		eui: Array.from({ length: 8 }, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join(':'),
 		status: ['online', 'offline', 'warning'][i % 3],
-		lastSeen: new Date(Date.now() - Math.random() * 86400000 * 7).toISOString()
+		lastSeen: new Date(Date.now() - Math.random() * 86400000 * 7).toISOString(),
+		textSize: i % 3 === 0 ? '0.75rem' : i % 3 === 1 ? '0.875rem' : '1rem'
 	}));
 
 	const columns: CwColumnDef<Device>[] = [
@@ -52,10 +54,11 @@
 		alert(`Delete: ${device.name}`);
 	}
 
-	const dataTableExample = `<CwDataTable
+const dataTableExample = `<CwDataTable
 \tcolumns={columns}
 \tloadData={loadData}
 \trowKey="id"
+\trowTextSizeKey="textSize"
 \tsearchable
 \tpageSize={10}
 >
@@ -76,6 +79,7 @@
 	{columns}
 	{loadData}
 	rowKey="id"
+	rowTextSizeKey="textSize"
 	searchable
 	pageSize={10}
 	actionsHeader="Actions"

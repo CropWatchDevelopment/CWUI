@@ -38,6 +38,8 @@
 		rowActions?: Snippet<[T]>;
 		/** Header text for the actions column (default: empty) */
 		actionsHeader?: string;
+		/** Row object key containing a CSS font-size value (e.g. "0.875rem", "14px"). */
+		rowTextSizeKey?: string;
 		class?: string;
 	}
 
@@ -62,6 +64,7 @@
 		cell,
 		rowActions,
 		actionsHeader = '',
+		rowTextSizeKey,
 		class: className = ''
 	}: Props = $props();
 
@@ -175,6 +178,13 @@
 		if (col.cell) return col.cell(row);
 		const val = (row as Record<string, unknown>)[col.key];
 		return val != null ? String(val) : '';
+	}
+
+	function getRowTextSize(row: T): string | undefined {
+		if (!rowTextSizeKey) return undefined;
+		const val = (row as Record<string, unknown>)[rowTextSizeKey];
+		if (typeof val === 'number') return `${val}px`;
+		return typeof val === 'string' && val.trim() ? val : undefined;
 	}
 
 	// Initial load
@@ -329,6 +339,7 @@
 								onkeydown={(e) => handleRowKeydown(e, row)}
 								tabindex={onRowClick ? 0 : undefined}
 								role={onRowClick ? 'button' : undefined}
+								style:font-size={getRowTextSize(row)}
 							>
 								{#each columns as col (col.key)}
 									<td
@@ -520,26 +531,27 @@
 
 	.cw-data-table__td {
 		padding: var(--cw-space-3) var(--cw-space-4);
-		color: var(--cw-text-primary);
+		color: #ffffff;
 		border-bottom: 1px solid var(--cw-border-muted);
 		vertical-align: middle;
 	}
 
 	.cw-data-table__row {
-		background-color: var(--cw-bg-table-row);
+		background-color: #0f172b;
+		color: #ffffff;
 		transition: background-color var(--cw-duration-fast) var(--cw-ease-default);
 	}
 
 	.cw-data-table__row:nth-child(even) {
-		background-color: var(--cw-bg-table-row-alt);
+		background-color: #141e32;
 	}
 
 	.cw-data-table__row:hover {
-		background-color: var(--cw-bg-table-row-hover);
+		background-color: #16213a;
 	}
 
 	.cw-data-table__row:nth-child(even):hover {
-		background-color: var(--cw-bg-table-row-alt-hover);
+		background-color: #1b2942;
 	}
 
 	.cw-data-table__row:last-child .cw-data-table__td {
