@@ -148,15 +148,11 @@
 		align-items: center;
 		gap: var(--cw-space-2);
 		padding: var(--cw-space-2) var(--cw-space-3) var(--cw-space-2) var(--cw-space-2);
-		background: linear-gradient(
-			180deg,
-			color-mix(in srgb, #1f293e 86%, #3a4f73) 0%,
-			#1f293e 100%
-		);
-		border: 1px solid #40567a;
+		background: var(--cw-profile-trigger-bg);
+		border: 1px solid var(--cw-profile-trigger-border);
 		border-radius: var(--cw-radius-xl);
 		cursor: pointer;
-		color: #f2f6ff;
+		color: var(--cw-profile-trigger-text);
 		font-family: var(--cw-font-family);
 		transition:
 			background-color var(--cw-duration-fast) var(--cw-ease-default),
@@ -164,32 +160,20 @@
 			color var(--cw-duration-fast) var(--cw-ease-default),
 			box-shadow var(--cw-duration-fast) var(--cw-ease-default),
 			transform var(--cw-duration-fast) var(--cw-ease-default);
-		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, #ffffff 9%, transparent),
-			0 6px 16px color-mix(in srgb, #050a16 52%, transparent);
+		box-shadow: var(--cw-profile-trigger-shadow);
 	}
 
 	.cw-profile-menu__trigger:hover {
-		background: linear-gradient(
-			180deg,
-			color-mix(in srgb, #2f4568 72%, #496695) 0%,
-			#2a3f60 100%
-		);
-		border-color: #5b78a8;
-		color: #ffffff;
+		background: var(--cw-profile-trigger-bg-hover);
+		border-color: var(--cw-profile-trigger-border-hover);
+		color: var(--cw-profile-trigger-text-hover);
 	}
 
 	.cw-profile-menu__trigger--open {
-		background: linear-gradient(
-			180deg,
-			color-mix(in srgb, #314a72 70%, #4d6ea3) 0%,
-			#2c4265 100%
-		);
-		border-color: #6282b8;
-		color: #ffffff;
-		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, #ffffff 14%, transparent),
-			0 8px 20px color-mix(in srgb, #050a16 58%, transparent);
+		background: var(--cw-profile-trigger-bg-open);
+		border-color: var(--cw-profile-trigger-border-open);
+		color: var(--cw-profile-trigger-text-hover);
+		box-shadow: var(--cw-profile-trigger-shadow-open);
 	}
 
 	.cw-profile-menu__trigger:focus-visible {
@@ -209,8 +193,8 @@
 		height: 2rem;
 		border-radius: var(--cw-radius-full);
 		overflow: hidden;
-		background: linear-gradient(180deg, #2c4265 0%, #1f293e 100%);
-		border: 1px solid #4e6f9e;
+		background: var(--cw-profile-avatar-bg);
+		border: 1px solid var(--cw-profile-avatar-border);
 		flex-shrink: 0;
 	}
 
@@ -247,7 +231,7 @@
 
 	.cw-profile-menu__subtitle {
 		font-size: var(--cw-text-xs);
-		color: var(--cw-text-muted);
+		color: var(--cw-profile-trigger-subtitle);
 		line-height: var(--cw-leading-tight);
 		white-space: nowrap;
 		overflow: hidden;

@@ -94,51 +94,35 @@
 
 	/* ── Variants ────────────────────────── */
 	.cw-button--primary {
-		background: linear-gradient(
-			180deg,
-			color-mix(in srgb, #1f293e 86%, #3a4f73) 0%,
-			#1f293e 100%
-		);
-		color: #f2f6ff;
-		border-color: #40567a;
-		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, #ffffff 9%, transparent),
-			0 5px 14px color-mix(in srgb, #050a16 42%, transparent);
+		background: var(--cw-button-primary-bg);
+		color: var(--cw-button-primary-text);
+		border-color: var(--cw-button-primary-border);
+		box-shadow: var(--cw-button-primary-shadow);
 	}
 	.cw-button--primary:hover:not(:disabled) {
-		background: linear-gradient(
-			180deg,
-			color-mix(in srgb, #2f4568 72%, #496695) 0%,
-			#2a3f60 100%
-		);
-		border-color: #5b78a8;
-		color: #ffffff;
+		background: var(--cw-button-primary-bg-hover);
+		border-color: var(--cw-button-primary-border-hover);
+		color: var(--cw-button-primary-text-hover);
 	}
 	.cw-button--primary:active:not(:disabled) {
-		background: linear-gradient(180deg, #2a3f60 0%, #233550 100%);
-		border-color: #53709e;
+		background: var(--cw-button-primary-bg-active);
+		border-color: var(--cw-button-primary-border-active);
 	}
 
 	.cw-button--secondary {
-		background: linear-gradient(180deg, #314a72 0%, #2c4265 100%);
-		color: #f4f8ff;
-		border-color: #6282b8;
-		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, #ffffff 12%, transparent),
-			0 5px 14px color-mix(in srgb, #050a16 44%, transparent);
+		background: var(--cw-button-secondary-bg);
+		color: var(--cw-button-secondary-text);
+		border-color: var(--cw-button-secondary-border);
+		box-shadow: var(--cw-button-secondary-shadow);
 	}
 	.cw-button--secondary:hover:not(:disabled) {
-		background: linear-gradient(
-			180deg,
-			color-mix(in srgb, #3e5f92 78%, #5479ad) 0%,
-			#35537f 100%
-		);
-		border-color: #7fa2dc;
-		color: #ffffff;
+		background: var(--cw-button-secondary-bg-hover);
+		border-color: var(--cw-button-secondary-border-hover);
+		color: var(--cw-button-secondary-text-hover);
 	}
 	.cw-button--secondary:active:not(:disabled) {
-		background: linear-gradient(180deg, #2e486e 0%, #273d5c 100%);
-		border-color: #5775a4;
+		background: var(--cw-button-secondary-bg-active);
+		border-color: var(--cw-button-secondary-border-active);
 	}
 
 	.cw-button--ghost {

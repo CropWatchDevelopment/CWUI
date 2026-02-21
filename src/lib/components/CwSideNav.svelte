@@ -299,13 +299,12 @@
 		display: flex;
 		flex-direction: column;
 		height: 100%;
-		background:
-			radial-gradient(120% 70% at 0% 0%, color-mix(in srgb, #4c6ca0 22%, transparent), transparent 70%),
-			linear-gradient(180deg, #0f172b 0%, #0c1326 100%);
+		background: var(--cw-sidenav-bg);
 		border-color: var(--cw-border-muted);
 		border-style: solid;
 		border-width: 0;
 		font-family: var(--cw-font-family);
+		color: var(--cw-sidenav-item-text);
 		overflow: hidden;
 		transition:
 			width var(--cw-duration-slow) var(--cw-ease-default),
@@ -426,7 +425,7 @@
 		font-weight: var(--cw-font-bold);
 		text-transform: uppercase;
 		letter-spacing: 0.075em;
-		color: var(--cw-text-muted);
+		color: var(--cw-sidenav-group-text);
 		user-select: none;
 	}
 
@@ -435,24 +434,24 @@
 		align-items: center;
 		gap: var(--cw-space-2);
 		border-radius: var(--cw-radius-md);
-		color: var(--cw-text-secondary);
+		color: var(--cw-sidenav-item-text);
 		transition:
 			background-color var(--cw-duration-fast) var(--cw-ease-default),
 			color var(--cw-duration-fast) var(--cw-ease-default);
 	}
 
 	.cw-sidenav__item-row:hover:not(.cw-sidenav__item-row--disabled) {
-		background-color: color-mix(in srgb, #42597e 24%, transparent);
-		color: var(--cw-text-primary);
+		background-color: var(--cw-sidenav-item-hover-bg);
+		color: var(--cw-sidenav-item-text-hover);
 	}
 
 	.cw-sidenav__item-row--active {
-		background-color: color-mix(in srgb, #4f72aa 24%, transparent);
-		color: #e9f1ff;
+		background-color: var(--cw-sidenav-item-active-bg);
+		color: var(--cw-sidenav-item-active-text);
 	}
 
 	.cw-sidenav__item-row--active:hover {
-		background-color: color-mix(in srgb, #4f72aa 34%, transparent);
+		background-color: var(--cw-sidenav-item-active-bg-hover);
 	}
 
 	.cw-sidenav__item-row--disabled {
@@ -519,17 +518,17 @@
 		height: 1.35rem;
 		padding: 0 var(--cw-space-2);
 		border-radius: var(--cw-radius-full);
-		border: 1px solid color-mix(in srgb, #7ea0d8 42%, transparent);
-		background: color-mix(in srgb, #46689a 22%, transparent);
-		color: #dce8ff;
+		border: 1px solid var(--cw-sidenav-trailing-border);
+		background: var(--cw-sidenav-trailing-bg);
+		color: var(--cw-sidenav-trailing-text);
 		font-size: 0.6875rem;
 		font-weight: var(--cw-font-semibold);
 		line-height: 1;
 	}
 
 	.cw-sidenav__item-row--active .cw-sidenav__trailing-pill {
-		border-color: color-mix(in srgb, #8fb4f3 58%, transparent);
-		background: color-mix(in srgb, #5f84c0 28%, transparent);
+		border-color: var(--cw-sidenav-trailing-active-border);
+		background: var(--cw-sidenav-trailing-active-bg);
 	}
 
 	.cw-sidenav--mini .cw-sidenav__item-row {

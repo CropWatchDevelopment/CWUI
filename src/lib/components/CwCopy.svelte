@@ -162,7 +162,7 @@
 		padding: 0.125rem 0.5rem;
 		border-radius: var(--cw-radius-sm);
 		background-color: var(--cw-success-500);
-		color: #fff;
+		color: var(--cw-tone-success-solid-text);
 		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-medium);
 		white-space: nowrap;

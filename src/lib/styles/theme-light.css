@@ -11,6 +11,7 @@
 	/* ── Surface / Background ──────────────────────────── */
 	--cw-bg-base: var(--cw-gray-50);
 	--cw-bg-surface: #ffffff;
+	--cw-bg-surface-elevated: #ffffff;
 	--cw-bg-elevated: #ffffff;
 	--cw-bg-overlay: var(--cw-gray-100);
 	--cw-bg-muted: var(--cw-gray-100);
@@ -19,6 +20,112 @@
 	--cw-bg-table-row-hover: color-mix(in srgb, var(--cw-info-200) 48%, #ffffff);
 	--cw-bg-table-row-alt: color-mix(in srgb, var(--cw-info-100) 68%, #ffffff);
 	--cw-bg-table-row-alt-hover: color-mix(in srgb, var(--cw-info-200) 58%, #ffffff);
+
+	/* ── Button / Profile Trigger ─────────────────────── */
+	--cw-button-primary-bg: linear-gradient(180deg, #2a3f61 0%, #1f2f49 100%);
+	--cw-button-primary-bg-hover: linear-gradient(180deg, #35527a 0%, #284061 100%);
+	--cw-button-primary-bg-active: linear-gradient(180deg, #243a59 0%, #1f314d 100%);
+	--cw-button-primary-border: #3f5b84;
+	--cw-button-primary-border-hover: #4f709f;
+	--cw-button-primary-border-active: #3f5f89;
+	--cw-button-primary-text: #f7fbff;
+	--cw-button-primary-text-hover: #ffffff;
+	--cw-button-primary-shadow:
+		inset 0 1px 0 color-mix(in srgb, #ffffff 12%, transparent),
+		0 4px 10px color-mix(in srgb, #1d2d45 20%, transparent);
+
+	--cw-button-secondary-bg: linear-gradient(180deg, #5b85c6 0%, #3f689f 100%);
+	--cw-button-secondary-bg-hover: linear-gradient(180deg, #6795db 0%, #4a76b2 100%);
+	--cw-button-secondary-bg-active: linear-gradient(180deg, #507bb8 0%, #3e6598 100%);
+	--cw-button-secondary-border: #4d72ac;
+	--cw-button-secondary-border-hover: #5d87c7;
+	--cw-button-secondary-border-active: #4c75ad;
+	--cw-button-secondary-text: #ffffff;
+	--cw-button-secondary-text-hover: #ffffff;
+	--cw-button-secondary-shadow:
+		inset 0 1px 0 color-mix(in srgb, #ffffff 20%, transparent),
+		0 4px 10px color-mix(in srgb, #2a4f80 20%, transparent);
+
+	--cw-profile-trigger-bg: var(--cw-button-primary-bg);
+	--cw-profile-trigger-bg-hover: var(--cw-button-primary-bg-hover);
+	--cw-profile-trigger-bg-open: linear-gradient(180deg, #35527a 0%, #2e4870 100%);
+	--cw-profile-trigger-border: var(--cw-button-primary-border);
+	--cw-profile-trigger-border-hover: var(--cw-button-primary-border-hover);
+	--cw-profile-trigger-border-open: #5a80b6;
+	--cw-profile-trigger-text: #f7fbff;
+	--cw-profile-trigger-text-hover: #ffffff;
+	--cw-profile-trigger-subtitle: #d8e5ff;
+	--cw-profile-trigger-shadow:
+		inset 0 1px 0 color-mix(in srgb, #ffffff 12%, transparent),
+		0 5px 12px color-mix(in srgb, #1d2d45 24%, transparent);
+	--cw-profile-trigger-shadow-open:
+		inset 0 1px 0 color-mix(in srgb, #ffffff 16%, transparent),
+		0 6px 14px color-mix(in srgb, #1d2d45 30%, transparent);
+	--cw-profile-avatar-bg: linear-gradient(180deg, #365a8f 0%, #274166 100%);
+	--cw-profile-avatar-border: #6d8fc5;
+
+	/* ── SideNav ──────────────────────────────────────── */
+	--cw-sidenav-bg:
+		radial-gradient(
+			120% 70% at 0% 0%,
+			color-mix(in srgb, var(--cw-info-300) 22%, transparent),
+			transparent 70%
+		),
+		linear-gradient(180deg, #f7fbff 0%, #edf4fe 100%);
+	--cw-sidenav-item-text: var(--cw-gray-700);
+	--cw-sidenav-item-text-hover: var(--cw-gray-900);
+	--cw-sidenav-item-active-text: var(--cw-gray-900);
+	--cw-sidenav-item-hover-bg: color-mix(in srgb, var(--cw-info-300) 24%, transparent);
+	--cw-sidenav-item-active-bg: color-mix(in srgb, var(--cw-info-400) 28%, transparent);
+	--cw-sidenav-item-active-bg-hover: color-mix(in srgb, var(--cw-info-400) 36%, transparent);
+	--cw-sidenav-group-text: var(--cw-gray-500);
+	--cw-sidenav-trailing-border: color-mix(in srgb, var(--cw-info-500) 35%, transparent);
+	--cw-sidenav-trailing-bg: color-mix(in srgb, var(--cw-info-200) 45%, #ffffff);
+	--cw-sidenav-trailing-text: var(--cw-info-900);
+	--cw-sidenav-trailing-active-border: color-mix(in srgb, var(--cw-info-600) 48%, transparent);
+	--cw-sidenav-trailing-active-bg: color-mix(in srgb, var(--cw-info-300) 58%, #ffffff);
+
+	/* ── DataTable ────────────────────────────────────── */
+	--cw-datatable-row-text: var(--cw-gray-900);
+	--cw-datatable-row-bg: #eef4ff;
+	--cw-datatable-row-bg-alt: #e3ecfb;
+	--cw-datatable-row-bg-hover: #d8e6fb;
+	--cw-datatable-row-bg-alt-hover: #cfdff8;
+
+	/* ── Chart Surfaces ───────────────────────────────── */
+	--cw-chart-card-border: var(--cw-border-default);
+	--cw-chart-card-bg: var(--cw-bg-surface);
+	--cw-chart-card-shadow: var(--cw-shadow-md);
+	--cw-chart-card-muted: var(--cw-text-muted);
+	--cw-chart-card-title: var(--cw-text-primary);
+	--cw-chart-card-cell-border: var(--cw-border-muted);
+	--cw-chart-card-cell-bg: color-mix(in srgb, var(--cw-bg-muted) 55%, #ffffff);
+
+	/* ── Line Chart ───────────────────────────────────── */
+	--cw-linechart-grid: color-mix(in srgb, var(--cw-border-default) 85%, transparent);
+	--cw-linechart-threshold: #64748b;
+	--cw-linechart-axis: #94a3b8;
+	--cw-linechart-tick: #64748b;
+	--cw-linechart-tick-secondary: #7e22ce;
+	--cw-linechart-axis-label-primary: #0369a1;
+	--cw-linechart-axis-label-secondary: #7e22ce;
+	--cw-linechart-time-label: #64748b;
+	--cw-linechart-crosshair: #94a3b8;
+	--cw-linechart-secondary-stroke: #7e22ce;
+	--cw-linechart-point-stroke: #f8fafc;
+	--cw-linechart-dot-sky: #0284c7;
+	--cw-linechart-dot-purple: #7e22ce;
+	--cw-linechart-threshold-marker: #64748b;
+	--cw-linechart-tooltip-border: var(--cw-border-default);
+	--cw-linechart-tooltip-bg: color-mix(in srgb, #ffffff 96%, var(--cw-bg-overlay));
+	--cw-linechart-tooltip-text: var(--cw-text-primary);
+	--cw-linechart-tooltip-muted: var(--cw-text-muted);
+	--cw-linechart-tooltip-value: var(--cw-text-primary);
+	--cw-linechart-tooltip-time: var(--cw-gray-500);
+	--cw-linechart-tooltip-alert-bg: color-mix(in srgb, var(--cw-warning-300) 32%, transparent);
+	--cw-linechart-tooltip-alert-text: var(--cw-warning-800);
+	--cw-linechart-legend-text: var(--cw-text-secondary);
+	--cw-linechart-legend-inactive: var(--cw-text-muted);
 
 	/* ── Text ──────────────────────────────────────────── */
 	--cw-text-primary: var(--cw-gray-900);

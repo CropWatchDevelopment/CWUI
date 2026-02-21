@@ -301,7 +301,7 @@
 				<path
 					d={secondaryPath}
 					fill="none"
-					stroke="rgb(168 85 247)"
+					stroke="var(--cw-linechart-secondary-stroke)"
 					stroke-width="2"
 					stroke-linecap="round"
 					stroke-linejoin="round"
@@ -317,7 +317,7 @@
 					<circle
 						{cx} {cy} r="3"
 						fill={threshold !== undefined && point.value > threshold ? 'rgb(239 68 68)' : 'rgb(59 130 246)'}
-						stroke="rgb(15 23 42)"
+						stroke="var(--cw-linechart-point-stroke)"
 						stroke-width="1"
 					/>
 				{/each}
@@ -332,7 +332,7 @@
 						<circle
 							r="10"
 							fill={point.alert?.severity === 'critical' ? 'rgb(239 68 68)' : 'rgb(245 158 11)'}
-							stroke="rgb(15 23 42)"
+							stroke="var(--cw-linechart-point-stroke)"
 							stroke-width="2"
 							class="cw-lchart__pulse"
 						/>
@@ -396,7 +396,7 @@
 				{#if hoverX >= 0 && hoverX <= chartWidth}
 					<line
 						x1={hoverX} y1="0" x2={hoverX} y2={chartHeight}
-						stroke="rgb(148 163 184)"
+						stroke="var(--cw-linechart-crosshair)"
 						stroke-width="1"
 						stroke-dasharray="3,3"
 						opacity="0.5"
@@ -486,7 +486,7 @@
 
 	/* ── Grid ─────────────────────────────── */
 	.cw-lchart__grid {
-		stroke: rgb(51 65 85);
+		stroke: var(--cw-linechart-grid);
 		stroke-width: 1;
 		stroke-dasharray: 4,4;
 		opacity: 0.5;
@@ -494,22 +494,22 @@
 
 	/* ── Threshold ────────────────────────── */
 	.cw-lchart__threshold {
-		stroke: rgb(148 163 184);
+		stroke: var(--cw-linechart-threshold);
 		stroke-width: 2;
 		stroke-dasharray: 6,4;
 	}
 	.cw-lchart__threshold-label {
-		fill: rgb(148 163 184);
+		fill: var(--cw-linechart-threshold);
 		font-size: 10px;
 	}
 
 	/* ── Axes ─────────────────────────────── */
 	.cw-lchart__axis {
-		stroke: rgb(71 85 105);
+		stroke: var(--cw-linechart-axis);
 		stroke-width: 1;
 	}
 	.cw-lchart__tick {
-		fill: rgb(148 163 184);
+		fill: var(--cw-linechart-tick);
 		font-size: 11px;
 		dominant-baseline: middle;
 	}
@@ -518,7 +518,7 @@
 	}
 	.cw-lchart__tick--right {
 		text-anchor: start;
-		fill: rgb(192 132 252);
+		fill: var(--cw-linechart-tick-secondary);
 	}
 	.cw-lchart__axis-label {
 		font-size: 12px;
@@ -526,13 +526,13 @@
 		text-anchor: middle;
 	}
 	.cw-lchart__axis-label--primary {
-		fill: rgb(14 165 233);
+		fill: var(--cw-linechart-axis-label-primary);
 	}
 	.cw-lchart__axis-label--secondary {
-		fill: rgb(168 85 247);
+		fill: var(--cw-linechart-axis-label-secondary);
 	}
 	.cw-lchart__time-label {
-		fill: rgb(148 163 184);
+		fill: var(--cw-linechart-time-label);
 		font-size: 10px;
 		text-anchor: end;
 	}
@@ -552,13 +552,13 @@
 		position: absolute;
 		z-index: 50;
 		border-radius: 0.5rem;
-		border: 1px solid #334155;
-		background-color: rgba(30, 41, 59, 0.95);
+		border: 1px solid var(--cw-linechart-tooltip-border);
+		background-color: var(--cw-linechart-tooltip-bg);
 		padding: 0.5rem 0.75rem;
 		font-size: 0.75rem;
 		box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
 		backdrop-filter: blur(4px);
-		color: #e2e8f0;
+		color: var(--cw-linechart-tooltip-text);
 	}
 	.cw-lchart__tt-row {
 		display: flex;
@@ -566,14 +566,14 @@
 		gap: 0.5rem;
 	}
 	.cw-lchart__tt-muted {
-		color: #94a3b8;
+		color: var(--cw-linechart-tooltip-muted);
 	}
 	.cw-lchart__tt-value {
-		color: #ffffff;
+		color: var(--cw-linechart-tooltip-value);
 		font-weight: 500;
 	}
 	.cw-lchart__tt-time {
-		color: #64748b;
+		color: var(--cw-linechart-tooltip-time);
 		font-size: 0.65rem;
 		margin-top: 0.125rem;
 	}
@@ -583,8 +583,8 @@
 		border-radius: 9999px;
 		flex-shrink: 0;
 	}
-	.cw-lchart__dot--sky    { background-color: #0ea5e9; }
-	.cw-lchart__dot--purple { background-color: #a855f7; }
+	.cw-lchart__dot--sky    { background-color: var(--cw-linechart-dot-sky); }
+	.cw-lchart__dot--purple { background-color: var(--cw-linechart-dot-purple); }
 
 	.cw-lchart__tt-alert {
 		margin-top: 0.5rem;
@@ -592,9 +592,9 @@
 		align-items: center;
 		gap: 0.25rem;
 		border-radius: 0.25rem;
-		background-color: rgba(245, 158, 11, 0.20);
+		background-color: var(--cw-linechart-tooltip-alert-bg);
 		padding: 0.25rem 0.5rem;
-		color: #fcd34d;
+		color: var(--cw-linechart-tooltip-alert-text);
 	}
 	.cw-lchart__tt-alert-icon {
 		height: 12px;
@@ -619,13 +619,13 @@
 		background: none;
 		border: none;
 		cursor: pointer;
-		color: #cbd5e1;
+		color: var(--cw-linechart-legend-text);
 		font-family: inherit;
 		font-size: inherit;
 		transition: color 0.15s;
 	}
 	.cw-lchart__legend-btn--inactive {
-		color: #64748b;
+		color: var(--cw-linechart-legend-inactive);
 		text-decoration: line-through;
 	}
 	.cw-lchart__legend-marker {
@@ -635,19 +635,19 @@
 		border-radius: 9999px;
 	}
 	.cw-lchart__legend-marker--primary {
-		background-color: #0ea5e9;
+		background-color: var(--cw-linechart-dot-sky);
 	}
 	.cw-lchart__legend-marker--secondary {
 		background: repeating-linear-gradient(
 			90deg,
-			rgb(168, 85, 247),
-			rgb(168, 85, 247) 4px,
+			var(--cw-linechart-dot-purple),
+			var(--cw-linechart-dot-purple) 4px,
 			transparent 4px,
 			transparent 6px
 		);
 	}
 	.cw-lchart__legend-marker--threshold {
-		border-top: 2px dashed #94a3b8;
+		border-top: 2px dashed var(--cw-linechart-threshold-marker);
 		background: none;
 	}
 </style>

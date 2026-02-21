@@ -108,10 +108,10 @@
 	/* ── Outer card ────────────────────────── */
 	.cw-chart-section {
 		border-radius: 1.5rem;
-		border: 1px solid #1e293b;
-		background-color: #0f172a;
+		border: 1px solid var(--cw-chart-card-border);
+		background-color: var(--cw-chart-card-bg);
 		padding: 1.5rem;
-		box-shadow: 0 10px 15px -3px rgba(2, 6, 23, 0.40);
+		box-shadow: var(--cw-chart-card-shadow);
 	}
 
 	/* ── Header ───────────────────────────── */
@@ -127,12 +127,12 @@
 		font-size: 0.75rem;
 		text-transform: uppercase;
 		letter-spacing: 0.2em;
-		color: #94a3b8;
+		color: var(--cw-chart-card-muted);
 	}
 	.cw-chart-section__title {
 		font-size: 1.25rem;
 		font-weight: 600;
-		color: #ffffff;
+		color: var(--cw-chart-card-title);
 		margin: 0;
 	}
 
@@ -142,7 +142,7 @@
 		align-items: center;
 		justify-content: center;
 		height: 350px;
-		color: #94a3b8;
+		color: var(--cw-chart-card-muted);
 	}
 
 	/* ── Soil 3-col grid ──────────────────── */
@@ -160,15 +160,15 @@
 	/* ── Individual cell ──────────────────── */
 	.cw-chart-section__cell {
 		border-radius: 1rem;
-		border: 1px solid #1e293b;
-		background-color: rgba(2, 6, 23, 0.40);
+		border: 1px solid var(--cw-chart-card-cell-border);
+		background-color: var(--cw-chart-card-cell-bg);
 		padding: 1rem;
 	}
 	.cw-chart-section__cell-label {
 		font-size: 0.75rem;
 		text-transform: uppercase;
 		letter-spacing: 0.2em;
-		color: #94a3b8;
+		color: var(--cw-chart-card-muted);
 		margin-bottom: 0.75rem;
 	}
 </style>
