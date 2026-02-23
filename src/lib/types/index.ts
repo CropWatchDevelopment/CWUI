@@ -199,3 +199,32 @@ export interface CwSideNavItem {
 	/** Optional per-item trailing snippet rendered at the right side in open mode */
 	trailingSnippet?: Snippet;
 }
+
+/* ── Alarm Scheduler types ─────────────────────────────── */
+
+/** Date/time input accepted by alarm APIs. */
+export type CwDateTimeInput = Date | string | number;
+
+export interface CwAlarmRegistration {
+	/** Base timestamp used for duration-style alarms. */
+	from: CwDateTimeInput;
+	/** Offset from `from` in minutes before alarm fires. */
+	alarmAfterMinutes?: number;
+	/** Offset from `from` in milliseconds before alarm fires. Takes precedence over `alarmAfterMinutes`. */
+	alarmAfterMs?: number;
+	/** Callback fired when the alarm triggers. */
+	callback: () => void;
+	/** Optional stable id. If reused, the existing alarm is replaced. */
+	id?: string;
+}
+
+export interface CwAlarmApi {
+	/** Schedule a single alarm and return its id. */
+	schedule(options: CwAlarmRegistration): string;
+	/** Cancel a scheduled alarm by id. */
+	cancel(id: string): void;
+	/** Remove all scheduled alarms. */
+	clear(): void;
+	/** Number of active alarms currently scheduled. */
+	readonly size: number;
+}

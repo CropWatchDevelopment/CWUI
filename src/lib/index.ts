@@ -34,6 +34,9 @@ export { default as CwToastContainer } from './components/CwToastContainer.svelt
 export { default as CwToastItemComponent } from './components/CwToastItem.svelte';
 export { createCwToastContext, useCwToast } from './components/cwToastContext.svelte.js';
 
+// ── Alarm system (non-visual) ──────────────────────────────
+export { createCwAlarmScheduler, createCwAlarmContext, useCwAlarm } from './components/cwAlarmContext.svelte.js';
+
 // ── Types ───────────────────────────────────────────────────
 export type {
 	CwTone,
@@ -61,5 +64,8 @@ export type {
 	CwSideNavMode,
 	CwSideNavSide,
 	CwSideNavItem,
-	CwHeatmapDataPoint
+	CwHeatmapDataPoint,
+	CwDateTimeInput,
+	CwAlarmRegistration,
+	CwAlarmApi
 } from './types/index.js';
