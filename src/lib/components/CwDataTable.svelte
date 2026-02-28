@@ -187,6 +187,10 @@
 		return typeof val === 'string' && val.trim() ? val : undefined;
 	}
 
+	function isRowLoading(row: T): boolean {
+		return (row as Record<string, unknown>).cwloading === true;
+	}
+
 	// Initial load
 	$effect(() => {
 		fetchData();
@@ -335,6 +339,7 @@
 							<tr
 								class="cw-data-table__row"
 								class:cw-data-table__row--clickable={!!onRowClick}
+								class:cw-data-table__row--loading={isRowLoading(row)}
 								onclick={() => handleRowClick(row)}
 								onkeydown={(e) => handleRowKeydown(e, row)}
 								tabindex={onRowClick ? 0 : undefined}
@@ -534,6 +539,8 @@
 		color: var(--cw-datatable-row-text);
 		border-bottom: 1px solid var(--cw-border-muted);
 		vertical-align: middle;
+		filter: none;
+		transition: filter var(--cw-duration-fast) var(--cw-ease-default);
 	}
 
 	.cw-data-table__row {
@@ -552,6 +559,19 @@
 
 	.cw-data-table__row:nth-child(even):hover {
 		background-color: var(--cw-datatable-row-bg-alt-hover);
+	}
+
+	.cw-data-table__row--loading,
+	.cw-data-table__row--loading:nth-child(even),
+	.cw-data-table__row--loading:hover,
+	.cw-data-table__row--loading:nth-child(even):hover {
+		background-color: var(--cw-warning-700);
+	}
+
+	.cw-data-table__row--loading .cw-data-table__td {
+		filter: blur(1.75px);
+		opacity: 0.75;
+		color: black;
 	}
 
 	.cw-data-table__row:last-child .cw-data-table__td {

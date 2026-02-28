@@ -1,28 +1,30 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import type { Snippet } from "svelte";
 
 	interface Props {
 		title?: string;
 		subtitle?: string;
-		titleAlign?: 'left' | 'center' | 'right';
+		titleAlign?: "left" | "center" | "right";
 		padded?: boolean;
 		elevated?: boolean;
 		class?: string;
 		children?: Snippet;
 		header?: Snippet;
+		subtitleSlot?: Snippet;
 		actions?: Snippet;
 	}
 
 	let {
 		title,
 		subtitle,
-		titleAlign = 'left',
+		titleAlign = "left",
 		padded = true,
 		elevated = false,
-		class: className = '',
+		class: className = "",
 		children,
 		header,
-		actions
+		subtitleSlot,
+		actions,
 	}: Props = $props();
 </script>
 
@@ -41,7 +43,12 @@
 						<h3 class="cw-card__title">{title}</h3>
 					{/if}
 					{#if subtitle}
-						<p class="cw-card__subtitle">{subtitle}</p>
+						<p class="cw-card__subtitle">
+							{subtitle}
+							{#if subtitleSlot}
+								{@render subtitleSlot()}
+							{/if}
+						</p>
 					{/if}
 				</div>
 			{/if}

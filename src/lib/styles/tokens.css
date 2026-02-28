@@ -59,23 +59,23 @@
 	/* ── Palette: Warning (amber) ──────────────────────── */
 	--cw-warning-50: #fffbeb;
 	--cw-warning-100: #fef3c7;
-	--cw-warning-200: #fde68a;
-	--cw-warning-300: #fcd34d;
+	--cw-warning-200: #f0e4b3;
+	--cw-warning-300: #f3d983;
 	--cw-warning-400: #fbbf24;
-	--cw-warning-500: #f59e0b;
-	--cw-warning-600: #d97706;
-	--cw-warning-700: #b45309;
-	--cw-warning-800: #92400e;
-	--cw-warning-900: #78350f;
+	--cw-warning-500: #ecba63;
+	--cw-warning-600: #ecdc49;
+	--cw-warning-700: #f3cc1c;
+	--cw-warning-800: #fddc1e;
+	--cw-warning-900: #eed600;
 
 	/* ── Palette: Danger (red) ─────────────────────────── */
-	--cw-danger-50: #fef2f2;
-	--cw-danger-100: #fee2e2;
-	--cw-danger-200: #fecaca;
-	--cw-danger-300: #fca5a5;
-	--cw-danger-400: #f87171;
-	--cw-danger-500: #ef4444;
-	--cw-danger-600: #dc2626;
+	--cw-danger-50: #f76767;
+	--cw-danger-100: #f84c4c;
+	--cw-danger-200: #f73b3b;
+	--cw-danger-300: #f51d1d;
+	--cw-danger-400: #f51f1f;
+	--cw-danger-500: #eb2f2f;
+	--cw-danger-600: #dd0f0f;
 	--cw-danger-700: #b91c1c;
 	--cw-danger-800: #991b1b;
 	--cw-danger-900: #7f1d1d;
