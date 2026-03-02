@@ -277,10 +277,10 @@
 		margin-top: var(--cw-space-1);
 		min-width: 12rem;
 		padding: var(--cw-space-1);
-		background-color: var(--cw-bg-elevated);
-		border: 1px solid var(--cw-border-default);
+		background-color: var(--cw-bg-surface-elevated);
+		border: 1px solid color-mix(in srgb, var(--cw-border-default) 82%, transparent);
 		border-radius: var(--cw-radius-lg);
-		box-shadow: var(--cw-shadow-xl);
+		box-shadow: var(--cw-shadow-lg);
 	}
 
 	.cw-profile-menu__dropdown-header {
@@ -307,7 +307,7 @@
 		padding: var(--cw-space-2) var(--cw-space-3);
 		font-family: var(--cw-font-family);
 		font-size: var(--cw-text-sm);
-		color: var(--cw-text-secondary);
+		color: var(--cw-text-primary);
 		background: none;
 		border: none;
 		border-radius: var(--cw-radius-md);
@@ -319,7 +319,7 @@
 	}
 
 	.cw-profile-menu__menu-item:hover {
-		background-color: var(--cw-bg-muted);
+		background-color: color-mix(in srgb, var(--cw-bg-muted) 78%, var(--cw-bg-surface));
 		color: var(--cw-text-primary);
 	}
 
@@ -334,7 +334,7 @@
 	}
 
 	.cw-profile-menu__menu-item--danger:hover {
-		background-color: var(--cw-tone-danger-bg);
+		background-color: color-mix(in srgb, var(--cw-tone-danger-bg) 22%, transparent);
 		color: var(--cw-tone-danger-text);
 	}
 </style>

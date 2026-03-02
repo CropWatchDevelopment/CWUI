@@ -172,6 +172,12 @@ export interface CwDrawerItem {
 
 export type CwSideNavMode = 'open' | 'mini' | 'hidden';
 export type CwSideNavSide = 'left' | 'right';
+export type CwSideNavIconModule = Record<string, string | { default: string }>;
+export type CwSideNavIcon =
+	| string
+	| { src: string }
+	| { path: string }
+	| CwSideNavIconModule;
 
 export interface CwSideNavItem {
 	/** Unique identifier */
@@ -180,8 +186,8 @@ export interface CwSideNavItem {
 	label: string;
 	/** Optional title alias for label */
 	title?: string;
-	/** SVG path data for a 16×16 viewBox icon, or raw SVG string */
-	icon?: string;
+	/** Icon source: path-data string, imported SVG URL string, `{ src }`, `{ path }`, or icon module object (e.g. `{ DASHBOARD_ICON }`) */
+	icon?: CwSideNavIcon;
 	/** Link href — if provided the item renders as an <a> */
 	href?: string;
 	/** Alternative navigation target. String values behave like href, function values run on click. */

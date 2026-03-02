@@ -33,6 +33,17 @@ body {
 	min-height: 100dvh;
 }
 
+/* ── Shared spinner animation ─────────────────────────── */
+@keyframes cw-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.cw-spin {
+	animation: cw-spin 0.75s linear infinite;
+}
+
 /* ── Focus visible ─────────────────────────────────────── */
 :focus-visible {
 	outline: var(--cw-focus-ring-width) solid var(--cw-focus-ring-color);
@@ -77,5 +88,10 @@ body {
 		animation-iteration-count: 1 !important;
 		transition-duration: 0.01ms !important;
 		scroll-behavior: auto !important;
+	}
+
+	/* Keep progress indicators visibly active even in reduced-motion mode. */
+	.cw-spin {
+		animation: cw-spin 1.5s linear infinite !important;
 	}
 }

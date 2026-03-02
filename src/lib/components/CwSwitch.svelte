@@ -102,22 +102,25 @@
 		background-color: var(--cw-bg-muted);
 		border: 1px solid var(--cw-border-default);
 		transition:
-			background-color var(--cw-duration-fast) var(--cw-ease-default),
-			border-color var(--cw-duration-fast) var(--cw-ease-default),
-			box-shadow var(--cw-duration-fast) var(--cw-ease-default);
+			background-color 180ms var(--cw-ease-default),
+			border-color 180ms var(--cw-ease-default),
+			box-shadow 180ms var(--cw-ease-default);
 		flex-shrink: 0;
 	}
 
 	.cw-switch__thumb {
+		display: block;
 		width: 1.125rem;
 		height: 1.125rem;
 		border-radius: var(--cw-radius-full);
 		background-color: var(--cw-bg-elevated);
 		box-shadow: var(--cw-shadow-sm);
-		transform: translateX(0);
+		transform: translate3d(0, 0, 0);
+		will-change: transform;
 		transition:
-			transform var(--cw-duration-fast) var(--cw-ease-default),
-			background-color var(--cw-duration-fast) var(--cw-ease-default);
+			transform 210ms cubic-bezier(0.22, 1, 0.36, 1),
+			background-color 180ms var(--cw-ease-default),
+			box-shadow 180ms var(--cw-ease-default);
 	}
 
 	.cw-switch__input:checked + .cw-switch__control {
@@ -126,7 +129,7 @@
 	}
 
 	.cw-switch__input:checked + .cw-switch__control .cw-switch__thumb {
-		transform: translateX(1rem);
+		transform: translate3d(1rem, 0, 0);
 		background-color: #fff;
 	}
 
@@ -160,5 +163,12 @@
 
 	.cw-switch--disabled .cw-switch__label {
 		cursor: not-allowed;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.cw-switch__control,
+		.cw-switch__thumb {
+			transition-duration: 140ms !important;
+		}
 	}
 </style>

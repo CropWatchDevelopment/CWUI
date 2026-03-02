@@ -21,6 +21,9 @@
 		rightSlot?: Snippet;
 		oninput?: (e: Event) => void;
 		onchange?: (e: Event) => void;
+		onkeydown?: (e: KeyboardEvent) => void;
+		onblur?: (e: FocusEvent) => void;
+		onfocus?: (e: FocusEvent) => void;
 		class?: string;
 	}
 
@@ -41,6 +44,9 @@
 		rightSlot,
 		oninput,
 		onchange,
+		onkeydown,
+		onblur,
+		onfocus,
 		class: className = '',
 	}: Props = $props();
 
@@ -103,6 +109,11 @@
 
 	function clear() {
 		value = '';
+		if (inputRef) {
+			inputRef.value = '';
+			inputRef.dispatchEvent(new Event('input', { bubbles: true }));
+			inputRef.focus();
+		}
 	}
 
 	function togglePasswordVisibility() {
@@ -163,6 +174,9 @@
 			maxlength={maxlength ?? undefined}
 			oninput={handleInput}
 			onchange={onchange}
+			onkeydown={onkeydown}
+			onblur={onblur}
+			onfocus={onfocus}
 			aria-invalid={error ? 'true' : undefined}
 			aria-describedby={error ? `${uid}-error` : undefined}
 		/>

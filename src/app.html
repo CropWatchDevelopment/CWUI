@@ -6,6 +6,25 @@
         <link rel="icon" type="image/x-icon" href="%sveltekit.assets%/favicon.ico">
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>CropWatch User Interface</title>
+		<script>
+			(() => {
+				const storageKey = 'cwui-theme';
+				try {
+					const stored = localStorage.getItem(storageKey);
+					const isValid = stored === 'dark' || stored === 'light' || stored === 'system';
+					if (!isValid) return;
+					const resolvedTheme =
+						stored === 'system'
+							? window.matchMedia('(prefers-color-scheme: dark)').matches
+								? 'dark'
+								: 'light'
+							: stored;
+					document.documentElement.setAttribute('data-theme', resolvedTheme);
+				} catch {
+					// Ignore storage access errors (e.g. private mode restrictions).
+				}
+			})();
+		</script>
 		%sveltekit.head%
 	</head>
 	<body>

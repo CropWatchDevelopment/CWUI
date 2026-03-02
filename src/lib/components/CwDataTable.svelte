@@ -3,7 +3,8 @@
 	import type { CwColumnDef, CwTableQuery, CwTableResult } from '../types/index.js';
 	import CwButton from './CwButton.svelte';
 	import CwDropdown from './CwDropdown.svelte';
-	import CwInput from './CwInput.svelte';
+	import CwSpinner from './CwSpinner.svelte';
+	import CwSearchInput from './CwSearchInput.svelte';
 
 	interface Props {
 		columns: CwColumnDef<T>[];
@@ -126,9 +127,8 @@
 		}
 	}
 
-	function handleSearch(e: Event) {
-		const target = e.target as HTMLInputElement;
-		search = target.value;
+	function handleSearch(query: string) {
+		search = query;
 		page = 1;
 		onSearch?.(search);
 		if (debounceTimer) clearTimeout(debounceTimer);
@@ -207,10 +207,7 @@
 	{#if loading}
 		<div class="cw-data-table__loading-container" role="status" aria-live="polite">
 			<div class="cw-data-table__loading-badge">
-				<svg viewBox="0 0 24 24" fill="none" class="cw-spin" aria-hidden="true">
-					<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity="0.25" />
-					<path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
-				</svg>
+				<CwSpinner size="md" />
 				Loading...
 			</div>
 		</div>
@@ -218,18 +215,12 @@
 		<div class="cw-data-table__toolbar">
 			{#if searchable}
 				<div class="cw-data-table__search-wrapper">
-					<CwInput
+					<CwSearchInput
 						value={search}
-						placeholder="Search\u2026"
+						placeholder="Search..."
 						oninput={handleSearch}
-					>
-						{#snippet leftSlot()}
-							<svg viewBox="0 0 16 16" fill="none" aria-hidden="true" style="width:1rem;height:1rem;color:var(--cw-text-muted)">
-								<circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5" />
-								<path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-							</svg>
-						{/snippet}
-					</CwInput>
+						debounceMs={0}
+					/>
 				</div>
 			{/if}
 
@@ -303,10 +294,7 @@
 						<tr>
 						<td colspan={colCount} class="cw-data-table__status">
 								<div class="cw-data-table__loading">
-									<svg viewBox="0 0 24 24" fill="none" class="cw-spin" aria-hidden="true">
-										<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity="0.25" />
-										<path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
-									</svg>
+									<CwSpinner size="lg" />
 									Loading...
 								</div>
 							</td>

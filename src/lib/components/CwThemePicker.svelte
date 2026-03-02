@@ -1,5 +1,6 @@
 <script lang="ts">
 	type Theme = 'dark' | 'light' | 'system';
+	const THEME_STORAGE_KEY = 'cwui-theme';
 
 	interface Props {
 		/** Current theme. Bind to persist externally. */
@@ -15,12 +16,28 @@
 	}: Props = $props();
 
 	let open = $state(false);
+	let hasInitializedTheme = $state(false);
 
 	const options: { value: Theme; label: string; icon: string }[] = [
 		{ value: 'light', label: 'Light', icon: 'sun' },
 		{ value: 'dark', label: 'Dark', icon: 'moon' },
 		{ value: 'system', label: 'System', icon: 'monitor' }
 	];
+
+	function isTheme(value: string | null): value is Theme {
+		return value === 'light' || value === 'dark' || value === 'system';
+	}
+
+	function getStoredTheme(): Theme | null {
+		if (typeof window === 'undefined') return null;
+		const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+		return isTheme(stored) ? stored : null;
+	}
+
+	function persistTheme(t: Theme) {
+		if (typeof window === 'undefined') return;
+		window.localStorage.setItem(THEME_STORAGE_KEY, t);
+	}
 
 	function applyTheme(t: Theme) {
 		if (typeof document === 'undefined') return;
@@ -34,14 +51,25 @@
 
 	function select(t: Theme) {
 		theme = t;
-		applyTheme(t);
 		onchange?.(t);
 		open = false;
 	}
 
-	// Apply on mount + when theme changes
+	// Initialize from localStorage once on client mount.
 	$effect(() => {
+		if (typeof window === 'undefined' || hasInitializedTheme) return;
+		const stored = getStoredTheme();
+		if (stored) {
+			theme = stored;
+		}
+		hasInitializedTheme = true;
+	});
+
+	// Apply and persist whenever theme changes after initialization.
+	$effect(() => {
+		if (!hasInitializedTheme) return;
 		applyTheme(theme);
+		persistTheme(theme);
 	});
 
 	// Listen for system preference changes if in system mode
@@ -95,7 +123,7 @@
 
 	{#if open}
 		<div class="cw-theme-picker__menu" role="listbox" aria-label="Theme">
-			{#each options as opt}
+			{#each options as opt (opt.value)}
 				<button
 					type="button"
 					class="cw-theme-picker__option"

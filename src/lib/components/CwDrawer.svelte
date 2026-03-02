@@ -123,7 +123,7 @@
 	.cw-drawer {
 		display: flex;
 		flex-direction: column;
-		background-color: var(--cw-bg-surface);
+		background-color: var(--cw-drawer-bg, var(--cw-bg-surface));
 		border-top: 1px solid var(--cw-border-muted);
 		font-family: var(--cw-font-family);
 		flex-shrink: 0;
@@ -136,8 +136,9 @@
 		gap: var(--cw-space-3);
 		width: 100%;
 		padding: var(--cw-space-2) var(--cw-space-4);
-		background: none;
+		background-color: var(--cw-drawer-header-bg, color-mix(in srgb, var(--cw-bg-surface-elevated) 62%, var(--cw-bg-surface)));
 		border: none;
+		border-bottom: 1px solid var(--cw-drawer-header-border, var(--cw-border-muted));
 		color: var(--cw-text-primary);
 		font-family: var(--cw-font-family);
 		font-size: var(--cw-text-sm);
@@ -146,7 +147,7 @@
 	}
 
 	.cw-drawer__header:hover {
-		background-color: var(--cw-bg-muted);
+		background-color: var(--cw-drawer-header-bg-hover, color-mix(in srgb, var(--cw-bg-surface-elevated) 76%, var(--cw-bg-surface)));
 	}
 
 	.cw-drawer__header:focus-visible {
@@ -236,6 +237,7 @@
 	/* ── Expanded panel ──────────────────── */
 	.cw-drawer__panel {
 		overflow: hidden;
+		background-color: var(--cw-drawer-panel-bg, color-mix(in srgb, var(--cw-bg-muted) 40%, var(--cw-bg-surface)));
 		transition: height var(--cw-duration-slow) var(--cw-ease-default);
 	}
 

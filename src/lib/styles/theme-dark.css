@@ -81,6 +81,13 @@
 	--cw-profile-avatar-bg: linear-gradient(180deg, #2c4265 0%, #1f293e 100%);
 	--cw-profile-avatar-border: #4e6f9e;
 
+	/* ── Drawer ────────────────────────────────────────── */
+	--cw-drawer-bg: var(--cw-bg-surface);
+	--cw-drawer-panel-bg: color-mix(in srgb, var(--cw-bg-surface-elevated) 55%, var(--cw-bg-surface));
+	--cw-drawer-header-bg: color-mix(in srgb, var(--cw-bg-surface-elevated) 68%, var(--cw-bg-surface));
+	--cw-drawer-header-bg-hover: color-mix(in srgb, var(--cw-bg-surface-elevated) 78%, var(--cw-bg-surface));
+	--cw-drawer-header-border: color-mix(in srgb, var(--cw-border-default) 84%, transparent);
+
 	/* ── SideNav ──────────────────────────────────────── */
 	--cw-sidenav-bg:
 		radial-gradient(

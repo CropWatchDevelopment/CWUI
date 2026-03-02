@@ -22,47 +22,54 @@
 	--cw-bg-table-row-alt-hover: color-mix(in srgb, var(--cw-info-200) 58%, #ffffff);
 
 	/* ── Button / Profile Trigger ─────────────────────── */
-	--cw-button-primary-bg: linear-gradient(180deg, #2a3f61 0%, #1f2f49 100%);
-	--cw-button-primary-bg-hover: linear-gradient(180deg, #35527a 0%, #284061 100%);
-	--cw-button-primary-bg-active: linear-gradient(180deg, #243a59 0%, #1f314d 100%);
-	--cw-button-primary-border: #3f5b84;
-	--cw-button-primary-border-hover: #4f709f;
-	--cw-button-primary-border-active: #3f5f89;
-	--cw-button-primary-text: #f7fbff;
+	--cw-button-primary-bg: linear-gradient(180deg, #3f6cae 0%, #30588f 100%);
+	--cw-button-primary-bg-hover: linear-gradient(180deg, #4b79bd 0%, #3867a4 100%);
+	--cw-button-primary-bg-active: linear-gradient(180deg, #365f99 0%, #2e5386 100%);
+	--cw-button-primary-border: #3f6399;
+	--cw-button-primary-border-hover: #4f79b3;
+	--cw-button-primary-border-active: #40679f;
+	--cw-button-primary-text: #f8fbff;
 	--cw-button-primary-text-hover: #ffffff;
 	--cw-button-primary-shadow:
-		inset 0 1px 0 color-mix(in srgb, #ffffff 12%, transparent),
-		0 4px 10px color-mix(in srgb, #1d2d45 20%, transparent);
+		inset 0 1px 0 color-mix(in srgb, #ffffff 22%, transparent),
+		0 6px 14px color-mix(in srgb, #1f3f6a 24%, transparent);
 
-	--cw-button-secondary-bg: linear-gradient(180deg, #5b85c6 0%, #3f689f 100%);
-	--cw-button-secondary-bg-hover: linear-gradient(180deg, #6795db 0%, #4a76b2 100%);
-	--cw-button-secondary-bg-active: linear-gradient(180deg, #507bb8 0%, #3e6598 100%);
-	--cw-button-secondary-border: #4d72ac;
-	--cw-button-secondary-border-hover: #5d87c7;
-	--cw-button-secondary-border-active: #4c75ad;
-	--cw-button-secondary-text: #ffffff;
-	--cw-button-secondary-text-hover: #ffffff;
+	--cw-button-secondary-bg: linear-gradient(180deg, #ffffff 0%, #f2f6fc 100%);
+	--cw-button-secondary-bg-hover: linear-gradient(180deg, #fbfdff 0%, #eaf1fb 100%);
+	--cw-button-secondary-bg-active: linear-gradient(180deg, #eef4fe 0%, #e0ebfa 100%);
+	--cw-button-secondary-border: #aec2df;
+	--cw-button-secondary-border-hover: #95afd2;
+	--cw-button-secondary-border-active: #889fc2;
+	--cw-button-secondary-text: #2b4569;
+	--cw-button-secondary-text-hover: #233a5a;
 	--cw-button-secondary-shadow:
-		inset 0 1px 0 color-mix(in srgb, #ffffff 20%, transparent),
-		0 4px 10px color-mix(in srgb, #2a4f80 20%, transparent);
+		inset 0 1px 0 color-mix(in srgb, #ffffff 72%, transparent),
+		0 2px 8px color-mix(in srgb, #1d3557 12%, transparent);
 
-	--cw-profile-trigger-bg: var(--cw-button-primary-bg);
-	--cw-profile-trigger-bg-hover: var(--cw-button-primary-bg-hover);
-	--cw-profile-trigger-bg-open: linear-gradient(180deg, #35527a 0%, #2e4870 100%);
-	--cw-profile-trigger-border: var(--cw-button-primary-border);
-	--cw-profile-trigger-border-hover: var(--cw-button-primary-border-hover);
-	--cw-profile-trigger-border-open: #5a80b6;
+	--cw-profile-trigger-bg: linear-gradient(180deg, #3f6aa3 0%, #30527f 100%);
+	--cw-profile-trigger-bg-hover: linear-gradient(180deg, #4d7bbc 0%, #3a649b 100%);
+	--cw-profile-trigger-bg-open: linear-gradient(180deg, #436faa 0%, #355b8e 100%);
+	--cw-profile-trigger-border: #406293;
+	--cw-profile-trigger-border-hover: #5881b8;
+	--cw-profile-trigger-border-open: #5077ad;
 	--cw-profile-trigger-text: #f7fbff;
 	--cw-profile-trigger-text-hover: #ffffff;
-	--cw-profile-trigger-subtitle: #d8e5ff;
+	--cw-profile-trigger-subtitle: #d9e8ff;
 	--cw-profile-trigger-shadow:
-		inset 0 1px 0 color-mix(in srgb, #ffffff 12%, transparent),
-		0 5px 12px color-mix(in srgb, #1d2d45 24%, transparent);
-	--cw-profile-trigger-shadow-open:
 		inset 0 1px 0 color-mix(in srgb, #ffffff 16%, transparent),
-		0 6px 14px color-mix(in srgb, #1d2d45 30%, transparent);
-	--cw-profile-avatar-bg: linear-gradient(180deg, #365a8f 0%, #274166 100%);
-	--cw-profile-avatar-border: #6d8fc5;
+		0 6px 14px color-mix(in srgb, #1b3354 24%, transparent);
+	--cw-profile-trigger-shadow-open:
+		inset 0 1px 0 color-mix(in srgb, #ffffff 20%, transparent),
+		0 8px 18px color-mix(in srgb, #1b3354 30%, transparent);
+	--cw-profile-avatar-bg: linear-gradient(180deg, #5c85bf 0%, #40669c 100%);
+	--cw-profile-avatar-border: #89a9d3;
+
+	/* ── Drawer ────────────────────────────────────────── */
+	--cw-drawer-bg: color-mix(in srgb, var(--cw-bg-muted) 64%, var(--cw-bg-surface));
+	--cw-drawer-panel-bg: color-mix(in srgb, var(--cw-bg-muted) 34%, var(--cw-bg-surface));
+	--cw-drawer-header-bg: color-mix(in srgb, var(--cw-bg-muted) 18%, var(--cw-bg-surface));
+	--cw-drawer-header-bg-hover: color-mix(in srgb, var(--cw-bg-muted) 26%, var(--cw-bg-surface));
+	--cw-drawer-header-border: color-mix(in srgb, var(--cw-border-default) 78%, transparent);
 
 	/* ── SideNav ──────────────────────────────────────── */
 	--cw-sidenav-bg:

@@ -1,6 +1,11 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import type { CwSideNavItem, CwSideNavMode, CwSideNavSide } from '../types/index.js';
+	import type {
+		CwSideNavIcon,
+		CwSideNavItem,
+		CwSideNavMode,
+		CwSideNavSide
+	} from '../types/index.js';
 	import CwSeparator from './CwSeparator.svelte';
 
 	interface Props {
@@ -43,6 +48,15 @@
 		footerMini,
 		class: className = ''
 	}: Props = $props();
+
+	type ResolvedSideNavIcon =
+		| { kind: 'path'; value: string }
+		| { kind: 'asset'; value: string };
+
+	/** Default placeholder icon (circle) when none is provided */
+	const defaultIcon = 'M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2';
+	const pathStartPattern = /^[MmLlHhVvCcSsQqTtAa]/;
+	const pathCharPattern = /^[MmZzLlHhVvCcSsQqTtAa0-9.,\-\s]+$/;
 
 	/** Track whether user has manually overridden the mode */
 	let userOverride = $state(false);
@@ -113,6 +127,35 @@
 		return typeof item.goto === 'string' ? item.goto : undefined;
 	}
 
+	function isSvgPathData(value: string) {
+		return pathStartPattern.test(value) && pathCharPattern.test(value);
+	}
+
+	function hasDefaultSvgExport(value: unknown): value is { default: string } {
+		return !!value && typeof value === 'object' && 'default' in value && typeof value.default === 'string';
+	}
+
+	function extractIconValue(icon: CwSideNavIcon | undefined): string | undefined {
+		if (!icon) return undefined;
+		if (typeof icon === 'string') return icon;
+
+		if ('path' in icon && typeof icon.path === 'string') return icon.path;
+		if ('src' in icon && typeof icon.src === 'string') return icon.src;
+
+		const [firstValue] = Object.values(icon);
+		if (typeof firstValue === 'string') return firstValue;
+		if (hasDefaultSvgExport(firstValue)) return firstValue.default;
+
+		return undefined;
+	}
+
+	function resolveItemIcon(item: CwSideNavItem): ResolvedSideNavIcon {
+		const iconValue = extractIconValue(item.icon)?.trim();
+		if (!iconValue) return { kind: 'path', value: defaultIcon };
+		if (isSvgPathData(iconValue)) return { kind: 'path', value: iconValue };
+		return { kind: 'asset', value: iconValue };
+	}
+
 	async function runItemGoto(item: CwSideNavItem) {
 		if (typeof item.goto !== 'function') return;
 		await item.goto();
@@ -148,8 +191,6 @@
 		}
 	});
 
-	/** Default placeholder icon (circle) when none is provided */
-	const defaultIcon = 'M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2';
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -214,6 +255,7 @@
 			{@const showGroup = item.group && item.group !== prevGroup}
 			{@const itemHref = resolveItemHref(item)}
 			{@const itemLabel = resolveItemLabel(item)}
+			{@const itemIcon = resolveItemIcon(item)}
 			{@const hasTrailing = itemTrailing || item.trailingSnippet || item.trailing !== undefined}
 
 			{#if (item.separator || showGroup) && i > 0}
@@ -239,9 +281,13 @@
 						title={displayMode === 'mini' ? itemLabel : undefined}
 						onclick={(event) => handleAnchorClick(event, item)}
 					>
-						<svg class="cw-sidenav__icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-							<path d={item.icon ?? defaultIcon} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-						</svg>
+						{#if itemIcon.kind === 'path'}
+							<svg class="cw-sidenav__icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+								<path d={itemIcon.value} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+							</svg>
+						{:else}
+							<img class="cw-sidenav__icon cw-sidenav__icon--asset" src={itemIcon.value} alt="" aria-hidden="true" />
+						{/if}
 						{#if displayMode === 'open'}
 							<span class="cw-sidenav__label">{itemLabel}</span>
 						{/if}
@@ -254,9 +300,13 @@
 						disabled={item.disabled}
 						onclick={() => handleItemClick(item)}
 					>
-						<svg class="cw-sidenav__icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-							<path d={item.icon ?? defaultIcon} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-						</svg>
+						{#if itemIcon.kind === 'path'}
+							<svg class="cw-sidenav__icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+								<path d={itemIcon.value} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+							</svg>
+						{:else}
+							<img class="cw-sidenav__icon cw-sidenav__icon--asset" src={itemIcon.value} alt="" aria-hidden="true" />
+						{/if}
 						{#if displayMode === 'open'}
 							<span class="cw-sidenav__label">{itemLabel}</span>
 						{/if}
@@ -494,6 +544,10 @@
 		width: 1.125rem;
 		height: 1.125rem;
 		flex-shrink: 0;
+	}
+
+	.cw-sidenav__icon--asset {
+		object-fit: contain;
 	}
 
 	.cw-sidenav__label {

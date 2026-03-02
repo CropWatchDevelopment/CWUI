@@ -5,6 +5,7 @@
 	import type { CwSideNavItem, CwSideNavMode } from "$lib/index.js";
 	import { page } from "$app/state";
 	import CwSearchInput from "$lib/components/CwSearchInput.svelte";
+	import CwThemePicker from "$lib/components/CwThemePicker.svelte";
 
 	let { children }: { children: Snippet } = $props();
 
@@ -15,6 +16,7 @@
 		badge: "M2 4h8a2 2 0 012 2v6H2V4zm10 1.5a2.5 2.5 0 115 0 2.5 2.5 0 01-5 0z",
 		card: "M2 4a1 1 0 011-1h10a1 1 0 011 1v8a1 1 0 01-1 1H3a1 1 0 01-1-1V4zm0 3h12",
 		input: "M3 4h10a1 1 0 011 1v6a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1zM5 7v2",
+		spinner: "M8 2a6 6 0 106 6M8 2a6 6 0 00-3.9 1.44",
 		switch: "M2 8a4 4 0 014-4h4a4 4 0 010 8H6a4 4 0 01-4-4zm8 0a2 2 0 110-4 2 2 0 010 4z",
 		statusdot:
 			"M4 8a2 2 0 114 0 2 2 0 01-4 0zm4 0a2 2 0 114 0 2 2 0 01-4 0zm4 0a2 2 0 114 0 2 2 0 01-4 0z",
@@ -44,6 +46,7 @@
 		expand: "M3 3h10a1 1 0 011 1v8a1 1 0 01-1 1H3a1 1 0 01-1-1V4a1 1 0 011-1zm1 3h8M6 9l2 2 2-2",
 		heatmap:
 			"M2 2h3v3H2V2zm4 0h3v3H6V2zm4 0h3v3h-3V2zM2 6h3v3H2V6zm4 0h3v3H6V6zm4 0h3v3h-3V6zM2 10h3v3H2v-3zm4 0h3v3H6v-3zm4 0h3v3h-3v-3z",
+		lock: "M6 6V4a2 2 0 114 0v2h2a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V7a1 1 0 011-1h2zm1 4v2m0-2a1 1 0 110 2 1 1 0 010-2z",
 	};
 
 	const navItems: CwSideNavItem[] = [
@@ -143,6 +146,13 @@
 			label: "Switch",
 			icon: icons.switch,
 			href: "/demo/switch",
+			group: "Components",
+		},
+		{
+			id: "spinner",
+			label: "Spinner",
+			icon: icons.spinner,
+			href: "/demo/spinner",
 			group: "Components",
 		},
 		{
@@ -265,6 +275,14 @@
 			href: "/demo/themepicker",
 			group: "Helpers",
 		},
+		{
+			id: "login",
+			label: "Login Screen",
+			icon: icons.lock,
+			href: "/demo/login-screen",
+			group: "Full Page Demos",
+			separator: true,
+		},
 	];
 
 	let sideNavMode = $state<CwSideNavMode>("open");
@@ -275,7 +293,8 @@
 			...item,
 			active:
 				page.url.pathname ===
-				(item.href ?? (typeof item.goto === "string" ? item.goto : undefined)),
+				(item.href ??
+					(typeof item.goto === "string" ? item.goto : undefined)),
 		})),
 	);
 
@@ -356,6 +375,19 @@
 					alt="CropWatch Logo"
 					style="width:1.5rem;height:1.5rem"
 				/>
+			{/snippet}
+			{#snippet actions()}
+				<CwThemePicker onchange={(theme) => console.log(theme)} />
+				<CwButton
+					variant="info"
+					onclick={() =>
+						window.open(
+							"https://github.com/CropWatchDevelopment/CWUI",
+							"_blank",
+						)}
+				>
+					Github
+				</CwButton>
 			{/snippet}
 		</CwHeader>
 

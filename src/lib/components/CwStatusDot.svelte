@@ -45,6 +45,7 @@
 
 	.cw-status-dot__dot {
 		display: inline-block;
+		position: relative;
 		border-radius: var(--cw-radius-full);
 		box-shadow: 0 0 0 1px color-mix(in srgb, var(--cw-bg-surface) 75%, transparent);
 	}
@@ -70,6 +71,23 @@
 
 	.cw-status-dot__dot--offline {
 		background-color: var(--cw-danger-500);
+		animation-name: cw-status-dot-offline-core !important;
+		animation-duration: 1.25s !important;
+		animation-timing-function: ease-in-out !important;
+		animation-iteration-count: infinite !important;
+	}
+
+	.cw-status-dot__dot--offline::after {
+		content: '';
+		position: absolute;
+		inset: -0.2rem;
+		border: 2px solid rgb(235 47 47 / 0.62);
+		border-radius: inherit;
+		pointer-events: none;
+		animation-name: cw-status-dot-offline-ring !important;
+		animation-duration: 1.25s !important;
+		animation-timing-function: ease-out !important;
+		animation-iteration-count: infinite !important;
 	}
 
 	.cw-status-dot__dot--loading {
@@ -94,6 +112,31 @@
 		100% {
 			opacity: 0.55;
 			transform: scale(0.92);
+		}
+	}
+
+	@keyframes cw-status-dot-offline-core {
+		0%,
+		100% {
+			transform: scale(0.9);
+		}
+		45% {
+			transform: scale(1);
+		}
+	}
+
+	@keyframes cw-status-dot-offline-ring {
+		0% {
+			opacity: 0.68;
+			transform: scale(0.65);
+		}
+		70% {
+			opacity: 0;
+			transform: scale(1.8);
+		}
+		100% {
+			opacity: 0;
+			transform: scale(1.8);
 		}
 	}
 </style>

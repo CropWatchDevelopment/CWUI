@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import type { CwButtonVariant, CwSize } from '../types/index.js';
 	import type { HTMLButtonAttributes } from 'svelte/elements';
+	import CwSpinner from './CwSpinner.svelte';
 
 	interface Props extends HTMLButtonAttributes {
 		variant?: CwButtonVariant;
@@ -25,6 +26,7 @@
 	}: Props = $props();
 
 	const isDisabled = $derived(disabled || loading);
+	const spinnerSize = $derived(size);
 </script>
 
 <button
@@ -37,15 +39,7 @@
 >
 	{#if loading}
 		<span class="cw-button__spinner" aria-hidden="true">
-			<svg viewBox="0 0 24 24" fill="none" class="cw-spin">
-				<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity="0.25" />
-				<path
-					d="M12 2a10 10 0 0 1 10 10"
-					stroke="currentColor"
-					stroke-width="3"
-					stroke-linecap="round"
-				/>
-			</svg>
+			<CwSpinner size={spinnerSize} />
 		</span>
 	{/if}
 	<span class="cw-button__label" class:cw-button__label--hidden={loading}>
@@ -98,6 +92,7 @@
 		color: var(--cw-button-primary-text);
 		border-color: var(--cw-button-primary-border);
 		box-shadow: var(--cw-button-primary-shadow);
+		--cw-button-focus-base-shadow: var(--cw-button-primary-shadow);
 	}
 	.cw-button--primary:hover:not(:disabled) {
 		background: var(--cw-button-primary-bg-hover);
@@ -114,6 +109,7 @@
 		color: var(--cw-button-secondary-text);
 		border-color: var(--cw-button-secondary-border);
 		box-shadow: var(--cw-button-secondary-shadow);
+		--cw-button-focus-base-shadow: var(--cw-button-secondary-shadow);
 	}
 	.cw-button--secondary:hover:not(:disabled) {
 		background: var(--cw-button-secondary-bg-hover);
@@ -129,6 +125,7 @@
 		background-color: transparent;
 		color: var(--cw-text-primary);
 		border-color: transparent;
+		--cw-button-focus-base-shadow: none;
 	}
 	.cw-button--ghost:hover:not(:disabled) {
 		background-color: var(--cw-bg-muted);
@@ -141,6 +138,7 @@
 		background-color: var(--cw-tone-danger-solid-bg);
 		color: var(--cw-tone-danger-solid-text);
 		border-color: var(--cw-tone-danger-solid-bg);
+		--cw-button-focus-base-shadow: none;
 	}
 	.cw-button--danger:hover:not(:disabled) {
 		background-color: var(--cw-danger-700);
@@ -154,6 +152,7 @@
 		background-color: var(--cw-tone-info-solid-bg);
 		color: var(--cw-tone-info-solid-text);
 		border-color: var(--cw-tone-info-solid-bg);
+		--cw-button-focus-base-shadow: none;
 	}
 	.cw-button--info:hover:not(:disabled) {
 		background-color: var(--cw-info-700);
@@ -167,6 +166,15 @@
 	.cw-button:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
+	}
+
+	.cw-button:focus-visible {
+		outline: none;
+		box-shadow:
+			0 0 0 var(--cw-focus-ring-width)
+				color-mix(in srgb, var(--cw-focus-ring-color) 34%, transparent),
+			0 0 0 calc(var(--cw-focus-ring-width) + 2px) var(--cw-bg-surface),
+			var(--cw-button-focus-base-shadow, none);
 	}
 
 	.cw-button--full {
@@ -198,13 +206,4 @@
 		pointer-events: none;
 	}
 
-	@keyframes cw-spin {
-		to {
-			transform: rotate(360deg);
-		}
-	}
-
-	:global(.cw-spin) {
-		animation: cw-spin 0.75s linear infinite;
-	}
 </style>
