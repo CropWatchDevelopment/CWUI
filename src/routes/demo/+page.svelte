@@ -1,5 +1,8 @@
 <h2>CropWatch UI Demo</h2>
 <p class="demo-desc">Select a component from the sidebar to view demos, API behavior, and copy-paste examples.</p>
+<p class="demo-links">
+	<a href="/llms.txt" target="_blank" rel="noopener noreferrer">LLM Docs: <code>/llms.txt</code></a>
+</p>
 
 <section class="demo-section">
 	<h3>Update Existing Install</h3>
@@ -50,6 +53,21 @@ pnpm up @cropwatchdevelopment/cwui --latest</code></pre>
 		color: var(--cw-text-muted);
 		font-size: var(--cw-text-sm);
 		margin-bottom: var(--cw-space-5);
+	}
+
+	.demo-links {
+		margin: 0 0 var(--cw-space-5);
+		font-size: var(--cw-text-sm);
+	}
+
+	.demo-links a {
+		color: var(--cw-primary-400);
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+
+	.demo-links a:hover {
+		color: var(--cw-primary-300);
 	}
 
 	.demo-section {

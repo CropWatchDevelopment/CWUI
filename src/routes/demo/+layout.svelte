@@ -370,11 +370,13 @@
 			onToggleNav={handleToggleNav}
 		>
 			{#snippet logo()}
-				<img
-					src="/cropwatch_animated.svg"
-					alt="CropWatch Logo"
-					style="width:1.5rem;height:1.5rem"
-				/>
+				<a href="/" class="cw-header__logo">
+					<img
+						src="/cropwatch_animated.svg"
+						alt="CropWatch Logo"
+						style="width:1.5rem;height:1.5rem"
+					/>
+				</a>
 			{/snippet}
 			{#snippet actions()}
 				<CwThemePicker onchange={(theme) => console.log(theme)} />

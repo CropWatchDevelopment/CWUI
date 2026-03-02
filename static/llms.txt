@@ -1,0 +1,182 @@
+# CropWatch UI (`@cropwatchdevelopment/cwui`) - LLM Integration Guide
+
+This file is intended for AI coding assistants (ChatGPT, Claude, Gemini, etc.) that need fast, accurate context about this library.
+
+## Project identity
+
+- Package: `@cropwatchdevelopment/cwui`
+- Repo: `https://github.com/CropWatchDevelopment/CWUI`
+- Framework target: `Svelte 5`
+- Styling model: CSS custom properties (no required Tailwind dependency)
+- Themes: dark/light via `data-theme="dark"` or `data-theme="light"`
+
+## Install
+
+GitHub Packages scope:
+
+```ini
+@cropwatchdevelopment:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
+Install:
+
+```bash
+npm install @cropwatchdevelopment/cwui
+```
+
+Peer dependency:
+
+```bash
+npm install svelte@^5
+```
+
+## Required style import
+
+Import once near app root:
+
+```ts
+import '@cropwatchdevelopment/cwui/styles';
+```
+
+Optional granular imports:
+
+```ts
+import '@cropwatchdevelopment/cwui/styles/tokens';
+import '@cropwatchdevelopment/cwui/styles/theme-dark';
+import '@cropwatchdevelopment/cwui/styles/theme-light';
+```
+
+## Public exports
+
+Import from the package entrypoint:
+
+```ts
+import { CwButton, CwInput, CwDataTable } from '@cropwatchdevelopment/cwui';
+```
+
+### Components
+
+- `CwBadge`
+- `CwButton`
+- `CwCalendar`
+- `CwCard`
+- `CwChip`
+- `CwCopy`
+- `CwDataTable`
+- `CwDateTimeRangePicker`
+- `CwDeviceLineChartSection`
+- `CwDialog`
+- `CwDonutChart`
+- `CwDrawer`
+- `CwDropdown`
+- `CwDuration`
+- `CwExpandPanel`
+- `CwHeader`
+- `CwHeatmap`
+- `CwInput`
+- `CwLineChart`
+- `CwListBox`
+- `CwOfflineOverlay`
+- `CwProfileMenu`
+- `CwSearchInput`
+- `CwSeparator`
+- `CwSideNav`
+- `CwSpinner`
+- `CwStatusDot`
+- `CwSwitch`
+- `CwThemePicker`
+- `CwToastContainer`
+- `CwToastItemComponent`
+- `CwTooltip`
+
+### Context APIs / non-visual APIs
+
+- `createCwToastContext()`
+- `useCwToast()`
+- `createCwAlarmScheduler()`
+- `createCwAlarmContext()`
+- `useCwAlarm()`
+
+## Key integration patterns
+
+### Toasts
+
+Create context once in a layout/root component, then call `toast.add(...)` in children.
+
+```svelte
+<script lang="ts">
+  import { CwToastContainer, createCwToastContext } from '@cropwatchdevelopment/cwui';
+  createCwToastContext();
+</script>
+
+<CwToastContainer />
+<slot />
+```
+
+```svelte
+<script lang="ts">
+  import { useCwToast, CwButton } from '@cropwatchdevelopment/cwui';
+  const toast = useCwToast();
+</script>
+
+<CwButton onclick={() => toast.add({ tone: 'success', message: 'Saved' })}>Save</CwButton>
+```
+
+### Data table
+
+`CwDataTable<T>` is async and expects:
+
+- `columns: CwColumnDef<T>[]`
+- `rowKey: keyof T & string`
+- `loadData(query: CwTableQuery): Promise<CwTableResult<T>>`
+
+`CwTableQuery` includes `page`, `pageSize`, `search`, `sort`, and `signal` for request cancellation.
+
+### Search input
+
+`CwSearchInput` can be used:
+
+- As plain search input (without suggestions)
+- As async autocomplete (`fetchSuggestions(query, signal)`)
+
+### Theming
+
+- Dark mode tokens are default in distributed base styles.
+- Set `data-theme` on an ancestor to switch light/dark.
+- `CwThemePicker` is available for runtime toggling.
+
+## Important exported types
+
+- `CwTone`
+- `CwButtonVariant`
+- `CwSize`
+- `CwChipVariant`
+- `CwColumnDef`, `CwTableQuery`, `CwTableResult`
+- `CwLineChartDataPoint`, `CwLineChartSecondaryDataPoint`, `CwDonutSegment`, `CwHeatmapDataPoint`
+- `CwDatePickerMode`, `CwDateGranularity`, `CwDateValue`
+- `CwDrawerItem`, `CwListBoxItem`, `CwProfileMenuItem`
+- `CwSideNavMode`, `CwSideNavSide`, `CwSideNavIcon`, `CwSideNavItem`
+- `CwAlarmRegistration`, `CwAlarmApi`
+
+## Source map for model tooling
+
+If you need deeper implementation details, inspect these files first:
+
+- Public exports: `src/lib/index.ts`
+- Types: `src/lib/types/index.ts`
+- Global styles/tokens/themes:
+  - `src/lib/styles/base.css`
+  - `src/lib/styles/tokens.css`
+  - `src/lib/styles/theme-dark.css`
+  - `src/lib/styles/theme-light.css`
+- Toast context: `src/lib/components/cwToastContext.svelte.ts`
+- Alarm scheduler/context: `src/lib/components/cwAlarmContext.svelte.ts`
+- Component demos: `src/routes/demo/*`
+
+## AI coding guidance
+
+- Prefer Svelte 5 runes syntax (`$state`, `$derived`, `$props`, `$bindable`) when writing examples for this codebase.
+- Import components/types from `@cropwatchdevelopment/cwui` (or `$lib/index.js` when editing this repository itself).
+- Keep style changes token-driven using existing `--cw-*` CSS variables.
+- Preserve accessibility behavior (labels, focus-visible, keyboard support, ARIA roles/attributes) when modifying components.
