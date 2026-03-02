@@ -163,7 +163,7 @@
 	}
 	.cw-chip--outline.cw-chip--warning {
 		background-color: transparent;
-		color: var(--cw-tone-warning-text);
+		color: var(--cw-tone-warning-border);
 		border: 1px solid var(--cw-tone-warning-border);
 	}
 	.cw-chip--outline.cw-chip--danger {

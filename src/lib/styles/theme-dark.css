@@ -146,8 +146,8 @@
 	--cw-linechart-tooltip-muted: #94a3b8;
 	--cw-linechart-tooltip-value: #ffffff;
 	--cw-linechart-tooltip-time: #64748b;
-	--cw-linechart-tooltip-alert-bg: rgba(245, 158, 11, 0.2);
-	--cw-linechart-tooltip-alert-text: #fcd34d;
+	--cw-linechart-tooltip-alert-bg: var(--cw-warning-400);
+	--cw-linechart-tooltip-alert-text: var(--cw-gray-950);
 	--cw-linechart-legend-text: #cbd5e1;
 	--cw-linechart-legend-inactive: #64748b;
 
@@ -196,11 +196,11 @@
 
 	/* ── Tone: Warning ─────────────────────────────────── */
 	--cw-tone-warning-bg: var(--cw-warning-900);
-	--cw-tone-warning-bg-subtle: color-mix(in srgb, var(--cw-warning-900) 40%, transparent);
-	--cw-tone-warning-text: var(--cw-warning-300);
+	--cw-tone-warning-bg-subtle: var(--cw-warning-500);
+	--cw-tone-warning-text: var(--cw-gray-950);
 	--cw-tone-warning-border: var(--cw-warning-700);
 	--cw-tone-warning-solid-bg: var(--cw-warning-600);
-	--cw-tone-warning-solid-text: #fff;
+	--cw-tone-warning-solid-text: var(--cw-gray-950);
 
 	/* ── Tone: Danger ──────────────────────────────────── */
 	--cw-tone-danger-bg: var(--cw-danger-900);

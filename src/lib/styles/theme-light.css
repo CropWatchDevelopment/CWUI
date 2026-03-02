@@ -130,7 +130,7 @@
 	--cw-linechart-tooltip-value: var(--cw-text-primary);
 	--cw-linechart-tooltip-time: var(--cw-gray-500);
 	--cw-linechart-tooltip-alert-bg: color-mix(in srgb, var(--cw-warning-300) 32%, transparent);
-	--cw-linechart-tooltip-alert-text: var(--cw-warning-800);
+	--cw-linechart-tooltip-alert-text: var(--cw-gray-950);
 	--cw-linechart-legend-text: var(--cw-text-secondary);
 	--cw-linechart-legend-inactive: var(--cw-text-muted);
 
@@ -180,10 +180,10 @@
 	/* ── Tone: Warning ─────────────────────────────────── */
 	--cw-tone-warning-bg: var(--cw-warning-50);
 	--cw-tone-warning-bg-subtle: color-mix(in srgb, var(--cw-warning-100) 50%, transparent);
-	--cw-tone-warning-text: var(--cw-warning-700);
+	--cw-tone-warning-text: var(--cw-gray-950);
 	--cw-tone-warning-border: var(--cw-warning-300);
 	--cw-tone-warning-solid-bg: var(--cw-warning-600);
-	--cw-tone-warning-solid-text: #fff;
+	--cw-tone-warning-solid-text: var(--cw-gray-950);
 
 	/* ── Tone: Danger ──────────────────────────────────── */
 	--cw-tone-danger-bg: var(--cw-danger-50);
