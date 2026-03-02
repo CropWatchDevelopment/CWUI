@@ -41,6 +41,7 @@
 	let listboxRef = $state<HTMLUListElement | null>(null);
 	let triggerRef = $state<HTMLButtonElement | null>(null);
 	let activeIndex = $state(-1);
+	let listboxStyle = $state('');
 
 	const selectedOption = $derived(options.find((o) => o.value === value));
 	const displayText = $derived(selectedOption?.label ?? placeholder);
@@ -111,10 +112,53 @@
 		open = false;
 	}
 
-	$effect(() => {
-		if (open && listboxRef) {
-			listboxRef.focus();
+	function updateListboxPosition() {
+		if (!open || !triggerRef) return;
+
+		const rect = triggerRef.getBoundingClientRect();
+		const margin = 8;
+		const spacing = 6;
+		const listWidth = Math.round(rect.width);
+		const listHeight = listboxRef?.offsetHeight ?? 0;
+		const viewportWidth = window.innerWidth;
+		const viewportHeight = window.innerHeight;
+
+		let left = rect.left;
+		if (left + listWidth > viewportWidth - margin) {
+			left = Math.max(margin, viewportWidth - margin - listWidth);
 		}
+		if (left < margin) left = margin;
+
+		let top = rect.bottom + spacing;
+		if (listHeight > 0 && top + listHeight > viewportHeight - margin) {
+			const aboveTop = rect.top - spacing - listHeight;
+			if (aboveTop >= margin) {
+				top = aboveTop;
+			} else {
+				top = Math.max(margin, viewportHeight - margin - listHeight);
+			}
+		}
+
+		listboxStyle = `left:${Math.round(left)}px;top:${Math.round(top)}px;width:${listWidth}px;`;
+	}
+
+	$effect(() => {
+		if (!open || !listboxRef) return;
+
+		const raf = requestAnimationFrame(() => {
+			updateListboxPosition();
+			listboxRef?.focus();
+		});
+
+		const handleViewportChange = () => updateListboxPosition();
+		window.addEventListener('resize', handleViewportChange);
+		window.addEventListener('scroll', handleViewportChange, true);
+
+		return () => {
+			cancelAnimationFrame(raf);
+			window.removeEventListener('resize', handleViewportChange);
+			window.removeEventListener('scroll', handleViewportChange, true);
+		};
 	});
 
 	// Scroll active option into view
@@ -133,7 +177,7 @@
 
 <div class="cw-dropdown {className}" class:cw-dropdown--error={!!error} class:cw-dropdown--disabled={disabled}>
 	{#if label}
-		<label class="cw-dropdown__label" id="{uid}-label">{label}</label>
+		<label class="cw-dropdown__label" id="{uid}-label" for="{uid}-trigger">{label}</label>
 	{/if}
 
 	{#if name || required}
@@ -152,6 +196,7 @@
 
 	<button
 		bind:this={triggerRef}
+		id="{uid}-trigger"
 		type="button"
 		class="cw-dropdown__trigger"
 		class:cw-dropdown__trigger--open={open}
@@ -176,12 +221,13 @@
 			bind:this={listboxRef}
 			id="{uid}-listbox"
 			class="cw-dropdown__listbox"
+			style={listboxStyle}
 			role="listbox"
 			tabindex="-1"
 			aria-labelledby={label ? `${uid}-label` : undefined}
 			onkeydown={handleListKeydown}
 		>
-			{#each options as opt, i}
+			{#each options as opt, i (opt.value)}
 				<!-- svelte-ignore a11y_click_events_have_key_events -->
 				<li
 					role="option"
@@ -293,16 +339,12 @@
 	.cw-dropdown__backdrop {
 		position: fixed;
 		inset: 0;
-		z-index: var(--cw-z-dropdown);
+		z-index: var(--cw-z-overlay);
 	}
 
 	.cw-dropdown__listbox {
-		position: absolute;
-		top: 100%;
-		left: 0;
-		right: 0;
-		z-index: calc(var(--cw-z-dropdown) + 1);
-		margin-top: var(--cw-space-1);
+		position: fixed;
+		z-index: calc(var(--cw-z-overlay) + 1);
 		padding: var(--cw-space-1);
 		list-style: none;
 		background-color: var(--cw-bg-elevated);

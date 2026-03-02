@@ -17,6 +17,9 @@
 
 	let open = $state(false);
 	let hasInitializedTheme = $state(false);
+	let menuRef = $state<HTMLDivElement | null>(null);
+	let triggerRef = $state<HTMLButtonElement | null>(null);
+	let menuStyle = $state('');
 
 	const options: { value: Theme; label: string; icon: string }[] = [
 		{ value: 'light', label: 'Light', icon: 'sun' },
@@ -86,6 +89,53 @@
 			open = false;
 		}
 	}
+
+	function updateMenuPosition() {
+		if (!open || !triggerRef) return;
+
+		const rect = triggerRef.getBoundingClientRect();
+		const margin = 8;
+		const spacing = 6;
+		const menuWidth = menuRef?.offsetWidth ?? 144;
+		const menuHeight = menuRef?.offsetHeight ?? 0;
+		const viewportWidth = window.innerWidth;
+		const viewportHeight = window.innerHeight;
+
+		let left = rect.left;
+		if (left + menuWidth > viewportWidth - margin) {
+			left = Math.max(margin, rect.right - menuWidth);
+		}
+
+		let top = rect.bottom + spacing;
+		if (menuHeight > 0 && top + menuHeight > viewportHeight - margin) {
+			const aboveTop = rect.top - spacing - menuHeight;
+			if (aboveTop >= margin) {
+				top = aboveTop;
+			} else {
+				top = Math.max(margin, viewportHeight - margin - menuHeight);
+			}
+		}
+
+		menuStyle = `left:${Math.round(left)}px;top:${Math.round(top)}px;`;
+	}
+
+	$effect(() => {
+		if (!open) return;
+
+		const raf = requestAnimationFrame(() => {
+			updateMenuPosition();
+		});
+
+		const handleViewportChange = () => updateMenuPosition();
+		window.addEventListener('resize', handleViewportChange);
+		window.addEventListener('scroll', handleViewportChange, true);
+
+		return () => {
+			cancelAnimationFrame(raf);
+			window.removeEventListener('resize', handleViewportChange);
+			window.removeEventListener('scroll', handleViewportChange, true);
+		};
+	});
 </script>
 
 {#if open}
@@ -96,6 +146,7 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="cw-theme-picker {className}" class:cw-theme-picker--open={open} onkeydown={handleKeydown}>
 	<button
+		bind:this={triggerRef}
 		type="button"
 		class="cw-theme-picker__trigger"
 		class:cw-theme-picker__trigger--open={open}
@@ -122,7 +173,7 @@
 	</button>
 
 	{#if open}
-		<div class="cw-theme-picker__menu" role="listbox" aria-label="Theme">
+		<div bind:this={menuRef} class="cw-theme-picker__menu" style={menuStyle} role="listbox" aria-label="Theme">
 			{#each options as opt (opt.value)}
 				<button
 					type="button"
@@ -216,11 +267,8 @@
 
 	/* ── Menu ───────────────────────────────── */
 	.cw-theme-picker__menu {
-		position: absolute;
-		top: 100%;
-		right: 0;
+		position: fixed;
 		z-index: calc(var(--cw-z-overlay) + 1);
-		margin-top: var(--cw-space-1);
 		min-width: 9rem;
 		padding: var(--cw-space-1);
 		background-color: var(--cw-bg-elevated);
