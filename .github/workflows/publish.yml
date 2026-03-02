@@ -30,7 +30,23 @@ jobs:
 
       - run: pnpm run package
 
+      - name: Check package version on registry
+        id: package_check
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          if npm view "@cropwatchdevelopment/cwui@$VERSION" version --registry=https://npm.pkg.github.com > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Version $VERSION already exists in registry; skipping publish."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Version $VERSION not found in registry; publishing."
+          fi
+
       - name: Publish package
+        if: steps.package_check.outputs.exists != 'true'
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.CWUI_PUBLISH_TOKEN || secrets.GITHUB_TOKEN }}
