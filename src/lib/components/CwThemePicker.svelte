@@ -94,7 +94,7 @@
 {/if}
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="cw-theme-picker {className}" onkeydown={handleKeydown}>
+<div class="cw-theme-picker {className}" class:cw-theme-picker--open={open} onkeydown={handleKeydown}>
 	<button
 		type="button"
 		class="cw-theme-picker__trigger"
@@ -165,10 +165,15 @@
 		display: inline-block;
 	}
 
+	.cw-theme-picker--open {
+		isolation: isolate;
+		z-index: calc(var(--cw-z-overlay) + 1);
+	}
+
 	.cw-theme-picker__backdrop {
 		position: fixed;
 		inset: 0;
-		z-index: var(--cw-z-dropdown);
+		z-index: var(--cw-z-overlay);
 	}
 
 	.cw-theme-picker__trigger {
@@ -214,7 +219,7 @@
 		position: absolute;
 		top: 100%;
 		right: 0;
-		z-index: calc(var(--cw-z-dropdown) + 1);
+		z-index: calc(var(--cw-z-overlay) + 1);
 		margin-top: var(--cw-space-1);
 		min-width: 9rem;
 		padding: var(--cw-space-1);

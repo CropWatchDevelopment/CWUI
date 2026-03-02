@@ -93,6 +93,8 @@
 	   ──────────────────────────────────────── */
 
     .cw-header {
+        position: relative;
+        z-index: var(--cw-z-sticky);
         display: flex;
         align-items: center;
         gap: var(--cw-space-3);
