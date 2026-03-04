@@ -3,6 +3,7 @@
 	import type { Snippet } from "svelte";
 	import { CwSideNav, CwHeader, CwButton, CwStatusDot } from "$lib/index.js";
 	import type { CwSideNavItem, CwSideNavMode } from "$lib/index.js";
+	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 	import CwSearchInput from "$lib/components/CwSearchInput.svelte";
 	import CwThemePicker from "$lib/components/CwThemePicker.svelte";
@@ -310,9 +311,80 @@
 			group: "Full Page Demos",
 			separator: true,
 		},
-	];
+		];
+
+	interface SideNavSearchSuggestion {
+		id: string;
+		label: string;
+		href: string;
+		group?: string;
+		openExternalTab?: boolean;
+	}
 
 	let sideNavMode = $state<CwSideNavMode>("open");
+
+	const sideNavSearchIndex: SideNavSearchSuggestion[] = navItems.flatMap((item) => {
+		const href =
+			item.href ??
+			(typeof item.goto === "string" ? item.goto : undefined);
+
+		if (!href || item.disabled) return [];
+
+		return [
+			{
+				id: item.id,
+				label: item.title ?? item.label,
+				href,
+				group: item.group,
+				openExternalTab: item.openExternalTab,
+			},
+		];
+	});
+
+	function mapSideNavSuggestionToLabel(item: unknown) {
+		const suggestion = item as SideNavSearchSuggestion;
+		if (suggestion.group) {
+			return `${suggestion.label} (${suggestion.group})`;
+		}
+		return suggestion.label;
+	}
+
+	function mapSideNavSuggestionToValue(item: unknown) {
+		const suggestion = item as SideNavSearchSuggestion;
+		return suggestion.href;
+	}
+
+	async function fetchSideNavSuggestions(
+		query: string,
+		signal: AbortSignal,
+	): Promise<SideNavSearchSuggestion[]> {
+		if (signal.aborted) {
+			throw new DOMException("Aborted", "AbortError");
+		}
+
+		const normalized = query.trim().toLowerCase();
+		if (!normalized) {
+			return [];
+		}
+
+		return sideNavSearchIndex
+			.filter((item) =>
+				`${item.label} ${item.group ?? ""}`.toLowerCase().includes(normalized),
+			)
+			.slice(0, 12);
+	}
+
+	async function handleSideNavSearchSelect(_value: string, item: unknown) {
+		const suggestion = item as SideNavSearchSuggestion;
+		if (!suggestion?.href) return;
+
+		if (suggestion.openExternalTab) {
+			window.open(suggestion.href, "_blank", "noopener,noreferrer");
+			return;
+		}
+
+		await goto(suggestion.href);
+	}
 
 	/** Derive active state from current route */
 	const itemsWithActive = $derived(
@@ -355,15 +427,18 @@
 				<span class="demo-shell__logo-text">CropWatch UI</span>
 			</div>
 		{/snippet}
-		{#snippet aboveContent()}
-			<div>
-				<CwSearchInput
-					placeholder="Search components..."
-					onselect={() => {}}
-					fetchSuggestions={(query: string) => Promise.resolve([])}
-				/>
-			</div>
-		{/snippet}
+			{#snippet aboveContent()}
+				<div>
+					<CwSearchInput
+						placeholder="Search components..."
+						minChars={1}
+						fetchSuggestions={fetchSideNavSuggestions}
+						mapSuggestionToLabel={mapSideNavSuggestionToLabel}
+						mapSuggestionToValue={mapSideNavSuggestionToValue}
+						onselect={handleSideNavSearchSelect}
+					/>
+				</div>
+			{/snippet}
 		{#snippet itemTrailing(item)}
 			{#if item.id === "offline"}
 				<CwStatusDot status="loading" size="sm" />
