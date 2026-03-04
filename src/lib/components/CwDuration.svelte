@@ -7,11 +7,11 @@
 		/** Tick interval in ms */
 		tickMs?: number;
 		class?: string;
-		/** Trigger alarm once when elapsed minutes reaches/exceeds this threshold. */
+		/** Trigger alarm every elapsed-interval of this many minutes (e.g. 10 -> 10m, 20m, 30m...). */
 		alarmAfterMinutes?: number;
-		/** Called once when the alarm threshold is reached. */
+		/** Called each time an interval boundary is reached. */
 		alarmCallback?: () => void;
-		/** Called when elapsed drops back under the alarm threshold. */
+		/** Called when elapsed resets backward (e.g. `from` changes to a later time) or alarm is removed. */
 		alarmResetCallback?: () => void;
 	}
 
@@ -47,7 +47,7 @@
 			? alarmAfterMinutes * 60_000
 			: null
 	);
-	let alarmTriggered = $state(false);
+	let lastIntervalCount = $state(0);
 
 	const display = $derived.by(() => {
 		const totalSec = Math.floor(durationMs / 1000);
@@ -76,21 +76,36 @@
 
 	$effect(() => {
 		if (alarmAfterMs === null) {
-			if (alarmTriggered) {
-				alarmTriggered = false;
+			if (lastIntervalCount !== 0) {
+				lastIntervalCount = 0;
 				alarmResetCallback?.();
 			}
 			return;
 		}
 
-		const isOverThreshold = elapsed >= alarmAfterMs;
+		// Preserve prior behavior for zero: immediate single fire.
+		if (alarmAfterMs === 0) {
+			if (lastIntervalCount === 0) {
+				lastIntervalCount = 1;
+				alarmCallback?.();
+			}
+			return;
+		}
 
-		if (isOverThreshold && !alarmTriggered) {
-			alarmTriggered = true;
-			alarmCallback?.();
-		} else if (!isOverThreshold && alarmTriggered) {
-			alarmTriggered = false;
+		const intervalCount = Math.floor(elapsed / alarmAfterMs);
+
+		if (intervalCount < lastIntervalCount) {
+			lastIntervalCount = intervalCount;
 			alarmResetCallback?.();
+			return;
+		}
+
+		if (intervalCount > lastIntervalCount) {
+			const pendingTriggers = intervalCount - lastIntervalCount;
+			for (let i = 0; i < pendingTriggers; i++) {
+				alarmCallback?.();
+			}
+			lastIntervalCount = intervalCount;
 		}
 	});
 

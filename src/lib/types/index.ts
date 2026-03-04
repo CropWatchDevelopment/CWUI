@@ -190,6 +190,8 @@ export interface CwSideNavItem {
 	icon?: CwSideNavIcon;
 	/** Link href — if provided the item renders as an <a> */
 	href?: string;
+	/** Open href/string-goto links in a new browser tab */
+	openExternalTab?: boolean;
 	/** Alternative navigation target. String values behave like href, function values run on click. */
 	goto?: string | (() => void | Promise<void>);
 	/** Whether this item is currently active */

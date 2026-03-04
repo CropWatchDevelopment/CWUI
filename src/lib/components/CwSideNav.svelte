@@ -65,6 +65,12 @@
 	let isPhone = $state(false);
 	/** Temporary expansion state when hovering mini mode */
 	let hoverExpanded = $state(false);
+	/** Internal active fallback when items are not externally controlled */
+	let selectedItemId = $state<string | undefined>(undefined);
+
+	const hasExplicitActiveItem = $derived.by(() =>
+		items.some((item) => item.active === true)
+	);
 
 	const displayMode = $derived.by<CwSideNavMode>(() =>
 		mode === 'mini' && hoverExpanded ? 'open' : mode
@@ -161,8 +167,15 @@
 		await item.goto();
 	}
 
+	function isItemActive(item: CwSideNavItem) {
+		if (item.active) return true;
+		if (hasExplicitActiveItem) return false;
+		return selectedItemId === item.id;
+	}
+
 	async function handleItemClick(item: CwSideNavItem) {
 		if (item.disabled) return;
+		selectedItemId = item.id;
 		await runItemGoto(item);
 		onselect?.(item);
 	}
@@ -172,6 +185,7 @@
 			event.preventDefault();
 			return;
 		}
+		selectedItemId = item.id;
 		onselect?.(item);
 	}
 
@@ -188,6 +202,20 @@
 	$effect(() => {
 		if (mode !== 'mini' && hoverExpanded) {
 			hoverExpanded = false;
+		}
+	});
+
+	$effect(() => {
+		const explicitActiveItem = items.find((item) => item.active);
+		if (explicitActiveItem) {
+			if (selectedItemId !== explicitActiveItem.id) {
+				selectedItemId = explicitActiveItem.id;
+			}
+			return;
+		}
+
+		if (selectedItemId && !items.some((item) => item.id === selectedItemId)) {
+			selectedItemId = undefined;
 		}
 	});
 
@@ -268,14 +296,16 @@
 
 			<div
 				class="cw-sidenav__item-row"
-				class:cw-sidenav__item-row--active={item.active}
+				class:cw-sidenav__item-row--active={isItemActive(item)}
 				class:cw-sidenav__item-row--disabled={item.disabled}
 			>
 				{#if itemHref}
 					<a
 						class="cw-sidenav__item"
 						href={itemHref}
-						aria-current={item.active ? 'page' : undefined}
+						target={item.openExternalTab ? '_blank' : undefined}
+						rel={item.openExternalTab ? 'noopener noreferrer' : undefined}
+						aria-current={isItemActive(item) ? 'page' : undefined}
 						aria-disabled={item.disabled ? 'true' : undefined}
 						tabindex={item.disabled ? -1 : undefined}
 						title={displayMode === 'mini' ? itemLabel : undefined}

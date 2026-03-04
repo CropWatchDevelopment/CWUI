@@ -11,6 +11,10 @@
 
 	// SVG path data for 16×16 viewBox icons
 	const icons = {
+		home: "M3 4l5-3 5 3v8a1 1 0 01-1 1H4a1 1 0 01-1-1V4z",
+		website:
+			"M2 8a6 6 0 1112 0 6 6 0 01-12 0zm6-4a4 4 0 00-3.87 3h7.74A4 4 0 008 4zm0 8a4 4 0 003.87-3H4.13A4 4 0 008 12z",
+		api: "M3 4h10a1 1 0 011 1v6a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1zm2 2v2m4-2v2m-6-4h10",
 		button: "M3 4h10a1 1 0 011 1v6a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1z",
 		chip: "M4 6.5a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM2 6.5A3.5 3.5 0 015.5 3h5A3.5 3.5 0 0114 6.5v3A3.5 3.5 0 0110.5 13h-5A3.5 3.5 0 012 9.5v-3z",
 		badge: "M2 4h8a2 2 0 012 2v6H2V4zm10 1.5a2.5 2.5 0 115 0 2.5 2.5 0 01-5 0z",
@@ -50,6 +54,29 @@
 	};
 
 	const navItems: CwSideNavItem[] = [
+		{
+			id: "main-home",
+			label: "Home",
+			icon: icons.home,
+			href: "/demo/",
+			group: "General",
+		},
+		{
+			id: "website",
+			label: "Website",
+			icon: icons.website,
+			href: "https://CropWatch.io",
+			openExternalTab: true,
+			group: "General",
+		},
+		{
+			id: "api-docs",
+			label: "API Docs",
+			icon: icons.api,
+			href: "https://api.CropWatch.io",
+			openExternalTab: true,
+			group: "General",
+		},
 		// ── Structure ──
 		{
 			id: "header",

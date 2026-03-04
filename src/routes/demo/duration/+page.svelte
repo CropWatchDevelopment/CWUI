@@ -9,17 +9,17 @@
 	const twoDays = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
 	const oneMinCountdown = new Date(now.getTime() + 60 * 1000);
 	const alarmStart = new Date();
-	let alarmTriggered = $state(false);
+	let alarmFireCount = $state(0);
 	const durationExample = `<CwDuration
 \tfrom={new Date(Date.now() + 60 * 1000)}
 \tcountDown={true}
 />
 
-let alarmTriggered = $state(false);
+let alarmFireCount = $state(0);
 <CwDuration
 \tfrom={new Date()}
 \talarmAfterMinutes={1}
-\talarmCallback={() => (alarmTriggered = true)}
+\talarmCallback={() => (alarmFireCount += 1)}
 />
 `;
 </script>
@@ -50,16 +50,17 @@ let alarmTriggered = $state(false);
 	</div>
 	<div class="demo-card demo-card--alarm">
 		<div class="demo-card__alarm-head">
-			<span class="demo-label">Alarm after 1 minute</span>
-			{#if alarmTriggered}
+			<span class="demo-label">Alarm every 1 minute</span>
+			{#if alarmFireCount > 0}
 				<span class="demo-alarm-mark" aria-label="Alarm triggered">!</span>
 			{/if}
 		</div>
 		<CwDuration
 			from={alarmStart}
 			alarmAfterMinutes={1}
-			alarmCallback={() => (alarmTriggered = true)}
+			alarmCallback={() => (alarmFireCount += 1)}
 		/>
+		<span class="demo-label">Fired: {alarmFireCount}</span>
 	</div>
 </div>
 

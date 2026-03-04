@@ -21,7 +21,6 @@
 			label: "Dashboard",
 			icon: icons.home,
 			href: "#dashboard",
-			active: true,
 			group: "Main",
 		},
 		{
@@ -72,10 +71,9 @@
 	let side = $state<"left" | "right">("left");
 
 	let activeId = $state("home");
-
-	$effect(() => {
-		demoItems.forEach((item) => (item.active = item.id === activeId));
-	});
+	const itemsWithActive = $derived(
+		demoItems.map((item) => ({ ...item, active: item.id === activeId })),
+	);
 
 	function handleSelect(item: CwSideNavItem) {
 		activeId = item.id;
@@ -136,7 +134,7 @@
 </div>
 
 <div class="demo-frame" class:demo-frame--reversed={side === "right"}>
-	<CwSideNav items={demoItems} bind:mode {side} onselect={handleSelect}>
+	<CwSideNav items={itemsWithActive} bind:mode {side} onselect={handleSelect}>
 		{#snippet header()}
 			<div class="demo-logo">
 				<img
