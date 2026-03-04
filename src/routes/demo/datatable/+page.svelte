@@ -137,6 +137,25 @@ async function updateRow(row: Device) {
 }
 
 <CwDataTable columns={columns} loadData={loadData} rowKey="id" />`;
+
+const fillParentExample = `<div class="datatable-host">
+\t<CwDataTable
+\t\tcolumns={columns}
+\t\tloadData={loadData}
+\t\trowKey="id"
+\t\trowTextSizeKey="textSize"
+\t\tfillParent
+\t\tsearchable={false}
+\t\tpageSize={25}
+\t/>
+</div>
+
+<style>
+\t.datatable-host {
+\t\theight: clamp(18rem, 50vh, 26rem);
+\t\tmin-height: 0;
+\t}
+</style>`;
 </script>
 
 <h2>CwDataTable</h2>
@@ -171,6 +190,25 @@ async function updateRow(row: Device) {
 </CwDataTable>
 
 <DemoCodeExample code={dataTableExample} title="CwDataTable example" />
+
+<section class="demo-section">
+	<h3>Fill Parent Height + Internal Scroll</h3>
+	<p class="demo-hint">
+		Set a parent height, then pass <code>fillParent</code>. The table fills the container and the body region scrolls when rows exceed available space.
+	</p>
+	<div class="demo-table-host">
+		<CwDataTable
+			columns={columns}
+			loadData={loadData}
+			rowKey="id"
+			rowTextSizeKey="textSize"
+			fillParent
+			searchable={false}
+			pageSize={25}
+		/>
+	</div>
+	<DemoCodeExample code={fillParentExample} title="Fill-parent datatable" />
+</section>
 
 <section class="demo-section">
 	<h3>Row-Level Update Indicator Demo</h3>
@@ -226,6 +264,7 @@ async function updateRow(row: Device) {
 	.demo-desc { color: var(--cw-text-muted); font-size: var(--cw-text-sm); margin-bottom: var(--cw-space-4); }
 	.demo-hint { color: var(--cw-text-muted); font-size: var(--cw-text-xs); margin-bottom: var(--cw-space-2); }
 	.demo-section { margin-top: var(--cw-space-6); }
+	.demo-table-host { height: clamp(18rem, 50vh, 26rem); min-height: 0; }
 	.demo-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cw-space-2); margin-bottom: var(--cw-space-3); }
 	.demo-list { margin: 0; padding-left: var(--cw-space-4); color: var(--cw-text-secondary); font-size: var(--cw-text-sm); display: grid; gap: var(--cw-space-1); }
 	code { font-family: var(--cw-font-mono); font-size: var(--cw-text-xs); color: var(--cw-accent); }

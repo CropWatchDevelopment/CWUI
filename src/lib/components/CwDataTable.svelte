@@ -41,6 +41,8 @@
 		actionsHeader?: string;
 		/** Row object key containing a CSS font-size value (e.g. "0.875rem", "14px"). */
 		rowTextSizeKey?: string;
+		/** When true, fills parent height and makes the table body region scroll on overflow. */
+		fillParent?: boolean;
 		class?: string;
 	}
 
@@ -66,6 +68,7 @@
 		rowActions,
 		actionsHeader = '',
 		rowTextSizeKey,
+		fillParent = false,
 		class: className = ''
 	}: Props = $props();
 
@@ -203,7 +206,7 @@
 	});
 </script>
 
-<div class="cw-data-table {className}">
+<div class="cw-data-table {className}" class:cw-data-table--fill-parent={fillParent}>
 	{#if loading}
 		<div class="cw-data-table__loading-container" role="status" aria-live="polite">
 			<div class="cw-data-table__loading-badge">
@@ -411,6 +414,11 @@
 		overflow: hidden;
 	}
 
+	.cw-data-table--fill-parent {
+		height: 100%;
+		min-height: 0;
+	}
+
 	/* ── Toolbar ─────────────────────────── */
 	.cw-data-table__loading-container {
 		display: flex;
@@ -418,6 +426,11 @@
 		justify-content: center;
 		padding: var(--cw-space-10) var(--cw-space-4);
 		min-height: 14rem;
+	}
+
+	.cw-data-table--fill-parent .cw-data-table__loading-container {
+		flex: 1 1 auto;
+		min-height: 0;
 	}
 
 	.cw-data-table__loading-badge {
@@ -476,6 +489,12 @@
 	/* ── Scroll wrapper ──────────────────── */
 	.cw-data-table__scroll {
 		overflow-x: auto;
+	}
+
+	.cw-data-table--fill-parent .cw-data-table__scroll {
+		flex: 1 1 auto;
+		min-height: 0;
+		overflow-y: auto;
 	}
 
 	/* ── Table ───────────────────────────── */
