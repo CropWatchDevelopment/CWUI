@@ -127,7 +127,6 @@
 		border: none;
 		padding: 0;
 		background: transparent;
-		max-width: min(90vw, 32rem);
 		width: 100%;
 		max-height: 85dvh;
 		z-index: var(--cw-z-modal);
