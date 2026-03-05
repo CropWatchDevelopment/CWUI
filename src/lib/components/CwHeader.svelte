@@ -98,12 +98,13 @@
         display: flex;
         align-items: center;
         gap: var(--cw-space-3);
-        height: 5rem;
+        height: 4.5rem;
         padding: 0 var(--cw-space-4);
-        background-color: var(--cw-bg-base);
-        border-bottom: 2px solid var(--cw-border-muted);
+        background: var(--cw-sidenav-bg);
+        border-bottom: 1px solid color-mix(in srgb, var(--cw-border-muted) 65%, transparent);
         font-family: var(--cw-font-family);
         flex-shrink: 0;
+        color: var(--cw-text-primary);
     }
 
     /* ── Hamburger ─────────────────────────── */
@@ -151,7 +152,7 @@
     .cw-header__link {
         display: flex;
         align-items: center;
-        gap: var(--cw-space-3);
+        gap: var(--cw-space-2);
         text-decoration: none;
     }
 
@@ -171,7 +172,7 @@
     /* ── Title ─────────────────────────────── */
     .cw-header__title {
         font-size: var(--cw-text-base);
-        font-weight: var(--cw-font-bold);
+        font-weight: var(--cw-font-semibold);
         color: var(--cw-text-primary);
         white-space: nowrap;
         overflow: hidden;

@@ -124,9 +124,11 @@
 		display: flex;
 		flex-direction: column;
 		background-color: var(--cw-drawer-bg, var(--cw-bg-surface));
-		border-top: 1px solid var(--cw-border-muted);
+		border: 1px solid var(--cw-border-muted);
+		border-radius: var(--cw-radius-md);
 		font-family: var(--cw-font-family);
 		flex-shrink: 0;
+		overflow: hidden;
 	}
 
 	/* ── Header bar (always visible) ─────── */
@@ -137,17 +139,18 @@
 		width: 100%;
 		padding: var(--cw-space-2) var(--cw-space-4);
 		background-color: var(--cw-drawer-header-bg, color-mix(in srgb, var(--cw-bg-surface-elevated) 62%, var(--cw-bg-surface)));
-		border: none;
 		border-bottom: 1px solid var(--cw-drawer-header-border, var(--cw-border-muted));
 		color: var(--cw-text-primary);
 		font-family: var(--cw-font-family);
 		font-size: var(--cw-text-sm);
 		cursor: pointer;
-		transition: background-color var(--cw-duration-fast) var(--cw-ease-default);
+		transition: background-color var(--cw-duration-fast) var(--cw-ease-default),
+			box-shadow var(--cw-duration-fast) var(--cw-ease-default);
 	}
 
 	.cw-drawer__header:hover {
 		background-color: var(--cw-drawer-header-bg-hover, color-mix(in srgb, var(--cw-bg-surface-elevated) 76%, var(--cw-bg-surface)));
+		box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--cw-border-default) 12%, transparent);
 	}
 
 	.cw-drawer__header:focus-visible {
@@ -192,6 +195,7 @@
 		white-space: nowrap;
 		color: var(--cw-text-secondary);
 		font-size: var(--cw-text-sm);
+		padding: calc(var(--cw-space-1) + 0.125rem) 0;
 	}
 
 	.cw-drawer__item-icon {
@@ -227,7 +231,7 @@
 		color: var(--cw-text-muted);
 		flex-shrink: 0;
 		margin-left: auto;
-		transition: transform var(--cw-duration-fast) var(--cw-ease-default);
+		transition: transform var(--cw-duration-fast) var(--cw-ease-default), color var(--cw-duration-fast) var(--cw-ease-default);
 	}
 
 	.cw-drawer__chevron--open {
@@ -238,7 +242,8 @@
 	.cw-drawer__panel {
 		overflow: hidden;
 		background-color: var(--cw-drawer-panel-bg, color-mix(in srgb, var(--cw-bg-muted) 40%, var(--cw-bg-surface)));
-		transition: height var(--cw-duration-slow) var(--cw-ease-default);
+		transition: height var(--cw-duration-slow) var(--cw-ease-default), box-shadow var(--cw-duration-fast) var(--cw-ease-default);
+		border-top: 1px solid color-mix(in srgb, var(--cw-border-muted) 55%, transparent);
 	}
 
 	.cw-drawer__content {

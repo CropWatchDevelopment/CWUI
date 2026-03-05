@@ -70,7 +70,7 @@
 	.cw-card {
 		background-color: var(--cw-bg-surface);
 		border: 1px solid var(--cw-border-default);
-		border-radius: var(--cw-radius-lg);
+		border-radius: var(--cw-radius-md);
 		overflow: hidden;
 	}
 

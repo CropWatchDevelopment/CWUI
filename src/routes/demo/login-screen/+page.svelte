@@ -10,7 +10,7 @@
 	} from '$lib/index.js';
 
 	const DEMO_EMAIL = 'demo@email.com';
-	const DEMO_PASSWORD = 'CropWatch!2026';
+	const DEMO_PASSWORD = 'demoPASS123!';
 
 	createCwToastContext();
 	const toast = useCwToast();

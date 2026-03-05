@@ -54,7 +54,7 @@
 		justify-content: center;
 		gap: var(--cw-space-2);
 		border: 1px solid transparent;
-		border-radius: var(--cw-radius-xl);
+		border-radius: var(--cw-radius-md);
 		font-family: var(--cw-font-family);
 		font-weight: var(--cw-font-medium);
 		line-height: 1;

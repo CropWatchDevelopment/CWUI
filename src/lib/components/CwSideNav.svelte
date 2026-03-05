@@ -400,12 +400,12 @@
 	}
 
 	.cw-sidenav--open {
-		width: 17.5rem;
+		width: 20rem;
 		flex-shrink: 0;
 	}
 
 	.cw-sidenav--mini {
-		width: 3.5rem;
+		width: 3.25rem;
 		flex-shrink: 0;
 	}
 
