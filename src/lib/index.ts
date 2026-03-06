@@ -4,6 +4,7 @@ export { default as CwBadge } from './components/CwBadge.svelte';
 export { default as CwChip } from './components/CwChip.svelte';
 export { default as CwCard } from './components/CwCard.svelte';
 export { default as CwInput } from './components/CwInput.svelte';
+export { default as CwTextArea } from './components/CwTextArea.svelte';
 export { default as CwSpinner } from './components/CwSpinner.svelte';
 export { default as CwSwitch } from './components/CwSwitch.svelte';
 export { default as CwStatusDot } from './components/CwStatusDot.svelte';

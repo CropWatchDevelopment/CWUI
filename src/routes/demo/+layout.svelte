@@ -34,6 +34,7 @@
 		duration: "M8 2a6 6 0 110 12A6 6 0 018 2zm0 3v3l2 2",
 		alarm: "M8 2a6 6 0 110 12A6 6 0 018 2zm0 2v4m0 4h.01M3 3l10 10",
 		search: "M7 3a4 4 0 110 8 4 4 0 010-8zm4.5 7.5L14 13",
+		textarea: "M3 4h10a1 1 0 011 1v6a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1zm2 2h6M5 8h6M5 10h4",
 		table: "M2 3h12v10H2V3zm0 3h12m0 3H2m4-6v6m4-6v6",
 		linechart: "M2 12l3-4 3 2 4-6 2 3",
 		donut: "M8 2a6 6 0 110 12A6 6 0 018 2zm0 3a3 3 0 100 6 3 3 0 000-6z",
@@ -52,6 +53,8 @@
 		heatmap:
 			"M2 2h3v3H2V2zm4 0h3v3H6V2zm4 0h3v3h-3V2zM2 6h3v3H2V6zm4 0h3v3H6V6zm4 0h3v3h-3V6zM2 10h3v3H2v-3zm4 0h3v3H6v-3zm4 0h3v3h-3v-3z",
 		lock: "M6 6V4a2 2 0 114 0v2h2a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V7a1 1 0 011-1h2zm1 4v2m0-2a1 1 0 110 2 1 1 0 010-2z",
+		dataDisplay:
+			"M2.5 3.5h11a1 1 0 011 1v7a1 1 0 01-1 1h-11a1 1 0 01-1-1v-7a1 1 0 011-1zm1.5 2h7m-7 2.5h5m3 0h.01M4 10.5h3.5m4-4 1.5 1.5L14 6",
 		sensorcard:
 			"M3 3h10a1 1 0 011 1v8a1 1 0 01-1 1H3a1 1 0 01-1-1V4a1 1 0 011-1zm2 4a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm5 0h2M5 10h6",
 	};
@@ -169,6 +172,13 @@
 			label: "Input",
 			icon: icons.input,
 			href: "/demo/inputs",
+			group: "Components",
+		},
+		{
+			id: "textarea",
+			label: "Text Area",
+			icon: icons.textarea,
+			href: "/demo/textarea",
 			group: "Components",
 		},
 		{
@@ -312,6 +322,13 @@
 			href: "/demo/login-screen",
 			group: "Full Page Demos",
 			separator: true,
+		},
+		{
+			id: "data-display",
+			label: "Data Display",
+			icon: icons.dataDisplay,
+			href: "/demo/data-display",
+			group: "Full Page Demos",
 		},
 		{
 			id: "sensorcard",
