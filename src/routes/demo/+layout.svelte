@@ -52,6 +52,8 @@
 		heatmap:
 			"M2 2h3v3H2V2zm4 0h3v3H6V2zm4 0h3v3h-3V2zM2 6h3v3H2V6zm4 0h3v3H6V6zm4 0h3v3h-3V6zM2 10h3v3H2v-3zm4 0h3v3H6v-3zm4 0h3v3h-3v-3z",
 		lock: "M6 6V4a2 2 0 114 0v2h2a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V7a1 1 0 011-1h2zm1 4v2m0-2a1 1 0 110 2 1 1 0 010-2z",
+		sensorcard:
+			"M3 3h10a1 1 0 011 1v8a1 1 0 01-1 1H3a1 1 0 01-1-1V4a1 1 0 011-1zm2 4a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm5 0h2M5 10h6",
 	};
 
 	const navItems: CwSideNavItem[] = [
@@ -310,6 +312,13 @@
 			href: "/demo/login-screen",
 			group: "Full Page Demos",
 			separator: true,
+		},
+		{
+			id: "sensorcard",
+			label: "Sensor Card",
+			icon: icons.sensorcard,
+			href: "/demo/sensorcard",
+			group: "Full Page Demos",
 		},
 		];
 

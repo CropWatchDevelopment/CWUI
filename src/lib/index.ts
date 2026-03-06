@@ -29,6 +29,7 @@ export { default as CwCalendar } from './components/CwCalendar.svelte';
 export { default as CwCopy } from './components/CwCopy.svelte';
 export { default as CwExpandPanel } from './components/CwExpandPanel.svelte';
 export { default as CwHeatmap } from './components/CwHeatmap.svelte';
+export { default as CwSensorCard } from './components/CwSensorCard.svelte';
 
 // ── Toast system ────────────────────────────────────────────
 export { default as CwToastContainer } from './components/CwToastContainer.svelte';
@@ -69,5 +70,7 @@ export type {
 	CwHeatmapDataPoint,
 	CwDateTimeInput,
 	CwAlarmRegistration,
-	CwAlarmApi
+	CwAlarmApi,
+	CwSensorCardDetailRow,
+	CwSensorCardDevice
 } from './types/index.js';

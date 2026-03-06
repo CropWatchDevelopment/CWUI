@@ -22,7 +22,14 @@
 	}: Props = $props();
 
 	const statusLabel = $derived(
-		label ?? (status === 'online' ? 'Online' : status === 'offline' ? 'Offline' : 'Loading')
+		label ??
+			(status === 'online'
+				? 'Online'
+				: status === 'offline'
+					? 'Offline'
+					: status === 'warning'
+						? 'Warning'
+						: 'Loading')
 	);
 </script>
 
@@ -95,6 +102,20 @@
 		animation: cw-status-dot-pulse 1.1s ease-in-out infinite;
 	}
 
+	.cw-status-dot__dot--warning {
+		background-color: var(--cw-warning-400);
+	}
+
+	.cw-status-dot__dot--warning::after {
+		content: '';
+		position: absolute;
+		inset: -0.2rem;
+		border: 2px solid color-mix(in srgb, var(--cw-warning-400) 62%, transparent);
+		border-radius: inherit;
+		pointer-events: none;
+		animation: cw-status-dot-warning-ring 1.5s ease-out infinite;
+	}
+
 	.cw-status-dot__label {
 		font-size: var(--cw-text-sm);
 		color: var(--cw-text-secondary);
@@ -126,6 +147,21 @@
 	}
 
 	@keyframes cw-status-dot-offline-ring {
+		0% {
+			opacity: 0.68;
+			transform: scale(0.65);
+		}
+		70% {
+			opacity: 0;
+			transform: scale(1.8);
+		}
+		100% {
+			opacity: 0;
+			transform: scale(1.8);
+		}
+	}
+
+	@keyframes cw-status-dot-warning-ring {
 		0% {
 			opacity: 0.68;
 			transform: scale(0.65);

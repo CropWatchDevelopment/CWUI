@@ -17,7 +17,7 @@ export type CwSize = 'sm' | 'md' | 'lg';
 export type CwBadgePosition = 'top_left' | 'top_right' | 'bottom_left' | 'bottom_right';
 
 /** Status dot semantic state */
-export type CwStatusDotStatus = 'online' | 'offline' | 'loading';
+export type CwStatusDotStatus = 'online' | 'offline' | 'loading' | 'warning';
 
 /** Chip visual variant */
 export type CwChipVariant = 'solid' | 'soft' | 'outline';
@@ -225,6 +225,50 @@ export interface CwAlarmRegistration {
 	/** Optional stable id. If reused, the existing alarm is replaced. */
 	id?: string;
 }
+
+/* ── Sensor Card types ──────────────────────────────────── */
+
+export interface CwSensorCardDetailRow {
+	/** Unique identifier */
+	id: string;
+	/** Display label */
+	label: string;
+	/** Display value */
+	value?: string | number | null;
+	/** Unit suffix */
+	unit?: string;
+	/** Icon type for the row */
+	icon?: 'drop' | 'thermo' | 'timer';
+	/** Device online status */
+	status?: 'online' | 'offline' | 'warning' | 'loading';
+	/** Last Updated **/
+	lastUpdated?: Date;
+	/** Duration since last update */
+	expectedUpdateAfter?: number; // in minutes
+}
+
+export interface CwSensorCardDevice {
+	/** Device name or label */
+	label: string;
+	/** Primary reading value (e.g. temperature) */
+	primaryValue: number;
+	/** Unit for primary value */
+	primaryUnit?: string;
+	/** Secondary reading value (e.g. humidity) */
+	secondaryValue?: number;
+	/** Unit for secondary value */
+	secondaryUnit?: string;
+	/** Custom detail rows for this device */
+	detailRows?: CwSensorCardDetailRow[];
+	/** Device online status */
+	status?: 'online' | 'offline' | 'warning' | 'loading';
+	/** Timestamp of the last data update — used for the live elapsed timer */
+	lastUpdated?: Date | string | number;
+	/** Expected update interval in minutes. CwDuration alarm fires when exceeded. */
+	expectedUpdateAfterMinutes?: number;
+}
+
+/* ── Alarm Scheduler types ─────────────────────────────── */
 
 export interface CwAlarmApi {
 	/** Schedule a single alarm and return its id. */

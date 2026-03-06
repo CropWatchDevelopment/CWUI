@@ -5,19 +5,21 @@
 	const statusDotExample = `<CwStatusDot status="online" showLabel />
 <CwStatusDot status="offline" showLabel />
 <CwStatusDot status="loading" showLabel />
+<CwStatusDot status="warning" showLabel />
 
 <!-- Offline status is animated (CSS pulse) -->
 <CwStatusDot status="offline" size="lg" label="Offline (pulsing)" showLabel />`;
 </script>
 
 <h2>CwStatusDot</h2>
-<p class="demo-desc">Simple status indicator for online, offline, and loading states. Offline status is animated with a pulse effect.</p>
+<p class="demo-desc">Simple status indicator for online, offline, loading, and warning states. Offline and warning statuses include ring animations; loading pulses.</p>
 
 <div class="demo-card">
 	<div class="demo-row">
 		<CwStatusDot status="online" showLabel />
 		<CwStatusDot status="offline" showLabel />
 		<CwStatusDot status="loading" showLabel />
+		<CwStatusDot status="warning" showLabel />
 	</div>
 </div>
 
@@ -34,6 +36,13 @@
 	<span class="demo-label">Offline pulse</span>
 	<div class="demo-row">
 		<CwStatusDot status="offline" size="lg" label="Offline (pulsing)" showLabel />
+	</div>
+</div>
+
+<div class="demo-card">
+	<span class="demo-label">Warning ring</span>
+	<div class="demo-row">
+		<CwStatusDot status="warning" size="lg" label="Warning (ring)" showLabel />
 	</div>
 </div>
 
