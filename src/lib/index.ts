@@ -19,6 +19,8 @@ export { default as CwDataTable } from './components/CwDataTable.svelte';
 export { default as CwLineChart } from './components/CwLineChart.svelte';
 export { default as CwDeviceLineChartSection } from './components/CwDeviceLineChartSection.svelte';
 export { default as CwDonutChart } from './components/CwDonutChart.svelte';
+export { default as CwPPFDChart } from './components/CwPPFDChart.svelte';
+export { default as CwVPDChart } from './components/CwVPDChart.svelte';
 export { default as CwDateTimeRangePicker } from './components/CwDateTimeRangePicker.svelte';
 export { default as CwThemePicker } from './components/CwThemePicker.svelte';
 export { default as CwListBox } from './components/CwListBox.svelte';
@@ -55,6 +57,14 @@ export type {
 	CwLineChartDataPoint,
 	CwLineChartSecondaryDataPoint,
 	CwDonutSegment,
+	CwPPFDStatus,
+	CwPPFDTick,
+	CwPPFDReading,
+	CwVPDStatus,
+	CwVPDStageBandTone,
+	CwVPDTick,
+	CwVPDStageBand,
+	CwVPDReading,
 	CwToastItem,
 	CwDatePickerMode,
 	CwDateGranularity,

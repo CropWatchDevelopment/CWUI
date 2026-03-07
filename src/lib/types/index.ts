@@ -87,6 +87,64 @@ export interface CwDonutSegment {
 	color?: string;
 }
 
+export type CwPPFDStatus = 'low' | 'optimal' | 'high';
+
+export interface CwPPFDTick {
+	value: number;
+	label?: string;
+}
+
+export interface CwPPFDReading {
+	/** Optional crop or cultivar label shown in the chart header. */
+	plant?: string;
+	/** Instantaneous PPFD reading in µmol/m²/s. */
+	current: number;
+	/** Lower bound of the target PPFD band. */
+	targetMin: number;
+	/** Upper bound of the target PPFD band. */
+	targetMax: number;
+	/** Optional timestamp as Date, ISO string, or Unix time in seconds/milliseconds. */
+	timestamp?: string | Date | number;
+	/** Optional DLI value for the current day. */
+	dliToday?: number;
+}
+
+export type CwVPDStatus = 'low' | 'optimal' | 'high';
+export type CwVPDStageBandTone = 'humid' | 'balanced' | 'flower';
+
+export interface CwVPDTick {
+	value: number;
+	label?: string;
+}
+
+export interface CwVPDStageBand {
+	label: string;
+	min: number;
+	max?: number;
+	tone?: CwVPDStageBandTone;
+}
+
+export interface CwVPDReading {
+	/** Optional crop label shown in the chart header. */
+	plant?: string;
+	/** Optional crop phase or growth stage. */
+	growthStage?: string;
+	/** Optional live VPD reading in kPa. If omitted, the chart can derive room VPD from temperature and RH. */
+	current?: number;
+	/** Lower bound of the target VPD band. */
+	targetMin: number;
+	/** Upper bound of the target VPD band. */
+	targetMax: number;
+	/** Optional timestamp as Date, ISO string, or Unix time in seconds/milliseconds. */
+	timestamp?: string | Date | number;
+	/** Optional air temperature in Celsius. */
+	airTemperatureC?: number;
+	/** Optional leaf temperature in Celsius. */
+	leafTemperatureC?: number;
+	/** Optional relative humidity percentage. */
+	relativeHumidity?: number;
+}
+
 export interface CwHeatmapDataPoint {
 	/** ISO string or Date. */
 	timestamp: string | Date;

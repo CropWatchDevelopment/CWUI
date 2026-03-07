@@ -134,6 +134,12 @@
 		onCellClick?.({ date: fmtDate(col), hour, value: getValue(col, hour) });
 	}
 
+	function handleCellKeydown(event: KeyboardEvent, col: Date, hour: number) {
+		if (event.key !== 'Enter' && event.key !== ' ') return;
+		event.preventDefault();
+		handleClick(col, hour);
+	}
+
 	const hours = Array.from({ length: 24 }, (_, i) => i);
 </script>
 
@@ -155,13 +161,15 @@
 				<div class="cw-heatmap__row-header">{fmtHour(hour)}</div>
 				{#each dateColumns as col}
 					{@const val = getValue(col, hour)}
-					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<div
 						class="cw-heatmap__cell"
 						style="background-color:{cellColor(val)}; height:{rowHeight}px"
+						role="button"
+						tabindex="0"
 						onmouseenter={(e) => showTooltip(e, col, hour)}
 						onmouseleave={hideTooltip}
 						onclick={() => handleClick(col, hour)}
+						onkeydown={(event) => handleCellKeydown(event, col, hour)}
 					>
 						{#if val !== null}
 							<span class="cw-heatmap__cell-text">{val.toFixed(1)}</span>
@@ -210,11 +218,6 @@
 		display: grid;
 		gap: 1px;
 		min-width: max-content;
-	}
-
-	/* ── Headers ──────────────────────── */
-	.cw-heatmap__corner {
-		/* empty top-left */
 	}
 
 	.cw-heatmap__col-header {

@@ -38,6 +38,8 @@
 		table: "M2 3h12v10H2V3zm0 3h12m0 3H2m4-6v6m4-6v6",
 		linechart: "M2 12l3-4 3 2 4-6 2 3",
 		donut: "M8 2a6 6 0 110 12A6 6 0 018 2zm0 3a3 3 0 100 6 3 3 0 000-6z",
+		ppfd: "M2 11a6 6 0 1112 0H2zm6-3 2.75-2.25M8 6.5v.01",
+		vpd: "M2.5 11a5.5 5.5 0 1111 0h-11zm5.5-4.2v2.7m0 0L6.4 8.1M8 9.5l1.6-1.4",
 		calendar:
 			"M3 4h10a1 1 0 011 1v8a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1zm2-2v3m6-3v3M2 7h12",
 		theme: "M8 2a6 6 0 100 12V2z",
@@ -129,6 +131,22 @@
 			href: "/demo/donutchart",
 			group: "Charts",
 			trailing: 1,
+		},
+		{
+			id: "ppfdchart",
+			label: "PPFD Chart",
+			icon: icons.ppfd,
+			href: "/demo/ppfdchart",
+			group: "Charts",
+			trailing: "new",
+		},
+		{
+			id: "vpdchart",
+			label: "VPD Chart",
+			icon: icons.vpd,
+			href: "/demo/vpdchart",
+			group: "Charts",
+			trailing: "new",
 		},
 		{
 			id: "heatmap",

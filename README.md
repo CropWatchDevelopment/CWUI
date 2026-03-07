@@ -181,6 +181,8 @@ Override any CSS variable in your own stylesheet:
 | **`CwDataTable<T>`** | Server-side data table — pagination, sorting, column search, page-size control, toolbar/row action slots, zebra striping |
 | **`CwLineChart`** | SVG line chart — multiple series, gradient fill, responsive, auto-scaling axes |
 | **`CwDonutChart`** | SVG donut chart — hover highlighting, center label, configurable thickness, legend |
+| **`CwPPFDChart`** | Horizontal PPFD range gauge — low/optimal/high zones, crop target band, live reading marker, dynamic scaling |
+| **`CwVPDChart`** | Temperature-by-RH VPD matrix — agriculture-style heatmap with selected target overlay and live climate cell |
 | **`CwChip`** | Badge/tag — 6 tones × 3 variants (`solid`/`soft`/`outline`), dismissible |
 | **`CwDuration`** | Live elapsed time — auto-ticking `<time>` element from a start timestamp |
 | **`CwListBox<T>`** | Selectable list — badges, end-text, custom item snippets, keyboard navigation |
@@ -226,6 +228,14 @@ import type {
   // Charts
   CwLineSeries,
   CwDonutSegment,
+  CwPPFDStatus,
+  CwPPFDTick,
+  CwPPFDReading,
+  CwVPDStatus,
+  CwVPDStageBandTone,
+  CwVPDTick,
+  CwVPDStageBand,
+  CwVPDReading,
 
   // Toast
   CwToastItem,
