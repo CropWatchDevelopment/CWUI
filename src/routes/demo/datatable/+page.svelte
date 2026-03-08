@@ -3,11 +3,14 @@
 	import type { CwColumnDef, CwTableQuery, CwTableResult } from '$lib/index.js';
 	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
+	const DEVICE_STATUSES = ['online', 'offline', 'warning'] as const;
+	type DeviceStatus = (typeof DEVICE_STATUSES)[number];
+
 	interface Device {
 		id: string;
 		name: string;
 		eui: string;
-		status: string;
+		status: DeviceStatus;
 		lastSeen: string;
 		textSize: string;
 		cwloading?: boolean;
@@ -17,9 +20,20 @@
 		id: `dev-${i + 1}`,
 		name: `Sensor ${String(i + 1).padStart(3, '0')}`,
 		eui: Array.from({ length: 8 }, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join(':'),
-		status: ['online', 'offline', 'warning'][i % 3],
+		status: DEVICE_STATUSES[i % DEVICE_STATUSES.length],
 		lastSeen: new Date(Date.now() - Math.random() * 86400000 * 7).toISOString(),
 		textSize: i % 3 === 0 ? '0.75rem' : i % 3 === 1 ? '0.875rem' : '1rem'
+	}));
+
+	const virtualDevices: Device[] = Array.from({ length: 2500 }, (_, i) => ({
+		id: `virtual-dev-${i + 1}`,
+		name: `Virtual Sensor ${String(i + 1).padStart(4, '0')}`,
+		eui: Array.from({ length: 8 }, (_, segment) =>
+			((i * 17 + segment * 31) % 256).toString(16).padStart(2, '0')
+		).join(':'),
+		status: DEVICE_STATUSES[i % DEVICE_STATUSES.length],
+		lastSeen: new Date(Date.now() - i * 600000).toISOString(),
+		textSize: '0.875rem'
 	}));
 
 	const columns: CwColumnDef<Device>[] = [
@@ -29,20 +43,56 @@
 		{ key: 'lastSeen', header: 'Last Seen', sortable: true, hideBelow: 'md', cell: (row) => new Date(row.lastSeen).toLocaleString() }
 	];
 
-	async function loadData(query: CwTableQuery): Promise<CwTableResult<Device>> {
-		await new Promise((r) => setTimeout(r, 400));
-		let items = [...mockDevices];
+	function delay(ms: number) {
+		return new Promise((resolve) => setTimeout(resolve, ms));
+	}
+
+	function applyDeviceQuery(items: Device[], query: CwTableQuery): Device[] {
+		let nextItems = [...items];
+
 		if (query.search) {
 			const s = query.search.toLowerCase();
-			items = items.filter((d) => d.name.toLowerCase().includes(s) || d.eui.includes(s));
+			nextItems = nextItems.filter((device) =>
+				device.name.toLowerCase().includes(s) || device.eui.includes(s)
+			);
 		}
+
+		const statusFilters = query.filters.status ?? [];
+		if (statusFilters.length > 0) {
+			nextItems = nextItems.filter((device) => statusFilters.includes(device.status));
+		}
+
 		if (query.sort) {
 			const k = query.sort.column as keyof Device;
-			items.sort((a, b) => {
-				const av = a[k], bv = b[k];
-				return query.sort!.direction === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+			nextItems.sort((a, b) => {
+				const av = a[k];
+				const bv = b[k];
+				return query.sort!.direction === 'asc'
+					? String(av).localeCompare(String(bv))
+					: String(bv).localeCompare(String(av));
 			});
 		}
+
+		return nextItems;
+	}
+
+	async function loadData(query: CwTableQuery): Promise<CwTableResult<Device>> {
+		await delay(400);
+		const items = applyDeviceQuery(mockDevices, query);
+		const start = (query.page - 1) * query.pageSize;
+		return { rows: items.slice(start, start + query.pageSize), total: items.length };
+	}
+
+	function createStatusFilters(status: 'all' | DeviceStatus): Record<string, string[]> {
+		return status === 'all' ? {} : { status: [status] };
+	}
+
+	let virtualStatusFilter = $state<'all' | DeviceStatus>('all');
+	const virtualFilters = $derived(createStatusFilters(virtualStatusFilter));
+
+	async function loadVirtualData(query: CwTableQuery): Promise<CwTableResult<Device>> {
+		await delay(160);
+		const items = applyDeviceQuery(virtualDevices, query);
 		const start = (query.page - 1) * query.pageSize;
 		return { rows: items.slice(start, start + query.pageSize), total: items.length };
 	}
@@ -82,19 +132,8 @@
 	}
 
 	async function loadRowLoadingDemoData(query: CwTableQuery): Promise<CwTableResult<Device>> {
-		await new Promise((r) => setTimeout(r, 250));
-		let items = [...rowLoadingDevices];
-		if (query.search) {
-			const s = query.search.toLowerCase();
-			items = items.filter((d) => d.name.toLowerCase().includes(s) || d.eui.includes(s));
-		}
-		if (query.sort) {
-			const k = query.sort.column as keyof Device;
-			items.sort((a, b) => {
-				const av = a[k], bv = b[k];
-				return query.sort!.direction === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
-			});
-		}
+		await delay(250);
+		const items = applyDeviceQuery(rowLoadingDevices, query);
 		const start = (query.page - 1) * query.pageSize;
 		return { rows: items.slice(start, start + query.pageSize), total: items.length };
 	}
@@ -156,10 +195,34 @@ const fillParentExample = `<div class="datatable-host">
 \t\tmin-height: 0;
 \t}
 </style>`;
+
+const virtualScrollExample = `<script lang="ts">
+\tlet statusFilter = $state<'all' | 'online' | 'offline' | 'warning'>('all');
+\tconst filters = $derived(statusFilter === 'all' ? {} : { status: [statusFilter] });
+
+\tasync function loadData(query: CwTableQuery): Promise<CwTableResult<Device>> {
+\t\tconst rows = applyServerQuery(query);
+\t\treturn {
+\t\t\trows: rows.slice((query.page - 1) * query.pageSize, query.page * query.pageSize),
+\t\t\ttotal: rows.length
+\t\t};
+\t}
+<\/script>
+
+<CwDataTable
+\tcolumns={columns}
+\tloadData={loadData}
+\trowKey="id"
+\tfilters={filters}
+\tvirtualScroll
+\tvirtualScrollHeight="24rem"
+\tvirtualRowHeight={52}
+\tpageSize={75}
+/>`;
 </script>
 
 <h2>CwDataTable</h2>
-<p class="demo-desc">Async data loading, search, sort, pagination, zebra rows, custom cell rendering (e.g. <code>CwDuration</code>), page-size picker, toolbar actions, and per-row action buttons.</p>
+<p class="demo-desc">Async data loading, search, sort, pagination, virtual scrolling, zebra rows, custom cell rendering (e.g. <code>CwDuration</code>), page-size picker, toolbar actions, and per-row action buttons.</p>
 
 <CwDataTable
 	{columns}
@@ -208,6 +271,105 @@ const fillParentExample = `<div class="datatable-host">
 		/>
 	</div>
 	<DemoCodeExample code={fillParentExample} title="Fill-parent datatable" />
+</section>
+
+<section class="demo-section">
+	<h3>Virtual Scroll + Preserved Query State</h3>
+	<p class="demo-hint">
+		Virtual mode keeps native scrolling for touch devices, incrementally fetches matching pages, and preserves search, sort, and external <code>filters</code> in every request.
+	</p>
+	<div class="demo-row">
+		<CwButton
+			size="sm"
+			variant={virtualStatusFilter === 'all' ? 'primary' : 'secondary'}
+			onclick={() => (virtualStatusFilter = 'all')}
+		>
+			All statuses
+		</CwButton>
+		<CwButton
+			size="sm"
+			variant={virtualStatusFilter === 'online' ? 'primary' : 'secondary'}
+			onclick={() => (virtualStatusFilter = 'online')}
+		>
+			Online only
+		</CwButton>
+		<CwButton
+			size="sm"
+			variant={virtualStatusFilter === 'offline' ? 'primary' : 'secondary'}
+			onclick={() => (virtualStatusFilter = 'offline')}
+		>
+			Offline only
+		</CwButton>
+		<CwButton
+			size="sm"
+			variant={virtualStatusFilter === 'warning' ? 'primary' : 'secondary'}
+			onclick={() => (virtualStatusFilter = 'warning')}
+		>
+			Warnings only
+		</CwButton>
+	</div>
+	<CwDataTable
+		columns={columns}
+		loadData={loadVirtualData}
+		rowKey="id"
+		rowTextSizeKey="textSize"
+		filters={virtualFilters}
+		searchable
+		pageSize={75}
+		virtualScroll
+		virtualScrollHeight="24rem"
+		virtualRowHeight={52}
+		virtualOverscan={14}
+	/>
+	<DemoCodeExample code={virtualScrollExample} title="Virtual-scroll datatable" />
+</section>
+
+<section class="demo-section">
+	<h3>Virtual Scrolling Documentation</h3>
+	<p class="demo-hint">
+		Use this checklist before enabling <code>virtualScroll</code> in production. The feature is intentionally query-driven so the same <code>loadData</code> contract works for both pagination and continuous scrolling.
+	</p>
+	<div class="demo-doc-grid">
+		<article class="demo-doc-card">
+			<h4>What virtual mode changes</h4>
+			<ul class="demo-list">
+				<li>Pagination stays the default. Nothing changes until you pass <code>virtualScroll</code>.</li>
+				<li>The table still calls <code>loadData(query)</code> with <code>page</code>, <code>pageSize</code>, <code>search</code>, <code>sort</code>, and <code>filters</code>.</li>
+				<li>In virtual mode, <code>pageSize</code> becomes the fetch batch size rather than a single visible page.</li>
+				<li>The DOM only renders the visible row window plus overscan, so large datasets stay responsive.</li>
+			</ul>
+		</article>
+
+		<article class="demo-doc-card">
+			<h4>What stays preserved</h4>
+			<ul class="demo-list">
+				<li>Search remains built in and still debounces before refetching.</li>
+				<li>Sorting still resets to the top of the result set and refetches with the new order.</li>
+				<li>External filters continue to flow through <code>query.filters</code> on every request, even while the table is fetching additional pages during scroll.</li>
+				<li>Custom cells, row actions, row click handlers, and row-level loading styles still work the same way.</li>
+			</ul>
+		</article>
+
+		<article class="demo-doc-card">
+			<h4>Layout and iPad guidance</h4>
+			<ul class="demo-list">
+				<li>Give the table a bounded viewport with <code>fillParent</code> or <code>virtualScrollHeight</code>. Virtual mode needs an actual scroll container.</li>
+				<li>The scroll container uses native overflow scrolling with momentum, which is what you want on iPad instead of a custom gesture layer.</li>
+				<li>Keep <code>virtualRowHeight</code> close to the real rendered row height. If the estimate is too small or too large, the scroll window will feel less accurate.</li>
+				<li>Increase <code>virtualOverscan</code> when touch users scroll quickly and you want more rows pre-rendered ahead of the viewport.</li>
+			</ul>
+		</article>
+
+		<article class="demo-doc-card">
+			<h4>Recommended implementation checklist</h4>
+			<ul class="demo-list">
+				<li>Return a stable <code>total</code> from <code>loadData</code> whenever possible so the footer and load-more logic stay accurate.</li>
+				<li>Apply filtering and sorting on the same query path the table already uses for pagination. Do not create a second code path just for virtual mode.</li>
+				<li>Use a batch size that matches the density of the screen. Dense admin tables can often use <code>75</code> or <code>100</code>; taller mobile cards may prefer smaller batches.</li>
+				<li>Test on a real touch device before shipping. Fast momentum scrolling is where overscan and row-height estimates matter most.</li>
+			</ul>
+		</article>
+	</div>
 </section>
 
 <section class="demo-section">
@@ -261,10 +423,30 @@ const fillParentExample = `<div class="datatable-host">
 <style>
 	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }
 	h3 { font-size: var(--cw-text-base); font-weight: var(--cw-font-semibold); margin-bottom: var(--cw-space-2); color: var(--cw-text-secondary); }
+	h4 { font-size: var(--cw-text-sm); font-weight: var(--cw-font-semibold); margin: 0; color: var(--cw-text-primary); }
 	.demo-desc { color: var(--cw-text-muted); font-size: var(--cw-text-sm); margin-bottom: var(--cw-space-4); }
 	.demo-hint { color: var(--cw-text-muted); font-size: var(--cw-text-xs); margin-bottom: var(--cw-space-2); }
 	.demo-section { margin-top: var(--cw-space-6); }
 	.demo-table-host { height: clamp(18rem, 50vh, 26rem); min-height: 0; }
+	.demo-doc-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+		gap: var(--cw-space-3);
+	}
+	.demo-doc-card {
+		display: grid;
+		gap: var(--cw-space-2);
+		padding: var(--cw-space-4);
+		border: 1px solid color-mix(in srgb, var(--cw-border-default) 80%, transparent);
+		border-radius: var(--cw-radius-lg);
+		background:
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--cw-bg-elevated) 92%, white),
+				color-mix(in srgb, var(--cw-bg-muted) 60%, white)
+			);
+		box-shadow: var(--cw-shadow-sm);
+	}
 	.demo-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cw-space-2); margin-bottom: var(--cw-space-3); }
 	.demo-list { margin: 0; padding-left: var(--cw-space-4); color: var(--cw-text-secondary); font-size: var(--cw-text-sm); display: grid; gap: var(--cw-space-1); }
 	code { font-family: var(--cw-font-mono); font-size: var(--cw-text-xs); color: var(--cw-accent); }

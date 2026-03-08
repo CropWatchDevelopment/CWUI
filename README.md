@@ -178,7 +178,7 @@ Override any CSS variable in your own stylesheet:
 
 | Component | Description |
 |---|---|
-| **`CwDataTable<T>`** | Server-side data table — pagination, sorting, column search, page-size control, toolbar/row action slots, zebra striping |
+| **`CwDataTable<T>`** | Server-side data table — pagination or virtual scrolling, sorting, column search, external filters, page-size control, toolbar/row action slots, zebra striping |
 | **`CwLineChart`** | SVG line chart — multiple series, gradient fill, responsive, auto-scaling axes |
 | **`CwDonutChart`** | SVG donut chart — hover highlighting, center label, configurable thickness, legend |
 | **`CwPPFDChart`** | Horizontal PPFD range gauge — low/optimal/high zones, crop target band, live reading marker, dynamic scaling |
@@ -311,6 +311,8 @@ import '@cropwatchdevelopment/cwui/styles/theme-light';  // Light theme mapping
 
   interface Device { id: string; name: string; status: string; }
 
+  let filters = $state<Record<string, string[]>>({});
+
   const columns: CwColumnDef<Device>[] = [
     { key: 'name', header: 'Name', sortable: true },
     { key: 'status', header: 'Status' },
@@ -322,7 +324,15 @@ import '@cropwatchdevelopment/cwui/styles/theme-light';  // Light theme mapping
   }
 </script>
 
-<CwDataTable {columns} loadData={loadDevices} rowKey="id" />
+<CwDataTable
+  {columns}
+  loadData={loadDevices}
+  rowKey="id"
+  filters={filters}
+  virtualScroll
+  virtualScrollHeight="24rem"
+  virtualRowHeight={52}
+/>
 ```
 
 ### Responsive App Shell
