@@ -119,6 +119,7 @@
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 	let requestVersion = 0;
 	let lastResetKey = '';
+	let lastQueryKey = '';
 
 	const totalPages = $derived(Math.max(1, Math.ceil(total / pageSize)));
 	const normalizedFilters = $derived.by(() => sanitizeFilters(filters));
@@ -483,12 +484,13 @@
 	}
 
 	$effect(() => {
-		loadData;
 		appliedSearch;
 		pageSize;
 		sort;
 		const filterKey = JSON.stringify(normalizedFilters);
 		const resetKey = `${virtualScroll}|${pageSize}|${filterKey}`;
+		const sortKey = sort ? `${sort.column}:${sort.direction}` : '';
+		const queryKey = `${virtualScroll}|${page}|${pageSize}|${appliedSearch}|${sortKey}|${filterKey}`;
 
 		if (resetKey !== lastResetKey) {
 			lastResetKey = resetKey;
@@ -497,6 +499,12 @@
 				return;
 			}
 		}
+
+		if (queryKey === lastQueryKey) {
+			return;
+		}
+
+		lastQueryKey = queryKey;
 
 		if (virtualScroll) {
 			void fetchVirtualData();
