@@ -472,6 +472,7 @@
 		if (!virtualScroll) return;
 		if (loadingState || appendingState || error || appendError || !hasMoreRows) return;
 		if (rows.length === 0) return;
+		if (viewportHeight <= 0) return;
 		if (rows.length - virtualEndIndex > virtualPrefetchThreshold) return;
 
 		void fetchNextVirtualPage(loadedPageCount + 1);
@@ -785,10 +786,11 @@
 		background-color: var(--cw-bg-surface);
 		border: 1px solid var(--cw-border-default);
 		border-radius: var(--cw-radius-lg);
-		overflow: hidden;
+		overflow: visible;
 	}
 
 	.cw-data-table--fill-parent {
+		flex: 1 1 0%;
 		height: 100%;
 		min-height: 0;
 	}
@@ -860,7 +862,9 @@
 	}
 
 	.cw-data-table__scroll {
+		border-radius: 0 0 var(--cw-radius-lg) var(--cw-radius-lg);
 		overflow-x: auto;
+		overflow-y: hidden;
 	}
 
 	.cw-data-table__scroll--virtual,
