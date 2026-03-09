@@ -1,5 +1,5 @@
 <script lang="ts" generics="T">
-	import { onDestroy } from 'svelte';
+	import { onDestroy, tick } from 'svelte';
 	import type { Snippet } from 'svelte';
 	import type { CwColumnDef, CwTableQuery, CwTableResult } from '../types/index.js';
 	import CwButton from './CwButton.svelte';
@@ -288,6 +288,43 @@
 		scrollTop = scrollRef?.scrollTop ?? 0;
 	}
 
+	function getVirtualAppendAnchor():
+		| {
+				distanceFromBottom: number;
+				shouldRestoreFromBottom: boolean;
+		  }
+		| null {
+		if (!virtualScroll || !scrollRef) return null;
+
+		const maxScrollTop = Math.max(scrollRef.scrollHeight - scrollRef.clientHeight, 0);
+		const distanceFromBottom = Math.max(0, maxScrollTop - scrollRef.scrollTop);
+		const restoreThreshold = Math.max(virtualRowHeight, 1) * 2;
+
+		return {
+			distanceFromBottom,
+			shouldRestoreFromBottom: distanceFromBottom <= restoreThreshold
+		};
+	}
+
+	async function restoreVirtualAppendAnchor(
+		anchor:
+			| {
+					distanceFromBottom: number;
+					shouldRestoreFromBottom: boolean;
+			  }
+			| null
+	) {
+		if (!anchor?.shouldRestoreFromBottom) return;
+
+		await tick();
+
+		if (!scrollRef) return;
+
+		const maxScrollTop = Math.max(scrollRef.scrollHeight - scrollRef.clientHeight, 0);
+		scrollRef.scrollTop = Math.max(0, maxScrollTop - anchor.distanceFromBottom);
+		scrollTop = scrollRef.scrollTop;
+	}
+
 	function getCellValue(row: T, col: CwColumnDef<T>): string {
 		if (col.cell) return col.cell(row);
 		const val = (row as Record<string, unknown>)[col.key];
@@ -405,6 +442,7 @@
 		const version = requestVersion;
 		const controller = new AbortController();
 		const query = createQueryState(pageNumber, controller.signal);
+		const scrollAnchor = getVirtualAppendAnchor();
 
 		abortController = controller;
 		appendingState = true;
@@ -423,6 +461,7 @@
 				? result.rows.length > 0 && mergedRows.length < resolved.total
 				: result.rows.length === pageSize;
 			loadedPageCount = pageNumber;
+			await restoreVirtualAppendAnchor(scrollAnchor);
 		} catch (err) {
 			if (err instanceof DOMException && err.name === 'AbortError') return;
 			if (version !== requestVersion) return;
