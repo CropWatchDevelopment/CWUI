@@ -177,21 +177,31 @@ async function updateRow(row: Device) {
 
 <CwDataTable columns={columns} loadData={loadData} rowKey="id" />`;
 
-const fillParentExample = `<div class="datatable-host">
-\t<CwDataTable
-\t\tcolumns={columns}
-\t\tloadData={loadData}
-\t\trowKey="id"
-\t\trowTextSizeKey="textSize"
-\t\tfillParent
-\t\tsearchable={false}
-\t\tpageSize={25}
-\t/>
+const fillParentExample = `<div class="datatable-shell">
+\t<div class="datatable-shell__body">
+\t\t<CwDataTable
+\t\t\tcolumns={columns}
+\t\t\tloadData={loadData}
+\t\t\trowKey="id"
+\t\t\trowTextSizeKey="textSize"
+\t\t\tfillParent
+\t\t\tsearchable={false}
+\t\t\tpageSize={25}
+\t\t/>
+\t</div>
 </div>
 
 <style>
-\t.datatable-host {
+\t.datatable-shell {
+\t\tdisplay: flex;
+\t\tflex-direction: column;
 \t\theight: clamp(18rem, 50vh, 26rem);
+\t\tmin-height: 0;
+\t}
+
+\t.datatable-shell__body {
+\t\tdisplay: flex;
+\t\tflex: 1 1 auto;
 \t\tmin-height: 0;
 \t}
 </style>`;
@@ -217,6 +227,7 @@ const virtualScrollExample = `<script lang="ts">
 \tvirtualScroll
 \tvirtualScrollHeight="24rem"
 \tvirtualRowHeight={52}
+\tvirtualOverscan={14}
 \tpageSize={75}
 />`;
 </script>
@@ -257,18 +268,20 @@ const virtualScrollExample = `<script lang="ts">
 <section class="demo-section">
 	<h3>Fill Parent Height + Internal Scroll</h3>
 	<p class="demo-hint">
-		Set a parent height, then pass <code>fillParent</code>. The table fills the container and the body region scrolls when rows exceed available space.
+		Use <code>fillParent</code> when the surrounding shell already owns height. In flex layouts, make the table a direct flex child and keep shrinking wrappers at <code>min-height: 0</code> so the internal scroll viewport can resolve correctly.
 	</p>
-	<div class="demo-table-host">
-		<CwDataTable
-			columns={columns}
-			loadData={loadData}
-			rowKey="id"
-			rowTextSizeKey="textSize"
-			fillParent
-			searchable={false}
-			pageSize={25}
-		/>
+	<div class="demo-table-shell">
+		<div class="demo-table-shell__body">
+			<CwDataTable
+				columns={columns}
+				loadData={loadData}
+				rowKey="id"
+				rowTextSizeKey="textSize"
+				fillParent
+				searchable={false}
+				pageSize={25}
+			/>
+		</div>
 	</div>
 	<DemoCodeExample code={fillParentExample} title="Fill-parent datatable" />
 </section>
@@ -276,7 +289,7 @@ const virtualScrollExample = `<script lang="ts">
 <section class="demo-section">
 	<h3>Virtual Scroll + Preserved Query State</h3>
 	<p class="demo-hint">
-		Virtual mode keeps native scrolling for touch devices, incrementally fetches matching pages, and preserves search, sort, and external <code>filters</code> in every request.
+		Virtual mode keeps native scrolling for touch devices, incrementally fetches matching pages, and preserves search, sort, and external <code>filters</code> in every request. Use <code>virtualScrollHeight</code> when the table owns its own viewport, or combine <code>virtualScroll</code> with <code>fillParent</code> inside a bounded flex shell.
 	</p>
 	<div class="demo-row">
 		<CwButton
@@ -354,6 +367,7 @@ const virtualScrollExample = `<script lang="ts">
 			<h4>Layout and iPad guidance</h4>
 			<ul class="demo-list">
 				<li>Give the table a bounded viewport with <code>fillParent</code> or <code>virtualScrollHeight</code>. Virtual mode needs an actual scroll container.</li>
+				<li>If you use <code>fillParent</code> in a flex dashboard, keep each shrinking ancestor at <code>min-height: 0</code> so the table can resolve a non-zero viewport height.</li>
 				<li>The scroll container uses native overflow scrolling with momentum, which is what you want on iPad instead of a custom gesture layer.</li>
 				<li>Keep <code>virtualRowHeight</code> close to the real rendered row height. If the estimate is too small or too large, the scroll window will feel less accurate.</li>
 				<li>Increase <code>virtualOverscan</code> when touch users scroll quickly and you want more rows pre-rendered ahead of the viewport.</li>
@@ -365,6 +379,7 @@ const virtualScrollExample = `<script lang="ts">
 			<ul class="demo-list">
 				<li>Return a stable <code>total</code> from <code>loadData</code> whenever possible so the footer and load-more logic stay accurate.</li>
 				<li>Apply filtering and sorting on the same query path the table already uses for pagination. Do not create a second code path just for virtual mode.</li>
+				<li>If the table renders but never scrolls or keeps loading, inspect the layout chain first. Virtual prefetch only starts once the viewport has a real height.</li>
 				<li>Use a batch size that matches the density of the screen. Dense admin tables can often use <code>75</code> or <code>100</code>; taller mobile cards may prefer smaller batches.</li>
 				<li>Test on a real touch device before shipping. Fast momentum scrolling is where overscan and row-height estimates matter most.</li>
 			</ul>
@@ -427,7 +442,17 @@ const virtualScrollExample = `<script lang="ts">
 	.demo-desc { color: var(--cw-text-muted); font-size: var(--cw-text-sm); margin-bottom: var(--cw-space-4); }
 	.demo-hint { color: var(--cw-text-muted); font-size: var(--cw-text-xs); margin-bottom: var(--cw-space-2); }
 	.demo-section { margin-top: var(--cw-space-6); }
-	.demo-table-host { height: clamp(18rem, 50vh, 26rem); min-height: 0; }
+	.demo-table-shell {
+		display: flex;
+		flex-direction: column;
+		height: clamp(18rem, 50vh, 26rem);
+		min-height: 0;
+	}
+	.demo-table-shell__body {
+		display: flex;
+		flex: 1 1 auto;
+		min-height: 0;
+	}
 	.demo-doc-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));

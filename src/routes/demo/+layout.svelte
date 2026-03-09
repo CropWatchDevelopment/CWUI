@@ -7,6 +7,8 @@
 	import { page } from "$app/state";
 	import CwSearchInput from "$lib/components/CwSearchInput.svelte";
 	import CwThemePicker from "$lib/components/CwThemePicker.svelte";
+	import DemoPageDocs from "./_components/DemoPageDocs.svelte";
+	import { demoRouteDocs } from "./_components/demoPageDocs";
 
 	let { children }: { children: Snippet } = $props();
 
@@ -448,6 +450,8 @@
 			sideNavMode = "hidden";
 		}
 	}
+
+	const activeDemoDocs = $derived(demoRouteDocs[page.url.pathname]);
 </script>
 
 <svelte:head>
@@ -540,7 +544,12 @@
 		</CwHeader>
 
 		<main class="demo-shell__main">
-			{@render children()}
+			<div class="demo-shell__page">
+				{@render children()}
+				{#if activeDemoDocs}
+					<DemoPageDocs docs={activeDemoDocs} />
+				{/if}
+			</div>
 		</main>
 	</div>
 </div>
@@ -567,6 +576,11 @@
 		padding: var(--cw-space-6);
 		overflow-y: auto;
 		background-color: var(--cw-bg-base);
+	}
+
+	.demo-shell__page {
+		display: grid;
+		gap: var(--cw-space-1);
 	}
 
 	.demo-shell__logo {
