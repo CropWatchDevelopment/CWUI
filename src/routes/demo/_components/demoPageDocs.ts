@@ -2028,6 +2028,18 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				defaultValue: 'false'
 			},
 			{
+				name: 'actionsHeader',
+				type: 'Snippet',
+				description:
+					'Snippet rendered on the right side of the toolbar next to the page-size dropdown. Use this for add, export, filter, or other table-level actions.'
+			},
+			{
+				name: 'toolbarActions',
+				type: 'Snippet',
+				description:
+					'Deprecated alias for `actionsHeader`, kept so existing toolbar content keeps rendering during migration.'
+			},
+			{
 				name: 'cell',
 				type: 'Snippet<[T, CwColumnDef<T>, string]>',
 				description:
@@ -2037,6 +2049,12 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'rowActions',
 				type: 'Snippet<[T]>',
 				description: 'Optional per-row actions column rendered on the far right.'
+			},
+			{
+				name: 'rowActionsHeader',
+				type: 'string',
+				description:
+					'Optional text label for the row actions column header. If omitted, the header stays blank.'
 			},
 			{
 				name: 'rowTextSizeKey',

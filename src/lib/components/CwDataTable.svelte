@@ -37,14 +37,16 @@
 		/** Available page-size options shown in the toolbar dropdown */
 		pageSizeOptions?: number[];
 		searchable?: boolean;
-		/** Snippet rendered at the right side of the toolbar for custom action buttons */
+		/** Snippet rendered at the right side of the toolbar for custom action controls. */
+		actionsHeader?: Snippet;
+		/** Deprecated alias for `actionsHeader`; kept for compatibility. */
 		toolbarActions?: Snippet;
 		/** Optional custom cell snippet for any table column. Receives row, column, and default string value. */
 		cell?: Snippet<[T, CwColumnDef<T>, string]>;
 		/** Snippet rendered in the Actions column for each row. Receives the row data. */
 		rowActions?: Snippet<[T]>;
-		/** Header text for the actions column (default: empty) */
-		actionsHeader?: string;
+		/** Header text for the row actions column (default: empty). */
+		rowActionsHeader?: string;
 		/** Row object key containing a CSS font-size value (e.g. "0.875rem", "14px"). */
 		rowTextSizeKey?: string;
 		/** When true, fills parent height and makes the table body region scroll on overflow. */
@@ -78,10 +80,11 @@
 		totalItems,
 		pageSizeOptions = [10, 20, 50, 100],
 		searchable = true,
+		actionsHeader,
 		toolbarActions,
 		cell,
 		rowActions,
-		actionsHeader = '',
+		rowActionsHeader = '',
 		rowTextSizeKey,
 		fillParent = false,
 		virtualScroll = false,
@@ -162,6 +165,7 @@
 				? Math.min(rows.length, virtualEndIndex)
 				: Math.min(page * pageSize, total)
 	);
+	const toolbarActionsSnippet = $derived(actionsHeader ?? toolbarActions);
 
 	function sanitizeFilters(nextFilters: CwTableFilters | undefined): CwTableFilters {
 		if (!nextFilters) return {};
@@ -579,9 +583,9 @@
 					/>
 				</div>
 
-				{#if toolbarActions}
+				{#if toolbarActionsSnippet}
 					<div class="cw-data-table__toolbar-actions">
-						{@render toolbarActions()}
+						{@render toolbarActionsSnippet()}
 					</div>
 				{/if}
 			</div>
@@ -635,7 +639,7 @@
 						{/each}
 						{#if rowActions}
 							<th class="cw-data-table__th cw-data-table__th--actions" style:text-align="right">
-								{actionsHeader}
+								{rowActionsHeader}
 							</th>
 						{/if}
 					</tr>

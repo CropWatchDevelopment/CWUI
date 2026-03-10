@@ -3,9 +3,10 @@
    ============================================================ */
 
 import type { CwTone, CwToastItem } from '../types/index.js';
-import { getContext, setContext } from 'svelte';
+import { getContext, hasContext, setContext } from 'svelte';
 
 const TOAST_KEY = Symbol('cw-toast');
+const EMPTY_TOAST_ITEMS: CwToastItem[] = [];
 
 export interface CwToastApi {
 	add(opts: {
@@ -17,6 +18,16 @@ export interface CwToastApi {
 	dismiss(id: string): void;
 	readonly items: CwToastItem[];
 }
+
+const NOOP_TOAST_API: CwToastApi = {
+	add() {
+		return '';
+	},
+	dismiss() {},
+	get items() {
+		return EMPTY_TOAST_ITEMS;
+	}
+};
 
 /**
  * Creates the toast context. Call once in a layout/root component.
@@ -65,5 +76,9 @@ export function createCwToastContext(maxItems = 5): CwToastApi {
  * Retrieve the toast API from context. Call in child components.
  */
 export function useCwToast(): CwToastApi {
+	if (!hasContext(TOAST_KEY)) {
+		return NOOP_TOAST_API;
+	}
+
 	return getContext<CwToastApi>(TOAST_KEY);
 }

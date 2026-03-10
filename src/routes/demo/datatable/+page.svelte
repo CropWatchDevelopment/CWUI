@@ -153,7 +153,18 @@ const dataTableExample = `<CwDataTable
 \trowTextSizeKey="textSize"
 \tsearchable
 \tpageSize={10}
+\trowActionsHeader="Actions"
 >
+\t{#snippet actionsHeader()}
+\t\t<CwButton size="sm" variant="primary">+ Add Device</CwButton>
+\t\t<CwButton size="sm" variant="secondary">Export</CwButton>
+\t{/snippet}
+\t{#snippet rowActions(row)}
+\t\t<div class="row-actions">
+\t\t\t<CwButton size="sm" variant="ghost" onclick={() => handleEdit(row)}>Edit</CwButton>
+\t\t\t<CwButton size="sm" variant="danger" onclick={() => handleDelete(row)}>Delete</CwButton>
+\t\t</div>
+\t{/snippet}
 \t{#snippet cell(row, col, defaultValue)}
 \t\t{#if col.key === 'lastSeen'}
 \t\t\t<CwDuration from={row.lastSeen} />
@@ -242,9 +253,9 @@ const virtualScrollExample = `<script lang="ts">
 	rowTextSizeKey="textSize"
 	searchable
 	pageSize={10}
-	actionsHeader="Actions"
+	rowActionsHeader="Actions"
 >
-	{#snippet toolbarActions()}
+	{#snippet actionsHeader()}
 		<CwButton size="sm" variant="primary">+ Add Device</CwButton>
 		<CwButton size="sm" variant="secondary">Export</CwButton>
 	{/snippet}
@@ -406,7 +417,7 @@ const virtualScrollExample = `<script lang="ts">
 		rowTextSizeKey="textSize"
 		searchable={false}
 		pageSize={6}
-		actionsHeader="Update"
+		rowActionsHeader="Update"
 	>
 		{#snippet rowActions(row: Device)}
 			<CwButton
