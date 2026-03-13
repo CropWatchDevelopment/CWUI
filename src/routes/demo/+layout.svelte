@@ -357,6 +357,14 @@
 			href: "/demo/sensorcard",
 			group: "Full Page Demos",
 		},
+		{
+			id: "statcard",
+			label: "Stat Card",
+			icon: icons.dataDisplay,
+			href: "/demo/statcard",
+			group: "Full Page Demos",
+			trailing: "new",
+		},
 		];
 
 	interface SideNavSearchSuggestion {

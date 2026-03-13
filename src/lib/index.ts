@@ -33,6 +33,7 @@ export { default as CwCopy } from './components/CwCopy.svelte';
 export { default as CwExpandPanel } from './components/CwExpandPanel.svelte';
 export { default as CwHeatmap } from './components/CwHeatmap.svelte';
 export { default as CwSensorCard } from './components/CwSensorCard.svelte';
+export { default as CwStatCard } from './components/CwStatCard.svelte';
 
 // ── Toast system ────────────────────────────────────────────
 export { default as CwToastContainer } from './components/CwToastContainer.svelte';
@@ -83,5 +84,7 @@ export type {
 	CwAlarmRegistration,
 	CwAlarmApi,
 	CwSensorCardDetailRow,
-	CwSensorCardDevice
+	CwSensorCardDevice,
+	CwStatCardTrend,
+	CwStatCardData
 } from './types/index.js';

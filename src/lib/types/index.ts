@@ -326,6 +326,29 @@ export interface CwSensorCardDevice {
 	expectedUpdateAfterMinutes?: number;
 }
 
+/* ── Stat Card types ────────────────────────────────────── */
+
+export type CwStatCardTrend = 'up' | 'down' | 'stable';
+
+export interface CwStatCardData {
+	/** Minimum recorded value */
+	min?: number;
+	/** Maximum recorded value */
+	max?: number;
+	/** Mean / average value */
+	avg?: number;
+	/** Median value */
+	median?: number;
+	/** Standard deviation */
+	stdDev?: number;
+	/** Number of readings */
+	count?: number;
+	/** Most recent reading */
+	lastReading?: number;
+	/** Trend direction */
+	trend?: CwStatCardTrend;
+}
+
 /* ── Alarm Scheduler types ─────────────────────────────── */
 
 export interface CwAlarmApi {
