@@ -1905,7 +1905,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 	},
 	'/demo/datatable': {
 		summary:
-			'CwDataTable is query-driven. The table owns search, sort, pagination, and virtual windowing, while your `loadData(query)` function stays authoritative for rows, totals, and filters. For real layouts, pair `virtualScroll` with either `virtualScrollHeight` or `fillParent` inside a bounded flex shell.',
+			'CwDataTable is query-driven. The table owns search, sort, pagination, refresh, column visibility, and virtual windowing, while your `loadData(query)` function stays authoritative for rows, totals, and filters. Built-in column settings persist visible columns per grid ID in local storage.',
 		steps: [
 			{
 				title: 'Start from the query contract',
@@ -1945,7 +1945,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 		],
 		apiTitle: 'Core API for pagination and virtual mode',
 		apiNote:
-			'Pagination is the default behavior. In virtual mode, `pageSize` becomes the number of rows fetched per request rather than the number of rows shown on one discrete page. Pair `virtualScroll` with either `virtualScrollHeight` or `fillParent` so the table has a real scroll viewport.',
+			'Pagination is the default behavior. In virtual mode, `pageSize` becomes the number of rows fetched per request rather than the number of rows shown on one discrete page. Every table also includes a built-in overflow menu for refresh and persisted column settings. Pair `virtualScroll` with either `virtualScrollHeight` or `fillParent` so the table has a real scroll viewport.',
 		apiRows: [
 			{
 				name: 'columns',
@@ -1993,6 +1993,13 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				defaultValue: '[10, 20, 50, 100]'
 			},
 			{
+				name: 'gridId',
+				type: 'string',
+				description:
+					'Storage key for persisted column visibility. Defaults to the current page path plus `_grid`; pass an explicit value when multiple tables share one route.',
+				defaultValue: 'derived from route'
+			},
+			{
 				name: 'virtualScroll',
 				type: 'boolean',
 				description:
@@ -2031,7 +2038,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'actionsHeader',
 				type: 'Snippet',
 				description:
-					'Snippet rendered on the right side of the toolbar next to the page-size dropdown. Use this for add, export, filter, or other table-level actions.'
+					'Snippet rendered in the toolbar before the built-in overflow menu. Use this for add, export, filter, or other table-level actions.'
 			},
 			{
 				name: 'toolbarActions',
@@ -2063,10 +2070,10 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 					'Optional row property name containing a CSS font-size value when a dataset needs row-level text scaling.'
 			},
 			{
-				name: 'onSearch / onSort / onPageSizeChanged',
+				name: 'onSearch / onSort / onPageSizeChanged / onRefresh',
 				type: 'callbacks',
 				description:
-					'Optional observers for analytics, syncing external controls, or reacting to table query changes outside the table itself.'
+					'Optional observers for analytics, syncing external controls, or reacting to table query changes outside the table itself. `onRefresh` fires when the built-in Refresh menu action is selected.'
 			}
 		],
 		examples: [
@@ -2078,6 +2085,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \tcolumns={columns}
 \tloadData={loadData}
 \trowKey="id"
+\tgridId="devices_grid"
 \tsearchable
 \tpageSize={20}
 />`
@@ -2095,6 +2103,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \tcolumns={columns}
 \tloadData={loadData}
 \trowKey="id"
+\tgridId="devices_virtual_grid"
 \tfilters={filters}
 \tvirtualScroll
 \tvirtualScrollHeight="24rem"
@@ -2113,6 +2122,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \t\t\tcolumns={columns}
 \t\t\tloadData={loadData}
 \t\t\trowKey="id"
+\t\t\tgridId="devices_fill_parent_grid"
 \t\t\tfillParent
 \t\t\tvirtualScroll
 \t\t\tpageSize={100}

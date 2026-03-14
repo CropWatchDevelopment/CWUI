@@ -42,6 +42,15 @@
 		{ key: 'status', header: 'Status', sortable: true },
 		{ key: 'lastSeen', header: 'Last Seen', sortable: true, hideBelow: 'md', cell: (row) => new Date(row.lastSeen).toLocaleString() }
 	];
+	const demoGridIds = {
+		main: 'demo_datatable_main_grid',
+		phone: 'demo_datatable_phone_grid',
+		fillParent: 'demo_datatable_fill_parent_grid',
+		virtual: 'demo_datatable_virtual_grid',
+		rowLoading: 'demo_datatable_row_loading_grid'
+	} as const;
+
+	let mainRefreshCount = $state(0);
 
 	function delay(ms: number) {
 		return new Promise((resolve) => setTimeout(resolve, ms));
@@ -146,13 +155,19 @@
 		alert(`Delete: ${device.name}`);
 	}
 
+	function handleMainTableRefresh() {
+		mainRefreshCount += 1;
+	}
+
 	const dataTableExample = `<CwDataTable
 \tcolumns={columns}
 \tloadData={loadData}
 \trowKey="id"
+\tgridId="devices_grid"
 \trowTextSizeKey="textSize"
 \tsearchable
 \tpageSize={10}
+\tonRefresh={refreshDevices}
 \trowActionsHeader="Actions"
 >
 \t{#snippet actionsHeader()}
@@ -179,6 +194,7 @@
 \t\tcolumns={columns}
 \t\tloadData={loadData}
 \t\trowKey="id"
+\t\tgridId="devices_phone_grid"
 \t\trowTextSizeKey="textSize"
 \t\tsearchable
 \t\tpageSize={4}
@@ -226,6 +242,7 @@ async function updateRow(row: Device) {
 \t\t\tcolumns={columns}
 \t\t\tloadData={loadData}
 \t\t\trowKey="id"
+\t\t\tgridId="devices_fill_parent_grid"
 \t\t\trowTextSizeKey="textSize"
 \t\t\tfillParent
 \t\t\tsearchable={false}
@@ -266,6 +283,7 @@ async function updateRow(row: Device) {
 \tcolumns={columns}
 \tloadData={loadData}
 \trowKey="id"
+\tgridId="devices_virtual_grid"
 \tfilters={filters}
 \tvirtualScroll
 \tvirtualScrollHeight="24rem"
@@ -282,9 +300,11 @@ async function updateRow(row: Device) {
 	{columns}
 	{loadData}
 	rowKey="id"
+	gridId={demoGridIds.main}
 	rowTextSizeKey="textSize"
 	searchable
 	pageSize={10}
+	onRefresh={handleMainTableRefresh}
 	rowActionsHeader="Actions"
 >
 	{#snippet actionsHeader()}
@@ -306,6 +326,10 @@ async function updateRow(row: Device) {
 	{/snippet}
 </CwDataTable>
 
+<p class="demo-hint">
+	Built-in menu refresh callback count: {mainRefreshCount}. Column visibility is persisted per grid ID.
+</p>
+
 <DemoCodeExample code={dataTableExample} title="CwDataTable example" />
 
 <section class="demo-section">
@@ -323,6 +347,7 @@ async function updateRow(row: Device) {
 					columns={columns}
 					loadData={loadData}
 					rowKey="id"
+					gridId={demoGridIds.phone}
 					rowTextSizeKey="textSize"
 					searchable
 					pageSize={4}
@@ -356,6 +381,7 @@ async function updateRow(row: Device) {
 				columns={columns}
 				loadData={loadData}
 				rowKey="id"
+				gridId={demoGridIds.fillParent}
 				rowTextSizeKey="textSize"
 				fillParent
 				searchable={false}
@@ -405,6 +431,7 @@ async function updateRow(row: Device) {
 		columns={columns}
 		loadData={loadVirtualData}
 		rowKey="id"
+		gridId={demoGridIds.virtual}
 		rowTextSizeKey="textSize"
 		filters={virtualFilters}
 		searchable
@@ -483,6 +510,7 @@ async function updateRow(row: Device) {
 		columns={columns}
 		loadData={loadRowLoadingDemoData}
 		rowKey="id"
+		gridId={demoGridIds.rowLoading}
 		rowTextSizeKey="textSize"
 		searchable={false}
 		pageSize={6}

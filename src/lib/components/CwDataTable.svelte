@@ -3,9 +3,11 @@
 	import type { Snippet } from 'svelte';
 	import type { CwColumnDef, CwTableQuery, CwTableResult } from '../types/index.js';
 	import CwButton from './CwButton.svelte';
+	import CwDialog from './CwDialog.svelte';
 	import CwDropdown from './CwDropdown.svelte';
 	import CwSpinner from './CwSpinner.svelte';
 	import CwSearchInput from './CwSearchInput.svelte';
+	import moreVertIcon from '../icons/more_vert.svg?raw';
 
 	type CwTableSort = { column: string; direction: 'asc' | 'desc' } | null;
 	type CwTableFilters = Record<string, string[]>;
@@ -27,6 +29,8 @@
 		onSort?: (sort: { column: string; direction: 'asc' | 'desc' } | null) => void;
 		/** Fired when the search text changes. */
 		onSearch?: (query: string) => void;
+		/** Fired when the built-in Refresh menu action is selected. */
+		onRefresh?: () => void | Promise<void>;
 		/** Optional externally-controlled filters passed through to `loadData`. */
 		filters?: CwTableFilters;
 		emptyState?: Snippet;
@@ -49,6 +53,8 @@
 		rowActionsHeader?: string;
 		/** Row object key containing a CSS font-size value (e.g. "0.875rem", "14px"). */
 		rowTextSizeKey?: string;
+		/** Storage key used for persisted column visibility. Defaults to the current page path plus `_grid`. */
+		gridId?: string;
 		/** When true, fills parent height and makes the table body region scroll on overflow. */
 		fillParent?: boolean;
 		/** When true, incrementally loads pages while only rendering the visible row window. */
@@ -73,6 +79,7 @@
 		onPageSizeChanged,
 		onSort,
 		onSearch,
+		onRefresh,
 		filters = {},
 		emptyState,
 		errorState,
@@ -86,6 +93,7 @@
 		rowActions,
 		rowActionsHeader = '',
 		rowTextSizeKey,
+		gridId,
 		fillParent = false,
 		virtualScroll = false,
 		virtualScrollHeight = '28rem',
@@ -94,8 +102,7 @@
 		class: className = ''
 	}: Props = $props();
 
-	/** Total column count including the optional actions column (for colspan) */
-	const colCount = $derived(columns.length + (rowActions ? 1 : 0));
+	const uid = $props.id();
 
 	/** Stringified value for the dropdown (CwDropdown uses string values) */
 	let pageSizeStr = $derived(String(pageSize));
@@ -118,16 +125,28 @@
 	let headerHeight = $state(0);
 	let containerWidth = $state(0);
 	let scrollRef = $state<HTMLDivElement | null>(null);
+	let toolbarMenuOpen = $state(false);
+	let columnSettingsOpen = $state(false);
+	let resolvedGridId = $state('datatable_grid');
+	let appliedVisibleColumnKeys = $state<string[] | null>(null);
+	let draftVisibleColumnKeys = $state<string[] | null>(null);
 
 	let abortController: AbortController | null = null;
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 	let requestVersion = 0;
 	let lastResetKey = '';
 	let lastQueryKey = '';
+	let lastColumnSettingsLoadKey = '';
 
+	/** Total column count including the optional actions column (for colspan) */
+	const defaultVisibleColumnKeys = $derived(columns.map((col) => col.key));
+	const resolvedVisibleColumnKeys = $derived(appliedVisibleColumnKeys ?? defaultVisibleColumnKeys);
+	const visibleColumnKeys = $derived(new Set(resolvedVisibleColumnKeys));
+	const visibleColumns = $derived(columns.filter((col) => visibleColumnKeys.has(col.key)));
+	const colCount = $derived(visibleColumns.length + (rowActions ? 1 : 0));
 	const totalPages = $derived(Math.max(1, Math.ceil(total / pageSize)));
 	const normalizedFilters = $derived.by(() => sanitizeFilters(filters));
-	const sortableColumns = $derived(columns.filter((col) => col.sortable));
+	const sortableColumns = $derived(visibleColumns.filter((col) => col.sortable));
 	const mobileSortOptions = $derived([
 		{ label: 'No sort', value: '' },
 		...sortableColumns.flatMap((col) => [
@@ -181,6 +200,7 @@
 				: Math.min(page * pageSize, total)
 	);
 	const toolbarActionsSnippet = $derived(actionsHeader ?? toolbarActions);
+	const canSaveColumnSettings = $derived((draftVisibleColumnKeys ?? defaultVisibleColumnKeys).length > 0);
 
 	function sanitizeFilters(nextFilters: CwTableFilters | undefined): CwTableFilters {
 		if (!nextFilters) return {};
@@ -195,6 +215,76 @@
 			.filter(([, values]) => values.length > 0);
 
 		return Object.fromEntries(entries);
+	}
+
+	function arraysEqual(left: string[], right: string[]): boolean {
+		return left.length === right.length && left.every((value, index) => value === right[index]);
+	}
+
+	function resolveGridStorageKey(nextGridId?: string): string {
+		const explicit = nextGridId?.trim();
+		if (explicit) return explicit;
+		if (typeof window === 'undefined') return 'datatable_grid';
+
+		const normalizedPath = window.location.pathname
+			.split('/')
+			.filter(Boolean)
+			.map((segment) =>
+				segment
+					.trim()
+					.toLowerCase()
+					.replace(/[^a-z0-9_-]+/g, '_')
+					.replace(/^_+|_+$/g, '')
+			)
+			.filter(Boolean)
+			.join('_');
+
+		return `${normalizedPath || 'home'}_grid`;
+	}
+
+	function orderVisibleColumnKeys(
+		keys: string[] | null | undefined,
+		options: { fallbackToDefault?: boolean } = {}
+	): string[] {
+		const fallbackToDefault = options.fallbackToDefault ?? true;
+		const requestedKeys = new Set(
+			Array.isArray(keys) ? keys.filter((value): value is string => typeof value === 'string') : []
+		);
+		const orderedKeys = defaultVisibleColumnKeys.filter((key) => requestedKeys.has(key));
+
+		if (orderedKeys.length === 0 && fallbackToDefault) {
+			return [...defaultVisibleColumnKeys];
+		}
+
+		return orderedKeys;
+	}
+
+	function readStoredVisibleColumnKeys(storageKey: string): string[] | null {
+		if (typeof window === 'undefined') return null;
+
+		try {
+			const stored = window.localStorage.getItem(storageKey);
+			if (!stored) return null;
+			const parsed = JSON.parse(stored);
+			return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === 'string') : null;
+		} catch {
+			return null;
+		}
+	}
+
+	function persistVisibleColumnKeys(storageKey: string, keys: string[]) {
+		if (typeof window === 'undefined') return;
+
+		try {
+			if (arraysEqual(keys, defaultVisibleColumnKeys)) {
+				window.localStorage.removeItem(storageKey);
+				return;
+			}
+
+			window.localStorage.setItem(storageKey, JSON.stringify(keys));
+		} catch {
+			// Ignore storage failures so the table still works in private or restricted contexts.
+		}
 	}
 
 	function createQueryState(pageNumber: number, signal: AbortSignal): CwTableQuery {
@@ -263,6 +353,10 @@
 		}, 250);
 	}
 
+	function closeToolbarMenu() {
+		toolbarMenuOpen = false;
+	}
+
 	function applySort(nextSort: CwTableSort) {
 		sort = nextSort;
 		page = 1;
@@ -300,6 +394,78 @@
 		}
 
 		applySort({ column, direction });
+	}
+
+	function toggleToolbarMenu() {
+		toolbarMenuOpen = !toolbarMenuOpen;
+	}
+
+	function handleTableKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			toolbarMenuOpen = false;
+		}
+	}
+
+	function openColumnSettings() {
+		toolbarMenuOpen = false;
+		draftVisibleColumnKeys = [...resolvedVisibleColumnKeys];
+		columnSettingsOpen = true;
+	}
+
+	function handleColumnSettingsClose() {
+		columnSettingsOpen = false;
+		draftVisibleColumnKeys = [...resolvedVisibleColumnKeys];
+	}
+
+	function toggleDraftColumnVisibility(columnKey: string) {
+		const currentDraftVisibleColumnKeys = draftVisibleColumnKeys ?? defaultVisibleColumnKeys;
+
+		if (currentDraftVisibleColumnKeys.includes(columnKey)) {
+			draftVisibleColumnKeys = orderVisibleColumnKeys(
+				currentDraftVisibleColumnKeys.filter((key) => key !== columnKey),
+				{ fallbackToDefault: false }
+			);
+			return;
+		}
+
+		draftVisibleColumnKeys = orderVisibleColumnKeys([...currentDraftVisibleColumnKeys, columnKey], {
+			fallbackToDefault: false
+		});
+	}
+
+	function resetColumnSettingsDraft() {
+		draftVisibleColumnKeys = [...defaultVisibleColumnKeys];
+	}
+
+	function saveColumnSettings() {
+		const nextVisibleColumnKeys = orderVisibleColumnKeys(
+			draftVisibleColumnKeys ?? defaultVisibleColumnKeys
+		);
+		appliedVisibleColumnKeys = [...nextVisibleColumnKeys];
+		draftVisibleColumnKeys = [...nextVisibleColumnKeys];
+		persistVisibleColumnKeys(resolvedGridId, nextVisibleColumnKeys);
+		columnSettingsOpen = false;
+
+		if (sort && !nextVisibleColumnKeys.includes(sort.column)) {
+			applySort(null);
+		}
+	}
+
+	async function refreshTable() {
+		toolbarMenuOpen = false;
+
+		try {
+			await onRefresh?.();
+		} catch {
+			// Ignore external callback failures so the built-in refresh still runs.
+		}
+
+		if (virtualScroll) {
+			await fetchVirtualData();
+			return;
+		}
+
+		await fetchPageData(page);
 	}
 
 	function handlePreviousPage() {
@@ -524,6 +690,30 @@
 	}
 
 	$effect(() => {
+		gridId;
+		defaultVisibleColumnKeys;
+		const nextResolvedGridId = resolveGridStorageKey(gridId);
+		const loadKey = `${nextResolvedGridId}|${defaultVisibleColumnKeys.join('|')}`;
+
+		if (loadKey === lastColumnSettingsLoadKey) return;
+		lastColumnSettingsLoadKey = loadKey;
+		resolvedGridId = nextResolvedGridId;
+
+		const storedVisibleColumns = readStoredVisibleColumnKeys(nextResolvedGridId);
+		const nextVisibleColumnKeys = orderVisibleColumnKeys(storedVisibleColumns);
+
+		appliedVisibleColumnKeys = [...nextVisibleColumnKeys];
+		draftVisibleColumnKeys = [...nextVisibleColumnKeys];
+	});
+
+	$effect(() => {
+		const currentSort = sort;
+		if (!currentSort) return;
+		if (sortableColumns.some((col) => col.key === currentSort.column)) return;
+		applySort(null);
+	});
+
+	$effect(() => {
 		appliedSearch;
 		pageSize;
 		sort;
@@ -580,6 +770,8 @@
 	});
 </script>
 
+<svelte:document onkeydown={handleTableKeydown} />
+
 <div
 	class="cw-data-table {className}"
 	class:cw-data-table--fill-parent={fillParent}
@@ -630,11 +822,63 @@
 					/>
 				</div>
 
-				{#if toolbarActionsSnippet}
-					<div class="cw-data-table__toolbar-actions">
+				<div class="cw-data-table__toolbar-actions">
+					{#if toolbarActionsSnippet}
 						{@render toolbarActionsSnippet()}
+					{/if}
+
+					<div class="cw-data-table__toolbar-menu">
+						{#if toolbarMenuOpen}
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<div
+								class="cw-data-table__toolbar-menu-backdrop"
+								onclick={closeToolbarMenu}
+								onkeydown={() => {}}
+							></div>
+						{/if}
+
+						<CwButton
+							variant="ghost"
+							size="sm"
+							type="button"
+							aria-label="Open table options"
+							aria-expanded={toolbarMenuOpen}
+							aria-haspopup="menu"
+							aria-controls={`${uid}-toolbar-menu`}
+							class="cw-data-table__toolbar-menu-button"
+							onclick={toggleToolbarMenu}
+						>
+							<span class="cw-data-table__toolbar-menu-icon" aria-hidden="true">
+								{@html moreVertIcon}
+							</span>
+						</CwButton>
+
+						{#if toolbarMenuOpen}
+							<div
+								class="cw-data-table__toolbar-menu-dropdown"
+								id={`${uid}-toolbar-menu`}
+								role="menu"
+							>
+								<button
+									type="button"
+									class="cw-data-table__toolbar-menu-item"
+									role="menuitem"
+									onclick={openColumnSettings}
+								>
+									Columns Settings
+								</button>
+								<button
+									type="button"
+									class="cw-data-table__toolbar-menu-item"
+									role="menuitem"
+									onclick={refreshTable}
+								>
+									Refresh
+								</button>
+							</div>
+						{/if}
 					</div>
-				{/if}
+				</div>
 			</div>
 		</div>
 
@@ -649,7 +893,7 @@
 			<table class="cw-data-table__table" role="grid">
 				<thead bind:offsetHeight={headerHeight}>
 					<tr>
-						{#each columns as col (col.key)}
+						{#each visibleColumns as col (col.key)}
 							<th
 								class="cw-data-table__th"
 								class:cw-data-table__th--sortable={col.sortable}
@@ -754,7 +998,7 @@
 								role={onRowClick ? 'button' : undefined}
 								style:font-size={getRowTextSize(row)}
 							>
-								{#each columns as col (col.key)}
+								{#each visibleColumns as col (col.key)}
 									<td
 										class="cw-data-table__td"
 										class:cw-data-table__td--hide-sm={col.hideBelow === 'sm'}
@@ -881,6 +1125,53 @@
 			<div class="cw-data-table__overlay" aria-hidden="true"></div>
 		{/if}
 	{/if}
+
+	<CwDialog bind:open={columnSettingsOpen} title="Columns Settings" onclose={handleColumnSettingsClose}>
+		{#snippet children()}
+			<div class="cw-data-table__column-settings-dialog">
+				<p class="cw-data-table__column-settings-copy">
+					Choose which columns are visible for this grid. Saved settings use the key
+					<code>{resolvedGridId}</code>.
+				</p>
+
+				<div class="cw-data-table__column-settings-list" role="group" aria-label="Visible columns">
+					{#each columns as col (col.key)}
+						<label class="cw-data-table__column-settings-item" for={`${uid}-column-${col.key}`}>
+							<input
+								id={`${uid}-column-${col.key}`}
+								type="checkbox"
+								class="cw-data-table__column-settings-checkbox"
+								checked={(draftVisibleColumnKeys ?? defaultVisibleColumnKeys).includes(col.key)}
+								onchange={() => toggleDraftColumnVisibility(col.key)}
+							/>
+							<span class="cw-data-table__column-settings-labels">
+								<span class="cw-data-table__column-settings-name">{col.header}</span>
+								<span class="cw-data-table__column-settings-key">{col.key}</span>
+							</span>
+						</label>
+					{/each}
+				</div>
+
+				{#if !canSaveColumnSettings}
+					<p class="cw-data-table__column-settings-warning">
+						Select at least one column before saving.
+					</p>
+				{/if}
+			</div>
+		{/snippet}
+
+		{#snippet actions()}
+			<CwButton variant="ghost" size="sm" type="button" onclick={handleColumnSettingsClose}>
+				Close
+			</CwButton>
+			<CwButton variant="secondary" size="sm" type="button" onclick={resetColumnSettingsDraft}>
+				Reset to Default
+			</CwButton>
+			<CwButton size="sm" type="button" disabled={!canSaveColumnSettings} onclick={saveColumnSettings}>
+				Save
+			</CwButton>
+		{/snippet}
+	</CwDialog>
 </div>
 
 <style>
@@ -970,7 +1261,152 @@
 	.cw-data-table__toolbar-actions {
 		display: flex;
 		align-items: center;
+		justify-content: flex-end;
 		gap: var(--cw-space-2);
+		min-width: 0;
+	}
+
+	.cw-data-table__toolbar-menu {
+		position: relative;
+		display: flex;
+		align-items: center;
+		flex-shrink: 0;
+	}
+
+	.cw-data-table__toolbar-menu-backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: var(--cw-z-dropdown);
+	}
+
+	.cw-data-table__toolbar-menu-button {
+		min-width: 2rem;
+		padding-inline: var(--cw-space-2);
+	}
+
+	.cw-data-table__toolbar-menu-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1rem;
+		height: 1rem;
+	}
+
+	.cw-data-table__toolbar-menu-icon :global(svg) {
+		width: 100%;
+		height: 100%;
+		fill: currentColor;
+	}
+
+	.cw-data-table__toolbar-menu-dropdown {
+		position: absolute;
+		top: calc(100% + var(--cw-space-1));
+		right: 0;
+		z-index: calc(var(--cw-z-dropdown) + 1);
+		min-width: 12rem;
+		padding: var(--cw-space-1);
+		background-color: var(--cw-bg-surface-elevated);
+		border: 1px solid color-mix(in srgb, var(--cw-border-default) 82%, transparent);
+		border-radius: var(--cw-radius-lg);
+		box-shadow: var(--cw-shadow-lg);
+	}
+
+	.cw-data-table__toolbar-menu-item {
+		display: flex;
+		align-items: center;
+		width: 100%;
+		padding: var(--cw-space-2) var(--cw-space-3);
+		background: none;
+		border: none;
+		border-radius: var(--cw-radius-md);
+		font-family: var(--cw-font-family);
+		font-size: var(--cw-text-sm);
+		color: var(--cw-text-primary);
+		cursor: pointer;
+		text-align: left;
+		transition:
+			background-color var(--cw-duration-fast) var(--cw-ease-default),
+			color var(--cw-duration-fast) var(--cw-ease-default);
+	}
+
+	.cw-data-table__toolbar-menu-item:hover {
+		background-color: color-mix(in srgb, var(--cw-bg-muted) 78%, var(--cw-bg-surface));
+	}
+
+	.cw-data-table__toolbar-menu-item:focus-visible {
+		outline: none;
+		box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--cw-focus-ring-color) 40%, transparent);
+	}
+
+	.cw-data-table__column-settings-dialog {
+		display: grid;
+		gap: var(--cw-space-4);
+	}
+
+	.cw-data-table__column-settings-copy {
+		margin: 0;
+		color: var(--cw-text-secondary);
+		font-size: var(--cw-text-sm);
+	}
+
+	.cw-data-table__column-settings-copy code {
+		font-family: var(--cw-font-mono);
+		font-size: 0.95em;
+		color: var(--cw-accent);
+	}
+
+	.cw-data-table__column-settings-list {
+		display: grid;
+		gap: var(--cw-space-2);
+		max-height: min(24rem, 48dvh);
+		overflow-y: auto;
+		padding-right: var(--cw-space-1);
+	}
+
+	.cw-data-table__column-settings-item {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--cw-space-3);
+		padding: var(--cw-space-3);
+		border: 1px solid color-mix(in srgb, var(--cw-border-default) 80%, transparent);
+		border-radius: var(--cw-radius-lg);
+		background:
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--cw-bg-elevated) 92%, white),
+				color-mix(in srgb, var(--cw-bg-muted) 60%, white)
+			);
+		cursor: pointer;
+	}
+
+	.cw-data-table__column-settings-checkbox {
+		margin-top: 0.15rem;
+		flex-shrink: 0;
+		accent-color: var(--cw-accent);
+	}
+
+	.cw-data-table__column-settings-labels {
+		display: grid;
+		gap: 0.125rem;
+		min-width: 0;
+	}
+
+	.cw-data-table__column-settings-name {
+		font-size: var(--cw-text-sm);
+		font-weight: var(--cw-font-medium);
+		color: var(--cw-text-primary);
+	}
+
+	.cw-data-table__column-settings-key {
+		font-family: var(--cw-font-mono);
+		font-size: var(--cw-text-xs);
+		color: var(--cw-text-muted);
+	}
+
+	.cw-data-table__column-settings-warning {
+		margin: 0;
+		color: var(--cw-tone-danger-text);
+		font-size: var(--cw-text-xs);
 	}
 
 	.cw-data-table__scroll {
@@ -1259,6 +1695,17 @@
 
 		.cw-data-table__toolbar-actions {
 			flex-wrap: wrap;
+			justify-content: stretch;
+		}
+
+		.cw-data-table__toolbar-menu {
+			margin-left: auto;
+		}
+
+		.cw-data-table__toolbar-menu-dropdown {
+			left: 0;
+			right: auto;
+			min-width: min(100%, 12rem);
 		}
 
 		.cw-data-table__mobile-sort {
