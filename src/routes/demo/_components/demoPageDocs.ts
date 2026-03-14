@@ -1905,7 +1905,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 	},
 	'/demo/datatable': {
 		summary:
-			'CwDataTable is query-driven. The table owns search, sort, pagination, refresh, column visibility, and virtual windowing, while your `loadData(query)` function stays authoritative for rows, totals, and filters. Built-in column settings persist visible columns per grid ID in local storage.',
+			'CwDataTable is query-driven. The table owns search, sort, pagination, refresh, column visibility, optional grouped rows, and virtual windowing, while your `loadData(query)` function stays authoritative for rows, totals, and filters. Built-in column settings persist visible columns per grid ID in local storage.',
 		steps: [
 			{
 				title: 'Start from the query contract',
@@ -1916,6 +1916,11 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				title: 'Use pagination by default',
 				description:
 					'Keep the default mode when the dataset is moderate or when you want explicit page navigation. Turn on `virtualScroll` when the main goal is continuous browsing through large result sets.'
+			},
+			{
+				title: 'Group rows only in paginated mode',
+				description:
+					'Use `groupBy` when you want visual category headers inside the default paginated table. Group headers are intentionally skipped in `virtualScroll` mode so row windowing stays predictable.'
 			},
 			{
 				title: 'Use fillParent inside a bounded flex shell',
@@ -1943,9 +1948,9 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 					'`virtualRowHeight` and `virtualOverscan` matter most on iPad and other touch devices. Keep row height estimates honest and overscan high enough to avoid blank gaps during momentum scrolling.'
 			}
 		],
-		apiTitle: 'Core API for pagination and virtual mode',
+		apiTitle: 'Core API for pagination, grouping, and virtual mode',
 		apiNote:
-			'Pagination is the default behavior. In virtual mode, `pageSize` becomes the number of rows fetched per request rather than the number of rows shown on one discrete page. Every table also includes a built-in overflow menu for refresh and persisted column settings. Pair `virtualScroll` with either `virtualScrollHeight` or `fillParent` so the table has a real scroll viewport.',
+			'Pagination is the default behavior. Use `groupBy` there when you want section headers between rows. In virtual mode, `pageSize` becomes the number of rows fetched per request rather than the number of rows shown on one discrete page, and grouped headers are disabled to keep the virtual window stable. Every table also includes a built-in overflow menu for refresh and persisted column settings. Pair `virtualScroll` with either `virtualScrollHeight` or `fillParent` so the table has a real scroll viewport.',
 		apiRows: [
 			{
 				name: 'columns',
@@ -1991,6 +1996,19 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				type: 'number[]',
 				description: 'Toolbar choices shown in the rows-per-page or rows-per-batch dropdown.',
 				defaultValue: '[10, 20, 50, 100]'
+			},
+			{
+				name: 'groupBy',
+				type: "keyof T & string | ((row: T) => string | number | boolean | null | undefined)",
+				description:
+					'Optional grouping key or callback for the default paginated renderer. The table inserts group headers for each resolved label and ignores this prop in `virtualScroll` mode.'
+			},
+			{
+				name: 'ungroupedLabel',
+				type: 'string',
+				description:
+					'Fallback group header label used when `groupBy` resolves to `null`, `undefined`, or an empty string.',
+				defaultValue: "'Ungrouped'"
 			},
 			{
 				name: 'gridId',
@@ -2088,6 +2106,20 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \tgridId="devices_grid"
 \tsearchable
 \tpageSize={20}
+/>`
+			},
+			{
+				title: 'Grouped paginated table',
+				description:
+					'Use `groupBy` when operators need category headers like greenhouse, zone, or device family while keeping normal pagination.',
+				code: `<CwDataTable
+\tcolumns={columns}
+\tloadData={loadData}
+\trowKey="id"
+\tgridId="devices_grouped_grid"
+\tgroupBy="group"
+\tpageSize={12}
+\tsearchable
 />`
 			},
 			{

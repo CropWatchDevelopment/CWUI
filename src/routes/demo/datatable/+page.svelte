@@ -4,12 +4,20 @@
 	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	const DEVICE_STATUSES = ['online', 'offline', 'warning'] as const;
+	const DEVICE_GROUPS = [
+		'Propagation Bay',
+		'East Greenhouse',
+		'North Irrigation',
+		'Packout'
+	] as const;
 	type DeviceStatus = (typeof DEVICE_STATUSES)[number];
+	type DeviceGroup = (typeof DEVICE_GROUPS)[number];
 
 	interface Device {
 		id: string;
 		name: string;
 		eui: string;
+		group: DeviceGroup;
 		status: DeviceStatus;
 		lastSeen: string;
 		textSize: string;
@@ -20,6 +28,7 @@
 		id: `dev-${i + 1}`,
 		name: `Sensor ${String(i + 1).padStart(3, '0')}`,
 		eui: Array.from({ length: 8 }, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join(':'),
+		group: DEVICE_GROUPS[Math.floor(i / 12) % DEVICE_GROUPS.length],
 		status: DEVICE_STATUSES[i % DEVICE_STATUSES.length],
 		lastSeen: new Date(Date.now() - Math.random() * 86400000 * 7).toISOString(),
 		textSize: i % 3 === 0 ? '0.75rem' : i % 3 === 1 ? '0.875rem' : '1rem'
@@ -31,6 +40,7 @@
 		eui: Array.from({ length: 8 }, (_, segment) =>
 			((i * 17 + segment * 31) % 256).toString(16).padStart(2, '0')
 		).join(':'),
+		group: DEVICE_GROUPS[Math.floor(i / 180) % DEVICE_GROUPS.length],
 		status: DEVICE_STATUSES[i % DEVICE_STATUSES.length],
 		lastSeen: new Date(Date.now() - i * 600000).toISOString(),
 		textSize: '0.875rem'
@@ -45,6 +55,7 @@
 	const demoGridIds = {
 		main: 'demo_datatable_main_grid',
 		phone: 'demo_datatable_phone_grid',
+		grouped: 'demo_datatable_grouped_grid',
 		fillParent: 'demo_datatable_fill_parent_grid',
 		virtual: 'demo_datatable_virtual_grid',
 		rowLoading: 'demo_datatable_row_loading_grid'
@@ -222,6 +233,25 @@
 \t}
 </style>`;
 
+	const groupedTableExample = `<CwDataTable
+\tcolumns={columns}
+\tloadData={loadData}
+\trowKey="id"
+\tgridId="devices_grouped_grid"
+\trowTextSizeKey="textSize"
+\tgroupBy="group"
+\tsearchable
+\tpageSize={12}
+>
+\t{#snippet cell(row, col, defaultValue)}
+\t\t{#if col.key === 'lastSeen'}
+\t\t\t<CwDuration from={row.lastSeen} />
+\t\t{:else}
+\t\t\t{defaultValue}
+\t\t{/if}
+\t{/snippet}
+</CwDataTable>`;
+
 	const rowLoadingExample = `interface Device {
 \tid: string;
 \tname: string;
@@ -331,6 +361,32 @@ async function updateRow(row: Device) {
 </p>
 
 <DemoCodeExample code={dataTableExample} title="CwDataTable example" />
+
+<section class="demo-section">
+	<h3>Grouped Rows</h3>
+	<p class="demo-hint">
+		Pass <code>groupBy</code> with a row key or callback to insert category headers in the standard paginated table. Grouping is intentionally ignored when <code>virtualScroll</code> is enabled.
+	</p>
+	<CwDataTable
+		columns={columns}
+		loadData={loadData}
+		rowKey="id"
+		gridId={demoGridIds.grouped}
+		rowTextSizeKey="textSize"
+		groupBy="group"
+		searchable
+		pageSize={12}
+	>
+		{#snippet cell(row: Device, col: CwColumnDef<Device>, defaultValue: string)}
+			{#if col.key === 'lastSeen'}
+				<CwDuration from={row.lastSeen} />
+			{:else}
+				{defaultValue}
+			{/if}
+		{/snippet}
+	</CwDataTable>
+	<DemoCodeExample code={groupedTableExample} title="Grouped datatable" />
+</section>
 
 <section class="demo-section">
 	<h3>Phone View</h3>

@@ -11,6 +11,10 @@
 
 	type CwTableSort = { column: string; direction: 'asc' | 'desc' } | null;
 	type CwTableFilters = Record<string, string[]>;
+	type CwTableGroupValue = string | number | boolean | null | undefined;
+	type CwTableGroupBy<T> = (keyof T & string) | ((row: T) => CwTableGroupValue);
+	type CwTableGroupedRow<T> = { row: T; rowIndex: number };
+	type CwTableGroup<T> = { key: string; label: string; rows: CwTableGroupedRow<T>[] };
 
 	interface Props {
 		columns: CwColumnDef<T>[];
@@ -53,6 +57,10 @@
 		rowActionsHeader?: string;
 		/** Row object key containing a CSS font-size value (e.g. "0.875rem", "14px"). */
 		rowTextSizeKey?: string;
+		/** Groups rows by a row key or callback. Group headers only render in non-virtual mode. */
+		groupBy?: CwTableGroupBy<T>;
+		/** Label shown when `groupBy` resolves to an empty value. */
+		ungroupedLabel?: string;
 		/** Storage key used for persisted column visibility. Defaults to the current page path plus `_grid`. */
 		gridId?: string;
 		/** When true, fills parent height and makes the table body region scroll on overflow. */
@@ -93,6 +101,8 @@
 		rowActions,
 		rowActionsHeader = '',
 		rowTextSizeKey,
+		groupBy,
+		ungroupedLabel = 'Ungrouped',
 		gridId,
 		fillParent = false,
 		virtualScroll = false,
@@ -184,6 +194,36 @@
 			: rows.length
 	);
 	const visibleRows = $derived(virtualScroll ? rows.slice(virtualStartIndex, virtualEndIndex) : rows);
+	const groupingEnabled = $derived(!virtualScroll && groupBy != null);
+	const groupedRows = $derived.by(() => {
+		if (!groupBy || virtualScroll) return [] as CwTableGroup<T>[];
+
+		const groups = new Map<string, CwTableGroup<T>>();
+
+		rows.forEach((row, rowIndex) => {
+			const rawGroup =
+				typeof groupBy === 'function'
+					? groupBy(row)
+					: ((row as Record<string, unknown>)[groupBy] as CwTableGroupValue);
+			const normalizedGroup =
+				typeof rawGroup === 'string' ? rawGroup.trim() : rawGroup == null ? '' : String(rawGroup);
+			const label = normalizedGroup || ungroupedLabel;
+			const existingGroup = groups.get(label);
+
+			if (existingGroup) {
+				existingGroup.rows.push({ row, rowIndex });
+				return;
+			}
+
+			groups.set(label, {
+				key: label,
+				label,
+				rows: [{ row, rowIndex }]
+			});
+		});
+
+		return Array.from(groups.values());
+	});
 	const topSpacerHeight = $derived(virtualScroll ? virtualStartIndex * effectiveVirtualRowHeight : 0);
 	const bottomSpacerHeight = $derived(
 		virtualScroll ? Math.max(0, (rows.length - virtualEndIndex) * effectiveVirtualRowHeight) : 0
@@ -786,6 +826,48 @@
 			</div>
 		</div>
 	{:else}
+		{#snippet renderDataRow(row: T, rowIndex: number)}
+			<tr
+				class="cw-data-table__row"
+				class:cw-data-table__row--even={rowIndex % 2 === 1}
+				class:cw-data-table__row--clickable={!!onRowClick}
+				class:cw-data-table__row--loading={isRowLoading(row)}
+				onclick={() => handleRowClick(row)}
+				onkeydown={(e) => handleRowKeydown(e, row)}
+				tabindex={onRowClick ? 0 : undefined}
+				role={onRowClick ? 'button' : undefined}
+				style:font-size={getRowTextSize(row)}
+			>
+				{#each visibleColumns as col (col.key)}
+					<td
+						class="cw-data-table__td"
+						class:cw-data-table__td--hide-sm={col.hideBelow === 'sm'}
+						class:cw-data-table__td--hide-md={col.hideBelow === 'md'}
+						class:cw-data-table__td--hide-lg={col.hideBelow === 'lg'}
+						data-label={col.header}
+						style:text-align={col.align ?? 'left'}
+					>
+						{#if cell}
+							{@render cell(row, col, getCellValue(row, col))}
+						{:else}
+							{getCellValue(row, col)}
+						{/if}
+					</td>
+				{/each}
+				{#if rowActions}
+					<td
+						class="cw-data-table__td cw-data-table__td--actions"
+						data-label={rowActionsHeader || 'Actions'}
+						style:text-align="right"
+					>
+						<div class="cw-data-table__action-slot">
+							{@render rowActions(row)}
+						</div>
+					</td>
+				{/if}
+			</tr>
+		{/snippet}
+
 		<div class="cw-data-table__toolbar">
 			{#if searchable}
 				<div class="cw-data-table__search-wrapper">
@@ -985,48 +1067,29 @@
 							</tr>
 						{/if}
 
-						{#each visibleRows as row, visibleIndex (row[rowKey])}
-							{@const rowIndex = virtualScroll ? virtualStartIndex + visibleIndex : visibleIndex}
-							<tr
-								class="cw-data-table__row"
-								class:cw-data-table__row--even={rowIndex % 2 === 1}
-								class:cw-data-table__row--clickable={!!onRowClick}
-								class:cw-data-table__row--loading={isRowLoading(row)}
-								onclick={() => handleRowClick(row)}
-								onkeydown={(e) => handleRowKeydown(e, row)}
-								tabindex={onRowClick ? 0 : undefined}
-								role={onRowClick ? 'button' : undefined}
-								style:font-size={getRowTextSize(row)}
-							>
-								{#each visibleColumns as col (col.key)}
-									<td
-										class="cw-data-table__td"
-										class:cw-data-table__td--hide-sm={col.hideBelow === 'sm'}
-										class:cw-data-table__td--hide-md={col.hideBelow === 'md'}
-										class:cw-data-table__td--hide-lg={col.hideBelow === 'lg'}
-										data-label={col.header}
-										style:text-align={col.align ?? 'left'}
-									>
-										{#if cell}
-											{@render cell(row, col, getCellValue(row, col))}
-										{:else}
-											{getCellValue(row, col)}
-										{/if}
-									</td>
-								{/each}
-								{#if rowActions}
-									<td
-										class="cw-data-table__td cw-data-table__td--actions"
-										data-label={rowActionsHeader || 'Actions'}
-										style:text-align="right"
-									>
-										<div class="cw-data-table__action-slot">
-											{@render rowActions(row)}
+						{#if groupingEnabled}
+							{#each groupedRows as group (group.key)}
+								<tr class="cw-data-table__group-row">
+									<th colspan={colCount} class="cw-data-table__group-cell">
+										<div class="cw-data-table__group-heading">
+											<span class="cw-data-table__group-label">{group.label}</span>
+											<span class="cw-data-table__group-count">
+												{group.rows.length} {group.rows.length === 1 ? 'item' : 'items'}
+											</span>
 										</div>
-									</td>
-								{/if}
-							</tr>
-						{/each}
+									</th>
+								</tr>
+
+								{#each group.rows as entry (entry.row[rowKey])}
+									{@render renderDataRow(entry.row, entry.rowIndex)}
+								{/each}
+							{/each}
+						{:else}
+							{#each visibleRows as row, visibleIndex (row[rowKey])}
+								{@const rowIndex = virtualScroll ? virtualStartIndex + visibleIndex : visibleIndex}
+								{@render renderDataRow(row, rowIndex)}
+							{/each}
+						{/if}
 
 						{#if virtualScroll && appendingState}
 							<tr class="cw-data-table__append-row" aria-live="polite">
@@ -1517,6 +1580,43 @@
 		border-bottom: none;
 	}
 
+	.cw-data-table__group-row {
+		background:
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--cw-bg-muted) 94%, white),
+				color-mix(in srgb, var(--cw-bg-elevated) 80%, white)
+			);
+	}
+
+	.cw-data-table__group-cell {
+		padding: var(--cw-space-3) var(--cw-space-4);
+		border-bottom: 1px solid var(--cw-border-default);
+		text-align: left;
+	}
+
+	.cw-data-table__group-heading {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--cw-space-3);
+		flex-wrap: wrap;
+	}
+
+	.cw-data-table__group-label {
+		font-size: var(--cw-text-xs);
+		font-weight: var(--cw-font-semibold);
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--cw-text-primary);
+	}
+
+	.cw-data-table__group-count {
+		font-size: 0.75rem;
+		font-weight: var(--cw-font-medium);
+		color: var(--cw-text-muted);
+	}
+
 	.cw-data-table__row--clickable {
 		cursor: pointer;
 	}
@@ -1731,6 +1831,21 @@
 
 		.cw-data-table__row {
 			display: block;
+		}
+
+		.cw-data-table__group-row {
+			display: block;
+		}
+
+		.cw-data-table__group-cell {
+			display: block;
+			padding: var(--cw-space-2) var(--cw-space-3);
+		}
+
+		.cw-data-table__group-heading {
+			align-items: flex-start;
+			flex-direction: column;
+			gap: 0.125rem;
 		}
 
 		.cw-data-table__row > .cw-data-table__td {
