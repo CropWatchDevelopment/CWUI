@@ -116,6 +116,7 @@
 	let scrollTop = $state(0);
 	let viewportHeight = $state(0);
 	let headerHeight = $state(0);
+	let containerWidth = $state(0);
 	let scrollRef = $state<HTMLDivElement | null>(null);
 
 	let abortController: AbortController | null = null;
@@ -126,16 +127,30 @@
 
 	const totalPages = $derived(Math.max(1, Math.ceil(total / pageSize)));
 	const normalizedFilters = $derived.by(() => sanitizeFilters(filters));
+	const sortableColumns = $derived(columns.filter((col) => col.sortable));
+	const mobileSortOptions = $derived([
+		{ label: 'No sort', value: '' },
+		...sortableColumns.flatMap((col) => [
+			{ label: `${col.header} (A-Z)`, value: `${col.key}:asc` },
+			{ label: `${col.header} (Z-A)`, value: `${col.key}:desc` }
+		])
+	]);
+	const mobileSortValue = $derived(sort ? `${sort.column}:${sort.direction}` : '');
+	const effectiveVirtualRowHeight = $derived(
+		containerWidth > 0 && containerWidth <= 640
+			? Math.max(virtualRowHeight, 112)
+			: Math.max(virtualRowHeight, 1)
+	);
 	const effectiveViewportHeight = $derived(Math.max(0, viewportHeight - headerHeight));
 	const bodyScrollTop = $derived(virtualScroll ? scrollTop : 0);
 	const visibleRowCapacity = $derived(
 		virtualScroll
-			? Math.max(1, Math.ceil((effectiveViewportHeight || virtualRowHeight) / Math.max(virtualRowHeight, 1)))
+			? Math.max(1, Math.ceil((effectiveViewportHeight || effectiveVirtualRowHeight) / effectiveVirtualRowHeight))
 			: rows.length
 	);
 	const virtualStartIndex = $derived(
 		virtualScroll
-			? Math.max(0, Math.floor(bodyScrollTop / Math.max(virtualRowHeight, 1)) - virtualOverscan)
+			? Math.max(0, Math.floor(bodyScrollTop / effectiveVirtualRowHeight) - virtualOverscan)
 			: 0
 	);
 	const virtualEndIndex = $derived(
@@ -144,15 +159,15 @@
 					rows.length,
 					Math.max(
 						0,
-						Math.ceil((bodyScrollTop + effectiveViewportHeight) / Math.max(virtualRowHeight, 1))
+						Math.ceil((bodyScrollTop + effectiveViewportHeight) / effectiveVirtualRowHeight)
 					) + virtualOverscan
 				)
 			: rows.length
 	);
 	const visibleRows = $derived(virtualScroll ? rows.slice(virtualStartIndex, virtualEndIndex) : rows);
-	const topSpacerHeight = $derived(virtualScroll ? virtualStartIndex * Math.max(virtualRowHeight, 1) : 0);
+	const topSpacerHeight = $derived(virtualScroll ? virtualStartIndex * effectiveVirtualRowHeight : 0);
 	const bottomSpacerHeight = $derived(
-		virtualScroll ? Math.max(0, (rows.length - virtualEndIndex) * Math.max(virtualRowHeight, 1)) : 0
+		virtualScroll ? Math.max(0, (rows.length - virtualEndIndex) * effectiveVirtualRowHeight) : 0
 	);
 	const virtualPrefetchThreshold = $derived(Math.max(visibleRowCapacity, virtualOverscan * 2));
 	const rangeStart = $derived(
@@ -248,22 +263,43 @@
 		}, 250);
 	}
 
-	function handleSort(col: CwColumnDef<T>) {
-		if (!col.sortable) return;
-
-		if (sort?.column === col.key) {
-			sort =
-				sort.direction === 'asc'
-					? { column: col.key, direction: 'desc' }
-					: null;
-		} else {
-			sort = { column: col.key, direction: 'asc' };
-		}
-
+	function applySort(nextSort: CwTableSort) {
+		sort = nextSort;
 		page = 1;
 		appendError = null;
 		if (virtualScroll) resetVirtualViewport();
 		onSort?.(sort);
+	}
+
+	function handleSort(col: CwColumnDef<T>) {
+		if (!col.sortable) return;
+
+		const nextSort: CwTableSort =
+			sort?.column === col.key
+				? sort.direction === 'asc'
+					? { column: col.key, direction: 'desc' }
+					: null
+				: { column: col.key, direction: 'asc' };
+
+		applySort(nextSort);
+	}
+
+	function handleMobileSortChange(value: string) {
+		if (value === mobileSortValue) return;
+		if (!value) {
+			applySort(null);
+			return;
+		}
+
+		const [column, direction] = value.split(':');
+		if (
+			(direction !== 'asc' && direction !== 'desc') ||
+			!sortableColumns.some((col) => col.key === column)
+		) {
+			return;
+		}
+
+		applySort({ column, direction });
 	}
 
 	function handlePreviousPage() {
@@ -303,7 +339,7 @@
 
 		const maxScrollTop = Math.max(scrollRef.scrollHeight - scrollRef.clientHeight, 0);
 		const distanceFromBottom = Math.max(0, maxScrollTop - scrollRef.scrollTop);
-		const restoreThreshold = Math.max(virtualRowHeight, 1) * 2;
+		const restoreThreshold = effectiveVirtualRowHeight * 2;
 
 		return {
 			distanceFromBottom,
@@ -548,6 +584,7 @@
 	class="cw-data-table {className}"
 	class:cw-data-table--fill-parent={fillParent}
 	class:cw-data-table--virtual={virtualScroll}
+	bind:clientWidth={containerWidth}
 >
 	{#if loading}
 		<div class="cw-data-table__loading-container" role="status" aria-live="polite">
@@ -572,6 +609,16 @@
 			<span class="cw-data-table__toolbar-spacer"></span>
 
 			<div class="cw-data-table__toolbar-end">
+				{#if sortableColumns.length > 0}
+					<div class="cw-data-table__mobile-sort">
+						<CwDropdown
+							options={mobileSortOptions}
+							value={mobileSortValue}
+							onchange={handleMobileSortChange}
+						/>
+					</div>
+				{/if}
+
 				<div class="cw-data-table__page-size">
 					<CwDropdown
 						options={pageSizeOptions.map((n) => ({
@@ -713,6 +760,7 @@
 										class:cw-data-table__td--hide-sm={col.hideBelow === 'sm'}
 										class:cw-data-table__td--hide-md={col.hideBelow === 'md'}
 										class:cw-data-table__td--hide-lg={col.hideBelow === 'lg'}
+										data-label={col.header}
 										style:text-align={col.align ?? 'left'}
 									>
 										{#if cell}
@@ -723,8 +771,14 @@
 									</td>
 								{/each}
 								{#if rowActions}
-									<td class="cw-data-table__td cw-data-table__td--actions" style:text-align="right">
-										{@render rowActions(row)}
+									<td
+										class="cw-data-table__td cw-data-table__td--actions"
+										data-label={rowActionsHeader || 'Actions'}
+										style:text-align="right"
+									>
+										<div class="cw-data-table__action-slot">
+											{@render rowActions(row)}
+										</div>
 									</td>
 								{/if}
 							</tr>
@@ -831,6 +885,8 @@
 
 <style>
 	.cw-data-table {
+		--cw-datatable-mobile-label-width: 5.5rem;
+		container-type: inline-size;
 		position: relative;
 		display: flex;
 		flex-direction: column;
@@ -900,6 +956,11 @@
 		align-items: center;
 		gap: var(--cw-space-2);
 		flex-shrink: 0;
+	}
+
+	.cw-data-table__mobile-sort {
+		display: none;
+		min-width: 8.5rem;
 	}
 
 	.cw-data-table__page-size {
@@ -1030,6 +1091,16 @@
 		white-space: nowrap;
 	}
 
+	.cw-data-table__action-slot {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: var(--cw-space-1);
+		width: 100%;
+		min-width: 0;
+		flex-wrap: wrap;
+	}
+
 	.cw-data-table__status {
 		padding: var(--cw-space-12) var(--cw-space-4);
 		text-align: center;
@@ -1129,30 +1200,46 @@
 		z-index: 1;
 	}
 
-	@media (max-width: 640px) {
+	@container (max-width: 640px) {
 		.cw-data-table__th--hide-sm,
 		.cw-data-table__td--hide-sm {
 			display: none;
 		}
 	}
 
-	@media (max-width: 768px) {
+	@container (max-width: 768px) {
 		.cw-data-table__th--hide-md,
 		.cw-data-table__td--hide-md {
 			display: none;
 		}
 	}
 
-	@media (max-width: 1024px) {
+	@container (max-width: 1024px) {
 		.cw-data-table__th--hide-lg,
 		.cw-data-table__td--hide-lg {
 			display: none;
 		}
 	}
 
-	@media (max-width: 640px) {
+	@container (max-width: 640px) {
+		.cw-data-table__table {
+			--cw-datatable-mobile-label-width: 5rem;
+			table-layout: fixed;
+		}
+
 		.cw-data-table__toolbar {
+			gap: var(--cw-space-2);
+			padding: var(--cw-space-2) var(--cw-space-3);
 			flex-wrap: wrap;
+		}
+
+		.cw-data-table__search-wrapper,
+		.cw-data-table__mobile-sort,
+		.cw-data-table__page-size,
+		.cw-data-table__toolbar-actions {
+			max-width: none;
+			min-width: 0;
+			width: 100%;
 		}
 
 		.cw-data-table__toolbar-spacer {
@@ -1170,8 +1257,86 @@
 			align-items: stretch;
 		}
 
+		.cw-data-table__toolbar-actions {
+			flex-wrap: wrap;
+		}
+
+		.cw-data-table__mobile-sort {
+			display: block;
+		}
+
+		.cw-data-table__scroll {
+			overflow-x: hidden;
+		}
+
+		.cw-data-table__table thead {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			padding: 0;
+			margin: -1px;
+			overflow: hidden;
+			clip: rect(0 0 0 0);
+			clip-path: inset(50%);
+			white-space: nowrap;
+			border: 0;
+		}
+
+		.cw-data-table__row {
+			display: block;
+		}
+
+		.cw-data-table__row > .cw-data-table__td {
+			display: grid;
+			grid-template-columns: minmax(0, var(--cw-datatable-mobile-label-width)) minmax(0, 1fr);
+			gap: var(--cw-space-2);
+			align-items: start;
+			padding: var(--cw-space-2) var(--cw-space-3);
+			text-align: left !important;
+			white-space: normal;
+			word-break: break-word;
+			overflow-wrap: anywhere;
+		}
+
+		.cw-data-table__row > .cw-data-table__td::before {
+			content: attr(data-label);
+			color: var(--cw-text-muted);
+			font-size: 0.6875rem;
+			font-weight: var(--cw-font-semibold);
+			line-height: 1.3;
+			letter-spacing: 0.04em;
+			text-transform: uppercase;
+		}
+
+		.cw-data-table__row > .cw-data-table__td--actions {
+			width: auto;
+			grid-template-columns: minmax(0, 1fr);
+			gap: var(--cw-space-1);
+			align-items: start;
+			white-space: normal;
+			word-break: normal;
+			overflow-wrap: normal;
+		}
+
+		.cw-data-table__row > .cw-data-table__td--actions .cw-data-table__action-slot {
+			justify-content: flex-start;
+		}
+
+		.cw-data-table__status,
+		.cw-data-table__append-cell {
+			padding: var(--cw-space-8) var(--cw-space-3);
+		}
+
 		.cw-data-table__page-controls {
+			gap: var(--cw-space-1);
 			justify-content: center;
+		}
+
+		.cw-data-table__page-info,
+		.cw-data-table__page-num,
+		.cw-data-table__virtual-meta,
+		.cw-data-table__pagination {
+			font-size: var(--cw-text-xs);
 		}
 	}
 </style>

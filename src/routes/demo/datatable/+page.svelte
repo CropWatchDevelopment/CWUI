@@ -146,7 +146,7 @@
 		alert(`Delete: ${device.name}`);
 	}
 
-const dataTableExample = `<CwDataTable
+	const dataTableExample = `<CwDataTable
 \tcolumns={columns}
 \tloadData={loadData}
 \trowKey="id"
@@ -174,7 +174,39 @@ const dataTableExample = `<CwDataTable
 \t{/snippet}
 </CwDataTable>`;
 
-const rowLoadingExample = `interface Device {
+	const phoneViewExample = `<div class="datatable-phone-preview">
+\t<CwDataTable
+\t\tcolumns={columns}
+\t\tloadData={loadData}
+\t\trowKey="id"
+\t\trowTextSizeKey="textSize"
+\t\tsearchable
+\t\tpageSize={4}
+\t\trowActionsHeader="Action"
+\t>
+\t\t{#snippet rowActions(row)}
+\t\t\t<CwButton size="sm" variant="secondary" onclick={() => handleEdit(row)}>
+\t\t\t\tView
+\t\t\t</CwButton>
+\t\t{/snippet}
+\t\t{#snippet cell(row, col, defaultValue)}
+\t\t\t{#if col.key === 'lastSeen'}
+\t\t\t\t<CwDuration from={row.lastSeen} />
+\t\t\t{:else}
+\t\t\t\t{defaultValue}
+\t\t\t{/if}
+\t\t{/snippet}
+\t</CwDataTable>
+</div>
+
+<style>
+\t.datatable-phone-preview {
+\t\twidth: min(100%, 24rem);
+\t\tmargin-inline: auto;
+\t}
+</style>`;
+
+	const rowLoadingExample = `interface Device {
 \tid: string;
 \tname: string;
 \tcwloading?: boolean;
@@ -188,7 +220,7 @@ async function updateRow(row: Device) {
 
 <CwDataTable columns={columns} loadData={loadData} rowKey="id" />`;
 
-const fillParentExample = `<div class="datatable-shell">
+	const fillParentExample = `<div class="datatable-shell">
 \t<div class="datatable-shell__body">
 \t\t<CwDataTable
 \t\t\tcolumns={columns}
@@ -217,7 +249,7 @@ const fillParentExample = `<div class="datatable-shell">
 \t}
 </style>`;
 
-const virtualScrollExample = `<script lang="ts">
+	const virtualScrollExample = `<script lang="ts">
 \tlet statusFilter = $state<'all' | 'online' | 'offline' | 'warning'>('all');
 \tconst filters = $derived(statusFilter === 'all' ? {} : { status: [statusFilter] });
 
@@ -275,6 +307,43 @@ const virtualScrollExample = `<script lang="ts">
 </CwDataTable>
 
 <DemoCodeExample code={dataTableExample} title="CwDataTable example" />
+
+<section class="demo-section">
+	<h3>Phone View</h3>
+	<p class="demo-hint">
+		The table now responds to its own width, so this phone shell shows the rotated mobile fields, compact toolbar, and a single-button actions column.
+	</p>
+	<div class="demo-phone-preview">
+		<div class="demo-phone-frame">
+			<div class="demo-phone-frame__top">
+				<span class="demo-phone-frame__speaker" aria-hidden="true"></span>
+			</div>
+			<div class="demo-phone-frame__screen">
+				<CwDataTable
+					columns={columns}
+					loadData={loadData}
+					rowKey="id"
+					rowTextSizeKey="textSize"
+					searchable
+					pageSize={4}
+					rowActionsHeader="Action"
+				>
+					{#snippet rowActions(row: Device)}
+						<CwButton size="sm" variant="secondary" onclick={() => handleEdit(row)}>View</CwButton>
+					{/snippet}
+					{#snippet cell(row: Device, col: CwColumnDef<Device>, defaultValue: string)}
+						{#if col.key === 'lastSeen'}
+							<CwDuration from={row.lastSeen} />
+						{:else}
+							{defaultValue}
+						{/if}
+					{/snippet}
+				</CwDataTable>
+			</div>
+		</div>
+	</div>
+	<DemoCodeExample code={phoneViewExample} title="Phone-width datatable" />
+</section>
 
 <section class="demo-section">
 	<h3>Fill Parent Height + Internal Scroll</h3>
@@ -453,6 +522,45 @@ const virtualScrollExample = `<script lang="ts">
 	.demo-desc { color: var(--cw-text-muted); font-size: var(--cw-text-sm); margin-bottom: var(--cw-space-4); }
 	.demo-hint { color: var(--cw-text-muted); font-size: var(--cw-text-xs); margin-bottom: var(--cw-space-2); }
 	.demo-section { margin-top: var(--cw-space-6); }
+	.demo-phone-preview {
+		display: grid;
+		place-items: center;
+	}
+	.demo-phone-frame {
+		display: grid;
+		gap: var(--cw-space-3);
+		width: min(100%, 24rem);
+		padding: 0.85rem;
+		border-radius: 2rem;
+		border: 1px solid color-mix(in srgb, var(--cw-border-default) 70%, transparent);
+		background:
+			radial-gradient(circle at top, color-mix(in srgb, var(--cw-info-200) 30%, transparent), transparent 58%),
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--cw-gray-900) 94%, var(--cw-bg-surface)),
+				color-mix(in srgb, var(--cw-gray-800) 92%, var(--cw-bg-elevated))
+			);
+		box-shadow:
+			0 1.25rem 2.5rem color-mix(in srgb, var(--cw-gray-900) 22%, transparent),
+			inset 0 1px 0 color-mix(in srgb, white 12%, transparent);
+	}
+	.demo-phone-frame__top {
+		display: flex;
+		justify-content: center;
+	}
+	.demo-phone-frame__speaker {
+		width: 5rem;
+		height: 0.35rem;
+		border-radius: var(--cw-radius-pill);
+		background: color-mix(in srgb, black 55%, var(--cw-gray-700));
+		box-shadow: inset 0 1px 1px color-mix(in srgb, white 10%, transparent);
+	}
+	.demo-phone-frame__screen {
+		overflow: hidden;
+		border-radius: 1.45rem;
+		background: var(--cw-bg-surface);
+		border: 1px solid color-mix(in srgb, var(--cw-border-default) 78%, transparent);
+	}
 	.demo-table-shell {
 		display: flex;
 		flex-direction: column;
@@ -488,6 +596,7 @@ const virtualScrollExample = `<script lang="ts">
 	code { font-family: var(--cw-font-mono); font-size: var(--cw-text-xs); color: var(--cw-accent); }
 	.row-actions {
 		display: flex;
+		flex-wrap: wrap;
 		gap: var(--cw-space-1);
 		justify-content: flex-end;
 	}
