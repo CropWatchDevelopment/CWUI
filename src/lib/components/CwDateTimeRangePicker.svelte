@@ -37,6 +37,9 @@
 	let viewMonth = $state(new Date().getMonth());
 	let open = $state(false);
 	let hoverDate = $state<Date | null>(null);
+	let triggerRef = $state<HTMLButtonElement | null>(null);
+	let dropdownRef = $state<HTMLDivElement | null>(null);
+	let dropdownStyle = $state('');
 
 	// Range selection state
 	let rangeStart = $state<Date | null>(null);
@@ -331,10 +334,83 @@
 		open = false;
 	}
 
+	function handleDropdownKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			open = false;
+			triggerRef?.focus();
+		}
+	}
+
 	function handleTimeChange() {
 		// Re-emit when time changes
 		if (value) emit();
 	}
+
+	function updateDropdownPosition() {
+		if (!open || !triggerRef) return;
+
+		const rect = triggerRef.getBoundingClientRect();
+		const margin = 8;
+		const spacing = 6;
+		const fallbackWidth = 272;
+		const measuredWidth = dropdownRef?.offsetWidth ?? fallbackWidth;
+		const measuredHeight = dropdownRef?.offsetHeight ?? 0;
+		const viewportWidth = window.innerWidth;
+		const viewportHeight = window.innerHeight;
+		const maxPanelWidth = Math.max(0, viewportWidth - margin * 2);
+		const panelWidth = Math.min(Math.max(rect.width, measuredWidth), maxPanelWidth);
+
+		let left = rect.left;
+		if (left + panelWidth > viewportWidth - margin) {
+			left = viewportWidth - margin - panelWidth;
+		}
+		if (left < margin) {
+			left = margin;
+		}
+
+		const belowTop = rect.bottom + spacing;
+		const belowSpace = Math.max(0, viewportHeight - margin - belowTop);
+		const aboveSpace = Math.max(0, rect.top - spacing - margin);
+		const placeAbove = measuredHeight > belowSpace && aboveSpace > belowSpace;
+
+		let top = belowTop;
+		let maxHeight = belowSpace;
+
+		if (placeAbove) {
+			maxHeight = aboveSpace;
+			const renderedHeight = measuredHeight > 0 ? Math.min(measuredHeight, maxHeight) : maxHeight;
+			top = Math.max(margin, rect.top - spacing - renderedHeight);
+		}
+
+		if (maxHeight <= 0) {
+			top = margin;
+			maxHeight = Math.max(0, viewportHeight - margin * 2);
+		}
+
+		dropdownStyle = `left:${Math.round(left)}px;top:${Math.round(top)}px;width:${Math.round(panelWidth)}px;max-height:${Math.round(maxHeight)}px;`;
+	}
+
+	$effect(() => {
+		if (!open || !triggerRef || !dropdownRef) return;
+
+		updateDropdownPosition();
+		const raf = requestAnimationFrame(() => updateDropdownPosition());
+		const resizeObserver = new ResizeObserver(() => updateDropdownPosition());
+		resizeObserver.observe(triggerRef);
+		resizeObserver.observe(dropdownRef);
+
+		const handleViewportChange = () => updateDropdownPosition();
+		window.addEventListener('resize', handleViewportChange);
+		window.addEventListener('scroll', handleViewportChange, true);
+
+		return () => {
+			cancelAnimationFrame(raf);
+			resizeObserver.disconnect();
+			window.removeEventListener('resize', handleViewportChange);
+			window.removeEventListener('scroll', handleViewportChange, true);
+		};
+	});
 </script>
 
 {#if open}
@@ -344,6 +420,7 @@
 
 <div class="cw-date-picker {className}">
 	<button
+		bind:this={triggerRef}
 		type="button"
 		class="cw-date-picker__trigger"
 		class:cw-date-picker__trigger--open={open}
@@ -374,7 +451,15 @@
 	{/if}
 
 	{#if open}
-		<div class="cw-date-picker__dropdown" role="dialog" aria-label="Date picker">
+		<div
+			bind:this={dropdownRef}
+			class="cw-date-picker__dropdown"
+			style={dropdownStyle}
+			role="dialog"
+			tabindex="-1"
+			aria-label="Date picker"
+			onkeydown={handleDropdownKeydown}
+		>
 			<!-- Navigation -->
 			<div class="cw-date-picker__nav">
 				<button type="button" class="cw-date-picker__nav-btn" onclick={granularity === 'day' ? prevMonth : prevYear} aria-label="Previous">
@@ -397,10 +482,10 @@
 			<!-- Day grid -->
 			{#if granularity === 'day'}
 				<div class="cw-date-picker__grid cw-date-picker__grid--day" role="grid">
-					{#each daysOfWeek as dow}
+					{#each daysOfWeek as dow (dow)}
 						<div class="cw-date-picker__dow">{dow}</div>
 					{/each}
-					{#each calendarDays as day}
+					{#each calendarDays as day (day.date.getTime())}
 						<button
 							type="button"
 							class="cw-date-picker__day"
@@ -425,7 +510,7 @@
 			<!-- Month grid -->
 			{#if granularity === 'month'}
 				<div class="cw-date-picker__grid cw-date-picker__grid--month" role="grid">
-					{#each monthGrid as m}
+					{#each monthGrid as m (m.month)}
 						<button
 							type="button"
 							class="cw-date-picker__month-cell"
@@ -443,7 +528,7 @@
 			<!-- Year grid -->
 			{#if granularity === 'year'}
 				<div class="cw-date-picker__grid cw-date-picker__grid--year" role="grid">
-					{#each yearGrid as y}
+					{#each yearGrid as y (y.year)}
 						<button
 							type="button"
 							class="cw-date-picker__year-cell"
@@ -523,7 +608,7 @@
 	.cw-date-picker__backdrop {
 		position: fixed;
 		inset: 0;
-		z-index: var(--cw-z-dropdown);
+		z-index: var(--cw-z-overlay);
 	}
 
 	.cw-date-picker__trigger {
@@ -580,17 +665,19 @@
 
 	/* ── Dropdown panel ──────────────────── */
 	.cw-date-picker__dropdown {
-		position: absolute;
-		top: 100%;
-		left: 0;
-		z-index: calc(var(--cw-z-dropdown) + 1);
-		margin-top: var(--cw-space-1);
+		position: fixed;
+		z-index: calc(var(--cw-z-overlay) + 1);
 		padding: var(--cw-space-3);
 		background-color: var(--cw-bg-elevated);
 		border: 1px solid var(--cw-border-default);
 		border-radius: var(--cw-radius-lg);
 		box-shadow: var(--cw-shadow-xl);
-		min-width: 17rem;
+		box-sizing: border-box;
+		min-width: min(17rem, calc(100vw - 1rem));
+		max-width: calc(100vw - 1rem);
+		overflow-y: auto;
+		overflow-x: hidden;
+		overscroll-behavior: contain;
 	}
 
 	/* ── Navigation ──────────────────────── */

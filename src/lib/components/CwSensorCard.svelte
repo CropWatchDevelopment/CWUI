@@ -15,7 +15,7 @@
 		title?: string;
 		/** Current device connection status */
 		status?: CwStatusDotStatus;
-		/** Initial expanded state for devices before localStorage overrides (default: true) */
+		/** Initial expanded state for devices when no localStorage entry exists (default: false) */
 		defaultExpanded?: boolean;
 		/** Storage key for persisting expand states. Defaults to title. */
 		storageKey?: string;
@@ -48,7 +48,7 @@
 	let {
 		title = 'Location',
 		status = 'loading' as CwStatusDotStatus,
-		defaultExpanded = true,
+		defaultExpanded = false,
 		storageKey,
 		devices,
 		deviceLabel,

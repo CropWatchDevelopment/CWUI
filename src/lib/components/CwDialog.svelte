@@ -88,12 +88,12 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <dialog
 	bind:this={dialogRef}
-	class="cw-dialog {className}"
+	class="cw-dialog"
 	aria-labelledby={title ? `${uid}-title` : undefined}
 	onclick={handleBackdropClick}
 	onkeydown={handleKeydown}
 >
-	<div class="cw-dialog__panel">
+	<div class={['cw-dialog__panel', className]}>
 		<div class="cw-dialog__header">
 			{#if title}
 				<h2 class="cw-dialog__title" id="{uid}-title">{title}</h2>
@@ -138,6 +138,8 @@
 	}
 
 	.cw-dialog__panel {
+		width: min(var(--cw-dialog-width, 50vw), calc(100vw - 2rem));
+		margin: 0 auto;
 		display: flex;
 		flex-direction: column;
 		background-color: var(--cw-bg-surface);

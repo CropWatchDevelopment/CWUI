@@ -1193,8 +1193,7 @@
 		{#snippet children()}
 			<div class="cw-data-table__column-settings-dialog">
 				<p class="cw-data-table__column-settings-copy">
-					Choose which columns are visible for this grid. Saved settings use the key
-					<code>{resolvedGridId}</code>.
+					Choose which columns are visible for this grid.
 				</p>
 
 				<div class="cw-data-table__column-settings-list" role="group" aria-label="Visible columns">
@@ -1433,12 +1432,7 @@
 		padding: var(--cw-space-3);
 		border: 1px solid color-mix(in srgb, var(--cw-border-default) 80%, transparent);
 		border-radius: var(--cw-radius-lg);
-		background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-bg-elevated) 92%, white),
-				color-mix(in srgb, var(--cw-bg-muted) 60%, white)
-			);
+		
 		cursor: pointer;
 	}
 

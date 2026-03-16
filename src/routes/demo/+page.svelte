@@ -1,3 +1,8 @@
+<script lang="ts">
+	import WORKER_IMAGE from '$lib/images/office-work.webp';
+</script>
+<img src={WORKER_IMAGE} alt="CWUI In development Header" style="width: 100%;" />
+
 <h2>CropWatch UI Demo</h2>
 <p class="demo-desc">Select a component from the sidebar to view demos, API behavior, and copy-paste examples.</p>
 <p class="demo-links">
