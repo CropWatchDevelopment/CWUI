@@ -142,6 +142,16 @@ Create context once in a layout/root component, then call `toast.add(...)` in ch
 - As plain search input (without suggestions)
 - As async autocomplete (`fetchSuggestions(query, signal)`)
 
+### Calendar
+
+`CwCalendar` is a reusable month grid shell with:
+
+- bindable `year` and `month` props (`month` is zero-based)
+- `onDateClick(date)` for enabled day selection
+- `onMonthChange(year, month, displayedMonth)` for prev/next month navigation
+- `minDate` and `maxDate` to disable navigation and day clicks outside an allowed range
+- `dayHeader(date)`, `dayTrailing(date)`, and `dayContent(date)` snippet props for custom day UI
+
 ### Theming
 
 - Dark mode tokens are default in distributed base styles.

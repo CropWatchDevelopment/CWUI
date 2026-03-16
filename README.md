@@ -184,6 +184,7 @@ Override any CSS variable in your own stylesheet:
 | **`CwPPFDChart`** | Horizontal PPFD range gauge — low/optimal/high zones, crop target band, live reading marker, dynamic scaling |
 | **`CwVPDChart`** | Temperature-by-RH VPD matrix — agriculture-style heatmap with selected target overlay and live climate cell |
 | **`CwChip`** | Badge/tag — 6 tones × 3 variants (`solid`/`soft`/`outline`), dismissible |
+| **`CwCalendar`** | Month calendar — bindable `year`/`month`, customizable day snippets, month-change callback, optional `minDate` / `maxDate` |
 | **`CwDuration`** | Live elapsed time — auto-ticking `<time>` element from a start timestamp |
 | **`CwListBox<T>`** | Selectable list — badges, end-text, custom item snippets, keyboard navigation |
 
@@ -206,6 +207,65 @@ Override any CSS variable in your own stylesheet:
 | **`CwToastContainer`** | Toast notification system — context-based, auto-dismiss, 6 tones |
 | **`CwProfileMenu`** | User profile dropdown — avatar (image or initials), menu items with separators and danger styling |
 | **`CwThemePicker`** | Theme switcher — dark/light/system toggle, applies `data-theme` to `<html>` |
+
+---
+
+## Calendar
+
+`CwCalendar` is a reusable month grid shell. Use it bare for a simple calendar, or add snippets when each day needs a label, trailing metadata, or richer body content.
+
+### Core props
+
+- `year` / `month`: Optional bindable month state. `month` is zero-based like `Date#getMonth()`.
+- `onDateClick(date)`: Fires when an enabled day is clicked.
+- `onMonthChange(year, month, displayedMonth)`: Fires after the previous/next month buttons change the visible month.
+- `minDate` / `maxDate`: Prevent navigation and date clicks outside the allowed range.
+- `dayHeader(date)` / `dayTrailing(date)` / `dayContent(date)`: Optional snippet props for custom day content.
+
+### Example
+
+```svelte
+<script lang="ts">
+  import { CwCalendar } from '@cropwatchdevelopment/cwui';
+
+  let visibleYear = $state(new Date().getFullYear());
+  let visibleMonth = $state(new Date().getMonth());
+  let selectedDate = $state<Date | null>(null);
+
+  const minDate = new Date(2026, 2, 10);
+  const maxDate = new Date(2026, 4, 22);
+
+  function weatherFor(date: Date) {
+    const icons = ['☀️', '🌤️', '⛅', '🌧️', '🌦️', '☁️', '🌤️'];
+    return { icon: icons[date.getDay()], high: 70 + (date.getDay() % 4) };
+  }
+</script>
+
+<CwCalendar
+  bind:year={visibleYear}
+  bind:month={visibleMonth}
+  {minDate}
+  {maxDate}
+  onDateClick={(date) => (selectedDate = date)}
+  onMonthChange={(_year, _month, displayedMonth) => console.log(displayedMonth)}
+>
+  {#snippet dayHeader(date)}
+    <span>{selectedDate?.toDateString() === date.toDateString() ? 'Selected' : 'Open day'}</span>
+  {/snippet}
+
+  {#snippet dayTrailing(date)}
+    {@const weather = weatherFor(date)}
+    <div style="display:grid;justify-items:end;gap:0.1rem">
+      <span style="font-size:1.2rem">{weather.icon}</span>
+      <span>{weather.high}°</span>
+    </div>
+  {/snippet}
+
+  {#snippet dayContent(date)}
+    <div>{date.toLocaleDateString()}</div>
+  {/snippet}
+</CwCalendar>
+```
 
 ---
 

@@ -1676,6 +1676,158 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			}
 		]
 	},
+	'/demo/calendar': {
+		summary:
+			'CwCalendar is a month grid shell. Use it as a simple calendar first, then layer in `dayHeader`, `dayTrailing`, and `dayContent` snippets only when each day needs richer content.',
+		steps: [
+			{
+				title: 'Decide if the month should be controlled',
+				description:
+					'Leave `year` and `month` alone for an internal calendar, or bind them when the rest of the page needs to know which month is on screen.'
+			},
+			{
+				title: 'Constrain with real dates, not custom guards',
+				description:
+					'Use `minDate` and `maxDate` to disable both navigation and day clicks outside the allowed window instead of wrapping the callbacks yourself.'
+			},
+			{
+				title: 'Treat snippets as layers',
+				description:
+					'`dayHeader` is for the compact label next to the day number, `dayTrailing` is for lightweight metadata like weather, and `dayContent` is the larger body area.'
+			}
+		],
+		apiRows: [
+			{
+				name: 'year',
+				type: 'number',
+				description: 'Displayed year. Bind this when parent state should track the visible month.',
+				defaultValue: 'current year'
+			},
+			{
+				name: 'month',
+				type: 'number',
+				description: 'Displayed month, zero-based like `Date#getMonth()`.',
+				defaultValue: 'current month'
+			},
+			{
+				name: 'startOnMonday',
+				type: 'boolean',
+				description: 'Switches weekday headers between Monday-first and Sunday-first layout.',
+				defaultValue: 'true'
+			},
+			{
+				name: 'minDate',
+				type: 'Date',
+				description: 'Earliest selectable date and earliest month the user can navigate to.'
+			},
+			{
+				name: 'maxDate',
+				type: 'Date',
+				description: 'Latest selectable date and latest month the user can navigate to.'
+			},
+			{
+				name: 'onDateClick',
+				type: '(date: Date) => void',
+				description: 'Runs when the user clicks an enabled day cell.'
+			},
+			{
+				name: 'onMonthChange',
+				type: '(year: number, month: number, displayedMonth: Date) => void',
+				description:
+					'Runs after the previous or next month buttons change the visible month. `month` is zero-based and `displayedMonth` is the first day of that month.'
+			},
+			{
+				name: 'dayHeader',
+				type: 'Snippet<[Date]>',
+				description: 'Optional compact label rendered beside the day number.'
+			},
+			{
+				name: 'dayTrailing',
+				type: 'Snippet<[Date]>',
+				description: 'Optional metadata rendered on the right side of the day header.'
+			},
+			{
+				name: 'dayContent',
+				type: 'Snippet<[Date]>',
+				description: 'Optional main content block rendered under the header inside each day cell.'
+			}
+		],
+		examples: [
+			{
+				title: 'Minimal calendar shell',
+				description: 'Start here when the page only needs the standard month grid.',
+				code: `<CwCalendar
+\tonDateClick={(date) => console.log(date)}
+/>`
+			},
+			{
+				title: 'Controlled month with min/max bounds',
+				description: 'Use this when sibling UI needs to react to visible month changes.',
+				code: `<script lang="ts">
+\tlet visibleYear = $state(new Date().getFullYear());
+\tlet visibleMonth = $state(new Date().getMonth());
+\tlet lastMonth = $state(new Date(visibleYear, visibleMonth, 1));
+
+\tconst minDate = new Date(2026, 2, 10);
+\tconst maxDate = new Date(2026, 4, 22);
+
+\tfunction handleMonthChange(_year: number, _month: number, displayedMonth: Date) {
+\t\tlastMonth = displayedMonth;
+\t}
+</script>
+
+<CwCalendar
+\tbind:year={visibleYear}
+\tbind:month={visibleMonth}
+\t{minDate}
+\t{maxDate}
+\tonMonthChange={handleMonthChange}
+\tonDateClick={(date) => console.log(date)}
+/>
+
+<p>
+\tShowing
+\t{lastMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+</p>`
+			},
+			{
+				title: 'Weather and schedule snippets',
+				description: 'This pattern keeps the calendar shell reusable while the page owns the per-day content.',
+				code: `<script lang="ts">
+\tfunction weatherFor(date: Date) {
+\t\tconst icons = ['☀️', '🌤️', '⛅', '🌧️', '🌦️', '☁️', '🌤️'];
+\t\treturn { icon: icons[date.getDay()], high: 70 + (date.getDay() % 4) };
+\t}
+
+\tfunction jobsFor(date: Date) {
+\t\treturn date.getDay() === 2
+\t\t\t? ['Irrigation schedule', 'Nutrient audit']
+\t\t\t: [];
+\t}
+</script>
+
+<CwCalendar onDateClick={(date) => console.log(date)}>
+\t{#snippet dayHeader(date)}
+\t\t<span>{jobsFor(date)[0] ?? 'Open day'}</span>
+\t{/snippet}
+
+\t{#snippet dayTrailing(date)}
+\t\t{@const weather = weatherFor(date)}
+\t\t<div style="display:grid;justify-items:end;gap:0.1rem">
+\t\t\t<span style="font-size:1.2rem">{weather.icon}</span>
+\t\t\t<span>{weather.high}°</span>
+\t\t</div>
+\t{/snippet}
+
+\t{#snippet dayContent(date)}
+\t\t{#each jobsFor(date) as job}
+\t\t\t<div>{job}</div>
+\t\t{/each}
+\t{/snippet}
+</CwCalendar>`
+			}
+		]
+	},
 	'/demo/datepicker': {
 		summary:
 			'CwDateTimeRangePicker covers single dates, ranges, month and year picking, and optional time entry. The returned value shape changes with `mode`, so decide that up front.',
