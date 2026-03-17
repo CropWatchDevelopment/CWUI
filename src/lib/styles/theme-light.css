@@ -5,206 +5,135 @@
    Applied via [data-theme="light"].
    ============================================================ */
 
+/* ============================================================
+   CropWatch UI — Refined Light Theme
+   ============================================================
+   Professional, high-contrast, and layered for business use.
+   Applied via [data-theme="light"].
+   ============================================================ */
+
+/* ============================================================
+   CropWatch UI — Full Refined Light Theme
+   ============================================================
+   Optimized for: Business Professional Dashboards
+   Strategy: Using "Slate" grays for depth and "Blue" for intent.
+   ============================================================ */
+
+/* ============================================================
+   CropWatch UI — High-Contrast Professional Light Theme
+   ============================================================
+   Targeting: Depth, Layering, and WCAG-compliant contrast.
+   ============================================================ */
+
 [data-theme='light'] {
-	color-scheme: light;
+    color-scheme: light;
 
-	/* ── Surface / Background ──────────────────────────── */
-	--cw-bg-base: var(--cw-gray-50);
-	--cw-bg-surface: #ffffff;
-	--cw-bg-surface-elevated: #ffffff;
-	--cw-bg-elevated: #ffffff;
-	--cw-bg-overlay: var(--cw-gray-100);
-	--cw-bg-muted: var(--cw-gray-100);
-	--cw-bg-subtle: var(--cw-gray-200);
-	--cw-bg-table-row: color-mix(in srgb, var(--cw-info-100) 55%, #ffffff);
-	--cw-bg-table-row-hover: color-mix(in srgb, var(--cw-info-200) 48%, #ffffff);
-	--cw-bg-table-row-alt: color-mix(in srgb, var(--cw-info-100) 68%, #ffffff);
-	--cw-bg-table-row-alt-hover: color-mix(in srgb, var(--cw-info-200) 58%, #ffffff);
+    /* ── Surface / Background ──────────────────────────── 
+       Darkened base ensures white surfaces (cards/demo blocks) 
+       stand out.
+    */
+    --cw-bg-base: #f1f5f9;              /* Slate 100 - The background "floor" */
+    --cw-bg-surface: #ffffff;           /* Pure White - For Cards/Main Content */
+    --cw-bg-surface-elevated: #ffffff;
+    --cw-bg-elevated: #ffffff;
+    --cw-bg-overlay: #cbd5e1;           /* Slate 300 - For backdrops */
+    --cw-bg-muted: #f8fafc;             /* Slate 50 - For inset areas */
+    --cw-bg-subtle: #f1f5f9;            /* Slate 100 */
+    
+    /* Table & Row Contrast */
+    --cw-bg-table-row: #ffffff;
+    --cw-bg-table-row-hover: #f1f5f9;
+    --cw-bg-table-row-alt: #f8fafc;
+    --cw-bg-table-row-alt-hover: #f1f5f9;
 
-	/* ── Button / Profile Trigger ─────────────────────── */
-	--cw-button-primary-bg: linear-gradient(180deg, #3f6cae 0%, #30588f 100%);
-	--cw-button-primary-bg-hover: linear-gradient(180deg, #4b79bd 0%, #3867a4 100%);
-	--cw-button-primary-bg-active: linear-gradient(180deg, #365f99 0%, #2e5386 100%);
-	--cw-button-primary-border: #3f6399;
-	--cw-button-primary-border-hover: #4f79b3;
-	--cw-button-primary-border-active: #40679f;
-	--cw-button-primary-text: #f8fbff;
-	--cw-button-primary-text-hover: #ffffff;
-	--cw-button-primary-shadow:
-		inset 0 1px 0 color-mix(in srgb, #ffffff 22%, transparent),
-		0 6px 14px color-mix(in srgb, #1f3f6a 24%, transparent);
+	/* ── Header ─────────────────────────────────────────── 
+	   Darkened header to create a clear separation from the 
+	   content and sidebar.
+	*/
+	--cw-header-bg: #cee7ff;            /* Clean white background */
 
-	--cw-button-secondary-bg: linear-gradient(180deg, #ffffff 0%, #f2f6fc 100%);
-	--cw-button-secondary-bg-hover: linear-gradient(180deg, #fbfdff 0%, #eaf1fb 100%);
-	--cw-button-secondary-bg-active: linear-gradient(180deg, #eef4fe 0%, #e0ebfa 100%);
-	--cw-button-secondary-border: #aec2df;
-	--cw-button-secondary-border-hover: #95afd2;
-	--cw-button-secondary-border-active: #889fc2;
-	--cw-button-secondary-text: #2b4569;
-	--cw-button-secondary-text-hover: #233a5a;
-	--cw-button-secondary-shadow:
-		inset 0 1px 0 color-mix(in srgb, #ffffff 72%, transparent),
-		0 2px 8px color-mix(in srgb, #1d3557 12%, transparent);
+    /* ── SideNav ──────────────────────────────────────── 
+       Increased definition for the sidebar to prevent it 
+       blending into the header or content.
+    */
+    --cw-sidenav-bg: #ffffff;           /* Clean white background */
+    --cw-sidenav-item-text: #64748b;    /* Slate 500 */
+    --cw-sidenav-item-text-hover: #0f172a;
+    --cw-sidenav-item-active-text: #2563eb; /* Primary Blue */
+    --cw-sidenav-item-hover-bg: #f1f5f9;
+    --cw-sidenav-item-active-bg: #eff6ff;   /* Soft blue pill highlight */
+    --cw-sidenav-item-active-bg-hover: #dbeafe;
+    --cw-sidenav-group-text: #475569;    /* Slate 600 - Bold/Sharp headers */
+    --cw-sidenav-trailing-border: #e2e8f0;
+    --cw-sidenav-trailing-bg: #f8fafc;
+    --cw-sidenav-trailing-text: #475569;
 
-	--cw-profile-trigger-bg: linear-gradient(180deg, #3f6aa3 0%, #30527f 100%);
-	--cw-profile-trigger-bg-hover: linear-gradient(180deg, #4d7bbc 0%, #3a649b 100%);
-	--cw-profile-trigger-bg-open: linear-gradient(180deg, #436faa 0%, #355b8e 100%);
-	--cw-profile-trigger-border: #406293;
-	--cw-profile-trigger-border-hover: #5881b8;
-	--cw-profile-trigger-border-open: #5077ad;
-	--cw-profile-trigger-text: #f7fbff;
-	--cw-profile-trigger-text-hover: #ffffff;
-	--cw-profile-trigger-subtitle: #d9e8ff;
-	--cw-profile-trigger-shadow:
-		inset 0 1px 0 color-mix(in srgb, #ffffff 16%, transparent),
-		0 6px 14px color-mix(in srgb, #1b3354 24%, transparent);
-	--cw-profile-trigger-shadow-open:
-		inset 0 1px 0 color-mix(in srgb, #ffffff 20%, transparent),
-		0 8px 18px color-mix(in srgb, #1b3354 30%, transparent);
-	--cw-profile-avatar-bg: linear-gradient(180deg, #5c85bf 0%, #40669c 100%);
-	--cw-profile-avatar-border: #89a9d3;
+    /* ── Button / Profile Trigger ─────────────────────── */
+    --cw-button-primary-bg: #2563eb;
+    --cw-button-primary-bg-hover: #1d4ed8;
+    --cw-button-primary-bg-active: #1e40af;
+    --cw-button-primary-border: #1e40af;
+    --cw-button-primary-text: #ffffff;
+    --cw-button-primary-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
-	/* ── Drawer ────────────────────────────────────────── */
-	--cw-drawer-bg: color-mix(in srgb, var(--cw-bg-muted) 64%, var(--cw-bg-surface));
-	--cw-drawer-panel-bg: color-mix(in srgb, var(--cw-bg-muted) 34%, var(--cw-bg-surface));
-	--cw-drawer-header-bg: color-mix(in srgb, var(--cw-bg-muted) 18%, var(--cw-bg-surface));
-	--cw-drawer-header-bg-hover: color-mix(in srgb, var(--cw-bg-muted) 26%, var(--cw-bg-surface));
-	--cw-drawer-header-border: color-mix(in srgb, var(--cw-border-default) 78%, transparent);
+    --cw-button-secondary-bg: #ffffff;
+    --cw-button-secondary-bg-hover: #f8fafc;
+    --cw-button-secondary-border: #cbd5e1; /* Slate 300 - visible border */
+    --cw-button-secondary-text: #334155;
+    --cw-button-secondary-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
-	/* ── SideNav ──────────────────────────────────────── */
-	--cw-sidenav-bg:
-		radial-gradient(
-			120% 70% at 0% 0%,
-			color-mix(in srgb, var(--cw-info-300) 22%, transparent),
-			transparent 70%
-		),
-		linear-gradient(180deg, #f7fbff 0%, #edf4fe 100%);
-	--cw-sidenav-item-text: var(--cw-gray-700);
-	--cw-sidenav-item-text-hover: var(--cw-gray-900);
-	--cw-sidenav-item-active-text: var(--cw-gray-900);
-	--cw-sidenav-item-hover-bg: color-mix(in srgb, var(--cw-info-300) 24%, transparent);
-	--cw-sidenav-item-active-bg: color-mix(in srgb, var(--cw-info-400) 28%, transparent);
-	--cw-sidenav-item-active-bg-hover: color-mix(in srgb, var(--cw-info-400) 36%, transparent);
-	--cw-sidenav-group-text: var(--cw-gray-500);
-	--cw-sidenav-trailing-border: color-mix(in srgb, var(--cw-info-500) 35%, transparent);
-	--cw-sidenav-trailing-bg: color-mix(in srgb, var(--cw-info-200) 45%, #ffffff);
-	--cw-sidenav-trailing-text: var(--cw-info-900);
-	--cw-sidenav-trailing-active-border: color-mix(in srgb, var(--cw-info-600) 48%, transparent);
-	--cw-sidenav-trailing-active-bg: color-mix(in srgb, var(--cw-info-300) 58%, #ffffff);
+    --cw-profile-trigger-bg: #ffffff;
+    --cw-profile-trigger-border: #cbd5e1;
+    --cw-profile-trigger-text: #0f172a;
+    --cw-profile-trigger-subtitle: #64748b;
+    --cw-profile-avatar-bg: #f1f5f9;
+    --cw-profile-avatar-border: #cbd5e1;
 
-	/* ── DataTable ────────────────────────────────────── */
-	--cw-datatable-row-text: var(--cw-gray-900);
-	--cw-datatable-row-bg: #eef4ff;
-	--cw-datatable-row-bg-alt: #e3ecfb;
-	--cw-datatable-row-bg-hover: #d8e6fb;
-	--cw-datatable-row-bg-alt-hover: #cfdff8;
+    /* ── DataTable ────────────────────────────────────── */
+    --cw-datatable-row-text: #0f172a;
+    --cw-datatable-row-bg: #ffffff;
+    --cw-datatable-row-bg-hover: #f8fafc;
 
-	/* ── Chart Surfaces ───────────────────────────────── */
-	--cw-chart-card-border: var(--cw-border-default);
-	--cw-chart-card-bg: var(--cw-bg-surface);
-	--cw-chart-card-shadow: var(--cw-shadow-md);
-	--cw-chart-card-muted: var(--cw-text-muted);
-	--cw-chart-card-title: var(--cw-text-primary);
-	--cw-chart-card-cell-border: var(--cw-border-muted);
-	--cw-chart-card-cell-bg: color-mix(in srgb, var(--cw-bg-muted) 55%, #ffffff);
+    /* ── Chart Surfaces ───────────────────────────────── */
+    --cw-chart-card-border: #cbd5e1;   /* Slate 300 */
+    --cw-chart-card-bg: #ffffff;
+    --cw-chart-card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --cw-chart-card-title: #0f172a;
+    --cw-chart-card-cell-border: #e2e8f0;
 
-	/* ── Line Chart ───────────────────────────────────── */
-	--cw-linechart-grid: color-mix(in srgb, var(--cw-border-default) 85%, transparent);
-	--cw-linechart-threshold: #64748b;
-	--cw-linechart-axis: #94a3b8;
-	--cw-linechart-tick: #64748b;
-	--cw-linechart-tick-secondary: #7e22ce;
-	--cw-linechart-axis-label-primary: #0369a1;
-	--cw-linechart-axis-label-secondary: #7e22ce;
-	--cw-linechart-time-label: #64748b;
-	--cw-linechart-crosshair: #94a3b8;
-	--cw-linechart-secondary-stroke: #7e22ce;
-	--cw-linechart-point-stroke: #f8fafc;
-	--cw-linechart-dot-sky: #0284c7;
-	--cw-linechart-dot-purple: #7e22ce;
-	--cw-linechart-threshold-marker: #64748b;
-	--cw-linechart-tooltip-border: var(--cw-border-default);
-	--cw-linechart-tooltip-bg: color-mix(in srgb, #ffffff 96%, var(--cw-bg-overlay));
-	--cw-linechart-tooltip-text: var(--cw-text-primary);
-	--cw-linechart-tooltip-muted: var(--cw-text-muted);
-	--cw-linechart-tooltip-value: var(--cw-text-primary);
-	--cw-linechart-tooltip-time: var(--cw-gray-500);
-	--cw-linechart-tooltip-alert-bg: color-mix(in srgb, var(--cw-warning-300) 32%, transparent);
-	--cw-linechart-tooltip-alert-text: var(--cw-gray-950);
-	--cw-linechart-legend-text: var(--cw-text-secondary);
-	--cw-linechart-legend-inactive: var(--cw-text-muted);
+    /* ── Text ──────────────────────────────────────────── 
+       Darker text colors solve the "washed out" feeling.
+    */
+    --cw-text-primary: #0f172a;   /* Slate 900 */
+    --cw-text-secondary: #334155; /* Slate 700 */
+    --cw-text-muted: #64748b;    /* Slate 500 */
+    --cw-text-disabled: #94a3b8;
+    --cw-text-inverse: #ffffff;
 
-	/* ── Text ──────────────────────────────────────────── */
-	--cw-text-primary: var(--cw-gray-900);
-	--cw-text-secondary: var(--cw-gray-600);
-	--cw-text-muted: var(--cw-gray-500);
-	--cw-text-disabled: var(--cw-gray-300);
-	--cw-text-inverse: var(--cw-gray-50);
+    /* ── Border ────────────────────────────────────────── 
+       Deepened from your original to create clear boundaries.
+    */
+    --cw-border-default: #cbd5e1; /* Slate 300 - Standard edge */
+    --cw-border-muted: #e2e8f0;   /* Slate 200 - Inner dividers */
+    --cw-border-strong: #94a3b8;  /* Slate 400 - Focused states */
 
-	/* ── Border ────────────────────────────────────────── */
-	--cw-border-default: var(--cw-gray-300);
-	--cw-border-muted: var(--cw-gray-200);
-	--cw-border-strong: var(--cw-gray-400);
+    /* ── Tone: Status ──────────────────────────────────── */
+    --cw-tone-primary-bg: #eff6ff;
+    --cw-tone-primary-text: #1e40af;
+    --cw-tone-primary-border: #bfdbfe;
 
-	/* ── Accent / Primary ──────────────────────────────── */
-	--cw-accent: var(--cw-primary-600);
-	--cw-accent-hover: var(--cw-primary-700);
-	--cw-accent-active: var(--cw-primary-800);
-	--cw-accent-bg: var(--cw-primary-50);
-	--cw-accent-text: var(--cw-primary-700);
+    --cw-tone-success-bg: #f0fdf4;
+    --cw-tone-success-text: #166534;
+    --cw-tone-success-border: #bbf7d0;
 
-	/* ── Tone: Primary ─────────────────────────────────── */
-	--cw-tone-primary-bg: var(--cw-primary-50);
-	--cw-tone-primary-bg-subtle: color-mix(in srgb, var(--cw-primary-100) 50%, transparent);
-	--cw-tone-primary-text: var(--cw-primary-700);
-	--cw-tone-primary-border: var(--cw-primary-300);
-	--cw-tone-primary-solid-bg: var(--cw-primary-600);
-	--cw-tone-primary-solid-text: #fff;
+    --cw-tone-danger-bg: #fef2f2;
+    --cw-tone-danger-text: #991b1b;
+    --cw-tone-danger-border: #fecaca;
 
-	/* ── Tone: Secondary ───────────────────────────────── */
-	--cw-tone-secondary-bg: var(--cw-secondary-50);
-	--cw-tone-secondary-bg-subtle: color-mix(in srgb, var(--cw-secondary-100) 50%, transparent);
-	--cw-tone-secondary-text: var(--cw-secondary-700);
-	--cw-tone-secondary-border: var(--cw-secondary-300);
-	--cw-tone-secondary-solid-bg: var(--cw-secondary-600);
-	--cw-tone-secondary-solid-text: #fff;
+    /* ── Focus ─────────────────────────────────────────── */
+    --cw-focus-ring-color: #3b82f6;
 
-	/* ── Tone: Info ─────────────────────────────────────── */
-	--cw-tone-info-bg: var(--cw-info-50);
-	--cw-tone-info-bg-subtle: color-mix(in srgb, var(--cw-info-100) 50%, transparent);
-	--cw-tone-info-text: var(--cw-info-700);
-	--cw-tone-info-border: var(--cw-info-300);
-	--cw-tone-info-solid-bg: var(--cw-info-600);
-	--cw-tone-info-solid-text: #fff;
-
-	/* ── Tone: Warning ─────────────────────────────────── */
-	--cw-tone-warning-bg: var(--cw-warning-50);
-	--cw-tone-warning-bg-subtle: color-mix(in srgb, var(--cw-warning-100) 50%, transparent);
-	--cw-tone-warning-text: var(--cw-gray-950);
-	--cw-tone-warning-border: var(--cw-warning-300);
-	--cw-tone-warning-solid-bg: var(--cw-warning-600);
-	--cw-tone-warning-solid-text: var(--cw-gray-950);
-
-	/* ── Tone: Danger ──────────────────────────────────── */
-	--cw-tone-danger-bg: var(--cw-danger-50);
-	--cw-tone-danger-bg-subtle: color-mix(in srgb, var(--cw-danger-100) 50%, transparent);
-	--cw-tone-danger-text: var(--cw-danger-700);
-	--cw-tone-danger-border: var(--cw-danger-300);
-	--cw-tone-danger-solid-bg: var(--cw-danger-600);
-	--cw-tone-danger-solid-text: #fff;
-
-	/* ── Tone: Success ─────────────────────────────────── */
-	--cw-tone-success-bg: var(--cw-success-50);
-	--cw-tone-success-bg-subtle: color-mix(in srgb, var(--cw-success-100) 50%, transparent);
-	--cw-tone-success-text: var(--cw-success-700);
-	--cw-tone-success-border: var(--cw-success-300);
-	--cw-tone-success-solid-bg: var(--cw-success-600);
-	--cw-tone-success-solid-text: #fff;
-
-	/* ── Focus ─────────────────────────────────────────── */
-	--cw-focus-ring-color: var(--cw-primary-500);
-
-	/* ── Scrollbar ─────────────────────────────────────── */
-	--cw-scrollbar-thumb: var(--cw-gray-300);
-	--cw-scrollbar-track: var(--cw-gray-100);
+    /* ── Scrollbar ─────────────────────────────────────── */
+    --cw-scrollbar-thumb: #cbd5e1;
+    --cw-scrollbar-track: #f1f5f9;
 }

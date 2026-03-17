@@ -100,7 +100,7 @@
         gap: var(--cw-space-3);
         height: 5rem;
         padding: 0 var(--cw-space-4);
-        background-color: var(--cw-bg-base);
+        background-color: var(--cw-header-bg);
         border-bottom: 2px solid var(--cw-border-muted);
         font-family: var(--cw-font-family);
         flex-shrink: 0;
