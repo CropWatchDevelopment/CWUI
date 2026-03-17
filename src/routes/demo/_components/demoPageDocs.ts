@@ -1463,6 +1463,131 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			}
 		]
 	},
+	'/demo/language-switcher': {
+		summary:
+			"CwLanguageSwitcher is a Paraglide-ready locale picker. Pass an `options` array, bind the current locale when the parent cares about it, and hand in Paraglide's `setLocale` function so the app actually swaps translations.",
+		steps: [
+			{
+				title: 'Use exact locale codes',
+				description:
+					"Each option's `locale` value should match the locale codes your Paraglide runtime expects, such as `en`, `fr`, or `pt-BR`."
+			},
+			{
+				title: 'Wire the runtime setter once',
+				description:
+					"Pass Paraglide's `setLocale` function directly so the component updates the actual app locale instead of only changing local UI state."
+			},
+			{
+				title: 'Keep unavailable languages visible',
+				description:
+					'Use `description` and `disabled` together when a locale is planned but not released yet, so users understand the roadmap without being able to select it.'
+			}
+		],
+		apiTitle: 'Props and option shape',
+		apiRows: [
+			{
+				name: 'options',
+				type: 'CwLanguageOption[]',
+				description: 'Language rows shown in the menu. Each option needs a `locale` and `label`.',
+				required: true
+			},
+			{
+				name: 'locale',
+				type: 'string',
+				description: 'Current locale. Bind this when parent UI also needs to react to locale changes.'
+			},
+			{
+				name: 'setLocale',
+				type: '(locale: string) => void | Promise<void>',
+				description: "Consumer callback, typically Paraglide's runtime `setLocale` function."
+			},
+			{
+				name: 'onchange',
+				type: '(locale: string, option: CwLanguageOption) => void | Promise<void>',
+				description: 'Runs after a locale has been applied successfully.'
+			},
+			{
+				name: 'onerror',
+				type: '(error: unknown, locale: string, option: CwLanguageOption) => void',
+				description: 'Runs if `setLocale` fails so the parent can log or surface an error.'
+			},
+			{
+				name: 'label',
+				type: 'string',
+				description: 'Optional field label rendered above the trigger.'
+			},
+			{
+				name: 'disabled',
+				type: 'boolean',
+				description: 'Disables the trigger and prevents opening the menu.',
+				defaultValue: 'false'
+			}
+		],
+		apiNote:
+			'Each `CwLanguageOption` accepts `locale`, `label`, and optional `flag`, `flagType`, `shortLabel`, `description`, and `disabled`.',
+		examples: [
+			{
+				title: 'Paraglide runtime wiring',
+				description:
+					"Use Paraglide's `getLocale` and `setLocale` runtime helpers as the source of truth.",
+				code: `<script lang="ts">
+\timport {
+\t\tCwLanguageSwitcher,
+\t\ttype CwLanguageOption
+\t} from '@cropwatchdevelopment/cwui';
+\timport { getLocale, setLocale } from '$lib/paraglide/runtime.js';
+
+\tconst locales: CwLanguageOption[] = [
+\t\t{ locale: 'en', label: 'English', shortLabel: 'EN', flag: '🇺🇸' },
+\t\t{ locale: 'es', label: 'Español', shortLabel: 'ES', flag: '🇪🇸' },
+\t\t{ locale: 'fr', label: 'Français', shortLabel: 'FR', flag: '🇫🇷' }
+\t];
+
+\tlet locale = $state(getLocale());
+</script>
+
+<CwLanguageSwitcher
+\tlabel="Language"
+\toptions={locales}
+\tbind:locale={locale}
+\tsetLocale={setLocale}
+/>`
+			},
+			{
+				title: 'Rich option metadata',
+				description:
+					'Descriptions make regional variants and staged launches clearer without custom rendering.',
+				code: `<script lang="ts">
+\tconst locales = [
+\t\t{
+\t\t\tlocale: 'en',
+\t\t\tlabel: 'English',
+\t\t\tshortLabel: 'EN',
+\t\t\tflag: '🇺🇸',
+\t\t\tdescription: 'Default product copy'
+\t\t},
+\t\t{
+\t\t\tlocale: 'es-MX',
+\t\t\tlabel: 'Español (México)',
+\t\t\tshortLabel: 'ES',
+\t\t\tflag: '🇲🇽',
+\t\t\tdescription: 'Regional content and billing copy'
+\t\t},
+\t\t{
+\t\t\tlocale: 'de',
+\t\t\tlabel: 'Deutsch',
+\t\t\tshortLabel: 'DE',
+\t\t\tflag: '🇩🇪',
+\t\t\tdescription: 'Coming soon',
+\t\t\tdisabled: true
+\t\t}
+\t];
+</script>
+
+<CwLanguageSwitcher options={locales} />`
+			}
+		]
+	},
 	'/demo/toast': {
 		summary:
 			'The toast system is a small context-based API rather than a single component. Create the context once, mount a container once, and then call `toast.add(...)` anywhere below that tree.',

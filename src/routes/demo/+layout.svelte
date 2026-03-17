@@ -36,6 +36,8 @@
 		duration: "M8 2a6 6 0 110 12A6 6 0 018 2zm0 3v3l2 2",
 		alarm: "M8 2a6 6 0 110 12A6 6 0 018 2zm0 2v4m0 4h.01M3 3l10 10",
 		search: "M7 3a4 4 0 110 8 4 4 0 010-8zm4.5 7.5L14 13",
+		language:
+			"M8 2a6 6 0 100 12A6 6 0 008 2zm0 1.5c.9 0 1.9 1.4 2.3 3.5H5.7C6.1 4.9 7.1 3.5 8 3.5zM5.7 9h4.6c-.4 2.1-1.4 3.5-2.3 3.5-.9 0-1.9-1.4-2.3-3.5zM3.6 7A4.5 4.5 0 017 3.6 8.2 8.2 0 005.9 7H3.6zm0 2h2.3A8.2 8.2 0 007 12.4 4.5 4.5 0 013.6 9zm8.8 0h2.3A4.5 4.5 0 019 12.4 8.2 8.2 0 0010.1 9h2.3zm0-2A8.2 8.2 0 009 3.6 4.5 4.5 0 0112.4 7h-2.3z",
 		textarea: "M3 4h10a1 1 0 011 1v6a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1zm2 2h6M5 8h6M5 10h4",
 		table: "M2 3h12v10H2V3zm0 3h12m0 3H2m4-6v6m4-6v6",
 		linechart: "M2 12l3-4 3 2 4-6 2 3",
@@ -333,6 +335,13 @@
 			label: "Theme Picker",
 			icon: icons.theme,
 			href: "/demo/themepicker",
+			group: "Helpers",
+		},
+		{
+			id: "language-switcher",
+			label: "Language Switcher",
+			icon: icons.language,
+			href: "/demo/language-switcher",
 			group: "Helpers",
 		},
 		{

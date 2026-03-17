@@ -23,6 +23,7 @@ export { default as CwPPFDChart } from './components/CwPPFDChart.svelte';
 export { default as CwVPDChart } from './components/CwVPDChart.svelte';
 export { default as CwDateTimeRangePicker } from './components/CwDateTimeRangePicker.svelte';
 export { default as CwThemePicker } from './components/CwThemePicker.svelte';
+export { default as CwLanguageSwitcher } from './components/CwLanguageSwitcher.svelte';
 export { default as CwListBox } from './components/CwListBox.svelte';
 export { default as CwProfileMenu } from './components/CwProfileMenu.svelte';
 export { default as CwSeparator } from './components/CwSeparator.svelte';
@@ -83,6 +84,8 @@ export type {
 	CwDateTimeInput,
 	CwAlarmRegistration,
 	CwAlarmApi,
+	CwLanguageFlagType,
+	CwLanguageOption,
 	CwSensorCardDetailRow,
 	CwSensorCardDevice,
 	CwStatCardTrend,

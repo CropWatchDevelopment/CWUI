@@ -198,6 +198,27 @@ export interface CwListBoxItem<T = string> {
 	disabled?: boolean;
 }
 
+/* ── Language switcher types ───────────────────────────── */
+
+export type CwLanguageFlagType = 'emoji' | 'image';
+
+export interface CwLanguageOption {
+	/** Locale code passed to Paraglide, for example `en` or `pt-BR`. */
+	locale: string;
+	/** Human-readable language name. */
+	label: string;
+	/** Optional flag emoji or image URL. */
+	flag?: string;
+	/** Whether `flag` should be treated as an emoji or image source. */
+	flagType?: CwLanguageFlagType;
+	/** Compact label used when no flag is supplied. */
+	shortLabel?: string;
+	/** Optional supporting text shown under the main language label. */
+	description?: string;
+	/** Whether this locale is currently unavailable. */
+	disabled?: boolean;
+}
+
 /* ── ProfileMenu types ─────────────────────────────────── */
 
 export interface CwProfileMenuItem {
