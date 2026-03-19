@@ -476,12 +476,17 @@ Publishing happens automatically via GitHub Actions when you push a version tag:
 
 ```bash
 # 1. Bump version in package.json
-# 2. Commit
+# 2. Commit the release
 git add -A && git commit -m "chore: release v0.2.0"
 
-# 3. Tag and push
+# 3. Push the release commit
+git push origin main
+
+# 4. Tag the same commit
 git tag v0.2.0
-git push origin main --tags
+
+# 5. Push the tag to trigger publish
+git push origin v0.2.0
 ```
 
 The [publish workflow](.github/workflows/publish.yml) will build the library and publish to GitHub Packages.
