@@ -29,7 +29,7 @@ export interface DemoRouteDocs {
 export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 	'/demo/buttons': {
 		summary:
-			'CwButton is the standard action component. Start with a label, then add variant, size, and loading or disabled state only when the workflow needs it.',
+			'CwButton is the standard action component. Use it for labeled actions, icon-and-text buttons, and icon-only controls that still need a proper accessible name.',
 		steps: [
 			{
 				title: 'Choose the role first',
@@ -45,6 +45,11 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				title: 'Prefer `loading` over manual spinners',
 				description:
 					'The component automatically disables itself and swaps in the shared spinner while async work is running.'
+			},
+			{
+				title: 'Label icon-only buttons accessibly',
+				description:
+					'If the button has no visible text, provide `aria-label`. You can render the icon inline as children or pass it through the `icon` prop.'
 			}
 		],
 		apiRows: [
@@ -79,9 +84,14 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				defaultValue: 'false'
 			},
 			{
+				name: 'icon',
+				type: "string | { src: string } | { default: string } | Snippet",
+				description: 'Optional leading icon asset or snippet. For icon-only buttons, pair it with `aria-label`.'
+			},
+			{
 				name: 'children',
 				type: 'Snippet',
-				description: 'Button label and optional inline icon content.'
+				description: 'Button content. This can be text, icon-only markup, or mixed inline content.'
 			},
 			{
 				name: '...native button attrs',
@@ -122,6 +132,33 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 >
 \tSave irrigation plan
 </CwButton>`
+			},
+			{
+				title: 'Icon-only and icon-prop buttons',
+				description: 'Use inline markup when you want full control, or `icon={...}` when you already have an asset import.',
+				code: `<script lang="ts">
+\timport moreVertIcon from '$lib/icons/more_vert.svg';
+</script>
+
+<CwButton variant="secondary" aria-label="Refresh data">
+\t<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+\t\t<path
+\t\t\td="M12.8 7.9A4.8 4.8 0 118 3.2c1.3 0 2.5.5 3.4 1.4"
+\t\t\tstroke="currentColor"
+\t\t\tstroke-width="1.4"
+\t\t\tstroke-linecap="round"
+\t\t/>
+\t\t<path
+\t\t\td="M11.7 3.2h2.4v2.4"
+\t\t\tstroke="currentColor"
+\t\t\tstroke-width="1.4"
+\t\t\tstroke-linecap="round"
+\t\t\tstroke-linejoin="round"
+\t\t/>
+\t</svg>
+</CwButton>
+
+<CwButton variant="primary" aria-label="More actions" icon={moreVertIcon} />`
 			}
 		]
 	},

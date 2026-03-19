@@ -4,14 +4,29 @@
 	import type { HTMLButtonAttributes } from 'svelte/elements';
 	import CwSpinner from './CwSpinner.svelte';
 
+	type CwButtonIcon = string | { src: string } | { default: string } | Snippet;
+
 	interface Props extends HTMLButtonAttributes {
 		variant?: CwButtonVariant;
 		size?: CwSize;
 		loading?: boolean;
 		disabled?: boolean;
 		fullWidth?: boolean;
+		icon?: CwButtonIcon;
 		children?: Snippet;
 		class?: string;
+	}
+
+	function hasDefaultIconExport(value: unknown): value is { default: string } {
+		return !!value && typeof value === 'object' && 'default' in value && typeof value.default === 'string';
+	}
+
+	function resolveIconSource(icon: CwButtonIcon | undefined) {
+		if (!icon || typeof icon === 'function') return undefined;
+		if (typeof icon === 'string') return icon;
+		if ('src' in icon && typeof icon.src === 'string') return icon.src;
+		if (hasDefaultIconExport(icon)) return icon.default;
+		return undefined;
 	}
 
 	let {
@@ -20,6 +35,7 @@
 		loading = false,
 		disabled = false,
 		fullWidth = false,
+		icon,
 		class: className = '',
 		children,
 		...rest
@@ -27,6 +43,8 @@
 
 	const isDisabled = $derived(disabled || loading);
 	const spinnerSize = $derived(size);
+	const iconSource = $derived(resolveIconSource(icon));
+	const iconSnippet = $derived(typeof icon === 'function' ? icon : undefined);
 </script>
 
 <button
@@ -42,7 +60,16 @@
 			<CwSpinner size={spinnerSize} />
 		</span>
 	{/if}
-	<span class="cw-button__label" class:cw-button__label--hidden={loading}>
+	<span class="cw-button__content" class:cw-button__content--hidden={loading}>
+		{#if iconSource || iconSnippet}
+			<span class="cw-button__icon" aria-hidden="true">
+				{#if iconSource}
+					<img src={iconSource} alt="" />
+				{:else if iconSnippet}
+					{@render iconSnippet()}
+				{/if}
+			</span>
+		{/if}
 		{@render children?.()}
 	</span>
 </button>
@@ -188,18 +215,35 @@
 		height: 1em;
 	}
 
-	.cw-button__label {
-		display: flex;
-		flex-direction: row;
+	.cw-button__content {
+		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		gap: var(--cw-space-2);
+		min-width: 0;
 	}
 
-	.cw-button__label--hidden {
+	.cw-button__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		line-height: 0;
+		flex-shrink: 0;
+	}
+
+	.cw-button__content--hidden {
 		visibility: hidden;
 		width: 0;
 		overflow: hidden;
+	}
+
+	.cw-button__content :global(img),
+	.cw-button__content :global(svg) {
+		display: block;
+		width: 1em;
+		height: 1em;
+		flex-shrink: 0;
+		object-fit: contain;
 	}
 
 	.cw-button--loading {

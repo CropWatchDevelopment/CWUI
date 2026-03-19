@@ -1,8 +1,33 @@
 <script lang="ts">
 	import { CwButton } from '$lib/index.js';
+	import moreVertIcon from '$lib/icons/more_vert.svg';
 	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	const buttonExample = `<CwButton variant="primary">Save Changes</CwButton>`;
+	const iconButtonExample = `<script lang="ts">
+	import moreVertIcon from '$lib/icons/more_vert.svg';
+<\/script>
+
+<CwButton variant="secondary" aria-label="Refresh data">
+	<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+		<path
+			d="M12.8 7.9A4.8 4.8 0 118 3.2c1.3 0 2.5.5 3.4 1.4"
+			stroke="currentColor"
+			stroke-width="1.4"
+			stroke-linecap="round"
+		/>
+		<path
+			d="M11.7 3.2h2.4v2.4"
+			stroke="currentColor"
+			stroke-width="1.4"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+		/>
+	</svg>
+</CwButton>
+
+<CwButton variant="primary" aria-label="More actions" icon={moreVertIcon} />
+<CwButton variant="primary" icon={moreVertIcon}>More</CwButton>`;
 </script>
 
 <h2>CwButton</h2>
@@ -37,6 +62,32 @@
 		<CwButton fullWidth>Full Width</CwButton>
 	</div>
 	<DemoCodeExample code={buttonExample} title="CwButton example" />
+</section>
+
+<section class="demo-section">
+	<h3>Icons</h3>
+	<div class="demo-row">
+		<CwButton variant="secondary" aria-label="Refresh data">
+			<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+				<path
+					d="M12.8 7.9A4.8 4.8 0 118 3.2c1.3 0 2.5.5 3.4 1.4"
+					stroke="currentColor"
+					stroke-width="1.4"
+					stroke-linecap="round"
+				/>
+				<path
+					d="M11.7 3.2h2.4v2.4"
+					stroke="currentColor"
+					stroke-width="1.4"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				/>
+			</svg>
+		</CwButton>
+		<CwButton variant="primary" aria-label="More actions" icon={moreVertIcon} />
+		<CwButton variant="primary" icon={moreVertIcon}>More</CwButton>
+	</div>
+	<DemoCodeExample code={iconButtonExample} title="CwButton icon examples" />
 </section>
 
 <style>
