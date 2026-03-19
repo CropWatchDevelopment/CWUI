@@ -577,11 +577,12 @@
 		bottom: 0.75rem;
 		width: 5px;
 		border-radius: var(--cw-radius-full);
-		background: linear-gradient(
+		/* background: linear-gradient(
 			180deg,
 			var(--_slot-color, var(--_sensor-color, var(--cw-success-500))),
 			var(--cw-bg-surface)
-		);
+		); */
+		background: var(--_slot-color, var(--_sensor-color, var(--cw-success-500)));
 		box-shadow: 0 0 10px var(--_slot-glow, var(--_sensor-glow, color-mix(in srgb, var(--cw-success-500) 50%, transparent)));
 	}
 
