@@ -26,116 +26,186 @@
    ============================================================ */
 
 [data-theme='light'] {
-    color-scheme: light;
+	color-scheme: light;
 
-    /* ── Surface / Background ──────────────────────────── 
-       Darkened base ensures white surfaces (cards/demo blocks) 
-       stand out.
-    */
-    --cw-bg-base: #f1f5f9;              /* Slate 100 - The background "floor" */
-    --cw-bg-surface: #ffffff;           /* Pure White - For Cards/Main Content */
-    --cw-bg-surface-elevated: #ffffff;
-    --cw-bg-elevated: #ffffff;
-    --cw-bg-overlay: #cbd5e1;           /* Slate 300 - For backdrops */
-    --cw-bg-muted: #f8fafc;             /* Slate 50 - For inset areas */
-    --cw-bg-subtle: #f1f5f9;            /* Slate 100 */
-    
-    /* Table & Row Contrast */
-    --cw-bg-table-row: #ffffff;
-    --cw-bg-table-row-hover: #f1f5f9;
-    --cw-bg-table-row-alt: #f8fafc;
-    --cw-bg-table-row-alt-hover: #f1f5f9;
+	/* ── Surface / Background ──────────────────────────── */
+	--cw-bg-base: #d6e0ea;
+	--cw-bg-surface: #f7fafc;
+	--cw-bg-surface-elevated: #fbfdff;
+	--cw-bg-elevated: #e8eff5;
+	--cw-bg-overlay: #94a3b8;
+	--cw-bg-muted: #dee7f0;
+	--cw-bg-subtle: #ccd8e4;
+	--cw-bg-table-row: #f8fbfd;
+	--cw-bg-table-row-hover: #e8eff5;
+	--cw-bg-table-row-alt: #e3ebf3;
+	--cw-bg-table-row-alt-hover: #d8e3ed;
+	--cw-header-bg: #cfdeeb;
 
-	/* ── Header ─────────────────────────────────────────── 
-	   Darkened header to create a clear separation from the 
-	   content and sidebar.
-	*/
-	--cw-header-bg: #cee7ff;            /* Clean white background */
+	/* ── Button / Profile Trigger ─────────────────────── */
+	--cw-button-primary-bg: linear-gradient(180deg, #2a66b2 0%, #1f568f 100%);
+	--cw-button-primary-bg-hover: linear-gradient(180deg, #3573c1 0%, #255f9d 100%);
+	--cw-button-primary-bg-active: linear-gradient(180deg, #1f568f 0%, #194a7d 100%);
+	--cw-button-primary-border: #194a7d;
+	--cw-button-primary-border-hover: #245d9a;
+	--cw-button-primary-border-active: #163f69;
+	--cw-button-primary-text: #f7fbff;
+	--cw-button-primary-text-hover: #ffffff;
+	--cw-button-primary-shadow: 0 10px 18px -14px rgba(20, 53, 89, 0.5);
 
-    /* ── SideNav ──────────────────────────────────────── 
-       Increased definition for the sidebar to prevent it 
-       blending into the header or content.
-    */
-    --cw-sidenav-bg: #ffffff;           /* Clean white background */
-    --cw-sidenav-item-text: #64748b;    /* Slate 500 */
-    --cw-sidenav-item-text-hover: #0f172a;
-    --cw-sidenav-item-active-text: #2563eb; /* Primary Blue */
-    --cw-sidenav-item-hover-bg: #f1f5f9;
-    --cw-sidenav-item-active-bg: #eff6ff;   /* Soft blue pill highlight */
-    --cw-sidenav-item-active-bg-hover: #dbeafe;
-    --cw-sidenav-group-text: #475569;    /* Slate 600 - Bold/Sharp headers */
-    --cw-sidenav-trailing-border: #e2e8f0;
-    --cw-sidenav-trailing-bg: #f8fafc;
-    --cw-sidenav-trailing-text: #475569;
+	--cw-button-secondary-bg: linear-gradient(180deg, #f8fbfd 0%, #edf3f8 100%);
+	--cw-button-secondary-bg-hover: linear-gradient(180deg, #eef4f9 0%, #e2ebf3 100%);
+	--cw-button-secondary-bg-active: linear-gradient(180deg, #e5edf5 0%, #d8e2ed 100%);
+	--cw-button-secondary-border: #98adbf;
+	--cw-button-secondary-border-hover: #889fb4;
+	--cw-button-secondary-border-active: #7891a8;
+	--cw-button-secondary-text: #13253a;
+	--cw-button-secondary-text-hover: #0e1d30;
+	--cw-button-secondary-shadow: 0 8px 18px -16px rgba(36, 54, 74, 0.42);
 
-    /* ── Button / Profile Trigger ─────────────────────── */
-    --cw-button-primary-bg: #2563eb;
-    --cw-button-primary-bg-hover: #1d4ed8;
-    --cw-button-primary-bg-active: #1e40af;
-    --cw-button-primary-border: #1e40af;
-    --cw-button-primary-text: #ffffff;
-    --cw-button-primary-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	--cw-profile-trigger-bg: linear-gradient(180deg, #fbfdff 0%, #eef3f8 100%);
+	--cw-profile-trigger-bg-hover: linear-gradient(180deg, #f4f8fb 0%, #e6edf5 100%);
+	--cw-profile-trigger-bg-open: linear-gradient(180deg, #eef4f9 0%, #dde7f1 100%);
+	--cw-profile-trigger-border: #98adbf;
+	--cw-profile-trigger-border-hover: #889fb4;
+	--cw-profile-trigger-border-open: #7289a1;
+	--cw-profile-trigger-text: #0c1a2b;
+	--cw-profile-trigger-text-hover: #07111d;
+	--cw-profile-trigger-subtitle: #556a81;
+	--cw-profile-trigger-shadow: 0 12px 20px -16px rgba(22, 36, 57, 0.3);
+	--cw-profile-trigger-shadow-open: 0 14px 24px -16px rgba(22, 36, 57, 0.34);
+	--cw-profile-avatar-bg: linear-gradient(180deg, #f3f7fb 0%, #e4ebf3 100%);
+	--cw-profile-avatar-border: #b0c0d0;
 
-    --cw-button-secondary-bg: #ffffff;
-    --cw-button-secondary-bg-hover: #f8fafc;
-    --cw-button-secondary-border: #cbd5e1; /* Slate 300 - visible border */
-    --cw-button-secondary-text: #334155;
-    --cw-button-secondary-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	/* ── Drawer ────────────────────────────────────────── */
+	--cw-drawer-bg: var(--cw-bg-surface);
+	--cw-drawer-panel-bg: color-mix(in srgb, var(--cw-bg-muted) 55%, var(--cw-bg-surface));
+	--cw-drawer-header-bg: color-mix(in srgb, var(--cw-bg-surface-elevated) 70%, var(--cw-bg-muted));
+	--cw-drawer-header-bg-hover: color-mix(in srgb, var(--cw-bg-surface-elevated) 52%, var(--cw-bg-muted));
+	--cw-drawer-header-border: color-mix(in srgb, var(--cw-border-default) 84%, transparent);
 
-    --cw-profile-trigger-bg: #ffffff;
-    --cw-profile-trigger-border: #cbd5e1;
-    --cw-profile-trigger-text: #0f172a;
-    --cw-profile-trigger-subtitle: #64748b;
-    --cw-profile-avatar-bg: #f1f5f9;
-    --cw-profile-avatar-border: #cbd5e1;
+	/* ── SideNav ──────────────────────────────────────── */
+	--cw-sidenav-bg:
+		radial-gradient(
+			120% 70% at 0% 0%,
+			color-mix(in srgb, #8fb2d8 16%, transparent),
+			transparent 70%
+		),
+		linear-gradient(180deg, #f4f8fb 0%, #e7eef5 100%);
+	--cw-sidenav-item-text: #37495f;
+	--cw-sidenav-item-text-hover: #122338;
+	--cw-sidenav-item-active-text: #124b88;
+	--cw-sidenav-item-hover-bg: #d7e1eb;
+	--cw-sidenav-item-active-bg: #cadef1;
+	--cw-sidenav-item-active-bg-hover: #bfd6ea;
+	--cw-sidenav-group-text: #26394f;
+	--cw-sidenav-trailing-border: #aebfce;
+	--cw-sidenav-trailing-bg: #e7eef4;
+	--cw-sidenav-trailing-text: #34475d;
+	--cw-sidenav-trailing-active-border: #7f9bb8;
+	--cw-sidenav-trailing-active-bg: #dbe8f6;
 
-    /* ── DataTable ────────────────────────────────────── */
-    --cw-datatable-row-text: #0f172a;
-    --cw-datatable-row-bg: var(--cw-bg-table-row);
-    --cw-datatable-row-bg-alt: var(--cw-bg-table-row-alt);
-    --cw-datatable-row-bg-hover: var(--cw-bg-table-row-hover);
-    --cw-datatable-row-bg-alt-hover: var(--cw-bg-table-row-alt-hover);
+	/* ── DataTable ────────────────────────────────────── */
+	--cw-datatable-row-text: #0b1726;
+	--cw-datatable-row-bg: var(--cw-bg-table-row);
+	--cw-datatable-row-bg-alt: var(--cw-bg-table-row-alt);
+	--cw-datatable-row-bg-hover: var(--cw-bg-table-row-hover);
+	--cw-datatable-row-bg-alt-hover: var(--cw-bg-table-row-alt-hover);
 
-    /* ── Chart Surfaces ───────────────────────────────── */
-    --cw-chart-card-border: #cbd5e1;   /* Slate 300 */
-    --cw-chart-card-bg: #ffffff;
-    --cw-chart-card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    --cw-chart-card-title: #0f172a;
-    --cw-chart-card-cell-border: #e2e8f0;
+	/* ── Chart Surfaces ───────────────────────────────── */
+	--cw-chart-card-border: #9eb2c5;
+	--cw-chart-card-bg: #f7fafc;
+	--cw-chart-card-shadow: 0 14px 24px -18px rgba(25, 41, 61, 0.28);
+	--cw-chart-card-muted: #4f647b;
+	--cw-chart-card-title: #07111d;
+	--cw-chart-card-cell-border: #b8c7d4;
+	--cw-chart-card-cell-bg: color-mix(in srgb, var(--cw-bg-muted) 78%, var(--cw-bg-surface));
 
-    /* ── Text ──────────────────────────────────────────── 
-       Darker text colors solve the "washed out" feeling.
-    */
-    --cw-text-primary: #0f172a;   /* Slate 900 */
-    --cw-text-secondary: #334155; /* Slate 700 */
-    --cw-text-muted: #64748b;    /* Slate 500 */
-    --cw-text-disabled: #94a3b8;
-    --cw-text-inverse: #ffffff;
+	/* ── Line Chart ───────────────────────────────────── */
+	--cw-linechart-grid: rgb(181 195 209);
+	--cw-linechart-threshold: rgb(99 116 139);
+	--cw-linechart-axis: rgb(148 163 184);
+	--cw-linechart-tick: rgb(71 85 105);
+	--cw-linechart-tick-secondary: rgb(126 87 194);
+	--cw-linechart-axis-label-primary: rgb(3 105 161);
+	--cw-linechart-axis-label-secondary: rgb(109 40 217);
+	--cw-linechart-time-label: rgb(100 116 139);
+	--cw-linechart-crosshair: rgb(100 116 139);
+	--cw-linechart-secondary-stroke: rgb(124 58 237);
+	--cw-linechart-point-stroke: #f7fafc;
+	--cw-linechart-dot-sky: #0284c7;
+	--cw-linechart-dot-purple: #7c3aed;
+	--cw-linechart-threshold-marker: #64748b;
+	--cw-linechart-tooltip-border: #9fb0c2;
+	--cw-linechart-tooltip-bg: rgba(244, 248, 252, 0.96);
+	--cw-linechart-tooltip-text: #13253a;
+	--cw-linechart-tooltip-muted: #4c6279;
+	--cw-linechart-tooltip-value: #07111d;
+	--cw-linechart-tooltip-time: #60758b;
+	--cw-linechart-tooltip-alert-bg: var(--cw-warning-500);
+	--cw-linechart-tooltip-alert-text: var(--cw-gray-950);
+	--cw-linechart-legend-text: #334155;
+	--cw-linechart-legend-inactive: #94a3b8;
 
-    /* ── Border ────────────────────────────────────────── 
-       Deepened from your original to create clear boundaries.
-    */
-    --cw-border-default: #cbd5e1; /* Slate 300 - Standard edge */
-    --cw-border-muted: #e2e8f0;   /* Slate 200 - Inner dividers */
-    --cw-border-strong: #94a3b8;  /* Slate 400 - Focused states */
+	/* ── Text ──────────────────────────────────────────── */
+	--cw-text-primary: #07111d;
+	--cw-text-secondary: #1f3144;
+	--cw-text-muted: #465b72;
+	--cw-text-disabled: #8397ac;
+	--cw-text-inverse: #fbfdff;
 
-    /* ── Tone: Status ──────────────────────────────────── */
-    --cw-tone-primary-bg: #eff6ff;
-    --cw-tone-primary-text: #1e40af;
-    --cw-tone-primary-border: #bfdbfe;
+	/* ── Border ────────────────────────────────────────── */
+	--cw-border-default: #99aec1;
+	--cw-border-muted: #b0c0ce;
+	--cw-border-strong: #70869d;
 
-    --cw-tone-success-bg: #f0fdf4;
-    --cw-tone-success-text: #166534;
-    --cw-tone-success-border: #bbf7d0;
+	/* ── Tone: Status ──────────────────────────────────── */
+	--cw-tone-primary-bg: #dbeafe;
+	--cw-tone-primary-bg-subtle: color-mix(in srgb, #2563eb 14%, transparent);
+	--cw-tone-primary-text: #1e40af;
+	--cw-tone-primary-border: #93c5fd;
+	--cw-tone-primary-solid-bg: #2563eb;
+	--cw-tone-primary-solid-text: #ffffff;
 
-    --cw-tone-danger-bg: #fef2f2;
-    --cw-tone-danger-text: #991b1b;
-    --cw-tone-danger-border: #fecaca;
+	--cw-tone-secondary-bg: #e2e8f0;
+	--cw-tone-secondary-bg-subtle: color-mix(in srgb, #475569 12%, transparent);
+	--cw-tone-secondary-text: #334155;
+	--cw-tone-secondary-border: #b2c0cf;
+	--cw-tone-secondary-solid-bg: #475569;
+	--cw-tone-secondary-solid-text: #ffffff;
 
-    /* ── Focus ─────────────────────────────────────────── */
-    --cw-focus-ring-color: #3b82f6;
+	--cw-tone-info-bg: #e0f2fe;
+	--cw-tone-info-bg-subtle: color-mix(in srgb, #0284c7 12%, transparent);
+	--cw-tone-info-text: #075985;
+	--cw-tone-info-border: #7dd3fc;
+	--cw-tone-info-solid-bg: #0284c7;
+	--cw-tone-info-solid-text: #ffffff;
 
-    /* ── Scrollbar ─────────────────────────────────────── */
-    --cw-scrollbar-thumb: #cbd5e1;
-    --cw-scrollbar-track: #f1f5f9;
+	--cw-tone-warning-bg: #fff7db;
+	--cw-tone-warning-bg-subtle: color-mix(in srgb, #d97706 18%, transparent);
+	--cw-tone-warning-text: #92400e;
+	--cw-tone-warning-border: #f3d983;
+	--cw-tone-warning-solid-bg: #d97706;
+	--cw-tone-warning-solid-text: #ffffff;
+
+	--cw-tone-danger-bg: #fee2e2;
+	--cw-tone-danger-bg-subtle: color-mix(in srgb, #dc2626 12%, transparent);
+	--cw-tone-danger-text: #991b1b;
+	--cw-tone-danger-border: #fca5a5;
+	--cw-tone-danger-solid-bg: #dc2626;
+	--cw-tone-danger-solid-text: #ffffff;
+
+	--cw-tone-success-bg: #dcfce7;
+	--cw-tone-success-bg-subtle: color-mix(in srgb, #059669 12%, transparent);
+	--cw-tone-success-text: #166534;
+	--cw-tone-success-border: #86efac;
+	--cw-tone-success-solid-bg: #059669;
+	--cw-tone-success-solid-text: #ffffff;
+
+	/* ── Focus ─────────────────────────────────────────── */
+	--cw-focus-ring-color: #2c6cb7;
+
+	/* ── Scrollbar ─────────────────────────────────────── */
+	--cw-scrollbar-thumb: #b3c1d0;
+	--cw-scrollbar-track: #dfe7ef;
 }

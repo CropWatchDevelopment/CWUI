@@ -35,6 +35,7 @@ export { default as CwExpandPanel } from './components/CwExpandPanel.svelte';
 export { default as CwHeatmap } from './components/CwHeatmap.svelte';
 export { default as CwSensorCard } from './components/CwSensorCard.svelte';
 export { default as CwStatCard } from './components/CwStatCard.svelte';
+export { default as CwAlertPointsEditor } from './components/CwAlertPointsEditor.svelte';
 
 // ── Toast system ────────────────────────────────────────────
 export { default as CwToastContainer } from './components/CwToastContainer.svelte';
@@ -89,5 +90,9 @@ export type {
 	CwSensorCardDetailRow,
 	CwSensorCardDevice,
 	CwStatCardTrend,
-	CwStatCardData
+	CwStatCardData,
+	CwAlertPointUnit,
+	CwAlertPointCondition,
+	CwAlertPointRule,
+	CwAlertPointsValue
 } from './types/index.js';

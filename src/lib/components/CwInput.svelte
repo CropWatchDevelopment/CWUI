@@ -2,7 +2,9 @@
 	import type { Snippet } from 'svelte';
 	import type { HTMLInputAttributes } from 'svelte/elements';
 
-	type InputType = 'text' | 'numeric' | 'email' | 'password' | 'devEui' | 'creditCard' | 'cardExpiry';
+	type InputType = 'text' | 'numeric' | 'email' | 'password' | 'color' | 'devEui' | 'creditCard' | 'cardExpiry';
+
+	const DEFAULT_COLOR = '#000000';
 
 	interface Props {
 		type?: InputType;
@@ -55,6 +57,7 @@
 	let showPassword = $state(false);
 
 	const isPassword = $derived(type === 'password');
+	const isColor = $derived(type === 'color');
 	const nativeType = $derived.by(() => {
 		if (type === 'password') {
 			return showPassword ? 'text' : 'password';
@@ -64,25 +67,37 @@
 			: type;
 	});
 
-	const inputMode = $derived<'text' | 'numeric' | 'email'>(
+	const inputMode = $derived<'text' | 'numeric' | 'email' | undefined>(
 		type === 'numeric' || type === 'creditCard' || type === 'cardExpiry'
 			? 'numeric'
 			: type === 'email'
 				? 'email'
-				: 'text'
+				: type === 'color'
+					? undefined
+					: 'text'
 	);
+	const displayValue = $derived.by(() => (type === 'color' ? normalizeColorValue(value) : value));
 
 	/** Whether a validation icon is rendered on the right */
 	const hasValidationIcon = $derived(!!error || (valid && !error));
 
 	/** Whether the clear button should show */
-	const showClear = $derived(clearable && value.length > 0 && !disabled);
+	const showClear = $derived(clearable && !isColor && value.length > 0 && !disabled);
 
 	/** Whether the password visibility toggle should show */
 	const showPasswordToggle = $derived(isPassword);
 
 	/** Whether _anything_ occupies the right side (slot, clear btn, or validation icon) */
 	const hasRight = $derived(!!rightSlot || hasValidationIcon || showClear || showPasswordToggle);
+
+	$effect(() => {
+		if (!isColor) return;
+
+		const normalized = normalizeColorValue(value);
+		if (value !== normalized) {
+			value = normalized;
+		}
+	});
 
 	function handleInput(e: Event) {
 		const target = e.target as HTMLInputElement;
@@ -96,9 +111,11 @@
 			raw = formatCreditCard(raw);
 		} else if (type === 'cardExpiry') {
 			raw = formatCardExpiry(raw);
+		} else if (type === 'color') {
+			raw = normalizeColorValue(raw);
 		}
 
-		if (maxlength !== undefined && raw.length > maxlength) {
+		if (type !== 'color' && maxlength !== undefined && raw.length > maxlength) {
 			raw = raw.slice(0, maxlength);
 		}
 
@@ -138,6 +155,22 @@
 		}
 		return digits;
 	}
+
+	function normalizeColorValue(input: string): string {
+		const trimmed = input.trim();
+		if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) {
+			return trimmed.toLowerCase();
+		}
+		if (/^#[0-9a-fA-F]{3}$/.test(trimmed)) {
+			return `#${trimmed
+				.slice(1)
+				.split('')
+				.map((char) => char + char)
+				.join('')
+				.toLowerCase()}`;
+		}
+		return DEFAULT_COLOR;
+	}
 </script>
 
 <div
@@ -165,7 +198,7 @@
 			class:cw-input__field--has-right={hasRight}
 			type={nativeType}
 			inputmode={inputMode}
-			{value}
+			value={displayValue}
 			{name}
 			{required}
 			{disabled}
@@ -285,6 +318,21 @@
 
 	.cw-input__field::placeholder {
 		color: var(--cw-text-muted);
+	}
+
+	.cw-input__field[type='color'] {
+		padding: 0.3125rem;
+		cursor: pointer;
+	}
+
+	.cw-input__field[type='color']::-webkit-color-swatch-wrapper {
+		padding: 0;
+	}
+
+	.cw-input__field[type='color']::-webkit-color-swatch,
+	.cw-input__field[type='color']::-moz-color-swatch {
+		border: none;
+		border-radius: calc(var(--cw-radius-xl) - 0.3125rem);
 	}
 
 	.cw-input__field:hover:not(:disabled) {

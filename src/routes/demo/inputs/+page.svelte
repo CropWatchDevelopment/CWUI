@@ -6,6 +6,7 @@
 	let numVal = $state('');
 	let emailVal = $state('');
 	let passVal = $state('');
+	let colorVal = $state('#2f8f5b');
 	let euiVal = $state('');
 	let ccVal = $state('');
 	let expVal = $state('');
@@ -21,13 +22,14 @@
 </script>
 
 <h2>CwInput</h2>
-<p class="demo-desc">All input types, validation states, icon slots, clear button, and DevEUI/credit-card formatting.</p>
+<p class="demo-desc">All input types, validation states, icon slots, clear button, native color picking, and DevEUI/credit-card formatting.</p>
 
 <div class="demo-grid">
 	<CwInput label="Text" type="text" placeholder="Type here…" bind:value={textVal} />
 	<CwInput label="Numeric" type="numeric" placeholder="Numbers only" bind:value={numVal} />
 	<CwInput label="Email" type="email" placeholder="user@example.com" bind:value={emailVal} />
 	<CwInput label="Password" type="password" placeholder="••••••••" bind:value={passVal} />
+	<CwInput label="Accent Color" type="color" bind:value={colorVal} />
 	<CwInput label="DevEUI" type="devEui" placeholder="XX:XX:XX:XX:XX:XX:XX:XX" bind:value={euiVal} />
 </div>
 

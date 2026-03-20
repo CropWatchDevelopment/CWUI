@@ -347,6 +347,44 @@ export interface CwSensorCardDevice {
 	expectedUpdateAfterMinutes?: number;
 }
 
+/* ── Alert Points Editor types ─────────────────────────── */
+
+export type CwAlertPointUnit = 'C' | 'F' | 'K';
+
+export type CwAlertPointCondition =
+	| 'equals'
+	| 'range'
+	| 'lessThan'
+	| 'lessThanOrEqual'
+	| 'greaterThan'
+	| 'greaterThanOrEqual';
+
+export interface CwAlertPointRule {
+	/** Stable point identifier. */
+	id: string;
+	/** Human-readable label shown in the editor and preview. */
+	name: string;
+	/** Hex colour used for the point or range. */
+	color: string;
+	/** Alert comparison mode. */
+	condition: CwAlertPointCondition;
+	/** Single-point comparison input. Kept as a string while editing so partial negatives/decimals remain valid. */
+	value: string;
+	/** Range lower bound input. */
+	min: string;
+	/** Range upper bound input. */
+	max: string;
+}
+
+export interface CwAlertPointsValue {
+	/** Visual unit preference for the editor. Bound values are normalized back to Celsius. */
+	unit: CwAlertPointUnit;
+	/** Number line midpoint. Kept as a string while editing. */
+	center: string;
+	/** Editable alert point definitions. */
+	points: CwAlertPointRule[];
+}
+
 /* ── Stat Card types ────────────────────────────────────── */
 
 export type CwStatCardTrend = 'up' | 'down' | 'stable';

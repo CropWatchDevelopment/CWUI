@@ -939,7 +939,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 		apiRows: [
 			{
 				name: 'type',
-				type: "'text' | 'numeric' | 'email' | 'password' | 'devEui' | 'creditCard' | 'cardExpiry'",
+				type: "'text' | 'numeric' | 'email' | 'password' | 'color' | 'devEui' | 'creditCard' | 'cardExpiry'",
 				description: 'Input behavior and optional formatting mode.',
 				defaultValue: 'text'
 			},
@@ -1004,13 +1004,20 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 />`
 			},
 			{
-				title: 'Formatted card and DevEUI inputs',
-				description: 'Use the specialized types only when you want the formatting behavior.',
+				title: 'Color picker plus formatted inputs',
+				description: 'Use the native color control or the specialized formatted types when you need them.',
 				code: `<script lang="ts">
 \tlet devEui = $state('');
+\tlet accentColor = $state('#2f8f5b');
 \tlet cardNumber = $state('');
 \tlet expiry = $state('');
 </script>
+
+<CwInput
+\tlabel="Accent color"
+\ttype="color"
+\tbind:value={accentColor}
+/>
 
 <CwInput
 \tlabel="Device EUI"
@@ -2582,6 +2589,135 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \trelativeHumidity={56}
 \tstageBands={stageBands}
 />`
+			}
+		]
+	},
+		'/demo/alert-points': {
+			summary:
+				'CwAlertPointsEditor is a number-line editor for threshold rules. It keeps the center point anchored, lets users add exact points, open-ended thresholds, and ranges, and keeps the bound values normalized in Celsius while the selected unit stays visual-only.',
+		steps: [
+			{
+				title: 'Treat the bound value as editable form state',
+				description:
+					'Numeric fields stay as strings while the user types so partial negatives and decimals do not get wiped out mid-edit.'
+			},
+			{
+				title: 'Use the condition dropdown to decide the shape',
+				description:
+					'`equals` draws a single point, `range` requires both `min` and `max`, and the less-than/greater-than variants render one-sided ranges.'
+			},
+				{
+					title: 'Normalize before you submit',
+					description:
+						'When you need a payload for storage or an API, convert the Celsius-backed `center`, `value`, `min`, and `max` fields into numbers or `null`.'
+				},
+			{
+				title: 'Let the scale breathe around the center',
+				description:
+					'The number line expands symmetrically around the configured center point so negative values always stay left and positive values stay right.'
+			}
+		],
+		apiTitle: 'Props and bound value shape',
+		apiNote:
+			'The component is intentionally optimized for editing. Numeric inputs are stored as strings inside the bound object.',
+		apiRows: [
+				{
+					name: 'value',
+					type: 'CwAlertPointsValue',
+					description:
+						'Bindable editor state containing the visual `unit`, the Celsius-backed `center`, and the editable `points[]` collection.'
+				},
+				{
+					name: 'value.unit',
+					type: "'C' | 'F' | 'K'",
+					description: 'Visual-only unit rendered beside the center control and used in helper copy. The bound numeric fields remain in Celsius.'
+				},
+				{
+					name: 'value.center',
+					type: 'string',
+					description:
+						'Midpoint of the number line. Kept as a string while editing, stored in Celsius, and typically normalized to a number before saving.'
+			},
+			{
+				name: 'value.points',
+				type: 'CwAlertPointRule[]',
+				description:
+					'Editable list of alert rules. Each rule includes `id`, `name`, `color`, `condition`, `value`, `min`, and `max`.'
+			},
+			{
+				name: 'point.condition',
+				type: "'equals' | 'range' | 'lessThan' | 'lessThanOrEqual' | 'greaterThan' | 'greaterThanOrEqual'",
+				description: 'Controls whether the preview draws a point, a closed range, or a one-sided threshold.'
+			},
+			{
+				name: 'point.color',
+				type: 'string',
+				description: 'Hex colour used for the point or range and preserved in the bound output object.'
+			},
+			{
+				name: 'onchange',
+				type: '(value: CwAlertPointsValue) => void',
+				description: 'Optional callback fired whenever the bound editor state changes.'
+			},
+			{
+				name: 'class',
+				type: 'string',
+				description: 'Optional class hook applied to the outer wrapper.'
+			}
+		],
+		examples: [
+			{
+				title: 'Bind the editor state',
+				description: 'This is the minimal setup for interactive editing inside your own page or drawer.',
+				code: `<script lang="ts">
+\timport { CwAlertPointsEditor } from '@cropwatchdevelopment/cwui';
+\timport type { CwAlertPointsValue } from '@cropwatchdevelopment/cwui';
+
+\tlet alertPoints = $state<CwAlertPointsValue>({
+\t\tunit: 'C',
+\t\tcenter: '0',
+\t\tpoints: []
+\t});
+</script>
+
+<CwAlertPointsEditor bind:value={alertPoints} />`
+			},
+				{
+					title: 'Normalize before API submit',
+					description: 'Convert the Celsius-backed string fields into numbers once the user is done building the rule set.',
+					code: `<script lang="ts">
+\tlet alertPoints = $state({
+\t\tunit: 'C',
+\t\tcenter: '0',
+\t\tpoints: [
+\t\t\t{
+\t\t\t\tid: 'alert-1',
+\t\t\t\tname: 'Cold edge',
+\t\t\t\tcolor: '#f7903b',
+\t\t\t\tcondition: 'lessThanOrEqual',
+\t\t\t\tvalue: '-2',
+\t\t\t\tmin: '',
+\t\t\t\tmax: ''
+\t\t\t}
+\t\t]
+\t});
+
+\tfunction toNumber(raw: string) {
+\t\tconst trimmed = raw.trim();
+\t\tif (!trimmed) return null;
+\t\tconst parsed = Number(trimmed);
+\t\treturn Number.isFinite(parsed) ? parsed : null;
+\t}
+
+\tconst normalized = $derived({
+\t\tcenter: toNumber(alertPoints.center) ?? 0,
+\t\tpoints: alertPoints.points.map((point) =>
+\t\t\tpoint.condition === 'range'
+\t\t\t\t? { ...point, min: toNumber(point.min), max: toNumber(point.max) }
+\t\t\t\t: { ...point, value: toNumber(point.value) }
+\t\t)
+\t});
+</script>`
 			}
 		]
 	}

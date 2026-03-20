@@ -23,6 +23,8 @@
 		badge: "M2 4h8a2 2 0 012 2v6H2V4zm10 1.5a2.5 2.5 0 115 0 2.5 2.5 0 01-5 0z",
 		card: "M2 4a1 1 0 011-1h10a1 1 0 011 1v8a1 1 0 01-1 1H3a1 1 0 01-1-1V4zm0 3h12",
 		input: "M3 4h10a1 1 0 011 1v6a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1zM5 7v2",
+		alertPoints:
+			"M2 8h12M4.5 6.5v3M8 4v8M11.5 6.5v3M9.5 8a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0",
 		spinner: "M8 2a6 6 0 106 6M8 2a6 6 0 00-3.9 1.44",
 		switch: "M2 8a4 4 0 014-4h4a4 4 0 010 8H6a4 4 0 01-4-4zm8 0a2 2 0 110-4 2 2 0 010 4z",
 		statusdot:
@@ -195,6 +197,14 @@
 			icon: icons.input,
 			href: "/demo/inputs",
 			group: "Components",
+		},
+		{
+			id: "alert-points",
+			label: "Alert Points",
+			icon: icons.alertPoints,
+			href: "/demo/alert-points",
+			group: "Components",
+			trailing: "new",
 		},
 		{
 			id: "textarea",
