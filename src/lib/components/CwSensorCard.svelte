@@ -456,7 +456,7 @@
 	.cw-sensor-card__header {
 		display: flex;
 		align-items: center;
-		padding: var(--cw-space-3) var(--cw-space-4);
+		padding: var(--cw-space-2) var(--cw-space-4);
 		gap: var(--cw-space-3);
 		background: var(--cw-bg-elevated);
 		border-bottom: 1px solid var(--cw-border-muted);
@@ -524,14 +524,14 @@
 	/* ── Body ── */
 	.cw-sensor-card__body {
 		background: var(--cw-bg-muted);
-		padding: var(--cw-space-4);
+		padding: var(--cw-space-1);
 	}
 
 	/* ── Devices container ── */
 	.cw-sensor-card__devices {
 		display: flex;
 		flex-direction: column;
-		gap: var(--cw-space-3);
+		gap: var(--cw-space-1);
 	}
 
 	/* ── Empty state ── */
@@ -563,7 +563,7 @@
 	/* ── Slot (content area with side status indicator bar) ── */
 	.cw-sensor-card__slot {
 		position: relative;
-		padding: var(--cw-space-3) var(--cw-space-3) var(--cw-space-3) var(--cw-space-8);
+		padding: var(--cw-space-1) var(--cw-space-3) var(--cw-space-2) var(--cw-space-8);
 		border-radius: var(--cw-radius-xl);
 		background: var(--cw-bg-elevated);
 		border: 1px solid var(--cw-border-muted);
@@ -625,6 +625,7 @@
 		color: var(--cw-text-secondary);
 		font-weight: var(--cw-font-semibold);
 		letter-spacing: 0.03em;
+		border-right: 1px solid var(--cw-border-muted);
 	}
 
 	/* ── Stats ── */
@@ -637,11 +638,14 @@
 
 	.cw-sensor-card__stat {
 		display: inline-flex;
-		align-items: baseline;
+		text-align: center;
+		width: 100%;
+		align-items: center;
 		gap: var(--cw-space-1);
 		font-weight: var(--cw-font-bold);
 		font-size: var(--cw-text-lg);
 		color: var(--cw-text-primary);
+		border-right: 1px solid var(--cw-border-muted);
 	}
 
 	.cw-sensor-card__stat-icon {

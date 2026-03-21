@@ -100,7 +100,7 @@ ${SCRIPT_CLOSE}
 </p>
 
 <section class="demo-section">
-	<CwAlertPointsEditor bind:value={alertPoints} />
+	<CwAlertPointsEditor bind:value={alertPoints} tickCount={1} />
 </section>
 
 <section class="demo-grid">

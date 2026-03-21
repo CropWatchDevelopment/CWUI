@@ -13,6 +13,8 @@
 	interface Props {
 		value?: CwAlertPointsValue;
 		onchange?: (value: CwAlertPointsValue) => void;
+		tickStep?: number;
+		tickCount?: number;
 		class?: string;
 	}
 
@@ -45,11 +47,12 @@
 
 	const STORAGE_UNIT: CwAlertPointUnit = "C";
 	const CENTER_DRAFT_KEY = "center";
+	const DEFAULT_TICK_INTERVALS = 10;
 
 	const unitOptions = [
-		{ label: "C", value: "C" },
-		{ label: "F", value: "F" },
-		{ label: "K", value: "K" },
+		{ label: "°C", value: "C" },
+		{ label: "°F", value: "F" },
+		{ label: "°K", value: "K" },
 	];
 
 	const conditionOptions = [
@@ -94,6 +97,8 @@
 	let {
 		value = $bindable(createDefaultValue()),
 		onchange,
+		tickStep,
+		tickCount,
 		class: className = "",
 	}: Props = $props();
 
@@ -442,13 +447,45 @@
 	}
 
 	function buildTicks(center: number, extent: number): number[] {
-		const step = niceStep((extent * 2) / 10);
+		const step = niceStep((extent * 2) / DEFAULT_TICK_INTERVALS);
 		const stepsPerSide = Math.max(2, Math.ceil(extent / step));
 
 		return Array.from(
 			{ length: stepsPerSide * 2 + 1 },
 			(_, index) => center + (index - stepsPerSide) * step,
 		);
+	}
+
+	function normalizeNumericTick(value: number): number {
+		const normalized = Number(value.toPrecision(15));
+		return Object.is(normalized, -0) ? 0 : normalized;
+	}
+
+	function normalizeTickStep(value: number | undefined): number | undefined {
+		if (value === undefined || !Number.isFinite(value) || value <= 0) {
+			return undefined;
+		}
+
+		return normalizeNumericTick(value);
+	}
+
+	function buildTicksByStep(
+		min: number,
+		max: number,
+		step: number,
+	): number[] {
+		const startIndex = Math.ceil(min / step);
+		const endIndex = Math.floor(max / step);
+
+		if (endIndex < startIndex) return [];
+
+		return Array.from({ length: endIndex - startIndex + 1 }, (_, index) =>
+			normalizeNumericTick((startIndex + index) * step),
+		);
+	}
+
+	function isCenterTick(tick: number, center: number): boolean {
+		return Math.abs(tick - center) <= 1e-9;
 	}
 
 	function getGeometry(
@@ -715,7 +752,14 @@
 	const axisExtent = $derived.by(() => getExtent(centerNumber, visualPoints));
 	const axisMin = $derived(centerNumber - axisExtent);
 	const axisMax = $derived(centerNumber + axisExtent);
-	const axisTicks = $derived.by(() => buildTicks(centerNumber, axisExtent));
+	const normalizedTickStep = $derived.by(() =>
+		normalizeTickStep(tickStep ?? tickCount),
+	);
+	const axisTicks = $derived.by(() =>
+		normalizedTickStep === undefined
+			? buildTicks(centerNumber, axisExtent)
+			: buildTicksByStep(axisMin, axisMax, normalizedTickStep),
+	);
 	const overlapPreviewCount = $derived.by(
 		() => visualPoints.filter((point) => point.overlapError).length,
 	);
@@ -902,8 +946,10 @@
 							<span class="cw-alert-points__tick-mark"></span>
 							<span
 								class="cw-alert-points__tick-label"
-								class:cw-alert-points__tick-label--center={tick ===
-									centerNumber}
+								class:cw-alert-points__tick-label--center={isCenterTick(
+									tick,
+									centerNumber,
+								)}
 							>
 								{formatNumber(tick)}
 							</span>
@@ -1122,11 +1168,6 @@
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--cw-accent);
-	}
-
-	.cw-alert-points__preview-head h3 {
-		margin: 0;
-		color: var(--cw-text-primary);
 	}
 
 	.cw-alert-points__preview-head p,

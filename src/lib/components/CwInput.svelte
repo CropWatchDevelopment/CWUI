@@ -3,8 +3,10 @@
 	import type { HTMLInputAttributes } from 'svelte/elements';
 
 	type InputType = 'text' | 'numeric' | 'email' | 'password' | 'color' | 'devEui' | 'creditCard' | 'cardExpiry';
+	type NumericConstraint = number | string;
 
 	const DEFAULT_COLOR = '#000000';
+	const DEFAULT_NUMERIC_STEP = 1;
 
 	interface Props {
 		type?: InputType;
@@ -18,6 +20,9 @@
 		placeholder?: string;
 		autocomplete?: HTMLInputAttributes['autocomplete'];
 		maxlength?: number;
+		min?: NumericConstraint;
+		max?: NumericConstraint;
+		step?: NumericConstraint;
 		clearable?: boolean;
 		leftSlot?: Snippet;
 		rightSlot?: Snippet;
@@ -41,6 +46,9 @@
 		placeholder,
 		autocomplete,
 		maxlength,
+		min,
+		max,
+		step,
 		clearable = false,
 		leftSlot,
 		rightSlot,
@@ -56,6 +64,7 @@
 	let inputRef = $state<HTMLInputElement | null>(null);
 	let showPassword = $state(false);
 
+	const isNumeric = $derived(type === 'numeric');
 	const isPassword = $derived(type === 'password');
 	const isColor = $derived(type === 'color');
 	const nativeType = $derived.by(() => {
@@ -67,16 +76,25 @@
 			: type;
 	});
 
-	const inputMode = $derived<'text' | 'numeric' | 'email' | undefined>(
-		type === 'numeric' || type === 'creditCard' || type === 'cardExpiry'
-			? 'numeric'
-			: type === 'email'
-				? 'email'
-				: type === 'color'
-					? undefined
-					: 'text'
+	const inputMode = $derived<HTMLInputAttributes['inputmode']>(
+		type === 'numeric'
+			? 'decimal'
+			: type === 'creditCard' || type === 'cardExpiry'
+				? 'numeric'
+				: type === 'email'
+					? 'email'
+					: type === 'color'
+						? undefined
+						: 'text'
 	);
 	const displayValue = $derived.by(() => (type === 'color' ? normalizeColorValue(value) : value));
+	const numericMin = $derived.by(() => parseNumericConstraint(min));
+	const numericMax = $derived.by(() => parseNumericConstraint(max));
+	const numericValueNow = $derived.by(() => {
+		if (!isNumeric) return undefined;
+		const parsed = Number(value);
+		return Number.isFinite(parsed) ? parsed : undefined;
+	});
 
 	/** Whether a validation icon is rendered on the right */
 	const hasValidationIcon = $derived(!!error || (valid && !error));
@@ -87,8 +105,14 @@
 	/** Whether the password visibility toggle should show */
 	const showPasswordToggle = $derived(isPassword);
 
-	/** Whether _anything_ occupies the right side (slot, clear btn, or validation icon) */
-	const hasRight = $derived(!!rightSlot || hasValidationIcon || showClear || showPasswordToggle);
+	/** Whether the numeric stepper should show */
+	const showNumericStepper = $derived(isNumeric);
+
+	/** Whether any non-stepper content occupies the right side */
+	const hasAuxiliaryRight = $derived(!!rightSlot || hasValidationIcon || showClear || showPasswordToggle);
+
+	/** Whether _anything_ occupies the right side */
+	const hasRight = $derived(showNumericStepper || hasAuxiliaryRight);
 
 	$effect(() => {
 		if (!isColor) return;
@@ -104,7 +128,7 @@
 		let raw = target.value;
 
 		if (type === 'numeric') {
-			raw = raw.replace(/[^0-9.\-]/g, '');
+			raw = normalizeNumericValue(raw);
 		} else if (type === 'devEui') {
 			raw = normalizeDevEui(raw);
 		} else if (type === 'creditCard') {
@@ -124,6 +148,25 @@
 		oninput?.(e);
 	}
 
+	function handleKeydown(e: KeyboardEvent) {
+		onkeydown?.(e);
+		if (
+			e.defaultPrevented ||
+			type !== 'numeric' ||
+			disabled ||
+			e.altKey ||
+			e.ctrlKey ||
+			e.metaKey
+		) {
+			return;
+		}
+
+		if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+			e.preventDefault();
+			stepNumericValue(e.key === 'ArrowUp' ? 1 : -1);
+		}
+	}
+
 	function clear() {
 		value = '';
 		if (inputRef) {
@@ -138,9 +181,46 @@
 		inputRef?.focus();
 	}
 
+	function handleStepperMouseDown(event: MouseEvent) {
+		event.preventDefault();
+		inputRef?.focus();
+	}
+
+	function stepNumericValue(direction: 1 | -1) {
+		if (!inputRef || type !== 'numeric' || disabled) return;
+
+		const currentValue = inputRef.value;
+		const currentNumber = Number(currentValue);
+		const baseValue = Number.isFinite(currentNumber) ? currentNumber : 0;
+		const stepSize = resolveNumericStep(currentValue);
+		const precision = Math.max(getNumericPrecision(currentValue), getDecimalPlaces(stepSize));
+		const nextValue = formatNumericValue(
+			clampNumericValue(baseValue + direction * stepSize),
+			precision
+		);
+
+		if (currentValue === nextValue) return;
+
+		inputRef.value = nextValue;
+		inputRef.dispatchEvent(new Event('input', { bubbles: true }));
+	}
+
 	function normalizeDevEui(input: string): string {
 		const hex = input.replace(/[^0-9a-fA-F]/g, '').toUpperCase().slice(0, 16);
 		return hex.match(/.{1,2}/g)?.join(':') ?? hex;
+	}
+
+	function normalizeNumericValue(input: string): string {
+		const cleaned = input.replace(/[^0-9.\-]/g, '');
+		const hasNegative = cleaned.startsWith('-');
+		const unsigned = cleaned.replace(/-/g, '');
+		const [integerPart = '', ...fractionParts] = unsigned.split('.');
+
+		if (unsigned.includes('.')) {
+			return `${hasNegative ? '-' : ''}${integerPart}.${fractionParts.join('')}`;
+		}
+
+		return `${hasNegative ? '-' : ''}${integerPart}`;
 	}
 
 	function formatCreditCard(input: string): string {
@@ -171,6 +251,56 @@
 		}
 		return DEFAULT_COLOR;
 	}
+
+	function parseNumericConstraint(input: NumericConstraint | undefined): number | undefined {
+		if (input === undefined || input === '') return undefined;
+		const parsed = Number(input);
+		return Number.isFinite(parsed) ? parsed : undefined;
+	}
+
+	function resolveNumericStep(currentValue: string): number {
+		const configuredStep = parseNumericConstraint(step);
+		if (configuredStep !== undefined && configuredStep > 0) {
+			return configuredStep;
+		}
+
+		const precision = getNumericPrecision(currentValue);
+		return precision > 0 ? 1 / 10 ** precision : DEFAULT_NUMERIC_STEP;
+	}
+
+	function clampNumericValue(nextValue: number): number {
+		let resolved = nextValue;
+
+		if (numericMin !== undefined) {
+			resolved = Math.max(resolved, numericMin);
+		}
+
+		if (numericMax !== undefined) {
+			resolved = Math.min(resolved, numericMax);
+		}
+
+		return resolved;
+	}
+
+	function getNumericPrecision(input: string): number {
+		const trimmed = input.trim();
+		if (!trimmed.includes('.')) return 0;
+		return trimmed.split('.')[1]?.length ?? 0;
+	}
+
+	function getDecimalPlaces(value: number): number {
+		const normalized = value.toString().toLowerCase();
+		if (normalized.includes('e-')) {
+			const [coefficient, exponent] = normalized.split('e-');
+			return Number(exponent) + (coefficient.split('.')[1]?.length ?? 0);
+		}
+
+		return normalized.split('.')[1]?.length ?? 0;
+	}
+
+	function formatNumericValue(nextValue: number, precision: number): string {
+		return precision > 0 ? nextValue.toFixed(precision) : String(Number(nextValue.toFixed(0)));
+	}
 </script>
 
 <div
@@ -195,7 +325,8 @@
 			id="{uid}-input"
 			class="cw-input__field"
 			class:cw-input__field--has-left={!!leftSlot}
-			class:cw-input__field--has-right={hasRight}
+			class:cw-input__field--has-right={hasAuxiliaryRight}
+			class:cw-input__field--has-stepper={showNumericStepper}
 			type={nativeType}
 			inputmode={inputMode}
 			value={displayValue}
@@ -203,20 +334,55 @@
 			{required}
 			{disabled}
 			{placeholder}
-			{autocomplete}
+			autocomplete="off"
 			maxlength={maxlength ?? undefined}
 			oninput={handleInput}
 			onchange={onchange}
-			onkeydown={onkeydown}
+			onkeydown={handleKeydown}
 			onblur={onblur}
 			onfocus={onfocus}
+			role={isNumeric ? 'spinbutton' : undefined}
 			aria-invalid={error ? 'true' : undefined}
 			aria-describedby={error ? `${uid}-error` : undefined}
+			aria-valuemin={isNumeric ? numericMin : undefined}
+			aria-valuemax={isNumeric ? numericMax : undefined}
+			aria-valuenow={isNumeric ? numericValueNow : undefined}
+			aria-valuetext={isNumeric && value ? value : undefined}
 		/>
 
 		<!-- Right-side content: clear button, user slot, validation icon -->
 		{#if hasRight}
 			<span class="cw-input__slot cw-input__slot--right">
+				{#if showNumericStepper}
+					<span class="cw-input__stepper">
+						<button
+							type="button"
+							class="cw-input__stepper-button"
+							aria-label="Increase value"
+							disabled={disabled}
+							tabindex="-1"
+							onmousedown={handleStepperMouseDown}
+							onclick={() => stepNumericValue(1)}
+						>
+							<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+								<path d="M4.5 9.5L8 6l3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+							</svg>
+						</button>
+						<button
+							type="button"
+							class="cw-input__stepper-button"
+							aria-label="Decrease value"
+							disabled={disabled}
+							tabindex="-1"
+							onmousedown={handleStepperMouseDown}
+							onclick={() => stepNumericValue(-1)}
+						>
+							<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+								<path d="M4.5 6.5L8 10l3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+							</svg>
+						</button>
+					</span>
+				{/if}
 				{#if showClear}
 					<!-- svelte-ignore a11y_consider_explicit_label -->
 					<button
@@ -355,6 +521,14 @@
 		padding-right: var(--cw-space-10);
 	}
 
+	.cw-input__field--has-stepper {
+		padding-right: 3.75rem;
+	}
+
+	.cw-input__field--has-right.cw-input__field--has-stepper {
+		padding-right: 5.625rem;
+	}
+
 	/* ── Slots ───────────────────────────── */
 	.cw-input__slot {
 		position: absolute;
@@ -374,6 +548,46 @@
 
 	.cw-input__slot--right {
 		right: var(--cw-space-3);
+		gap: 0.375rem;
+	}
+
+	.cw-input__stepper {
+		display: grid;
+		grid-template-rows: repeat(2, minmax(0, 1fr));
+		gap: 0.125rem;
+		pointer-events: auto;
+	}
+
+	.cw-input__stepper-button {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.25rem;
+		height: 0.8125rem;
+		padding: 0;
+		border: none;
+		background: color-mix(in srgb, var(--cw-bg-elevated) 78%, transparent);
+		color: var(--cw-text-muted);
+		cursor: pointer;
+		border-radius: 0.375rem;
+		transition:
+			color var(--cw-duration-fast) var(--cw-ease-default),
+			background-color var(--cw-duration-fast) var(--cw-ease-default);
+	}
+
+	.cw-input__stepper-button:hover:not(:disabled) {
+		color: var(--cw-text-primary);
+		background: color-mix(in srgb, var(--cw-bg-elevated) 92%, var(--cw-info-500));
+	}
+
+	.cw-input__stepper-button:disabled {
+		cursor: not-allowed;
+		opacity: 0.6;
+	}
+
+	.cw-input__stepper-button svg {
+		width: 0.75rem;
+		height: 0.75rem;
 	}
 
 	/* ── Clear button ────────────────────── */

@@ -926,6 +926,11 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 					'Use the specialized types only when you want the built-in formatting behavior. Otherwise stay with plain `text`, `email`, or `password`.'
 			},
 			{
+				title: 'Tune numeric stepping when precision matters',
+				description:
+					'`numeric` fields render inline up/down controls, respond to `ArrowUp` and `ArrowDown` while focused, and optionally respect `step`, `min`, and `max`.'
+			},
+			{
 				title: 'Use validation props for field-level feedback',
 				description:
 					'`error` and `valid` control the right-side validation icon and the helper message under the field.'
@@ -970,6 +975,16 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				description: 'Character cap applied after formatting.'
 			},
 			{
+				name: 'min / max',
+				type: 'number | string',
+				description: 'Optional numeric bounds used by the inline stepper and keyboard increment/decrement.'
+			},
+			{
+				name: 'step',
+				type: 'number | string',
+				description: 'Optional numeric increment for `type="numeric"`. When omitted, the field infers precision from the current value.'
+			},
+			{
 				name: 'clearable',
 				type: 'boolean',
 				description: 'Shows the clear button when the field has a value.',
@@ -1009,9 +1024,19 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				code: `<script lang="ts">
 \tlet devEui = $state('');
 \tlet accentColor = $state('#2f8f5b');
+\tlet threshold = $state('18.5');
 \tlet cardNumber = $state('');
 \tlet expiry = $state('');
 </script>
+
+<CwInput
+\tlabel="Threshold"
+\ttype="numeric"
+\tstep={0.5}
+\tmin={0}
+\tmax={40}
+\tbind:value={threshold}
+/>
 
 <CwInput
 \tlabel="Accent color"
