@@ -24,25 +24,17 @@
 	--cw-header-bg: #23354d;
 
 	/* ── Button / Profile Trigger ─────────────────────── */
-	--cw-button-primary-bg: linear-gradient(
-		180deg,
-		color-mix(in srgb, #1f293e 86%, #3a4f73) 0%,
-		#1f293e 100%
-	);
-	--cw-button-primary-bg-hover: linear-gradient(
-		180deg,
-		color-mix(in srgb, #2f4568 72%, #496695) 0%,
-		#2a3f60 100%
-	);
-	--cw-button-primary-bg-active: linear-gradient(180deg, #2a3f60 0%, #233550 100%);
-	--cw-button-primary-border: #40567a;
-	--cw-button-primary-border-hover: #5b78a8;
-	--cw-button-primary-border-active: #53709e;
-	--cw-button-primary-text: #f2f6ff;
+	--cw-button-primary-bg: linear-gradient(180deg, #45515e 0%, #313b46 100%);
+	--cw-button-primary-bg-hover: linear-gradient(180deg, #536170 0%, #394550 100%);
+	--cw-button-primary-bg-active: linear-gradient(180deg, #3f4b58 0%, #2b333d 100%);
+	--cw-button-primary-border: #75889a;
+	--cw-button-primary-border-hover: #8fa2b4;
+	--cw-button-primary-border-active: #66798b;
+	--cw-button-primary-text: #ffffff;
 	--cw-button-primary-text-hover: #ffffff;
 	--cw-button-primary-shadow:
-		inset 0 1px 0 color-mix(in srgb, #ffffff 9%, transparent),
-		0 5px 14px color-mix(in srgb, #050a16 42%, transparent);
+		inset 0 1px 0 color-mix(in srgb, #ffffff 14%, transparent),
+		0 6px 16px color-mix(in srgb, #050a16 48%, transparent);
 
 	--cw-button-secondary-bg: linear-gradient(180deg, #314a72 0%, #2c4265 100%);
 	--cw-button-secondary-bg-hover: linear-gradient(
@@ -60,15 +52,47 @@
 		inset 0 1px 0 color-mix(in srgb, #ffffff 12%, transparent),
 		0 5px 14px color-mix(in srgb, #050a16 44%, transparent);
 
-	--cw-profile-trigger-bg: var(--cw-button-primary-bg);
-	--cw-profile-trigger-bg-hover: var(--cw-button-primary-bg-hover);
+	--cw-button-info-bg: linear-gradient(180deg, #1177a4 0%, #085b85 100%);
+	--cw-button-info-bg-hover: linear-gradient(180deg, #0f6f9c 0%, #074f75 100%);
+	--cw-button-info-bg-active: linear-gradient(180deg, #0a628d 0%, #053f5d 100%);
+	--cw-button-info-border: #188dc3;
+	--cw-button-info-border-hover: #36a4d7;
+	--cw-button-info-border-active: #1272a2;
+	--cw-button-info-text: #f8fcff;
+	--cw-button-info-text-hover: #ffffff;
+	--cw-button-info-shadow:
+		inset 0 1px 0 color-mix(in srgb, #ffffff 12%, transparent),
+		0 6px 16px color-mix(in srgb, #03121c 54%, transparent);
+
+	--cw-button-danger-bg: linear-gradient(180deg, #c12727 0%, #a61b1b 100%);
+	--cw-button-danger-bg-hover: linear-gradient(180deg, #b32020 0%, #931717 100%);
+	--cw-button-danger-bg-active: linear-gradient(180deg, #9f1d1d 0%, #7f1414 100%);
+	--cw-button-danger-border: #de4b4b;
+	--cw-button-danger-border-hover: #f06c6c;
+	--cw-button-danger-border-active: #cb3a3a;
+	--cw-button-danger-text: #fff7f7;
+	--cw-button-danger-text-hover: #ffffff;
+	--cw-button-danger-shadow:
+		inset 0 1px 0 color-mix(in srgb, #ffffff 10%, transparent),
+		0 6px 16px color-mix(in srgb, #140404 56%, transparent);
+
+	--cw-profile-trigger-bg: linear-gradient(
+		180deg,
+		color-mix(in srgb, #1f293e 86%, #3a4f73) 0%,
+		#1f293e 100%
+	);
+	--cw-profile-trigger-bg-hover: linear-gradient(
+		180deg,
+		color-mix(in srgb, #2f4568 72%, #496695) 0%,
+		#2a3f60 100%
+	);
 	--cw-profile-trigger-bg-open: linear-gradient(
 		180deg,
 		color-mix(in srgb, #314a72 70%, #4d6ea3) 0%,
 		#2c4265 100%
 	);
-	--cw-profile-trigger-border: var(--cw-button-primary-border);
-	--cw-profile-trigger-border-hover: var(--cw-button-primary-border-hover);
+	--cw-profile-trigger-border: #40567a;
+	--cw-profile-trigger-border-hover: #5b78a8;
 	--cw-profile-trigger-border-open: #6282b8;
 	--cw-profile-trigger-text: #f2f6ff;
 	--cw-profile-trigger-text-hover: #ffffff;

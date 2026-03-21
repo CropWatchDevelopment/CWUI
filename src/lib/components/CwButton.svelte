@@ -79,6 +79,7 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
+		--cw-button-icon-size: 1.4em;
 		gap: var(--cw-space-2);
 		border: 1px solid transparent;
 		border-radius: var(--cw-radius-xl);
@@ -101,16 +102,19 @@
 		padding: var(--cw-space-1) var(--cw-space-3);
 		font-size: var(--cw-text-xs);
 		min-height: 1.75rem;
+		--cw-button-icon-size: 1.5em;
 	}
 	.cw-button--md {
 		padding: var(--cw-space-2) var(--cw-space-4);
 		font-size: var(--cw-text-sm);
 		min-height: 2.25rem;
+		--cw-button-icon-size: 1.7em;
 	}
 	.cw-button--lg {
 		padding: var(--cw-space-3) var(--cw-space-6);
 		font-size: var(--cw-text-base);
 		min-height: 2.75rem;
+		--cw-button-icon-size: 1.8em;
 	}
 
 	/* ── Variants ────────────────────────── */
@@ -162,31 +166,39 @@
 	}
 
 	.cw-button--danger {
-		background-color: var(--cw-tone-danger-solid-bg);
-		color: var(--cw-tone-danger-solid-text);
-		border-color: var(--cw-tone-danger-solid-bg);
-		--cw-button-focus-base-shadow: none;
+		background: var(--cw-button-danger-bg);
+		color: var(--cw-button-danger-text);
+		border-color: var(--cw-button-danger-border);
+		box-shadow: var(--cw-button-danger-shadow, none);
+		--cw-button-focus-base-shadow: var(--cw-button-danger-shadow, none);
 	}
 	.cw-button--danger:hover:not(:disabled) {
-		background-color: var(--cw-danger-700);
-		border-color: var(--cw-danger-700);
+		background: var(--cw-button-danger-bg-hover);
+		color: var(--cw-button-danger-text-hover);
+		border-color: var(--cw-button-danger-border-hover);
 	}
 	.cw-button--danger:active:not(:disabled) {
-		background-color: var(--cw-danger-800);
+		background: var(--cw-button-danger-bg-active);
+		color: var(--cw-button-danger-text-hover);
+		border-color: var(--cw-button-danger-border-active);
 	}
 
 	.cw-button--info {
-		background-color: var(--cw-tone-info-solid-bg);
-		color: var(--cw-tone-info-solid-text);
-		border-color: var(--cw-tone-info-solid-bg);
-		--cw-button-focus-base-shadow: none;
+		background: var(--cw-button-info-bg);
+		color: var(--cw-button-info-text);
+		border-color: var(--cw-button-info-border);
+		box-shadow: var(--cw-button-info-shadow, none);
+		--cw-button-focus-base-shadow: var(--cw-button-info-shadow, none);
 	}
 	.cw-button--info:hover:not(:disabled) {
-		background-color: var(--cw-info-700);
-		border-color: var(--cw-info-700);
+		background: var(--cw-button-info-bg-hover);
+		color: var(--cw-button-info-text-hover);
+		border-color: var(--cw-button-info-border-hover);
 	}
 	.cw-button--info:active:not(:disabled) {
-		background-color: var(--cw-info-800);
+		background: var(--cw-button-info-bg-active);
+		color: var(--cw-button-info-text-hover);
+		border-color: var(--cw-button-info-border-active);
 	}
 
 	/* ── States ──────────────────────────── */
@@ -229,6 +241,8 @@
 		justify-content: center;
 		line-height: 0;
 		flex-shrink: 0;
+		min-width: var(--cw-button-icon-size);
+		min-height: var(--cw-button-icon-size);
 	}
 
 	.cw-button__content--hidden {
@@ -240,8 +254,8 @@
 	.cw-button__content :global(img),
 	.cw-button__content :global(svg) {
 		display: block;
-		width: 1em;
-		height: 1em;
+		width: var(--cw-button-icon-size);
+		height: var(--cw-button-icon-size);
 		flex-shrink: 0;
 		object-fit: contain;
 	}
