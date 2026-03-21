@@ -133,6 +133,7 @@
 	--cw-radius-lg: 0.5rem;
 	--cw-radius-xl: 0.75rem;
 	--cw-radius-2xl: 1rem;
+	--cw-radius-pill: 9999px;
 	--cw-radius-full: 9999px;
 
 	/* ── Scale: Shadows ────────────────────────────────── */

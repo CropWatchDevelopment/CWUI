@@ -159,6 +159,13 @@
 	--cw-border-muted: #b0c0ce;
 	--cw-border-strong: #70869d;
 
+	/* ── Accent / Primary ──────────────────────────────── */
+	--cw-accent: #2c6cb7;
+	--cw-accent-hover: #255f9d;
+	--cw-accent-active: #194a7d;
+	--cw-accent-bg: #dbeafe;
+	--cw-accent-text: #1d4f8e;
+
 	/* ── Tone: Status ──────────────────────────────────── */
 	--cw-tone-primary-bg: #dbeafe;
 	--cw-tone-primary-bg-subtle: color-mix(in srgb, #2563eb 14%, transparent);
