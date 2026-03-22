@@ -320,7 +320,7 @@
 	}
 
 	.cw-stat-card__unit {
-		font-size: var(--cw-text-xs);
+		font-size: var(--cw-text-md);
 		font-weight: var(--cw-font-normal);
 	}
 

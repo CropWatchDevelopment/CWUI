@@ -637,4 +637,15 @@
 		align-items: center;
 		justify-content: center;
 	}
+
+	@media (min-width: 1024px) {
+		.cw-sidenav__item {
+			font-size: var(--cw-text-base);
+		}
+
+		.cw-sidenav__icon {
+			width: 1.25rem;
+			height: 1.25rem;
+		}
+	}
 </style>
