@@ -325,11 +325,12 @@
 	}
 
 	.cw-stat-card__hero {
+		position: relative;
 		display: grid;
-		justify-items: center;
-		gap: var(--cw-space-2);
+		place-items: center;
 		width: 100%;
-		padding: var(--cw-space-2) var(--cw-space-2);
+		min-height: 6.25rem;
+		padding: var(--cw-space-3) var(--cw-space-2);
 		text-align: center;
 		border: 1px solid
 			color-mix(
@@ -385,27 +386,30 @@
 	}
 
 	.cw-stat-card__comparison {
+		position: absolute;
+		top: var(--cw-space-2);
+		right: var(--cw-space-2);
 		display: inline-flex;
 		align-items: center;
-		gap: 0.375rem;
-		padding: 0.35rem 0.65rem;
+		gap: 0.25rem;
+		padding: 0.2rem 0.5rem;
 		border: 1px solid color-mix(in srgb, var(--cw-border-default) 72%, transparent);
 		border-radius: var(--cw-radius-pill);
 		background-color: color-mix(in srgb, var(--cw-bg-muted) 38%, var(--cw-bg-surface));
-		font-size: var(--cw-text-sm);
+		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-medium);
 		color: var(--cw-text-muted);
 		font-variant-numeric: tabular-nums;
 	}
 
 	.cw-stat-card__comparison-icon {
-		width: 1rem;
-		height: 1rem;
+		width: 0.875rem;
+		height: 0.875rem;
 		flex: none;
 	}
 
 	.cw-stat-card__comparison-value {
-		font-size: var(--cw-text-sm);
+		font-size: var(--cw-text-xs);
 	}
 
 	.cw-stat-card__labels {
