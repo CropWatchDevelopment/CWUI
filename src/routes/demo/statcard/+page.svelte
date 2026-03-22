@@ -10,8 +10,7 @@
 		median: 24.1,
 		stdDev: 3.2,
 		count: 288,
-		lastReading: 25.3,
-		trend: 'up'
+		lastReading: 25.3
 	};
 
 	const humidityStats: CwStatCardData = {
@@ -21,8 +20,7 @@
 		median: 70,
 		stdDev: 12.1,
 		count: 288,
-		lastReading: 72,
-		trend: 'stable'
+		lastReading: 72
 	};
 
 	const co2Stats: CwStatCardData = {
@@ -32,8 +30,7 @@
 		median: 580,
 		stdDev: 180,
 		count: 288,
-		lastReading: 450,
-		trend: 'down'
+		lastReading: 450
 	};
 
 	const lightStats: CwStatCardData = {
@@ -41,8 +38,7 @@
 		max: 850,
 		avg: 420,
 		count: 288,
-		lastReading: 620,
-		trend: 'up'
+		lastReading: 620
 	};
 
 	const minimalStats: CwStatCardData = {
@@ -62,8 +58,7 @@
 \t\tmedian: 24.1,
 \t\tstdDev: 3.2,
 \t\tcount: 288,
-\t\tlastReading: 25.3,
-\t\ttrend: 'up'
+\t\tlastReading: 25.3
 \t};
 <\/script>
 
@@ -86,7 +81,7 @@
 
 <h2>CwStatCard</h2>
 <p class="demo-desc">
-	Displays statistical summaries (min / avg / max) with a visual range bar, trend indicator, and expandable details.
+	Displays statistical summaries (min / avg / max) with a visual range bar, current reading, and current-vs-average delta.
 </p>
 
 <h3>Default (expandable)</h3>
@@ -109,11 +104,11 @@
 	<CwStatCard title="CO₂ Summary" stats={co2Stats} unit="ppm" expandable={false} accentColor="var(--cw-warning-500)" />
 </div>
 
-<h3>Trend indicators</h3>
+<h3>Current vs average</h3>
 <div class="demo-grid">
-	<CwStatCard title="Rising" stats={{ ...minimalStats, lastReading: 45, trend: 'up' }} unit="°C" />
-	<CwStatCard title="Falling" stats={{ ...minimalStats, lastReading: 15, trend: 'down' }} unit="°C" accentColor="var(--cw-danger-500)" />
-	<CwStatCard title="Stable" stats={{ ...minimalStats, lastReading: 30, trend: 'stable' }} unit="°C" accentColor="var(--cw-info-500)" />
+	<CwStatCard title="Above Average" stats={{ ...minimalStats, lastReading: 45 }} unit="°C" />
+	<CwStatCard title="Below Average" stats={{ ...minimalStats, lastReading: 15 }} unit="°C" accentColor="var(--cw-danger-500)" />
+	<CwStatCard title="At Average" stats={{ ...minimalStats, lastReading: 30 }} unit="°C" accentColor="var(--cw-info-500)" />
 </div>
 
 <DemoCodeExample code={basicExample} title="Basic usage" />
