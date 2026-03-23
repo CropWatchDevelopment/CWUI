@@ -30,7 +30,7 @@
 		median: 580,
 		stdDev: 180,
 		count: 288,
-		lastReading: 450
+		lastReading: 4583
 	};
 
 	const lightStats: CwStatCardData = {

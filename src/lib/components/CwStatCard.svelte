@@ -34,7 +34,9 @@
 	function fmt(v: number | undefined | null): string {
 		if (v == null) return "—";
 		const rounded = roundForDisplay(v);
-		return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+		return Number.isInteger(rounded)
+			? String(rounded)
+			: (+rounded.toLocaleString('en', { minimumFractionDigits: 1, maximumFractionDigits: 1, useGrouping: true }));
 	}
 
 	function fmtSigned(v: number): string {
@@ -116,13 +118,21 @@
 	{#if stats.lastReading != null}
 		<div class="cw-stat-card__hero">
 			<span class="cw-stat-card__hero-value">
-				{fmt(stats.lastReading)}{#if unit}
+				{stats.lastReading.toLocaleString('en', { minimumFractionDigits: 0, maximumFractionDigits: 2, useGrouping: true })}{#if unit}
 					{#if isCo2Unit(unit)}
-						<span class="cw-stat-card__hero-unit-group cw-stat-card__hero-unit-group--super">
-							{co2UnitPrefix(unit)}<sub class="cw-stat-card__hero-unit cw-stat-card__hero-unit--sub">2</sub>
+						<span
+							class="cw-stat-card__hero-unit-group cw-stat-card__hero-unit-group--super"
+						>
+							{co2UnitPrefix(unit)}<sub
+								class="cw-stat-card__hero-unit cw-stat-card__hero-unit--sub"
+								>2</sub
+							>
 						</span>
 					{:else}
-						<sup class="cw-stat-card__hero-unit cw-stat-card__hero-unit--super">{unit}</sup>
+						<sup
+							class="cw-stat-card__hero-unit cw-stat-card__hero-unit--super"
+							>{unit}</sup
+						>
 					{/if}
 				{/if}
 			</span>
@@ -164,7 +174,9 @@
 						{/if}
 					</svg>
 					<span class="cw-stat-card__comparison-value">
-						{fmtSigned(deltaFromAverage)}{#if unit}<sup class="cw-stat-card__unit">{unit}</sup>{/if}
+						{deltaFromAverage.toLocaleString('en', { minimumFractionDigits: 0, maximumFractionDigits: 0, useGrouping: true })}{#if unit}<sup
+								class="cw-stat-card__unit">{unit}</sup
+							>{/if}
 					</span>
 				</span>
 			{/if}
@@ -213,7 +225,7 @@
 			></div>
 		{/if}
 	</div>
-		<div class="cw-stat-card__labels">
+	<div class="cw-stat-card__labels">
 		<span>Min</span>
 		<span>Avg</span>
 		<span>Max</span>
@@ -351,7 +363,7 @@
 	}
 
 	.cw-stat-card__hero-value {
-		font-size: clamp(2.5rem, 9cqw, 3.75rem);
+		font-size: clamp(2.5rem, 9cqw, 4rem);
 		font-weight: var(--cw-font-bold);
 		line-height: 0.95;
 		letter-spacing: -0.04em;
@@ -363,7 +375,7 @@
 	   combine a fixed px floor with em-based scaling, then offset from baseline. */
 	.cw-stat-card__hero-unit,
 	.cw-stat-card__hero-unit-group {
-		font-size: calc(0.5em + 4px);
+		font-size: calc(0.5em);
 		font-weight: var(--cw-font-medium);
 		line-height: 1;
 		vertical-align: baseline;
@@ -378,7 +390,7 @@
 
 	.cw-stat-card__hero-unit--super,
 	.cw-stat-card__hero-unit-group--super {
-		top: calc(-0.83em + 3.32px);
+		top: calc(-0.83em + (-6.32px));
 	}
 
 	.cw-stat-card__hero-unit--sub {
@@ -387,15 +399,20 @@
 
 	.cw-stat-card__comparison {
 		position: absolute;
-		top: var(--cw-space-2);
-		right: var(--cw-space-2);
+		top: var(--cw-space-1);
+		right: var(--cw-space-1);
 		display: inline-flex;
 		align-items: center;
 		gap: 0.25rem;
 		padding: 0.2rem 0.5rem;
-		border: 1px solid color-mix(in srgb, var(--cw-border-default) 72%, transparent);
+		border: 1px solid
+			color-mix(in srgb, var(--cw-border-default) 72%, transparent);
 		border-radius: var(--cw-radius-pill);
-		background-color: color-mix(in srgb, var(--cw-bg-muted) 38%, var(--cw-bg-surface));
+		background-color: color-mix(
+			in srgb,
+			var(--cw-bg-muted) 38%,
+			var(--cw-bg-surface)
+		);
 		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-medium);
 		color: var(--cw-text-muted);
