@@ -1506,8 +1506,8 @@
 		position: relative;
 		display: flex;
 		flex-direction: column;
-		/* background:
-			linear-gradient(
+		background: --cw-bg-surface-elevated;
+		/* 	linear-gradient(
 				180deg,
 				color-mix(in srgb, var(--cw-bg-surface-elevated) 82%, var(--cw-accent) 4%) 0%,
 				var(--cw-bg-surface) 7rem
@@ -1586,13 +1586,7 @@
 		align-items: center;
 		gap: var(--cw-space-3);
 		padding: var(--cw-space-3) var(--cw-space-4);
-		/* background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-accent) 8%, var(--cw-bg-surface-elevated)) 0%,
-				color-mix(in srgb, var(--cw-bg-surface) 96%, transparent) 100%
-			); */
-
+		background-color: var(--cw-bg-surface);
 		border-bottom: 1px solid
 			color-mix(in srgb, var(--cw-border-muted) 78%, var(--cw-accent) 22%);
 		box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--cw-text-primary) 4%, transparent);
@@ -1838,6 +1832,7 @@
 			var(--cw-text-secondary) 88%,
 			var(--cw-accent) 12%
 		);
+		background-color: var(--cw-bg-surface);
 		/* background:
 			linear-gradient(
 				180deg,
@@ -1963,7 +1958,8 @@
 	}
 
 	.cw-data-table__row--even {
-		background-color: var(--cw-datatable-row-bg-alt);
+		/* background-color: var(--cw-datatable-row-bg-alt); */
+		background-color: color-mix(in srgb, var(--cw-bg-surface) 80%, var(--cw-datatable-row-bg-alt) 20%);
 	}
 
 	.cw-data-table__row:hover,
@@ -2154,12 +2150,7 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: var(--cw-space-3) var(--cw-space-4);
-		/* background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-bg-surface-elevated) 84%, var(--cw-accent) 8%) 0%,
-				var(--cw-bg-surface) 100%
-			); */
+		background-color: var(--cw-bg-surface);
 		border-top: 1px solid
 			color-mix(in srgb, var(--cw-border-muted) 76%, var(--cw-accent) 24%);
 		font-size: var(--cw-text-sm);
