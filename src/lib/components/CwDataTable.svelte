@@ -1,20 +1,30 @@
 <script lang="ts" generics="T">
-	import { onDestroy, tick } from 'svelte';
-	import type { Snippet } from 'svelte';
-	import type { CwColumnDef, CwTableQuery, CwTableResult } from '../types/index.js';
-	import CwButton from './CwButton.svelte';
-	import CwDialog from './CwDialog.svelte';
-	import CwDropdown from './CwDropdown.svelte';
-	import CwSpinner from './CwSpinner.svelte';
-	import CwSearchInput from './CwSearchInput.svelte';
-	import moreVertIcon from '../icons/more_vert.svg?raw';
+	import { onDestroy, tick } from "svelte";
+	import type { Snippet } from "svelte";
+	import type {
+		CwColumnDef,
+		CwTableQuery,
+		CwTableResult,
+	} from "../types/index.js";
+	import CwButton from "./CwButton.svelte";
+	import CwDialog from "./CwDialog.svelte";
+	import CwDropdown from "./CwDropdown.svelte";
+	import CwSpinner from "./CwSpinner.svelte";
+	import CwSearchInput from "./CwSearchInput.svelte";
+	import moreVertIcon from "../icons/more_vert.svg?raw";
 
-	type CwTableSort = { column: string; direction: 'asc' | 'desc' } | null;
+	type CwTableSort = { column: string; direction: "asc" | "desc" } | null;
 	type CwTableFilters = Record<string, string[]>;
 	type CwTableGroupValue = string | number | boolean | null | undefined;
-	type CwTableGroupBy<T> = (keyof T & string) | ((row: T) => CwTableGroupValue);
+	type CwTableGroupBy<T> =
+		| (keyof T & string)
+		| ((row: T) => CwTableGroupValue);
 	type CwTableGroupedRow<T> = { row: T; rowIndex: number };
-	type CwTableGroup<T> = { key: string; label: string; rows: CwTableGroupedRow<T>[] };
+	type CwTableGroup<T> = {
+		key: string;
+		label: string;
+		rows: CwTableGroupedRow<T>[];
+	};
 
 	interface Props {
 		columns: CwColumnDef<T>[];
@@ -30,7 +40,9 @@
 		/** Fired when the page size changes. */
 		onPageSizeChanged?: (pageSize: number) => void;
 		/** Fired when sorting changes. Receives null when sort is cleared. */
-		onSort?: (sort: { column: string; direction: 'asc' | 'desc' } | null) => void;
+		onSort?: (
+			sort: { column: string; direction: "asc" | "desc" } | null,
+		) => void;
 		/** Fired when the search text changes. */
 		onSearch?: (query: string) => void;
 		/** Fired when the built-in Refresh menu action is selected. */
@@ -99,17 +111,17 @@
 		toolbarActions,
 		cell,
 		rowActions,
-		rowActionsHeader = '',
+		rowActionsHeader = "",
 		rowTextSizeKey,
 		groupBy,
-		ungroupedLabel = 'Ungrouped',
+		ungroupedLabel = "Ungrouped",
 		gridId,
 		fillParent = false,
 		virtualScroll = false,
-		virtualScrollHeight = '28rem',
+		virtualScrollHeight = "28rem",
 		virtualRowHeight = 52,
 		virtualOverscan = 12,
-		class: className = ''
+		class: className = "",
 	}: Props = $props();
 
 	const uid = $props.id();
@@ -121,8 +133,8 @@
 	let total = $state(0);
 	let totalKnown = $state(false);
 	let page = $state(1);
-	let search = $state('');
-	let appliedSearch = $state('');
+	let search = $state("");
+	let appliedSearch = $state("");
 	let sort = $state<CwTableSort>(null);
 	let loadingState = $state(false);
 	let appendingState = $state(false);
@@ -137,50 +149,70 @@
 	let scrollRef = $state<HTMLDivElement | null>(null);
 	let toolbarMenuOpen = $state(false);
 	let columnSettingsOpen = $state(false);
-	let resolvedGridId = $state('datatable_grid');
+	let resolvedGridId = $state("datatable_grid");
 	let appliedVisibleColumnKeys = $state<string[] | null>(null);
 	let draftVisibleColumnKeys = $state<string[] | null>(null);
 
 	let abortController: AbortController | null = null;
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 	let requestVersion = 0;
-	let lastResetKey = '';
-	let lastQueryKey = '';
-	let lastColumnSettingsLoadKey = '';
+	let lastResetKey = "";
+	let lastQueryKey = "";
+	let lastColumnSettingsLoadKey = "";
 
 	/** Total column count including the optional actions column (for colspan) */
 	const defaultVisibleColumnKeys = $derived(columns.map((col) => col.key));
-	const resolvedVisibleColumnKeys = $derived(appliedVisibleColumnKeys ?? defaultVisibleColumnKeys);
+	const resolvedVisibleColumnKeys = $derived(
+		appliedVisibleColumnKeys ?? defaultVisibleColumnKeys,
+	);
 	const visibleColumnKeys = $derived(new Set(resolvedVisibleColumnKeys));
-	const visibleColumns = $derived(columns.filter((col) => visibleColumnKeys.has(col.key)));
+	const visibleColumns = $derived(
+		columns.filter((col) => visibleColumnKeys.has(col.key)),
+	);
 	const colCount = $derived(visibleColumns.length + (rowActions ? 1 : 0));
 	const totalPages = $derived(Math.max(1, Math.ceil(total / pageSize)));
 	const normalizedFilters = $derived.by(() => sanitizeFilters(filters));
-	const sortableColumns = $derived(visibleColumns.filter((col) => col.sortable));
+	const sortableColumns = $derived(
+		visibleColumns.filter((col) => col.sortable),
+	);
 	const mobileSortOptions = $derived([
-		{ label: 'No sort', value: '' },
+		{ label: "No sort", value: "" },
 		...sortableColumns.flatMap((col) => [
 			{ label: `${col.header} (A-Z)`, value: `${col.key}:asc` },
-			{ label: `${col.header} (Z-A)`, value: `${col.key}:desc` }
-		])
+			{ label: `${col.header} (Z-A)`, value: `${col.key}:desc` },
+		]),
 	]);
-	const mobileSortValue = $derived(sort ? `${sort.column}:${sort.direction}` : '');
+	const mobileSortValue = $derived(
+		sort ? `${sort.column}:${sort.direction}` : "",
+	);
 	const effectiveVirtualRowHeight = $derived(
 		containerWidth > 0 && containerWidth <= 640
 			? Math.max(virtualRowHeight, 112)
-			: Math.max(virtualRowHeight, 1)
+			: Math.max(virtualRowHeight, 1),
 	);
-	const effectiveViewportHeight = $derived(Math.max(0, viewportHeight - headerHeight));
+	const effectiveViewportHeight = $derived(
+		Math.max(0, viewportHeight - headerHeight),
+	);
 	const bodyScrollTop = $derived(virtualScroll ? scrollTop : 0);
 	const visibleRowCapacity = $derived(
 		virtualScroll
-			? Math.max(1, Math.ceil((effectiveViewportHeight || effectiveVirtualRowHeight) / effectiveVirtualRowHeight))
-			: rows.length
+			? Math.max(
+					1,
+					Math.ceil(
+						(effectiveViewportHeight || effectiveVirtualRowHeight) /
+							effectiveVirtualRowHeight,
+					),
+				)
+			: rows.length,
 	);
 	const virtualStartIndex = $derived(
 		virtualScroll
-			? Math.max(0, Math.floor(bodyScrollTop / effectiveVirtualRowHeight) - virtualOverscan)
-			: 0
+			? Math.max(
+					0,
+					Math.floor(bodyScrollTop / effectiveVirtualRowHeight) -
+						virtualOverscan,
+				)
+			: 0,
 	);
 	const virtualEndIndex = $derived(
 		virtualScroll
@@ -188,12 +220,17 @@
 					rows.length,
 					Math.max(
 						0,
-						Math.ceil((bodyScrollTop + effectiveViewportHeight) / effectiveVirtualRowHeight)
-					) + virtualOverscan
+						Math.ceil(
+							(bodyScrollTop + effectiveViewportHeight) /
+								effectiveVirtualRowHeight,
+						),
+					) + virtualOverscan,
 				)
-			: rows.length
+			: rows.length,
 	);
-	const visibleRows = $derived(virtualScroll ? rows.slice(virtualStartIndex, virtualEndIndex) : rows);
+	const visibleRows = $derived(
+		virtualScroll ? rows.slice(virtualStartIndex, virtualEndIndex) : rows,
+	);
 	const groupingEnabled = $derived(!virtualScroll && groupBy != null);
 	const groupedRows = $derived.by(() => {
 		if (!groupBy || virtualScroll) return [] as CwTableGroup<T>[];
@@ -202,11 +239,17 @@
 
 		rows.forEach((row, rowIndex) => {
 			const rawGroup =
-				typeof groupBy === 'function'
+				typeof groupBy === "function"
 					? groupBy(row)
-					: ((row as Record<string, unknown>)[groupBy] as CwTableGroupValue);
+					: ((row as Record<string, unknown>)[
+							groupBy
+						] as CwTableGroupValue);
 			const normalizedGroup =
-				typeof rawGroup === 'string' ? rawGroup.trim() : rawGroup == null ? '' : String(rawGroup);
+				typeof rawGroup === "string"
+					? rawGroup.trim()
+					: rawGroup == null
+						? ""
+						: String(rawGroup);
 			const label = normalizedGroup || ungroupedLabel;
 			const existingGroup = groups.get(label);
 
@@ -218,79 +261,112 @@
 			groups.set(label, {
 				key: label,
 				label,
-				rows: [{ row, rowIndex }]
+				rows: [{ row, rowIndex }],
 			});
 		});
 
 		return Array.from(groups.values());
 	});
-	const topSpacerHeight = $derived(virtualScroll ? virtualStartIndex * effectiveVirtualRowHeight : 0);
-	const bottomSpacerHeight = $derived(
-		virtualScroll ? Math.max(0, (rows.length - virtualEndIndex) * effectiveVirtualRowHeight) : 0
+	const topSpacerHeight = $derived(
+		virtualScroll ? virtualStartIndex * effectiveVirtualRowHeight : 0,
 	);
-	const virtualPrefetchThreshold = $derived(Math.max(visibleRowCapacity, virtualOverscan * 2));
+	const bottomSpacerHeight = $derived(
+		virtualScroll
+			? Math.max(
+					0,
+					(rows.length - virtualEndIndex) * effectiveVirtualRowHeight,
+				)
+			: 0,
+	);
+	const virtualPrefetchThreshold = $derived(
+		Math.max(visibleRowCapacity, virtualOverscan * 2),
+	);
 	const rangeStart = $derived(
-		rows.length === 0 ? 0 : virtualScroll ? virtualStartIndex + 1 : (page - 1) * pageSize + 1
+		rows.length === 0
+			? 0
+			: virtualScroll
+				? virtualStartIndex + 1
+				: (page - 1) * pageSize + 1,
 	);
 	const rangeEnd = $derived(
 		rows.length === 0
 			? 0
 			: virtualScroll
 				? Math.min(rows.length, virtualEndIndex)
-				: Math.min(page * pageSize, total)
+				: Math.min(page * pageSize, total),
 	);
 	const toolbarActionsSnippet = $derived(actionsHeader ?? toolbarActions);
-	const canSaveColumnSettings = $derived((draftVisibleColumnKeys ?? defaultVisibleColumnKeys).length > 0);
+	const canSaveColumnSettings = $derived(
+		(draftVisibleColumnKeys ?? defaultVisibleColumnKeys).length > 0,
+	);
 
-	function sanitizeFilters(nextFilters: CwTableFilters | undefined): CwTableFilters {
+	function sanitizeFilters(
+		nextFilters: CwTableFilters | undefined,
+	): CwTableFilters {
 		if (!nextFilters) return {};
 		const entries = Object.entries(nextFilters)
 			.sort(([left], [right]) => left.localeCompare(right))
-			.map(([key, values]) => [
-				key,
-				Array.isArray(values)
-					? values.filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
-					: []
-			] as const)
+			.map(
+				([key, values]) =>
+					[
+						key,
+						Array.isArray(values)
+							? values.filter(
+									(value): value is string =>
+										typeof value === "string" &&
+										value.trim().length > 0,
+								)
+							: [],
+					] as const,
+			)
 			.filter(([, values]) => values.length > 0);
 
 		return Object.fromEntries(entries);
 	}
 
 	function arraysEqual(left: string[], right: string[]): boolean {
-		return left.length === right.length && left.every((value, index) => value === right[index]);
+		return (
+			left.length === right.length &&
+			left.every((value, index) => value === right[index])
+		);
 	}
 
 	function resolveGridStorageKey(nextGridId?: string): string {
 		const explicit = nextGridId?.trim();
 		if (explicit) return explicit;
-		if (typeof window === 'undefined') return 'datatable_grid';
+		if (typeof window === "undefined") return "datatable_grid";
 
 		const normalizedPath = window.location.pathname
-			.split('/')
+			.split("/")
 			.filter(Boolean)
 			.map((segment) =>
 				segment
 					.trim()
 					.toLowerCase()
-					.replace(/[^a-z0-9_-]+/g, '_')
-					.replace(/^_+|_+$/g, '')
+					.replace(/[^a-z0-9_-]+/g, "_")
+					.replace(/^_+|_+$/g, ""),
 			)
 			.filter(Boolean)
-			.join('_');
+			.join("_");
 
-		return `${normalizedPath || 'home'}_grid`;
+		return `${normalizedPath || "home"}_grid`;
 	}
 
 	function orderVisibleColumnKeys(
 		keys: string[] | null | undefined,
-		options: { fallbackToDefault?: boolean } = {}
+		options: { fallbackToDefault?: boolean } = {},
 	): string[] {
 		const fallbackToDefault = options.fallbackToDefault ?? true;
 		const requestedKeys = new Set(
-			Array.isArray(keys) ? keys.filter((value): value is string => typeof value === 'string') : []
+			Array.isArray(keys)
+				? keys.filter(
+						(value): value is string => typeof value === "string",
+					)
+				: [],
 		);
-		const orderedKeys = defaultVisibleColumnKeys.filter((key) => requestedKeys.has(key));
+		const orderedKeys = defaultVisibleColumnKeys.filter((key) =>
+			requestedKeys.has(key),
+		);
 
 		if (orderedKeys.length === 0 && fallbackToDefault) {
 			return [...defaultVisibleColumnKeys];
@@ -300,20 +376,24 @@
 	}
 
 	function readStoredVisibleColumnKeys(storageKey: string): string[] | null {
-		if (typeof window === 'undefined') return null;
+		if (typeof window === "undefined") return null;
 
 		try {
 			const stored = window.localStorage.getItem(storageKey);
 			if (!stored) return null;
 			const parsed = JSON.parse(stored);
-			return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === 'string') : null;
+			return Array.isArray(parsed)
+				? parsed.filter(
+						(value): value is string => typeof value === "string",
+					)
+				: null;
 		} catch {
 			return null;
 		}
 	}
 
 	function persistVisibleColumnKeys(storageKey: string, keys: string[]) {
-		if (typeof window === 'undefined') return;
+		if (typeof window === "undefined") return;
 
 		try {
 			if (arraysEqual(keys, defaultVisibleColumnKeys)) {
@@ -327,26 +407,29 @@
 		}
 	}
 
-	function createQueryState(pageNumber: number, signal: AbortSignal): CwTableQuery {
+	function createQueryState(
+		pageNumber: number,
+		signal: AbortSignal,
+	): CwTableQuery {
 		return {
 			page: pageNumber,
 			pageSize,
 			search: appliedSearch,
 			sort,
 			filters: normalizedFilters,
-			signal
+			signal,
 		};
 	}
 
 	function getResolvedTotal(
 		result: CwTableResult<T>,
-		loadedCount: number
+		loadedCount: number,
 	): { total: number; known: boolean } {
-		if (typeof totalItems === 'number' && Number.isFinite(totalItems)) {
+		if (typeof totalItems === "number" && Number.isFinite(totalItems)) {
 			return { total: Math.max(0, totalItems), known: true };
 		}
 
-		if (typeof result.total === 'number' && Number.isFinite(result.total)) {
+		if (typeof result.total === "number" && Number.isFinite(result.total)) {
 			return { total: Math.max(0, result.total), known: true };
 		}
 
@@ -374,7 +457,12 @@
 
 	function handlePageSizeChange(val: string) {
 		const nextPageSize = Number(val);
-		if (!Number.isFinite(nextPageSize) || nextPageSize <= 0 || nextPageSize === pageSize) return;
+		if (
+			!Number.isFinite(nextPageSize) ||
+			nextPageSize <= 0 ||
+			nextPageSize === pageSize
+		)
+			return;
 		pageSize = nextPageSize;
 		page = 1;
 		if (virtualScroll) resetVirtualViewport();
@@ -410,10 +498,10 @@
 
 		const nextSort: CwTableSort =
 			sort?.column === col.key
-				? sort.direction === 'asc'
-					? { column: col.key, direction: 'desc' }
+				? sort.direction === "asc"
+					? { column: col.key, direction: "desc" }
 					: null
-				: { column: col.key, direction: 'asc' };
+				: { column: col.key, direction: "asc" };
 
 		applySort(nextSort);
 	}
@@ -425,9 +513,9 @@
 			return;
 		}
 
-		const [column, direction] = value.split(':');
+		const [column, direction] = value.split(":");
 		if (
-			(direction !== 'asc' && direction !== 'desc') ||
+			(direction !== "asc" && direction !== "desc") ||
 			!sortableColumns.some((col) => col.key === column)
 		) {
 			return;
@@ -441,7 +529,7 @@
 	}
 
 	function handleTableKeydown(e: KeyboardEvent) {
-		if (e.key === 'Escape') {
+		if (e.key === "Escape") {
 			toolbarMenuOpen = false;
 		}
 	}
@@ -458,19 +546,25 @@
 	}
 
 	function toggleDraftColumnVisibility(columnKey: string) {
-		const currentDraftVisibleColumnKeys = draftVisibleColumnKeys ?? defaultVisibleColumnKeys;
+		const currentDraftVisibleColumnKeys =
+			draftVisibleColumnKeys ?? defaultVisibleColumnKeys;
 
 		if (currentDraftVisibleColumnKeys.includes(columnKey)) {
 			draftVisibleColumnKeys = orderVisibleColumnKeys(
-				currentDraftVisibleColumnKeys.filter((key) => key !== columnKey),
-				{ fallbackToDefault: false }
+				currentDraftVisibleColumnKeys.filter(
+					(key) => key !== columnKey,
+				),
+				{ fallbackToDefault: false },
 			);
 			return;
 		}
 
-		draftVisibleColumnKeys = orderVisibleColumnKeys([...currentDraftVisibleColumnKeys, columnKey], {
-			fallbackToDefault: false
-		});
+		draftVisibleColumnKeys = orderVisibleColumnKeys(
+			[...currentDraftVisibleColumnKeys, columnKey],
+			{
+				fallbackToDefault: false,
+			},
+		);
 	}
 
 	function resetColumnSettingsDraft() {
@@ -479,7 +573,7 @@
 
 	function saveColumnSettings() {
 		const nextVisibleColumnKeys = orderVisibleColumnKeys(
-			draftVisibleColumnKeys ?? defaultVisibleColumnKeys
+			draftVisibleColumnKeys ?? defaultVisibleColumnKeys,
 		);
 		appliedVisibleColumnKeys = [...nextVisibleColumnKeys];
 		draftVisibleColumnKeys = [...nextVisibleColumnKeys];
@@ -525,7 +619,7 @@
 	}
 
 	function handleRowKeydown(e: KeyboardEvent, row: T) {
-		if (e.key === 'Enter' || e.key === ' ') {
+		if (e.key === "Enter" || e.key === " ") {
 			e.preventDefault();
 			onRowClick?.(row);
 		}
@@ -535,31 +629,33 @@
 		scrollTop = scrollRef?.scrollTop ?? 0;
 	}
 
-	function getVirtualAppendAnchor():
-		| {
-				distanceFromBottom: number;
-				shouldRestoreFromBottom: boolean;
-		  }
-		| null {
+	function getVirtualAppendAnchor(): {
+		distanceFromBottom: number;
+		shouldRestoreFromBottom: boolean;
+	} | null {
 		if (!virtualScroll || !scrollRef) return null;
 
-		const maxScrollTop = Math.max(scrollRef.scrollHeight - scrollRef.clientHeight, 0);
-		const distanceFromBottom = Math.max(0, maxScrollTop - scrollRef.scrollTop);
+		const maxScrollTop = Math.max(
+			scrollRef.scrollHeight - scrollRef.clientHeight,
+			0,
+		);
+		const distanceFromBottom = Math.max(
+			0,
+			maxScrollTop - scrollRef.scrollTop,
+		);
 		const restoreThreshold = effectiveVirtualRowHeight * 2;
 
 		return {
 			distanceFromBottom,
-			shouldRestoreFromBottom: distanceFromBottom <= restoreThreshold
+			shouldRestoreFromBottom: distanceFromBottom <= restoreThreshold,
 		};
 	}
 
 	async function restoreVirtualAppendAnchor(
-		anchor:
-			| {
-					distanceFromBottom: number;
-					shouldRestoreFromBottom: boolean;
-			  }
-			| null
+		anchor: {
+			distanceFromBottom: number;
+			shouldRestoreFromBottom: boolean;
+		} | null,
 	) {
 		if (!anchor?.shouldRestoreFromBottom) return;
 
@@ -567,22 +663,28 @@
 
 		if (!scrollRef) return;
 
-		const maxScrollTop = Math.max(scrollRef.scrollHeight - scrollRef.clientHeight, 0);
-		scrollRef.scrollTop = Math.max(0, maxScrollTop - anchor.distanceFromBottom);
+		const maxScrollTop = Math.max(
+			scrollRef.scrollHeight - scrollRef.clientHeight,
+			0,
+		);
+		scrollRef.scrollTop = Math.max(
+			0,
+			maxScrollTop - anchor.distanceFromBottom,
+		);
 		scrollTop = scrollRef.scrollTop;
 	}
 
 	function getCellValue(row: T, col: CwColumnDef<T>): string {
 		if (col.cell) return col.cell(row);
 		const val = (row as Record<string, unknown>)[col.key];
-		return val != null ? String(val) : '';
+		return val != null ? String(val) : "";
 	}
 
 	function getRowTextSize(row: T): string | undefined {
 		if (!rowTextSizeKey) return undefined;
 		const val = (row as Record<string, unknown>)[rowTextSizeKey];
-		if (typeof val === 'number') return `${val}px`;
-		return typeof val === 'string' && val.trim() ? val : undefined;
+		if (typeof val === "number") return `${val}px`;
+		return typeof val === "string" && val.trim() ? val : undefined;
 	}
 
 	function isRowLoading(row: T): boolean {
@@ -614,12 +716,17 @@
 			hasMoreRows = false;
 			loadedPageCount = result.rows.length > 0 ? nextPage : 0;
 		} catch (err) {
-			if (err instanceof DOMException && err.name === 'AbortError') return;
+			if (err instanceof DOMException && err.name === "AbortError")
+				return;
 			if (version !== requestVersion) return;
-			error = err instanceof Error ? err.message : 'An error occurred';
+			error = err instanceof Error ? err.message : "An error occurred";
 			rows = [];
-			total = typeof totalItems === 'number' && Number.isFinite(totalItems) ? Math.max(0, totalItems) : 0;
-			totalKnown = typeof totalItems === 'number' && Number.isFinite(totalItems);
+			total =
+				typeof totalItems === "number" && Number.isFinite(totalItems)
+					? Math.max(0, totalItems)
+					: 0;
+			totalKnown =
+				typeof totalItems === "number" && Number.isFinite(totalItems);
 			hasMoreRows = false;
 			loadedPageCount = 0;
 		} finally {
@@ -665,9 +772,10 @@
 				: result.rows.length === pageSize;
 			loadedPageCount = result.rows.length > 0 ? 1 : 0;
 		} catch (err) {
-			if (err instanceof DOMException && err.name === 'AbortError') return;
+			if (err instanceof DOMException && err.name === "AbortError")
+				return;
 			if (version !== requestVersion) return;
-			error = err instanceof Error ? err.message : 'An error occurred';
+			error = err instanceof Error ? err.message : "An error occurred";
 			rows = [];
 			total = 0;
 			totalKnown = false;
@@ -684,7 +792,8 @@
 	}
 
 	async function fetchNextVirtualPage(pageNumber: number) {
-		if (!virtualScroll || loadingState || appendingState || !hasMoreRows) return;
+		if (!virtualScroll || loadingState || appendingState || !hasMoreRows)
+			return;
 
 		const version = requestVersion;
 		const controller = new AbortController();
@@ -710,9 +819,11 @@
 			loadedPageCount = pageNumber;
 			await restoreVirtualAppendAnchor(scrollAnchor);
 		} catch (err) {
-			if (err instanceof DOMException && err.name === 'AbortError') return;
+			if (err instanceof DOMException && err.name === "AbortError")
+				return;
 			if (version !== requestVersion) return;
-			appendError = err instanceof Error ? err.message : 'Unable to load more rows';
+			appendError =
+				err instanceof Error ? err.message : "Unable to load more rows";
 		} finally {
 			if (version === requestVersion) {
 				appendingState = false;
@@ -733,14 +844,16 @@
 		gridId;
 		defaultVisibleColumnKeys;
 		const nextResolvedGridId = resolveGridStorageKey(gridId);
-		const loadKey = `${nextResolvedGridId}|${defaultVisibleColumnKeys.join('|')}`;
+		const loadKey = `${nextResolvedGridId}|${defaultVisibleColumnKeys.join("|")}`;
 
 		if (loadKey === lastColumnSettingsLoadKey) return;
 		lastColumnSettingsLoadKey = loadKey;
 		resolvedGridId = nextResolvedGridId;
 
-		const storedVisibleColumns = readStoredVisibleColumnKeys(nextResolvedGridId);
-		const nextVisibleColumnKeys = orderVisibleColumnKeys(storedVisibleColumns);
+		const storedVisibleColumns =
+			readStoredVisibleColumnKeys(nextResolvedGridId);
+		const nextVisibleColumnKeys =
+			orderVisibleColumnKeys(storedVisibleColumns);
 
 		appliedVisibleColumnKeys = [...nextVisibleColumnKeys];
 		draftVisibleColumnKeys = [...nextVisibleColumnKeys];
@@ -749,7 +862,8 @@
 	$effect(() => {
 		const currentSort = sort;
 		if (!currentSort) return;
-		if (sortableColumns.some((col) => col.key === currentSort.column)) return;
+		if (sortableColumns.some((col) => col.key === currentSort.column))
+			return;
 		applySort(null);
 	});
 
@@ -759,7 +873,7 @@
 		sort;
 		const filterKey = JSON.stringify(normalizedFilters);
 		const resetKey = `${virtualScroll}|${pageSize}|${filterKey}`;
-		const sortKey = sort ? `${sort.column}:${sort.direction}` : '';
+		const sortKey = sort ? `${sort.column}:${sort.direction}` : "";
 		const queryKey = `${virtualScroll}|${page}|${pageSize}|${appliedSearch}|${sortKey}|${filterKey}`;
 
 		if (resetKey !== lastResetKey) {
@@ -787,7 +901,14 @@
 
 	$effect(() => {
 		if (!virtualScroll) return;
-		if (loadingState || appendingState || error || appendError || !hasMoreRows) return;
+		if (
+			loadingState ||
+			appendingState ||
+			error ||
+			appendError ||
+			!hasMoreRows
+		)
+			return;
 		if (rows.length === 0) return;
 		if (viewportHeight <= 0) return;
 		if (rows.length - virtualEndIndex > virtualPrefetchThreshold) return;
@@ -796,7 +917,8 @@
 	});
 
 	$effect(() => {
-		if (typeof totalItems !== 'number' || !Number.isFinite(totalItems)) return;
+		if (typeof totalItems !== "number" || !Number.isFinite(totalItems))
+			return;
 		total = Math.max(0, totalItems);
 		totalKnown = true;
 		if (virtualScroll) {
@@ -819,7 +941,11 @@
 	bind:clientWidth={containerWidth}
 >
 	{#if loading}
-		<div class="cw-data-table__loading-container" role="status" aria-live="polite">
+		<div
+			class="cw-data-table__loading-container"
+			role="status"
+			aria-live="polite"
+		>
 			<div class="cw-data-table__loading-badge">
 				<CwSpinner size="md" />
 				Loading...
@@ -835,18 +961,22 @@
 				onclick={() => handleRowClick(row)}
 				onkeydown={(e) => handleRowKeydown(e, row)}
 				tabindex={onRowClick ? 0 : undefined}
-				role={onRowClick ? 'button' : undefined}
+				role={onRowClick ? "button" : undefined}
 				style:font-size={getRowTextSize(row)}
 			>
 				{#each visibleColumns as col (col.key)}
 					<td
 						class="cw-data-table__td"
-						class:cw-data-table__td--hide-sm={col.hideBelow === 'sm'}
-						class:cw-data-table__td--hide-md={col.hideBelow === 'md'}
-						class:cw-data-table__td--hide-lg={col.hideBelow === 'lg'}
-						class:cw-data-table__td--sorted={sort?.column === col.key}
+						class:cw-data-table__td--hide-sm={col.hideBelow ===
+							"sm"}
+						class:cw-data-table__td--hide-md={col.hideBelow ===
+							"md"}
+						class:cw-data-table__td--hide-lg={col.hideBelow ===
+							"lg"}
+						class:cw-data-table__td--sorted={sort?.column ===
+							col.key}
 						data-label={col.header}
-						style:text-align={col.align ?? 'left'}
+						style:text-align={col.align ?? "left"}
 					>
 						{#if cell}
 							{@render cell(row, col, getCellValue(row, col))}
@@ -858,7 +988,7 @@
 				{#if rowActions}
 					<td
 						class="cw-data-table__td cw-data-table__td--actions"
-						data-label={rowActionsHeader || 'Actions'}
+						data-label={rowActionsHeader || "Actions"}
 						style:text-align="right"
 					>
 						<div class="cw-data-table__action-slot">
@@ -897,8 +1027,10 @@
 				<div class="cw-data-table__page-size">
 					<CwDropdown
 						options={pageSizeOptions.map((n) => ({
-							label: virtualScroll ? `${n} rows/batch` : `${n} rows`,
-							value: String(n)
+							label: virtualScroll
+								? `${n} rows/batch`
+								: `${n} rows`,
+							value: String(n),
 						}))}
 						value={pageSizeStr}
 						onchange={handlePageSizeChange}
@@ -931,7 +1063,10 @@
 							class="cw-data-table__toolbar-menu-button"
 							onclick={toggleToolbarMenu}
 						>
-							<span class="cw-data-table__toolbar-menu-icon" aria-hidden="true">
+							<span
+								class="cw-data-table__toolbar-menu-icon"
+								aria-hidden="true"
+							>
 								{@html moreVertIcon}
 							</span>
 						</CwButton>
@@ -971,7 +1106,9 @@
 			class="cw-data-table__scroll"
 			class:cw-data-table__scroll--virtual={virtualScroll}
 			onscroll={handleScroll}
-			style:max-height={virtualScroll && !fillParent ? virtualScrollHeight : undefined}
+			style:max-height={virtualScroll && !fillParent
+				? virtualScrollHeight
+				: undefined}
 		>
 			<table class="cw-data-table__table" role="grid">
 				<thead bind:offsetHeight={headerHeight}>
@@ -980,16 +1117,20 @@
 							<th
 								class="cw-data-table__th"
 								class:cw-data-table__th--sortable={col.sortable}
-								class:cw-data-table__th--hide-sm={col.hideBelow === 'sm'}
-								class:cw-data-table__th--hide-md={col.hideBelow === 'md'}
-								class:cw-data-table__th--hide-lg={col.hideBelow === 'lg'}
-								class:cw-data-table__th--sorted={sort?.column === col.key}
+								class:cw-data-table__th--hide-sm={col.hideBelow ===
+									"sm"}
+								class:cw-data-table__th--hide-md={col.hideBelow ===
+									"md"}
+								class:cw-data-table__th--hide-lg={col.hideBelow ===
+									"lg"}
+								class:cw-data-table__th--sorted={sort?.column ===
+									col.key}
 								style:width={col.width}
-								style:text-align={col.align ?? 'left'}
+								style:text-align={col.align ?? "left"}
 								aria-sort={sort?.column === col.key
-									? sort.direction === 'asc'
-										? 'ascending'
-										: 'descending'
+									? sort.direction === "asc"
+										? "ascending"
+										: "descending"
 									: undefined}
 							>
 								{#if col.sortable}
@@ -999,9 +1140,14 @@
 										onclick={() => handleSort(col)}
 									>
 										{col.header}
-										<span class="cw-data-table__sort-icon" aria-hidden="true">
+										<span
+											class="cw-data-table__sort-icon"
+											aria-hidden="true"
+										>
 											{#if sort?.column === col.key}
-												{sort.direction === 'asc' ? '↑' : '↓'}
+												{sort.direction === "asc"
+													? "↑"
+													: "↓"}
 											{:else}
 												↕
 											{/if}
@@ -1013,7 +1159,10 @@
 							</th>
 						{/each}
 						{#if rowActions}
-							<th class="cw-data-table__th cw-data-table__th--actions" style:text-align="right">
+							<th
+								class="cw-data-table__th cw-data-table__th--actions"
+								style:text-align="right"
+							>
 								{rowActionsHeader}
 							</th>
 						{/if}
@@ -1022,7 +1171,10 @@
 				<tbody>
 					{#if loadingState && rows.length === 0}
 						<tr>
-							<td colspan={colCount} class="cw-data-table__status">
+							<td
+								colspan={colCount}
+								class="cw-data-table__status"
+							>
 								<div class="cw-data-table__loading">
 									<CwSpinner size="lg" />
 									Loading...
@@ -1031,7 +1183,10 @@
 						</tr>
 					{:else if error}
 						<tr>
-							<td colspan={colCount} class="cw-data-table__status">
+							<td
+								colspan={colCount}
+								class="cw-data-table__status"
+							>
 								{#if errorState}
 									{@render errorState(error)}
 								{:else}
@@ -1040,7 +1195,10 @@
 										<CwButton
 											variant="secondary"
 											size="sm"
-											onclick={() => (virtualScroll ? fetchVirtualData() : fetchPageData(page))}
+											onclick={() =>
+												virtualScroll
+													? fetchVirtualData()
+													: fetchPageData(page)}
 										>
 											Retry
 										</CwButton>
@@ -1050,17 +1208,25 @@
 						</tr>
 					{:else if rows.length === 0}
 						<tr>
-							<td colspan={colCount} class="cw-data-table__status">
+							<td
+								colspan={colCount}
+								class="cw-data-table__status"
+							>
 								{#if emptyState}
 									{@render emptyState()}
 								{:else}
-									<p class="cw-data-table__empty">No data available</p>
+									<p class="cw-data-table__empty">
+										No data available
+									</p>
 								{/if}
 							</td>
 						</tr>
 					{:else}
 						{#if virtualScroll && topSpacerHeight > 0}
-							<tr aria-hidden="true" class="cw-data-table__spacer-row">
+							<tr
+								aria-hidden="true"
+								class="cw-data-table__spacer-row"
+							>
 								<td
 									colspan={colCount}
 									class="cw-data-table__spacer-cell"
@@ -1072,30 +1238,54 @@
 						{#if groupingEnabled}
 							{#each groupedRows as group (group.key)}
 								<tr class="cw-data-table__group-row">
-									<th colspan={colCount} class="cw-data-table__group-cell">
-										<div class="cw-data-table__group-heading">
-											<span class="cw-data-table__group-label">{group.label}</span>
-											<span class="cw-data-table__group-count">
-												{group.rows.length} {group.rows.length === 1 ? 'item' : 'items'}
+									<th
+										colspan={colCount}
+										class="cw-data-table__group-cell"
+									>
+										<div
+											class="cw-data-table__group-heading"
+										>
+											<span
+												class="cw-data-table__group-label"
+												>{group.label}</span
+											>
+											<span
+												class="cw-data-table__group-count"
+											>
+												{group.rows.length}
+												{group.rows.length === 1
+													? "item"
+													: "items"}
 											</span>
 										</div>
 									</th>
 								</tr>
 
 								{#each group.rows as entry (entry.row[rowKey])}
-									{@render renderDataRow(entry.row, entry.rowIndex)}
+									{@render renderDataRow(
+										entry.row,
+										entry.rowIndex,
+									)}
 								{/each}
 							{/each}
 						{:else}
 							{#each visibleRows as row, visibleIndex (row[rowKey])}
-								{@const rowIndex = virtualScroll ? virtualStartIndex + visibleIndex : visibleIndex}
+								{@const rowIndex = virtualScroll
+									? virtualStartIndex + visibleIndex
+									: visibleIndex}
 								{@render renderDataRow(row, rowIndex)}
 							{/each}
 						{/if}
 
 						{#if virtualScroll && appendingState}
-							<tr class="cw-data-table__append-row" aria-live="polite">
-								<td colspan={colCount} class="cw-data-table__append-cell">
+							<tr
+								class="cw-data-table__append-row"
+								aria-live="polite"
+							>
+								<td
+									colspan={colCount}
+									class="cw-data-table__append-cell"
+								>
 									<div class="cw-data-table__append-status">
 										<CwSpinner size="md" />
 										Loading more rows...
@@ -1106,10 +1296,17 @@
 
 						{#if virtualScroll && appendError}
 							<tr class="cw-data-table__append-row">
-								<td colspan={colCount} class="cw-data-table__append-cell">
+								<td
+									colspan={colCount}
+									class="cw-data-table__append-cell"
+								>
 									<div class="cw-data-table__append-error">
 										<span>{appendError}</span>
-										<CwButton variant="secondary" size="sm" onclick={retryVirtualAppend}>
+										<CwButton
+											variant="secondary"
+											size="sm"
+											onclick={retryVirtualAppend}
+										>
 											Retry
 										</CwButton>
 									</div>
@@ -1118,7 +1315,10 @@
 						{/if}
 
 						{#if virtualScroll && bottomSpacerHeight > 0}
-							<tr aria-hidden="true" class="cw-data-table__spacer-row">
+							<tr
+								aria-hidden="true"
+								class="cw-data-table__spacer-row"
+							>
 								<td
 									colspan={colCount}
 									class="cw-data-table__spacer-cell"
@@ -1132,7 +1332,9 @@
 		</div>
 
 		{#if virtualScroll && rows.length > 0}
-			<div class="cw-data-table__pagination cw-data-table__pagination--virtual">
+			<div
+				class="cw-data-table__pagination cw-data-table__pagination--virtual"
+			>
 				<span class="cw-data-table__page-info">
 					{rangeStart}–{rangeEnd}
 					{#if totalKnown}
@@ -1166,11 +1368,24 @@
 						onclick={handlePreviousPage}
 						aria-label="Previous page"
 					>
-						<svg viewBox="0 0 16 16" fill="none" aria-hidden="true" style="width:1rem;height:1rem">
-							<path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+						<svg
+							viewBox="0 0 16 16"
+							fill="none"
+							aria-hidden="true"
+							style="width:1rem;height:1rem"
+						>
+							<path
+								d="M10 4l-4 4 4 4"
+								stroke="currentColor"
+								stroke-width="1.5"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							/>
 						</svg>
 					</CwButton>
-					<span class="cw-data-table__page-num">Page {page} of {totalPages}</span>
+					<span class="cw-data-table__page-num"
+						>Page {page} of {totalPages}</span
+					>
 					<CwButton
 						variant="secondary"
 						size="sm"
@@ -1178,8 +1393,19 @@
 						onclick={handleNextPage}
 						aria-label="Next page"
 					>
-						<svg viewBox="0 0 16 16" fill="none" aria-hidden="true" style="width:1rem;height:1rem">
-							<path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+						<svg
+							viewBox="0 0 16 16"
+							fill="none"
+							aria-hidden="true"
+							style="width:1rem;height:1rem"
+						>
+							<path
+								d="M6 4l4 4-4 4"
+								stroke="currentColor"
+								stroke-width="1.5"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							/>
 						</svg>
 					</CwButton>
 				</div>
@@ -1191,26 +1417,46 @@
 		{/if}
 	{/if}
 
-	<CwDialog bind:open={columnSettingsOpen} title="Columns Settings" onclose={handleColumnSettingsClose}>
+	<CwDialog
+		bind:open={columnSettingsOpen}
+		title="Columns Settings"
+		onclose={handleColumnSettingsClose}
+	>
 		{#snippet children()}
 			<div class="cw-data-table__column-settings-dialog">
 				<p class="cw-data-table__column-settings-copy">
 					Choose which columns are visible for this grid.
 				</p>
 
-				<div class="cw-data-table__column-settings-list" role="group" aria-label="Visible columns">
+				<div
+					class="cw-data-table__column-settings-list"
+					role="group"
+					aria-label="Visible columns"
+				>
 					{#each columns as col (col.key)}
-						<label class="cw-data-table__column-settings-item" for={`${uid}-column-${col.key}`}>
+						<label
+							class="cw-data-table__column-settings-item"
+							for={`${uid}-column-${col.key}`}
+						>
 							<input
 								id={`${uid}-column-${col.key}`}
 								type="checkbox"
 								class="cw-data-table__column-settings-checkbox"
-								checked={(draftVisibleColumnKeys ?? defaultVisibleColumnKeys).includes(col.key)}
-								onchange={() => toggleDraftColumnVisibility(col.key)}
+								checked={(
+									draftVisibleColumnKeys ??
+									defaultVisibleColumnKeys
+								).includes(col.key)}
+								onchange={() =>
+									toggleDraftColumnVisibility(col.key)}
 							/>
 							<span class="cw-data-table__column-settings-labels">
-								<span class="cw-data-table__column-settings-name">{col.header}</span>
-								<span class="cw-data-table__column-settings-key">{col.key}</span>
+								<span
+									class="cw-data-table__column-settings-name"
+									>{col.header}</span
+								>
+								<span class="cw-data-table__column-settings-key"
+									>{col.key}</span
+								>
 							</span>
 						</label>
 					{/each}
@@ -1225,13 +1471,28 @@
 		{/snippet}
 
 		{#snippet actions()}
-			<CwButton variant="ghost" size="sm" type="button" onclick={handleColumnSettingsClose}>
+			<CwButton
+				variant="ghost"
+				size="sm"
+				type="button"
+				onclick={handleColumnSettingsClose}
+			>
 				Close
 			</CwButton>
-			<CwButton variant="secondary" size="sm" type="button" onclick={resetColumnSettingsDraft}>
+			<CwButton
+				variant="secondary"
+				size="sm"
+				type="button"
+				onclick={resetColumnSettingsDraft}
+			>
 				Reset to Default
 			</CwButton>
-			<CwButton size="sm" type="button" disabled={!canSaveColumnSettings} onclick={saveColumnSettings}>
+			<CwButton
+				size="sm"
+				type="button"
+				disabled={!canSaveColumnSettings}
+				onclick={saveColumnSettings}
+			>
 				Save
 			</CwButton>
 		{/snippet}
@@ -1245,13 +1506,18 @@
 		position: relative;
 		display: flex;
 		flex-direction: column;
-		background:
+		/* background:
 			linear-gradient(
 				180deg,
 				color-mix(in srgb, var(--cw-bg-surface-elevated) 82%, var(--cw-accent) 4%) 0%,
 				var(--cw-bg-surface) 7rem
+			); */
+		border: 1px solid
+			color-mix(
+				in srgb,
+				var(--cw-border-default) 84%,
+				var(--cw-accent) 16%
 			);
-		border: 1px solid color-mix(in srgb, var(--cw-border-default) 84%, var(--cw-accent) 16%);
 		border-radius: calc(var(--cw-radius-xl) + 2px);
 		box-shadow:
 			0 1px 0 color-mix(in srgb, var(--cw-text-primary) 6%, transparent),
@@ -1261,15 +1527,10 @@
 	}
 
 	.cw-data-table::before {
-		content: '';
+		content: "";
 		position: absolute;
 		inset: 0 0 auto;
 		height: 1px;
-		background: linear-gradient(
-			90deg,
-			color-mix(in srgb, var(--cw-accent) 72%, transparent),
-			transparent 82%
-		);
 		pointer-events: none;
 		z-index: 1;
 	}
@@ -1299,8 +1560,17 @@
 		gap: var(--cw-space-2);
 		padding: var(--cw-space-2) var(--cw-space-4);
 		border-radius: var(--cw-radius-pill);
-		border: 1px solid color-mix(in srgb, var(--cw-border-default) 72%, var(--cw-accent) 28%);
-		background: color-mix(in srgb, var(--cw-bg-muted) 86%, var(--cw-accent) 14%);
+		border: 1px solid
+			color-mix(
+				in srgb,
+				var(--cw-border-default) 72%,
+				var(--cw-accent) 28%
+			);
+		background: color-mix(
+			in srgb,
+			var(--cw-bg-muted) 86%,
+			var(--cw-accent) 14%
+		);
 		color: var(--cw-text-secondary);
 		font-size: var(--cw-text-sm);
 		font-weight: var(--cw-font-medium);
@@ -1316,13 +1586,15 @@
 		align-items: center;
 		gap: var(--cw-space-3);
 		padding: var(--cw-space-3) var(--cw-space-4);
-		background:
+		/* background:
 			linear-gradient(
 				180deg,
 				color-mix(in srgb, var(--cw-accent) 8%, var(--cw-bg-surface-elevated)) 0%,
 				color-mix(in srgb, var(--cw-bg-surface) 96%, transparent) 100%
-			);
-		border-bottom: 1px solid color-mix(in srgb, var(--cw-border-muted) 78%, var(--cw-accent) 22%);
+			); */
+
+		border-bottom: 1px solid
+			color-mix(in srgb, var(--cw-border-muted) 78%, var(--cw-accent) 22%);
 		box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--cw-text-primary) 4%, transparent);
 	}
 
@@ -1399,13 +1671,13 @@
 		z-index: calc(var(--cw-z-dropdown) + 1);
 		min-width: 12rem;
 		padding: var(--cw-space-1);
-		background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-bg-surface-elevated) 88%, var(--cw-accent) 12%),
-				var(--cw-bg-surface)
+		background: var(--cw-bg-surface);
+		border: 1px solid
+			color-mix(
+				in srgb,
+				var(--cw-border-default) 74%,
+				var(--cw-accent) 26%
 			);
-		border: 1px solid color-mix(in srgb, var(--cw-border-default) 74%, var(--cw-accent) 26%);
 		border-radius: var(--cw-radius-lg);
 		box-shadow: var(--cw-shadow-lg);
 	}
@@ -1429,12 +1701,17 @@
 	}
 
 	.cw-data-table__toolbar-menu-item:hover {
-		background-color: color-mix(in srgb, var(--cw-accent) 12%, var(--cw-bg-muted));
+		background-color: color-mix(
+			in srgb,
+			var(--cw-accent) 12%,
+			var(--cw-bg-muted)
+		);
 	}
 
 	.cw-data-table__toolbar-menu-item:focus-visible {
 		outline: none;
-		box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--cw-focus-ring-color) 40%, transparent);
+		box-shadow: inset 0 0 0 2px
+			color-mix(in srgb, var(--cw-focus-ring-color) 40%, transparent);
 	}
 
 	.cw-data-table__column-settings-dialog {
@@ -1461,9 +1738,18 @@
 		align-items: flex-start;
 		gap: var(--cw-space-3);
 		padding: var(--cw-space-3);
-		border: 1px solid color-mix(in srgb, var(--cw-border-default) 72%, var(--cw-accent) 28%);
+		border: 1px solid
+			color-mix(
+				in srgb,
+				var(--cw-border-default) 72%,
+				var(--cw-accent) 28%
+			);
 		border-radius: var(--cw-radius-lg);
-		background: color-mix(in srgb, var(--cw-bg-surface-elevated) 86%, var(--cw-accent) 14%);
+		background: color-mix(
+			in srgb,
+			var(--cw-bg-surface-elevated) 86%,
+			var(--cw-accent) 14%
+		);
 		cursor: pointer;
 		transition:
 			border-color var(--cw-duration-fast) var(--cw-ease-default),
@@ -1471,8 +1757,16 @@
 	}
 
 	.cw-data-table__column-settings-item:hover {
-		border-color: color-mix(in srgb, var(--cw-border-default) 58%, var(--cw-accent) 42%);
-		background: color-mix(in srgb, var(--cw-bg-surface-elevated) 78%, var(--cw-accent) 22%);
+		border-color: color-mix(
+			in srgb,
+			var(--cw-border-default) 58%,
+			var(--cw-accent) 42%
+		);
+		background: color-mix(
+			in srgb,
+			var(--cw-bg-surface-elevated) 78%,
+			var(--cw-accent) 22%
+		);
 	}
 
 	.cw-data-table__column-settings-checkbox {
@@ -1509,12 +1803,12 @@
 		border-radius: 0 0 var(--cw-radius-lg) var(--cw-radius-lg);
 		overflow-x: auto;
 		overflow-y: hidden;
-		background:
+		/* background:
 			linear-gradient(
 				180deg,
 				color-mix(in srgb, var(--cw-bg-surface) 96%, var(--cw-accent) 4%) 0%,
 				var(--cw-bg-surface) 3.5rem
-			);
+			); */
 	}
 
 	.cw-data-table__scroll--virtual,
@@ -1539,16 +1833,26 @@
 		z-index: 2;
 		padding: var(--cw-space-3) var(--cw-space-4);
 		font-weight: var(--cw-font-semibold);
-		color: color-mix(in srgb, var(--cw-text-secondary) 88%, var(--cw-accent) 12%);
-		background:
+		color: color-mix(
+			in srgb,
+			var(--cw-text-secondary) 88%,
+			var(--cw-accent) 12%
+		);
+		/* background:
 			linear-gradient(
 				180deg,
 				color-mix(in srgb, var(--cw-bg-muted) 76%, var(--cw-bg-surface-elevated)) 0%,
 				color-mix(in srgb, var(--cw-bg-elevated) 82%, var(--cw-bg-surface)) 100%
+			); */
+		border-bottom: 1px solid
+			color-mix(
+				in srgb,
+				var(--cw-border-default) 80%,
+				var(--cw-accent) 20%
 			);
-		border-bottom: 1px solid color-mix(in srgb, var(--cw-border-default) 80%, var(--cw-accent) 20%);
 		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, var(--cw-text-inverse) 4%, transparent),
+			inset 0 1px 0
+				color-mix(in srgb, var(--cw-text-inverse) 4%, transparent),
 			inset 0 -1px 0 color-mix(in srgb, var(--cw-text-primary) 4%, transparent);
 		text-align: left;
 		white-space: nowrap;
@@ -1558,13 +1862,17 @@
 	}
 
 	.cw-data-table__th--sorted {
-		color: color-mix(in srgb, var(--cw-text-primary) 86%, var(--cw-accent) 14%);
-		background:
+		color: color-mix(
+			in srgb,
+			var(--cw-text-primary) 86%,
+			var(--cw-accent) 14%
+		);
+		/* background:
 			linear-gradient(
 				180deg,
 				color-mix(in srgb, var(--cw-accent) 18%, var(--cw-bg-muted)) 0%,
 				color-mix(in srgb, var(--cw-accent) 12%, var(--cw-bg-surface-elevated)) 100%
-			);
+			); */
 	}
 
 	.cw-data-table__th--sortable {
@@ -1600,7 +1908,8 @@
 
 	.cw-data-table__sort-btn:focus-visible {
 		outline: none;
-		box-shadow: 0 0 0 2px color-mix(in srgb, var(--cw-focus-ring-color) 32%, transparent);
+		box-shadow: 0 0 0 2px
+			color-mix(in srgb, var(--cw-focus-ring-color) 32%, transparent);
 	}
 
 	.cw-data-table__sort-icon {
@@ -1626,7 +1935,8 @@
 	.cw-data-table__td {
 		padding: var(--cw-space-3) var(--cw-space-4);
 		color: var(--cw-datatable-row-text);
-		border-bottom: 1px solid color-mix(in srgb, var(--cw-border-muted) 72%, transparent);
+		border-bottom: 1px solid
+			color-mix(in srgb, var(--cw-border-muted) 72%, transparent);
 		vertical-align: middle;
 		filter: none;
 		background-color: transparent;
@@ -1665,18 +1975,31 @@
 
 	.cw-data-table__row:hover > .cw-data-table__td,
 	.cw-data-table__row:focus-visible > .cw-data-table__td {
-		background-color: color-mix(in srgb, var(--cw-accent) 10%, var(--cw-datatable-row-bg-hover));
-		border-bottom-color: color-mix(in srgb, var(--cw-border-default) 64%, var(--cw-accent) 36%);
+		background-color: color-mix(
+			in srgb,
+			var(--cw-accent) 10%,
+			var(--cw-datatable-row-bg-hover)
+		);
+		border-bottom-color: color-mix(
+			in srgb,
+			var(--cw-border-default) 64%,
+			var(--cw-accent) 36%
+		);
 	}
 
 	.cw-data-table__row--even:hover > .cw-data-table__td,
 	.cw-data-table__row--even:focus-visible > .cw-data-table__td {
-		background-color: color-mix(in srgb, var(--cw-accent) 10%, var(--cw-datatable-row-bg-alt-hover));
+		background-color: color-mix(
+			in srgb,
+			var(--cw-accent) 10%,
+			var(--cw-datatable-row-bg-alt-hover)
+		);
 	}
 
 	.cw-data-table__row:hover > .cw-data-table__td:first-child,
 	.cw-data-table__row:focus-visible > .cw-data-table__td:first-child {
-		box-shadow: inset 3px 0 0 color-mix(in srgb, var(--cw-accent) 76%, transparent);
+		box-shadow: inset 3px 0 0
+			color-mix(in srgb, var(--cw-accent) 76%, transparent);
 	}
 
 	.cw-data-table__row--loading,
@@ -1699,12 +2022,12 @@
 	}
 
 	.cw-data-table__group-row {
-		background:
+		/* background:
 			linear-gradient(
 				180deg,
 				color-mix(in srgb, var(--cw-accent) 12%, var(--cw-bg-muted)),
 				color-mix(in srgb, var(--cw-accent) 8%, var(--cw-bg-elevated))
-			);
+			); */
 	}
 
 	.cw-data-table__group-cell {
@@ -1726,7 +2049,11 @@
 		font-weight: var(--cw-font-semibold);
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		color: color-mix(in srgb, var(--cw-text-primary) 88%, var(--cw-accent) 12%);
+		color: color-mix(
+			in srgb,
+			var(--cw-text-primary) 88%,
+			var(--cw-accent) 12%
+		);
 	}
 
 	.cw-data-table__group-count {
@@ -1759,12 +2086,12 @@
 		padding: var(--cw-space-12) var(--cw-space-4);
 		text-align: center;
 		color: var(--cw-text-muted);
-		background:
+		/* background:
 			linear-gradient(
 				180deg,
 				color-mix(in srgb, var(--cw-bg-surface-elevated) 84%, var(--cw-accent) 16%),
 				var(--cw-bg-surface)
-			);
+			); */
 	}
 
 	.cw-data-table__loading {
@@ -1828,13 +2155,14 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: var(--cw-space-3) var(--cw-space-4);
-		background:
+		/* background:
 			linear-gradient(
 				180deg,
 				color-mix(in srgb, var(--cw-bg-surface-elevated) 84%, var(--cw-accent) 8%) 0%,
 				var(--cw-bg-surface) 100%
-			);
-		border-top: 1px solid color-mix(in srgb, var(--cw-border-muted) 76%, var(--cw-accent) 24%);
+			); */
+		border-top: 1px solid
+			color-mix(in srgb, var(--cw-border-muted) 76%, var(--cw-accent) 24%);
 		font-size: var(--cw-text-sm);
 		color: var(--cw-text-secondary);
 		gap: var(--cw-space-3);
@@ -1862,7 +2190,11 @@
 	.cw-data-table__overlay {
 		position: absolute;
 		inset: 0;
-		background-color: color-mix(in srgb, var(--cw-bg-surface) 60%, transparent);
+		background-color: color-mix(
+			in srgb,
+			var(--cw-bg-surface) 60%,
+			transparent
+		);
 		z-index: 1;
 	}
 
@@ -1936,6 +2268,7 @@
 			left: 0;
 			right: auto;
 			min-width: min(100%, 12rem);
+			background: var(--cw-bg-surface);
 		}
 
 		.cw-data-table__mobile-sort {
@@ -1962,10 +2295,16 @@
 		.cw-data-table__row {
 			display: block;
 			margin: 0 var(--cw-space-2) var(--cw-space-2);
-			border: 1px solid color-mix(in srgb, var(--cw-border-default) 76%, var(--cw-accent) 24%);
+			border: 1px solid
+				color-mix(
+					in srgb,
+					var(--cw-border-default) 76%,
+					var(--cw-accent) 24%
+				);
 			border-radius: var(--cw-radius-lg);
 			overflow: hidden;
-			box-shadow: 0 10px 18px -20px color-mix(in srgb, var(--cw-accent) 46%, transparent);
+			box-shadow: 0 10px 18px -20px color-mix(in srgb, var(--cw-accent)
+						46%, transparent);
 		}
 
 		.cw-data-table__group-row {
@@ -1988,7 +2327,10 @@
 
 		.cw-data-table__row > .cw-data-table__td {
 			display: grid;
-			grid-template-columns: minmax(0, var(--cw-datatable-mobile-label-width)) minmax(0, 1fr);
+			grid-template-columns: minmax(
+					0,
+					var(--cw-datatable-mobile-label-width)
+				) minmax(0, 1fr);
 			gap: var(--cw-space-2);
 			align-items: start;
 			padding: var(--cw-space-2) var(--cw-space-3);
@@ -2022,7 +2364,9 @@
 			overflow-wrap: normal;
 		}
 
-		.cw-data-table__row > .cw-data-table__td--actions .cw-data-table__action-slot {
+		.cw-data-table__row
+			> .cw-data-table__td--actions
+			.cw-data-table__action-slot {
 			justify-content: flex-start;
 		}
 
