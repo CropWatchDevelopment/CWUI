@@ -1940,12 +1940,12 @@
 		vertical-align: middle;
 		filter: none;
 		background-color: transparent;
-		transition:
+		/* transition:
 			background-color var(--cw-duration-fast) var(--cw-ease-default),
 			border-color var(--cw-duration-fast) var(--cw-ease-default),
 			color var(--cw-duration-fast) var(--cw-ease-default),
 			filter var(--cw-duration-fast) var(--cw-ease-default),
-			box-shadow var(--cw-duration-fast) var(--cw-ease-default);
+			box-shadow var(--cw-duration-fast) var(--cw-ease-default); */
 	}
 
 	.cw-data-table__td--sorted {
@@ -1953,7 +1953,6 @@
 	}
 
 	.cw-data-table__row {
-		background-color: var(--cw-datatable-row-bg);
 		color: var(--cw-datatable-row-text);
 		outline: 1px solid transparent;
 		outline-offset: -1px;

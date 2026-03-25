@@ -11,7 +11,7 @@
 
 	/* ── Surface / Background ──────────────────────────── */
 	--cw-bg-base: #172335;
-	--cw-bg-surface: #243247;
+	--cw-bg-surface: #2d3243; /*#243247;*/
 	--cw-bg-surface-elevated: #2b3c54;
 	--cw-bg-elevated: #324661;
 	--cw-bg-overlay: #566b87;
@@ -21,7 +21,7 @@
 	--cw-bg-table-row-hover: color-mix(in srgb, var(--cw-info-700) 20%, var(--cw-bg-surface));
 	--cw-bg-table-row-alt: color-mix(in srgb, var(--cw-info-700) 14%, var(--cw-bg-surface));
 	--cw-bg-table-row-alt-hover: color-mix(in srgb, var(--cw-info-700) 24%, var(--cw-bg-surface));
-	--cw-header-bg: #23354d;
+	--cw-header-bg: #1a1d2a;/*#232a4d;*/
 
 	/* ── Button / Profile Trigger ─────────────────────── */
 	--cw-button-primary-bg: linear-gradient(180deg, #45515e 0%, #313b46 100%);
@@ -114,13 +114,13 @@
 	--cw-drawer-header-border: color-mix(in srgb, var(--cw-border-default) 84%, transparent);
 
 	/* ── SideNav ──────────────────────────────────────── */
-	--cw-sidenav-bg:
-		radial-gradient(
+	--cw-sidenav-bg: #191b23;
+		/* radial-gradient(
 			120% 70% at 0% 0%,
 			color-mix(in srgb, #6b8fc4 18%, transparent),
 			transparent 70%
 		),
-		linear-gradient(180deg, #24364d 0%, #1a2a3e 100%);
+		linear-gradient(180deg, #24364d 0%, #1a2a3e 100%); */
 	--cw-sidenav-item-text: var(--cw-text-secondary);
 	--cw-sidenav-item-text-hover: var(--cw-text-primary);
 	--cw-sidenav-item-active-text: #f6fbff;
