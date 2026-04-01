@@ -1435,6 +1435,11 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			{ name: 'description', type: 'string', description: 'Secondary explanatory text.' },
 			{ name: 'id', type: 'string', description: 'Optional explicit input id.' },
 			{
+				name: 'name',
+				type: 'string',
+				description: 'Form field name forwarded to the real checkbox input.'
+			},
+			{
 				name: 'oninput',
 				type: '(checked: boolean, event: Event) => void',
 				description: 'Runs whenever the checkbox input event fires.'
@@ -1445,9 +1450,9 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				description: 'Runs when the checkbox change event fires.'
 			},
 			{
-				name: '...native checkbox attrs',
+				name: '...other native checkbox attrs',
 				type: 'HTMLInputAttributes',
-				description: 'Pass `name`, `value`, `disabled`, `aria-*`, and native checkbox attributes through to the real input.'
+				description: 'Pass `value`, `disabled`, `aria-*`, and standard checkbox attributes through to the real input.'
 			}
 		],
 		apiNote:
@@ -1475,6 +1480,175 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \tlabel="SMS alerts"
 \toninput={(checked) => console.log('input', checked)}
 \tonchange={(checked) => savePreference('smsAlerts', checked)}
+/>`
+			}
+		]
+	},
+	'/demo/checkbox': {
+		summary:
+			'CwCheckbox is the library checkbox for independent yes or no selections. Use one checkbox per independent option, and rely on `name`, `value`, and `checked` when the control needs to participate in native form submission.',
+		steps: [
+			{
+				title: 'Bind `checked` when the page owns the state',
+				description:
+					'For interactive settings and filters, `bind:checked` is the simplest way to keep checkbox state in sync with the page.'
+			},
+			{
+				title: 'Set `name` explicitly for form submission',
+				description:
+					'When the checkbox is part of a real form, give it a `name` so the browser includes it in the submitted fields.'
+			},
+			{
+				title: 'Use helper text for consequences, not labels',
+				description:
+					'The label should name the option itself. Use `description` only when users need extra context about what checking it will do.'
+			}
+		],
+		apiRows: [
+			{
+				name: 'checked',
+				type: 'boolean',
+				description: 'Current checked state.',
+				defaultValue: 'false'
+			},
+			{ name: 'label', type: 'string', description: 'Primary checkbox text.' },
+			{ name: 'description', type: 'string', description: 'Secondary explanatory text.' },
+			{ name: 'id', type: 'string', description: 'Optional explicit input id.' },
+			{
+				name: 'name',
+				type: 'string',
+				description: 'Form field name forwarded to the real checkbox input.'
+			},
+			{
+				name: 'oninput',
+				type: '(checked: boolean, event: Event) => void',
+				description: 'Runs whenever the checkbox input event fires.'
+			},
+			{
+				name: 'onchange',
+				type: '(checked: boolean, event: Event) => void',
+				description: 'Runs when the checkbox change event fires.'
+			},
+			{
+				name: '...other native checkbox attrs',
+				type: 'HTMLInputAttributes',
+				description: 'Pass `value`, `disabled`, `required`, `aria-*`, and standard checkbox attributes through to the real input.'
+			}
+		],
+		apiNote:
+			'This component wraps a real checkbox input, so native form behavior and browser validation still apply.',
+		examples: [
+			{
+				title: 'Bound checkbox field',
+				description: 'This is the normal pattern for filters, export toggles, and settings forms.',
+				code: `<script lang="ts">
+\tlet includeOffline = $state(true);
+</script>
+
+<CwCheckbox
+\tname="includeOffline"
+\tlabel="Include offline devices"
+\tdescription="Keep stale or disconnected devices in the table."
+\tbind:checked={includeOffline}
+/>`
+			},
+			{
+				title: 'Immediate side effects on selection',
+				description: 'Use callbacks when checking the box should trigger follow-up work immediately.',
+				code: `<CwCheckbox
+\tname="emailDigest"
+\tlabel="Email digest"
+\toninput={(checked) => console.log('input', checked)}
+\tonchange={(checked) => savePreference('emailDigest', checked)}
+/>`
+			}
+		]
+	},
+	'/demo/radio': {
+		summary:
+			'CwRadio is the library radio input for single-choice selections. Group radios by sharing the same `name` and `bind:group`, then keep the labels specific enough that each option stands on its own.',
+		steps: [
+			{
+				title: 'Bind one shared group value',
+				description:
+					'Each radio gets its own `value`, but the whole group points at one shared `bind:group` selection.'
+			},
+			{
+				title: 'Use a common `name` for real form grouping',
+				description:
+					'Matching `name` attributes keep the radios behaving like one native radio set during form submission and validation.'
+			},
+			{
+				title: 'Add descriptions only when the options need explanation',
+				description:
+					'Simple choices can use label-only radios. Turn on `description` when users need help understanding the impact of each option.'
+			}
+		],
+		apiRows: [
+			{
+				name: 'group',
+				type: 'CwRadioValue | null',
+				description: 'Shared selected value for the radio group.'
+			},
+			{
+				name: 'value',
+				type: 'CwRadioValue',
+				description: 'Value emitted when this radio becomes selected.',
+				defaultValue: 'on'
+			},
+			{ name: 'label', type: 'string', description: 'Primary radio label.' },
+			{ name: 'description', type: 'string', description: 'Optional supporting text under the label.' },
+			{ name: 'id', type: 'string', description: 'Optional explicit input id.' },
+			{
+				name: 'oninput',
+				type: '(value: CwRadioValue, event: Event) => void',
+				description: 'Runs when this radio receives the input event and becomes selected.'
+			},
+			{
+				name: 'onchange',
+				type: '(value: CwRadioValue, event: Event) => void',
+				description: 'Runs when this radio receives the change event and becomes selected.'
+			},
+			{
+				name: '...native radio attrs',
+				type: 'HTMLInputAttributes',
+				description: 'Pass `name`, `required`, `disabled`, `aria-*`, and standard radio attributes through to the real input.'
+			}
+		],
+		apiNote:
+			'For a real radio group, every option should share the same `name` and `bind:group` target.',
+		examples: [
+			{
+				title: 'Single-choice settings group',
+				description: 'This is the normal form pattern for mutually exclusive options.',
+				code: `<script lang="ts">
+\tlet irrigationMode = $state('automatic');
+</script>
+
+<CwRadio
+\tname="irrigation-mode"
+\tvalue="automatic"
+\tlabel="Automatic"
+\tdescription="Follow the scheduled automation rules."
+\tbind:group={irrigationMode}
+/>
+<CwRadio
+\tname="irrigation-mode"
+\tvalue="manual"
+\tlabel="Manual"
+\tdescription="Only run when an operator starts a cycle."
+\tbind:group={irrigationMode}
+/>`
+			},
+			{
+				title: 'Immediate side effects on selection',
+				description: 'Use callbacks when changing the selected option should trigger follow-up work.',
+				code: `<CwRadio
+\tname="notification-channel"
+\tvalue="sms"
+\tlabel="SMS"
+\toninput={(value) => console.log('input', value)}
+\tonchange={(value) => savePreference('notificationChannel', value)}
 />`
 			}
 		]
@@ -2104,6 +2278,101 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \tplaceholder="Select report window..."
 \tmaxDate={new Date()}
 \tbind:value={rangeValue}
+\tonchange={(value) => console.log(value)}
+/>`
+			}
+		]
+	},
+	'/demo/time': {
+		summary:
+			'CwTimePicker keeps time-of-day editing separate from calendar workflows. It always edits in 24-hour format and shows the same value in 12-hour format below for quick AM/PM confirmation.',
+		steps: [
+			{
+				title: 'Use it when the user already knows the date',
+				description:
+					'This control is for time-only workflows such as quiet hours, irrigation starts, and maintenance windows.'
+			},
+			{
+				title: 'Keep the source of truth in 24-hour time',
+				description:
+					'The returned value is `{ hours, minutes }`, so the rest of the app can store or combine it with any date it needs.'
+			},
+			{
+				title: 'Use `minuteStep` to fit the schedule precision',
+				description:
+					'Leave the default step at `1` for exact times, or raise it for routine schedules such as 5-minute or 15-minute increments.'
+			}
+		],
+		apiRows: [
+			{
+				name: 'value',
+				type: 'CwTimeValue',
+				description: 'Current selected time with `{ hours, minutes }`.'
+			},
+			{
+				name: 'minuteStep',
+				type: 'number',
+				description: 'Step size used by the minute steppers and minute sanitization.',
+				defaultValue: '1'
+			},
+			{
+				name: 'label',
+				type: 'string',
+				description: 'Optional field label shown above the control.'
+			},
+			{
+				name: 'disabled',
+				type: 'boolean',
+				description: 'Locks the picker and dims the UI.',
+				defaultValue: 'false'
+			},
+			{
+				name: 'error',
+				type: 'string',
+				description: 'Optional validation message rendered below the picker.'
+			},
+			{
+				name: 'name / required',
+				type: 'native attrs',
+				description: 'Form integration for the hidden `HH:MM` field value.'
+			},
+			{
+				name: 'onchange',
+				type: '(value: CwTimeValue) => void',
+				description: 'Runs after the user commits a changed time.'
+			}
+		],
+		examples: [
+			{
+				title: 'Basic time-only picker',
+				description: 'Good for shift starts, alarms, and single schedule points.',
+				code: `<script lang="ts">
+\timport { CwTimePicker } from '@cropwatchdevelopment/cwui';
+\timport type { CwTimeValue } from '@cropwatchdevelopment/cwui';
+
+\tlet startTime = $state<CwTimeValue>({ hours: 6, minutes: 30 });
+<\/script>
+
+<CwTimePicker
+\tlabel="Start time"
+\tbind:value={startTime}
+/>`
+			},
+			{
+				title: 'Stepped scheduling',
+				description: 'Raise the minute step when operators only need preset intervals.',
+				code: `<script lang="ts">
+\timport { CwTimePicker } from '@cropwatchdevelopment/cwui';
+\timport type { CwTimeValue } from '@cropwatchdevelopment/cwui';
+
+\tlet quietHours = $state<CwTimeValue>({ hours: 22, minutes: 0 });
+<\/script>
+
+<CwTimePicker
+\tlabel="Quiet hours begin"
+\tminuteStep={15}
+\tname="quiet-hours"
+\tbind:value={quietHours}
 \tonchange={(value) => console.log(value)}
 />`
 			}

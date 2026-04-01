@@ -2016,15 +2016,6 @@
 		border-bottom: none;
 	}
 
-	.cw-data-table__group-row {
-		/* background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-accent) 12%, var(--cw-bg-muted)),
-				color-mix(in srgb, var(--cw-accent) 8%, var(--cw-bg-elevated))
-			); */
-	}
-
 	.cw-data-table__group-cell {
 		padding: var(--cw-space-3) var(--cw-space-4);
 		border-bottom: 1px solid var(--cw-border-default);

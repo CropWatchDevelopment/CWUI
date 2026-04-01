@@ -27,6 +27,8 @@
 			"M2 8h12M4.5 6.5v3M8 4v8M11.5 6.5v3M9.5 8a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0",
 		spinner: "M8 2a6 6 0 106 6M8 2a6 6 0 00-3.9 1.44",
 		switch: "M2 8a4 4 0 014-4h4a4 4 0 010 8H6a4 4 0 01-4-4zm8 0a2 2 0 110-4 2 2 0 010 4z",
+		checkbox: "M3 3h10v10H3V3zm2.2 5.1l1.7 1.7L10.8 6",
+		radio: "M8 2a6 6 0 110 12A6 6 0 018 2zm0 3a3 3 0 100 6 3 3 0 000-6z",
 		statusdot:
 			"M4 8a2 2 0 114 0 2 2 0 01-4 0zm4 0a2 2 0 114 0 2 2 0 01-4 0zm4 0a2 2 0 114 0 2 2 0 01-4 0z",
 		offline:
@@ -221,6 +223,20 @@
 			group: "Components",
 		},
 		{
+			id: "checkbox",
+			label: "Checkbox",
+			icon: icons.checkbox,
+			href: "/demo/checkbox",
+			group: "Components",
+		},
+		{
+			id: "radio",
+			label: "Radio",
+			icon: icons.radio,
+			href: "/demo/radio",
+			group: "Components",
+		},
+		{
 			id: "spinner",
 			label: "Spinner",
 			icon: icons.spinner,
@@ -277,6 +293,13 @@
 			label: "Date Picker",
 			icon: icons.calendar,
 			href: "/demo/datepicker",
+			group: "Components",
+		},
+		{
+			id: "time",
+			label: "Time",
+			icon: icons.duration,
+			href: "/demo/time",
 			group: "Components",
 		},
 		{

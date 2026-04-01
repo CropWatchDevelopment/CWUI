@@ -13,6 +13,9 @@ export type CwButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'in
 /** Component size scale */
 export type CwSize = 'sm' | 'md' | 'lg';
 
+/** Value types supported by radio inputs */
+export type CwRadioValue = string | number | boolean;
+
 /** Badge anchor position */
 export type CwBadgePosition = 'top_left' | 'top_right' | 'bottom_left' | 'bottom_right';
 
@@ -180,6 +183,11 @@ export interface CwRangeDateValue {
 }
 
 export type CwDateValue = CwSingleDateValue | CwRangeDateValue;
+
+export interface CwTimeValue {
+	hours: number;
+	minutes: number;
+}
 
 /* ── ListBox types ─────────────────────────────────────── */
 

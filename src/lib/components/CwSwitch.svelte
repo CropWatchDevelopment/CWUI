@@ -4,6 +4,7 @@
 	interface Props extends Omit<HTMLInputAttributes, 'type' | 'onchange' | 'oninput'> {
 		checked?: boolean;
 		id?: string;
+		name?: HTMLInputAttributes['name'];
 		label?: string;
 		description?: string;
 		onchange?: (checked: boolean, event: Event) => void;
@@ -14,6 +15,7 @@
 	let {
 		checked = $bindable(false),
 		id,
+		name,
 		label,
 		description,
 		disabled = false,
@@ -46,6 +48,7 @@
 			class="cw-switch__input"
 			type="checkbox"
 			bind:checked
+			{name}
 			{disabled}
 			oninput={handleInput}
 			onchange={handleChange}

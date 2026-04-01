@@ -24,7 +24,7 @@ A production-ready **Svelte 5** component library built with pure CSS custom pro
 
 ## Features
 
-- **22 components** — buttons, inputs, tables, charts, navigation, and more
+- **25 components** — buttons, inputs, tables, charts, navigation, and more
 - **Svelte 5 runes** — `$state`, `$derived`, `$bindable`, `$props`, `Snippet`
 - **Zero runtime dependencies** — pure CSS3 custom properties, no Tailwind required
 - **Dark & light themes** — swap with `data-theme="dark|light"` on any ancestor
@@ -170,9 +170,12 @@ Override any CSS variable in your own stylesheet:
 |---|---|
 | **`CwButton`** | Themed button — `primary`, `secondary`, `ghost`, `danger`, `info` variants with `sm`/`md`/`lg` sizes, loading spinner, and full-width option |
 | **`CwInput`** | Text input — supports `text`, `numeric`, `email`, `password`, `devEui` types. Left/right icon slots, automatic validation icons (✓/✗), error/valid/disabled states |
+| **`CwCheckbox`** | Checkbox input — native checked state with explicit `name` support, optional helper text, and standard form behavior |
+| **`CwRadio`** | Radio input — native single-choice behavior with shared `bind:group`, optional helper text, and form-friendly grouping via `name` |
 | **`CwDropdown`** | Custom select — keyboard-navigable ARIA combobox with search, error state, and label |
 | **`CwSearchInput`** | Autocomplete search — async suggestions with debounce, keyboard nav, and abort signal |
 | **`CwDateTimeRangePicker`** | Calendar picker — single or range mode, optional time fields, year/month/day granularity |
+| **`CwTimePicker`** | Time-only picker — 24-hour editing with stepper controls and a built-in 12-hour reference display |
 
 ### Data Display
 

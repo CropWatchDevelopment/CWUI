@@ -36,7 +36,11 @@
 		const rounded = roundForDisplay(v);
 		return Number.isInteger(rounded)
 			? String(rounded)
-			: (+rounded.toLocaleString('en', { minimumFractionDigits: 1, maximumFractionDigits: 1, useGrouping: true }));
+			: rounded.toLocaleString('en', {
+				minimumFractionDigits: 1,
+				maximumFractionDigits: 1,
+				useGrouping: true
+			});
 	}
 
 	function fmtSigned(v: number): string {
