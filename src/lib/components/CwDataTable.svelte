@@ -12,6 +12,7 @@
 	import CwSpinner from "./CwSpinner.svelte";
 	import CwSearchInput from "./CwSearchInput.svelte";
 	import moreVertIcon from "../icons/more_vert.svg?raw";
+	import { getCwViewSize, isCwPhoneView } from "../utils/cwViewSize.js";
 
 	type CwTableSort = { column: string; direction: "asc" | "desc" } | null;
 	type CwTableFilters = Record<string, string[]>;
@@ -185,8 +186,14 @@
 	const mobileSortValue = $derived(
 		sort ? `${sort.column}:${sort.direction}` : "",
 	);
+	const viewSize = $derived.by(() =>
+		containerWidth > 0 ? getCwViewSize(containerWidth) : null,
+	);
+	const isPhoneView = $derived(
+		containerWidth > 0 && isCwPhoneView(containerWidth),
+	);
 	const effectiveVirtualRowHeight = $derived(
-		containerWidth > 0 && containerWidth <= 640
+		isPhoneView
 			? Math.max(virtualRowHeight, 112)
 			: Math.max(virtualRowHeight, 1),
 	);
@@ -938,6 +945,7 @@
 	class="cw-data-table {className}"
 	class:cw-data-table--fill-parent={fillParent}
 	class:cw-data-table--virtual={virtualScroll}
+	data-view-size={viewSize ?? undefined}
 	bind:clientWidth={containerWidth}
 >
 	{#if loading}
@@ -1009,8 +1017,7 @@
 						debounceMs={0}
 					/>
 				</div>
-
-				<div class="cw-data-table__toolbar-menu">
+				{#if isCwPhoneView(containerWidth)}
 					<CwButton
 						variant="ghost"
 						size="sm"
@@ -1030,7 +1037,9 @@
 							{@html moreVertIcon}
 						</span>
 					</CwButton>
+				{/if}
 
+				<div class="cw-data-table__toolbar-menu">
 					{#if toolbarMenuOpen}
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<div
@@ -1067,7 +1076,7 @@
 				</div>
 			{/if}
 
-			<!-- <span class="cw-data-table__toolbar-spacer"></span> -->
+			<span class="cw-data-table__toolbar-spacer"></span>
 
 			<div class="cw-data-table__toolbar-end">
 				{#if sortableColumns.length > 0}
@@ -1080,7 +1089,7 @@
 					</div>
 				{/if}
 
-				<!-- <div class="cw-data-table__page-size">
+				<div class="cw-data-table__page-size">
 					<CwDropdown
 						options={pageSizeOptions.map((n) => ({
 							label: virtualScroll
@@ -1091,13 +1100,32 @@
 						value={pageSizeStr}
 						onchange={handlePageSizeChange}
 					/>
-				</div> -->
+				</div>
 
 				<div class="cw-data-table__toolbar-actions">
 					{#if toolbarActionsSnippet}
 						{@render toolbarActionsSnippet()}
 					{/if}
 				</div>
+				<CwButton
+					variant="ghost"
+					size="sm"
+					type="button"
+					aria-label="Open table options"
+					aria-expanded={toolbarMenuOpen}
+					aria-haspopup="menu"
+					aria-controls={`${uid}-toolbar-menu`}
+					class="cw-data-table__toolbar-menu-button"
+					onclick={toggleToolbarMenu}
+					style="padding: 0;"
+				>
+					<span
+						class="cw-data-table__toolbar-menu-icon"
+						aria-hidden="true"
+					>
+						{@html moreVertIcon}
+					</span>
+				</CwButton>
 			</div>
 		</div>
 
@@ -1241,13 +1269,14 @@
 								<tr class="cw-data-table__group-row">
 									<th
 										colspan={colCount}
-										class="cw-data-table__group-cell flex"
-										
+										class="cw-data-table__group-cell"
 									>
-										<div
-											style="display: flex;"
-										>
-											<div style="width: 50%; text-align: right;">{group.label}</div>
+										<div style="display: flex;">
+											<div
+												style="width: 50%; text-align: right;"
+											>
+												{group.label}
+											</div>
 											<div
 												class="text-sm text-gray-500"
 												style="width: 50%; text-align: right; font-weight: 300;"
@@ -1959,7 +1988,11 @@
 
 	.cw-data-table__row--even {
 		/* background-color: var(--cw-datatable-row-bg-alt); */
-		background-color: color-mix(in srgb, var(--cw-bg-surface) 80%, var(--cw-datatable-row-bg-alt) 20%);
+		background-color: color-mix(
+			in srgb,
+			var(--cw-bg-surface) 80%,
+			var(--cw-datatable-row-bg-alt) 20%
+		);
 	}
 
 	.cw-data-table__row:hover,
@@ -2017,11 +2050,11 @@
 	}
 
 	.cw-data-table__group-cell {
-		background: var(--cw-bg-surface-callout);
+		background-color: var(--cw-bg-surface-callout);
 		padding: var(--cw-space-3) var(--cw-space-4);
 		border-bottom: 1px solid var(--cw-border-default);
 	}
-	
+
 	.cw-data-table__group-heading {
 		display: flex;
 		flex-direction: row;
@@ -2243,6 +2276,10 @@
 			justify-content: stretch;
 		}
 
+		.cw-data-table__page-size {
+			display: none;
+		}
+
 		.cw-data-table__toolbar-menu {
 			margin-left: auto;
 		}
@@ -2293,15 +2330,14 @@
 		.cw-data-table__group-row {
 			display: block;
 			margin: 0 var(--cw-space-2) var(--cw-space-2);
-			/* border-radius: var(--cw-radius-lg); */
 			overflow: hidden;
 		}
-
+		
 		.cw-data-table__group-cell {
 			display: block;
 			padding: var(--cw-space-2) var(--cw-space-3);
 		}
-
+		
 		.cw-data-table__group-heading {
 			align-items: flex-start;
 			flex-direction: column;
@@ -2310,10 +2346,9 @@
 
 		.cw-data-table__row > .cw-data-table__td {
 			display: grid;
-			grid-template-columns: minmax(
-					0,
-					var(--cw-datatable-mobile-label-width)
-				) minmax(0, 1fr);
+			grid-template-columns:
+				minmax(0, var(--cw-datatable-mobile-label-width))
+				minmax(0, 1fr);
 			gap: var(--cw-space-2);
 			align-items: start;
 			padding: var(--cw-space-2) var(--cw-space-3);

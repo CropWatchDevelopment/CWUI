@@ -410,7 +410,7 @@ async function updateRow(row: Device) {
 					rowActionsHeader="Action"
 				>
 					{#snippet rowActions(row: Device)}
-						<CwButton size="sm" variant="secondary" onclick={() => handleEdit(row)}>View</CwButton>
+						<CwButton size="sm" variant="secondary" style="width: 100%;" onclick={() => handleEdit(row)}>View</CwButton>
 					{/snippet}
 					{#snippet cell(row: Device, col: CwColumnDef<Device>, defaultValue: string)}
 						{#if col.key === 'lastSeen'}

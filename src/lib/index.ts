@@ -48,6 +48,15 @@ export { createCwToastContext, useCwToast } from './components/cwToastContext.sv
 // ── Alarm system (non-visual) ──────────────────────────────
 export { createCwAlarmScheduler, createCwAlarmContext, useCwAlarm } from './components/cwAlarmContext.svelte.js';
 
+// ── Responsive helpers ─────────────────────────────────────
+export {
+	CW_VIEW_SIZE_BREAKPOINTS,
+	getCwViewSize,
+	isCwDesktopView,
+	isCwPhoneView,
+	isCwTabletView
+} from './utils/cwViewSize.js';
+
 // ── Types ───────────────────────────────────────────────────
 export type {
 	CwTone,
@@ -55,6 +64,7 @@ export type {
 	CwBadgePosition,
 	CwStatusDotStatus,
 	CwSize,
+	CwViewSize,
 	CwRadioValue,
 	CwChipVariant,
 	CwTableQuery,

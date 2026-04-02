@@ -13,6 +13,9 @@ export type CwButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'in
 /** Component size scale */
 export type CwSize = 'sm' | 'md' | 'lg';
 
+/** Shared responsive size buckets derived from component or viewport width */
+export type CwViewSize = 'phone' | 'tablet' | 'desktop';
+
 /** Value types supported by radio inputs */
 export type CwRadioValue = string | number | boolean;
 

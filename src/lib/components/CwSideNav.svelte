@@ -4,9 +4,11 @@
 		CwSideNavIcon,
 		CwSideNavItem,
 		CwSideNavMode,
-		CwSideNavSide
+		CwSideNavSide,
+		CwViewSize
 	} from '../types/index.js';
 	import CwSeparator from './CwSeparator.svelte';
+	import { getCwViewSize } from '../utils/cwViewSize.js';
 
 	interface Props {
 		/** Navigation items */
@@ -79,7 +81,7 @@
 	/** Detect viewport width for phone detection (always) */
 	$effect(() => {
 		if (typeof window === 'undefined') return;
-		const check = () => { isPhone = window.innerWidth < 640; };
+		const check = () => { isPhone = getCwViewSize(window.innerWidth) === 'phone'; };
 		check();
 		window.addEventListener('resize', check);
 		return () => window.removeEventListener('resize', check);
@@ -91,10 +93,10 @@
 
 		function applyResponsive() {
 			if (userOverride) return;
-			const w = window.innerWidth;
-			if (w >= 1024) {
+			const viewSize: CwViewSize = getCwViewSize(window.innerWidth);
+			if (viewSize === 'desktop') {
 				mode = 'open';
-			} else if (w >= 640) {
+			} else if (viewSize === 'tablet') {
 				mode = 'mini';
 			} else {
 				mode = 'hidden';
