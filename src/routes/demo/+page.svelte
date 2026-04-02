@@ -1,76 +1,104 @@
 <script lang="ts">
-	import WORKER_IMAGE from '$lib/images/office-work.webp';
+	import CwCopy from "$lib/components/CwCopy.svelte";
+	import WORKER_IMAGE from "$lib/images/office-work.webp";
 
 	const publishWorkflowUrl =
-		'https://github.com/CropWatchDevelopment/CWUI/actions/workflows/publish.yml';
+		"https://github.com/CropWatchDevelopment/CWUI/actions/workflows/publish.yml";
 
 	const releaseSteps = [
 		{
-			step: '01',
-			title: 'Confirm the release version',
-			body: 'Bump package.json, then make sure the release commit on main is the exact code you want to publish.'
+			step: "01",
+			title: "Confirm the release version",
+			body: "Bump package.json, then make sure the release commit on main is the exact code you want to publish.",
 		},
 		{
-			step: '02',
-			title: 'Push the release commit',
-			body: 'If your version bump is only local, push main first so the tag points at a commit GitHub Actions can build.',
-			code: 'git push origin main'
+			step: "02",
+			title: "Push the release commit",
+			body: "If your version bump is only local, push main first so the tag points at a commit GitHub Actions can build.",
+			code: "git push origin main",
 		},
 		{
-			step: '03',
-			title: 'Create the matching tag',
-			body: 'The publish workflow only runs for tags shaped like v<version>. The tag must match package.json exactly.',
-			code: 'git tag v<your-version>'
+			step: "03",
+			title: "Create the matching tag",
+			body: "The publish workflow only runs for tags shaped like v<version>. The tag must match package.json exactly.",
+			code: "git tag v<your-version>",
 		},
 		{
-			step: '04',
-			title: 'Push the tag to publish',
-			body: 'Pushing the tag triggers the GitHub Packages release workflow.',
-			code: 'git push origin v<your-version>'
+			step: "04",
+			title: "Push the tag to publish",
+			body: "Pushing the tag triggers the GitHub Packages release workflow.",
+			code: "git push origin v<your-version>",
 		},
 		{
-			step: '05',
-			title: 'Watch the workflow finish',
-			body: 'Open the publish workflow in GitHub Actions and wait for the package job to complete before announcing the release.'
-		}
+			step: "05",
+			title: "Watch the workflow finish",
+			body: "Open the publish workflow in GitHub Actions and wait for the package job to complete before announcing the release.",
+		},
 	];
 </script>
+
 <img src={WORKER_IMAGE} alt="CWUI In development Header" style="width: 100%;" />
 
 <h2>CropWatch UI Demo</h2>
-<p class="demo-desc">Select a component from the sidebar to view demos, API behavior, and copy-paste examples.</p>
+<p class="demo-desc">
+	Select a component from the sidebar to view demos, API behavior, and
+	copy-paste examples.
+</p>
 <p class="demo-links">
-	<a href="/llms.txt" target="_blank" rel="noopener noreferrer">LLM Docs: <code>/llms.txt</code></a>
+	<a href="/llms.txt" target="_blank" rel="noopener noreferrer"
+		>LLM Docs: <code>/llms.txt</code></a
+	>
 </p>
 
 <section class="demo-section">
 	<h3>Update Existing Install</h3>
 	<p class="demo-copy">
-		If you already use <code>@cropwatchdevelopment/cwui</code>, clear local build artifacts first, then upgrade:
+		If you already use <code>@cropwatchdevelopment/cwui</code>, clear local
+		build artifacts first, then upgrade:
 	</p>
-	<pre class="demo-code"><code>rm -rf node_modules .svelte-kit
+	<code>
+		<CwCopy
+			value="
+		rm -rf node_modules .svelte-kit
+		pnpm install
+		pnpm up @cropwatchdevelopment/cwui --latest
+		"
+		>
+			<pre class="demo-code">
+rm -rf node_modules .svelte-kit
 pnpm install
-pnpm up @cropwatchdevelopment/cwui --latest</code></pre>
+pnpm up @cropwatchdevelopment/cwui --latest
+		</pre>
+		</CwCopy>
+	</code>
 </section>
 
 <section class="demo-section">
 	<h3>Getting Started (Not Installed Yet)</h3>
 	<p class="demo-copy">Install the package in your SvelteKit project:</p>
-	<pre class="demo-code"><code>pnpm add @cropwatchdevelopment/cwui</code></pre>
+	<pre class="demo-code"><code>pnpm add @cropwatchdevelopment/cwui</code
+		></pre>
 
-	<p class="demo-copy">Load the base styles and a theme once (typically in your root layout):</p>
-	<pre class="demo-code"><code>&lt;script lang="ts"&gt;
+	<p class="demo-copy">
+		Load the base styles and a theme once (typically in your root layout):
+	</p>
+	<pre class="demo-code"><code
+			>&lt;script lang="ts"&gt;
 	import '@cropwatchdevelopment/cwui/styles';
 	import '@cropwatchdevelopment/cwui/styles/tokens';
 	import '@cropwatchdevelopment/cwui/styles/theme-light';
 &lt;/script&gt;
 
-&lt;slot /&gt;</code></pre>
+&lt;slot /&gt;</code
+		></pre>
 </section>
 
 <section class="demo-section">
 	<h3>Verify</h3>
-	<p class="demo-copy">Start your app and open this demo route to validate everything is wired correctly:</p>
+	<p class="demo-copy">
+		Start your app and open this demo route to validate everything is wired
+		correctly:
+	</p>
 	<pre class="demo-code"><code>pnpm dev</code></pre>
 </section>
 
@@ -78,19 +106,22 @@ pnpm up @cropwatchdevelopment/cwui --latest</code></pre>
 	<p class="demo-kicker">Maintainer Workflow</p>
 	<h3>Publish A New Package</h3>
 	<p class="demo-copy">
-		CWUI publishes through GitHub Packages at <code>npm.pkg.github.com</code>. After bumping the
-		version, release by pushing a matching Git tag.
+		CWUI publishes through GitHub Packages at <code>npm.pkg.github.com</code
+		>. After bumping the version, release by pushing a matching Git tag.
 	</p>
 
 	<ol class="release-steps">
 		{#each releaseSteps as releaseStep (releaseStep.step)}
 			<li class="release-step">
-				<div class="release-step-number" aria-hidden="true">{releaseStep.step}</div>
+				<div class="release-step-number" aria-hidden="true">
+					{releaseStep.step}
+				</div>
 				<div class="release-step-body">
 					<h4>{releaseStep.title}</h4>
 					<p>{releaseStep.body}</p>
 					{#if releaseStep.code}
-						<pre class="demo-code"><code>{releaseStep.code}</code></pre>
+						<pre class="demo-code"><code>{releaseStep.code}</code
+							></pre>
 					{/if}
 				</div>
 			</li>
@@ -98,8 +129,9 @@ pnpm up @cropwatchdevelopment/cwui --latest</code></pre>
 	</ol>
 
 	<p class="demo-copy demo-note">
-		The workflow checks whether the tagged version already exists. If that version is already in
-		the registry, the publish step is skipped instead of failing.
+		The workflow checks whether the tagged version already exists. If that
+		version is already in the registry, the publish step is skipped instead
+		of failing.
 	</p>
 	<p class="demo-links">
 		<a href={publishWorkflowUrl} target="_blank" rel="noopener noreferrer">
@@ -152,12 +184,12 @@ pnpm up @cropwatchdevelopment/cwui --latest</code></pre>
 	}
 
 	.release-section {
-		background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-primary-500) 10%, var(--cw-bg-elevated)) 0%,
-				var(--cw-bg-elevated) 100%
-			);
+		background: linear-gradient(
+			180deg,
+			color-mix(in srgb, var(--cw-primary-500) 10%, var(--cw-bg-elevated))
+				0%,
+			var(--cw-bg-elevated) 100%
+		);
 	}
 
 	.demo-kicker {
@@ -214,7 +246,8 @@ pnpm up @cropwatchdevelopment/cwui --latest</code></pre>
 		min-width: 3rem;
 		padding: var(--cw-space-2) var(--cw-space-3);
 		border-radius: 999px;
-		border: 1px solid color-mix(in srgb, var(--cw-primary-400) 30%, transparent);
+		border: 1px solid
+			color-mix(in srgb, var(--cw-primary-400) 30%, transparent);
 		background: color-mix(in srgb, var(--cw-primary-500) 12%, transparent);
 		font-family: var(--cw-font-mono);
 		font-size: var(--cw-text-xs);

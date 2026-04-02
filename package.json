@@ -1,6 +1,6 @@
 {
 	"name": "@cropwatchdevelopment/cwui",
-	"version": "0.1.59",
+	"version": "0.1.60",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/CropWatchDevelopment/CWUI.git"
@@ -27,24 +27,24 @@
 		".": {
 			"types": "./dist/index.d.ts",
 			"svelte": "./dist/index.js",
-			"development": "./src/lib/index.ts",
+			"development": "./dist/index.js",
 			"import": "./dist/index.js",
 			"default": "./dist/index.js"
 		},
 		"./styles": {
-			"development": "./src/lib/styles/base.css",
+			"development": "./dist/styles/base.css",
 			"default": "./dist/styles/base.css"
 		},
 		"./styles/tokens": {
-			"development": "./src/lib/styles/tokens.css",
+			"development": "./dist/styles/tokens.css",
 			"default": "./dist/styles/tokens.css"
 		},
 		"./styles/theme-dark": {
-			"development": "./src/lib/styles/theme-dark.css",
+			"development": "./dist/styles/theme-dark.css",
 			"default": "./dist/styles/theme-dark.css"
 		},
 		"./styles/theme-light": {
-			"development": "./src/lib/styles/theme-light.css",
+			"development": "./dist/styles/theme-light.css",
 			"default": "./dist/styles/theme-light.css"
 		}
 	},
