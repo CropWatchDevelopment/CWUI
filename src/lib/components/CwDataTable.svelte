@@ -991,7 +991,7 @@
 						data-label={rowActionsHeader || "Actions"}
 						style:text-align="right"
 					>
-						<div class="cw-data-table__action-slot">
+						<div class="cw-data-table__action-slot w-full">
 							{@render rowActions(row)}
 						</div>
 					</td>
@@ -1009,9 +1009,65 @@
 						debounceMs={0}
 					/>
 				</div>
+
+				<div class="cw-data-table__toolbar-menu">
+					<CwButton
+						variant="ghost"
+						size="sm"
+						type="button"
+						aria-label="Open table options"
+						aria-expanded={toolbarMenuOpen}
+						aria-haspopup="menu"
+						aria-controls={`${uid}-toolbar-menu`}
+						class="cw-data-table__toolbar-menu-button"
+						onclick={toggleToolbarMenu}
+						style="padding: 0;"
+					>
+						<span
+							class="cw-data-table__toolbar-menu-icon"
+							aria-hidden="true"
+						>
+							{@html moreVertIcon}
+						</span>
+					</CwButton>
+
+					{#if toolbarMenuOpen}
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div
+							class="cw-data-table__toolbar-menu-backdrop"
+							onclick={closeToolbarMenu}
+							onkeydown={() => {}}
+						></div>
+					{/if}
+
+					{#if toolbarMenuOpen}
+						<div
+							class="cw-data-table__toolbar-menu-dropdown"
+							id={`${uid}-toolbar-menu`}
+							role="menu"
+						>
+							<button
+								type="button"
+								class="cw-data-table__toolbar-menu-item"
+								role="menuitem"
+								onclick={openColumnSettings}
+							>
+								Columns Settings
+							</button>
+							<button
+								type="button"
+								class="cw-data-table__toolbar-menu-item"
+								role="menuitem"
+								onclick={refreshTable}
+							>
+								Refresh
+							</button>
+						</div>
+					{/if}
+				</div>
 			{/if}
 
-			<span class="cw-data-table__toolbar-spacer"></span>
+			<!-- <span class="cw-data-table__toolbar-spacer"></span> -->
 
 			<div class="cw-data-table__toolbar-end">
 				{#if sortableColumns.length > 0}
@@ -1024,7 +1080,7 @@
 					</div>
 				{/if}
 
-				<div class="cw-data-table__page-size">
+				<!-- <div class="cw-data-table__page-size">
 					<CwDropdown
 						options={pageSizeOptions.map((n) => ({
 							label: virtualScroll
@@ -1035,67 +1091,12 @@
 						value={pageSizeStr}
 						onchange={handlePageSizeChange}
 					/>
-				</div>
+				</div> -->
 
 				<div class="cw-data-table__toolbar-actions">
 					{#if toolbarActionsSnippet}
 						{@render toolbarActionsSnippet()}
 					{/if}
-
-					<div class="cw-data-table__toolbar-menu">
-						{#if toolbarMenuOpen}
-							<!-- svelte-ignore a11y_no_static_element_interactions -->
-							<div
-								class="cw-data-table__toolbar-menu-backdrop"
-								onclick={closeToolbarMenu}
-								onkeydown={() => {}}
-							></div>
-						{/if}
-
-						<CwButton
-							variant="ghost"
-							size="sm"
-							type="button"
-							aria-label="Open table options"
-							aria-expanded={toolbarMenuOpen}
-							aria-haspopup="menu"
-							aria-controls={`${uid}-toolbar-menu`}
-							class="cw-data-table__toolbar-menu-button"
-							onclick={toggleToolbarMenu}
-						>
-							<span
-								class="cw-data-table__toolbar-menu-icon"
-								aria-hidden="true"
-							>
-								{@html moreVertIcon}
-							</span>
-						</CwButton>
-
-						{#if toolbarMenuOpen}
-							<div
-								class="cw-data-table__toolbar-menu-dropdown"
-								id={`${uid}-toolbar-menu`}
-								role="menu"
-							>
-								<button
-									type="button"
-									class="cw-data-table__toolbar-menu-item"
-									role="menuitem"
-									onclick={openColumnSettings}
-								>
-									Columns Settings
-								</button>
-								<button
-									type="button"
-									class="cw-data-table__toolbar-menu-item"
-									role="menuitem"
-									onclick={refreshTable}
-								>
-									Refresh
-								</button>
-							</div>
-						{/if}
-					</div>
 				</div>
 			</div>
 		</div>
@@ -1240,23 +1241,22 @@
 								<tr class="cw-data-table__group-row">
 									<th
 										colspan={colCount}
-										class="cw-data-table__group-cell"
+										class="cw-data-table__group-cell flex"
+										
 									>
 										<div
-											class="cw-data-table__group-heading"
+											style="display: flex;"
 										>
-											<span
-												class="cw-data-table__group-label"
-												>{group.label}</span
-											>
-											<span
-												class="cw-data-table__group-count"
+											<div style="width: 50%; text-align: right;">{group.label}</div>
+											<div
+												class="text-sm text-gray-500"
+												style="width: 50%; text-align: right; font-weight: 300;"
 											>
 												{group.rows.length}
 												{group.rows.length === 1
 													? "item"
 													: "items"}
-											</span>
+											</div>
 										</div>
 									</th>
 								</tr>
@@ -2009,7 +2009,7 @@
 	.cw-data-table__row--loading .cw-data-table__td {
 		filter: blur(1.75px);
 		opacity: 0.75;
-		color: black;
+		color: var(--cw-text-primary);
 	}
 
 	.cw-data-table__row:last-child .cw-data-table__td {
@@ -2017,15 +2017,17 @@
 	}
 
 	.cw-data-table__group-cell {
+		background: var(--cw-bg-surface-callout);
 		padding: var(--cw-space-3) var(--cw-space-4);
 		border-bottom: 1px solid var(--cw-border-default);
-		text-align: left;
 	}
-
+	
 	.cw-data-table__group-heading {
 		display: flex;
+		flex-direction: row;
 		align-items: center;
-		justify-content: space-between;
+		/* justify-content: space-between; */
+		width: 100%;
 		gap: var(--cw-space-3);
 		flex-wrap: wrap;
 	}
@@ -2246,8 +2248,8 @@
 		}
 
 		.cw-data-table__toolbar-menu-dropdown {
-			left: 0;
-			right: auto;
+			left: auto;
+			right: 0;
 			min-width: min(100%, 12rem);
 			background: var(--cw-bg-surface);
 		}
@@ -2291,7 +2293,7 @@
 		.cw-data-table__group-row {
 			display: block;
 			margin: 0 var(--cw-space-2) var(--cw-space-2);
-			border-radius: var(--cw-radius-lg);
+			/* border-radius: var(--cw-radius-lg); */
 			overflow: hidden;
 		}
 
