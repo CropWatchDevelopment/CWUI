@@ -984,7 +984,7 @@
 						class:cw-data-table__td--sorted={sort?.column ===
 							col.key}
 						data-label={col.header}
-						style:text-align={col.align ?? "left"}
+						style:text-align={col.align ?? "center"}
 					>
 						{#if cell}
 							{@render cell(row, col, getCellValue(row, col))}
@@ -1155,7 +1155,7 @@
 								class:cw-data-table__th--sorted={sort?.column ===
 									col.key}
 								style:width={col.width}
-								style:text-align={col.align ?? "left"}
+								style:text-align={col.align ?? "center"}
 								aria-sort={sort?.column === col.key
 									? sort.direction === "asc"
 										? "ascending"
@@ -1271,15 +1271,14 @@
 										colspan={colCount}
 										class="cw-data-table__group-cell"
 									>
-										<div style="display: flex;">
+										<div class="cw-data-table__group-heading">
 											<div
-												style="width: 50%; text-align: right;"
+												class="cw-data-table__group-label"
 											>
 												{group.label}
 											</div>
 											<div
-												class="text-sm text-gray-500"
-												style="width: 50%; text-align: right; font-weight: 300;"
+												class="cw-data-table__group-count"
 											>
 												{group.rows.length}
 												{group.rows.length === 1
@@ -1907,7 +1906,8 @@
 	.cw-data-table__sort-btn {
 		display: inline-flex;
 		align-items: center;
-		justify-content: space-between;
+		text-align: center;
+		justify-content: center;
 		gap: var(--cw-space-3);
 		width: 100%;
 		background: none;
@@ -2050,6 +2050,7 @@
 	}
 
 	.cw-data-table__group-cell {
+		position: relative;
 		background-color: var(--cw-bg-surface-callout);
 		padding: var(--cw-space-3) var(--cw-space-4);
 		border-bottom: 1px solid var(--cw-border-default);
@@ -2059,7 +2060,7 @@
 		display: flex;
 		flex-direction: row;
 		align-items: center;
-		/* justify-content: space-between; */
+		justify-content: center;
 		width: 100%;
 		gap: var(--cw-space-3);
 		flex-wrap: wrap;
@@ -2078,9 +2079,15 @@
 	}
 
 	.cw-data-table__group-count {
-		font-size: 0.75rem;
+		position: absolute;
+		right: var(--cw-space-4);
+		font-size: 0.6875rem;
 		font-weight: var(--cw-font-medium);
 		color: var(--cw-text-muted);
+		background: color-mix(in srgb, var(--cw-accent) 10%, var(--cw-bg-muted));
+		padding: var(--cw-space-1) var(--cw-space-2);
+		border-radius: var(--cw-radius-pill);
+		line-height: 1;
 	}
 
 	.cw-data-table__row--clickable {

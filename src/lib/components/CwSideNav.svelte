@@ -230,8 +230,8 @@
 	class:cw-sidenav--mini={displayMode === 'mini'}
 	class:cw-sidenav--hidden={displayMode === 'hidden'}
 	class:cw-sidenav--right={side === 'right'}
-	onmouseenter={handleNavMouseEnter}
-	onmouseleave={handleNavMouseLeave}
+	// onmouseenter={handleNavMouseEnter}
+	// onmouseleave={handleNavMouseLeave}
 	aria-label="Side navigation"
 >
 	<!-- Header / Logo -->

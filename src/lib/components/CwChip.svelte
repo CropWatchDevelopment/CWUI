@@ -35,35 +35,6 @@
 	}
 </script>
 
-<span
-	class="cw-chip cw-chip--{tone} cw-chip--{variant} cw-chip--{size} {className}"
-	class:cw-chip--disabled={disabled}
-	class:cw-chip--interactive={dismissible}
-	role={dismissible ? 'group' : undefined}
-	aria-disabled={disabled || undefined}
->
-	<span class="cw-chip__label">{label}</span>
-	{#if dismissible}
-		<button
-			type="button"
-			class="cw-chip__dismiss"
-			onclick={handleDismiss}
-			onkeydown={handleKeydown}
-			{disabled}
-			aria-label="Dismiss {label}"
-		>
-			<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
-				<path
-					d="M4.5 4.5l7 7M11.5 4.5l-7 7"
-					stroke="currentColor"
-					stroke-width="1.5"
-					stroke-linecap="round"
-				/>
-			</svg>
-		</button>
-	{/if}
-</span>
-
 <style>
 	.cw-chip {
 		display: inline-flex;

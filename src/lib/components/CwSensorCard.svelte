@@ -618,6 +618,7 @@
 		gap: var(--cw-space-1);
 		flex: 1;
 		min-width: 0;
+		border-right: 1px solid var(--cw-border-muted);
 	}
 
 	.cw-sensor-card__label {
@@ -625,7 +626,6 @@
 		color: var(--cw-text-secondary);
 		font-weight: var(--cw-font-semibold);
 		letter-spacing: 0.03em;
-		border-right: 1px solid var(--cw-border-muted);
 	}
 
 	/* ── Stats ── */
@@ -645,7 +645,6 @@
 		font-weight: var(--cw-font-bold);
 		font-size: var(--cw-text-lg);
 		color: var(--cw-text-primary);
-		border-right: 1px solid var(--cw-border-muted);
 	}
 
 	.cw-sensor-card__stat-icon {
