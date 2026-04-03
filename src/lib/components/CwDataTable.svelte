@@ -1879,7 +1879,7 @@
 			inset 0 -1px 0 color-mix(in srgb, var(--cw-text-primary) 4%, transparent);
 		text-align: left;
 		white-space: nowrap;
-		font-size: 0.6875rem;
+		font-size: var(--cw-text-md);
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
 	}
