@@ -2051,7 +2051,7 @@
 
 	.cw-data-table__group-cell {
 		position: relative;
-		background-color: var(--cw-bg-surface-callout);
+		background-color: var(--cw-header-bg);
 		padding: var(--cw-space-3) var(--cw-space-4);
 		border-bottom: 1px solid var(--cw-border-default);
 	}
@@ -2071,11 +2071,12 @@
 		font-weight: var(--cw-font-semibold);
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		color: color-mix(
+		/* color: color-mix(
 			in srgb,
 			var(--cw-text-primary) 88%,
 			var(--cw-accent) 12%
-		);
+		); */
+		color: white;
 	}
 
 	.cw-data-table__group-count {
