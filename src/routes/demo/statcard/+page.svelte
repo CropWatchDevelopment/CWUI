@@ -89,6 +89,8 @@
 		aboveAvg: '平均以上',
 		belowAvg: '平均以下',
 		atAvg: '平均',
+		clickToExpand: 'クリックで展開',
+		clickToCollapse: 'クリックで折りたたむ',
 	};
 
 	const labelsExample = `<script lang="ts">
@@ -106,6 +108,8 @@
 \t\taboveAvg: '平均以上',
 \t\tbelowAvg: '平均以下',
 \t\tatAvg: '平均',
+\t\tclickToExpand: 'クリックで展開',
+\t\tclickToCollapse: 'クリックで折りたたむ',
 \t};
 <\/script>
 

@@ -39,6 +39,8 @@
 		aboveAvg: 'Above average',
 		belowAvg: 'Below average',
 		atAvg: 'At average',
+		clickToExpand: 'Click to expand',
+		clickToCollapse: 'Click to collapse',
 	};
 
 	const l = $derived({ ...defaultLabels, ...rawLabels });
@@ -308,7 +310,7 @@
 					stroke-linejoin="round"
 				/>
 			</svg>
-			<span>{expanded ? "Click to collapse" : "Click to expand"}</span>
+			<span>{expanded ? l.clickToCollapse : l.clickToExpand}</span>
 		</div>
 	{/if}
 </div>

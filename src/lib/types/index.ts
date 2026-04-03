@@ -411,6 +411,8 @@ export interface CwStatCardLabels {
 	aboveAvg?: string;
 	belowAvg?: string;
 	atAvg?: string;
+	clickToExpand?: string;
+	clickToCollapse?: string;
 }
 
 export interface CwStatCardData {
