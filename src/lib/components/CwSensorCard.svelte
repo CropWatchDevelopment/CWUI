@@ -563,9 +563,9 @@
 	/* ── Slot (content area with side status indicator bar) ── */
 	.cw-sensor-card__slot {
 		position: relative;
-		padding: var(--cw-space-1) var(--cw-space-3) var(--cw-space-2) var(--cw-space-8);
+		padding: var(--cw-space-1) var(--cw-space-3) var(--cw-space-1) var(--cw-space-8);
 		border-radius: var(--cw-radius-xl);
-		background: var(--cw-bg-elevated);
+		background: var(--cw-bg-elevated2);
 		border: 1px solid var(--cw-border-muted);
 	}
 

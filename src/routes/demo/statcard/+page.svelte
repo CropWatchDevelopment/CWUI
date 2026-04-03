@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { CwStatCard } from '$lib/index.js';
-	import type { CwStatCardData } from '$lib/index.js';
+	import type { CwStatCardData, CwStatCardLabels } from '$lib/index.js';
 	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	const temperatureStats: CwStatCardData = {
@@ -77,6 +77,39 @@
 \tunit="lux"
 \texpandable={false}
 />`;
+
+	const japaneseLabels: CwStatCardLabels = {
+		min: '最小',
+		avg: '平均',
+		max: '最大',
+		count: '件数',
+		median: '中央値',
+		stdDev: '標準偏差',
+		range: '範囲',
+		aboveAvg: '平均以上',
+		belowAvg: '平均以下',
+		atAvg: '平均',
+	};
+
+	const labelsExample = `<script lang="ts">
+\timport { CwStatCard } from '@cropwatchdevelopment/cwui';
+\timport type { CwStatCardLabels } from '@cropwatchdevelopment/cwui';
+
+\tconst jaLabels: CwStatCardLabels = {
+\t\tmin: '最小',
+\t\tavg: '平均',
+\t\tmax: '最大',
+\t\tcount: '件数',
+\t\tmedian: '中央値',
+\t\tstdDev: '標準偏差',
+\t\trange: '範囲',
+\t\taboveAvg: '平均以上',
+\t\tbelowAvg: '平均以下',
+\t\tatAvg: '平均',
+\t};
+<\/script>
+
+<CwStatCard title="温度" stats={stats} unit="°C" labels={jaLabels} />`;
 </script>
 
 <h2>CwStatCard</h2>
@@ -114,6 +147,18 @@
 <DemoCodeExample code={basicExample} title="Basic usage" />
 <DemoCodeExample code={customColorExample} title="Custom accent colour" />
 <DemoCodeExample code={nonExpandableExample} title="Non-expandable" />
+
+<h3>Localized labels (i18n)</h3>
+<p class="demo-desc">
+	Pass a <code>labels</code> prop to override any or all display strings. Only the provided keys are replaced; the rest stay English by default.
+</p>
+<div class="demo-grid">
+	<CwStatCard title="温度" stats={temperatureStats} unit="°C" labels={japaneseLabels} />
+	<CwStatCard title="湿度" stats={humidityStats} unit="%" accentColor="var(--cw-info-500)" labels={japaneseLabels} />
+	<CwStatCard title="CO₂" stats={co2Stats} unit="ppm" accentColor="var(--cw-warning-500)" labels={japaneseLabels} />
+</div>
+
+<DemoCodeExample code={labelsExample} title="Localized labels" />
 
 <style>
 	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }
