@@ -642,7 +642,7 @@
 	.demo-shell__logo-text {
 		font-size: var(--cw-text-lg);
 		font-weight: var(--cw-font-bold);
-		color: var(--cw-header-text, var(--cw-text-inverse));
+		color: #fff;
 	}
 
 	:global(.demo-shell__quick-btn) {

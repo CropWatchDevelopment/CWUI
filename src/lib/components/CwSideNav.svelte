@@ -413,6 +413,7 @@
 		padding: 0;
 		flex-shrink: 0;
 		background-color: var(--cw-header-bg);
+		color: #fff;
 	}
 
 	.cw-sidenav__header--mini {
@@ -421,6 +422,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		background-color: var(--cw-header-bg);
+		color: #fff;
 		border-bottom: 2px solid var(--cw-border-muted);
 	}
 
@@ -451,7 +454,7 @@
 		background: none;
 		border: none;
 		border-radius: var(--cw-radius-md);
-		color: var(--cw-header-text, var(--cw-text-inverse));
+		color: #fff;
 		cursor: pointer;
 		flex-shrink: 0;
 		transition:
@@ -460,8 +463,8 @@
 	}
 
 	.cw-sidenav__toggle:hover {
-		background-color: color-mix(in srgb, var(--cw-text-inverse) 20%, transparent);
-		color: var(--cw-header-text, var(--cw-text-inverse));
+		background-color: color-mix(in srgb, #fff 20%, transparent);
+		color: #fff;
 	}
 
 	.cw-sidenav__toggle:focus-visible {

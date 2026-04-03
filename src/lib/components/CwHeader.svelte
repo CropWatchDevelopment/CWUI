@@ -175,7 +175,7 @@
     .cw-header__title {
         font-size: var(--cw-text-base);
         font-weight: var(--cw-font-bold);
-        color: var(--cw-header-text, var(--cw-text-inverse));
+        color: #fff;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
