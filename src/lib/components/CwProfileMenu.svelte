@@ -207,7 +207,7 @@
 	.cw-profile-menu__avatar-initials {
 		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-bold);
-		color: var(--cw-text-inverse);
+		color: var(--cw-text-primary);
 		line-height: 1;
 	}
 
@@ -231,7 +231,7 @@
 
 	.cw-profile-menu__subtitle {
 		font-size: var(--cw-text-xs);
-		color: var(--cw-profile-trigger-subtitle);
+		color: var(--cw-text-muted);
 		line-height: var(--cw-leading-tight);
 		white-space: nowrap;
 		overflow: hidden;
