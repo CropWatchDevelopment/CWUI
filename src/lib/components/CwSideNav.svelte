@@ -380,19 +380,12 @@
 		flex-direction: column;
 		height: 100%;
 		background: var(--cw-sidenav-bg);
-		border-color: var(--cw-border-muted);
-		border-style: solid;
-		border-width: 0;
 		font-family: var(--cw-font-family);
 		color: var(--cw-sidenav-item-text);
 		overflow: hidden;
 		transition:
 			width var(--cw-duration-slow) var(--cw-ease-default),
 			transform var(--cw-duration-slow) var(--cw-ease-default);
-	}
-
-	.cw-sidenav:not(.cw-sidenav--right) {
-		border-right-width: 1px;
 	}
 
 	.cw-sidenav--right {
@@ -416,27 +409,34 @@
 	}
 
 	.cw-sidenav__header {
-		padding: var(--cw-space-4);
+		height: 5rem;
+		padding: 0;
 		flex-shrink: 0;
+		background-color: var(--cw-header-bg);
 	}
 
 	.cw-sidenav__header--mini {
 		height: 5rem;
-		padding: var(--cw-space-3);
+		padding: 0;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		border-bottom: 2px solid var(--cw-border-muted);
 	}
 
 	.cw-sidenav__header-row {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		border-bottom: 2px solid var(--cw-border-muted);
 		width: 100%;
+		height: 100%;
+		padding: 0 var(--cw-space-4);
 	}
 
 	.cw-sidenav__header-content {
-		height: 3rem;
+		display: flex;
+		align-items: center;
 		min-width: 0;
 		flex: 1;
 	}
@@ -451,7 +451,7 @@
 		background: none;
 		border: none;
 		border-radius: var(--cw-radius-md);
-		color: var(--cw-text-muted);
+		color: var(--cw-header-text, var(--cw-text-inverse));
 		cursor: pointer;
 		flex-shrink: 0;
 		transition:
@@ -460,8 +460,8 @@
 	}
 
 	.cw-sidenav__toggle:hover {
-		background-color: var(--cw-bg-muted);
-		color: var(--cw-text-primary);
+		background-color: color-mix(in srgb, var(--cw-text-inverse) 20%, transparent);
+		color: var(--cw-header-text, var(--cw-text-inverse));
 	}
 
 	.cw-sidenav__toggle:focus-visible {
@@ -485,7 +485,7 @@
 	}
 
 	.cw-sidenav__above-content {
-		padding: 0 var(--cw-space-3) var(--cw-space-2);
+		padding: var(--cw-space-2) var(--cw-space-3) var(--cw-space-2);
 		border-bottom: 1px solid color-mix(in srgb, var(--cw-border-muted) 65%, transparent);
 	}
 

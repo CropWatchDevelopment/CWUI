@@ -28,6 +28,9 @@
 [data-theme='light'] {
 	color-scheme: light;
 
+	/* ── CropWatch Color Palette ───────────────────────── */
+	--cw-green-standard: #006045;
+
 	/* ── Surface / Background ──────────────────────────── */
 	--cw-bg-base: #d6e0ea;
 	--cw-bg-surface: #f7fafc;
@@ -42,7 +45,7 @@
 	--cw-bg-table-row-hover: #e8eff5;
 	--cw-bg-table-row-alt: #e3ebf3;
 	--cw-bg-table-row-alt-hover: #d8e3ed;
-	--cw-header-bg: #cfdeeb;
+	--cw-header-bg: var(--cw-green-standard);
 
 	/* ── Button / Profile Trigger ─────────────────────── */
 	--cw-button-primary-bg: linear-gradient(180deg, #40546b 0%, #2d3d4f 100%);

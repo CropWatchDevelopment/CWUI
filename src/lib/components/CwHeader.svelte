@@ -61,6 +61,8 @@
     </button>
 
     <!-- Logo — visible on desktop and tablet, hidden on phone -->
+
+    {#if sideNavMode !== "open"}
     <a href="/" class="cw-header__link">
         {#if logo}
             <div class="cw-header__logo">
@@ -73,6 +75,7 @@
             <span class="cw-header__title">{title}</span>
         {/if}
     </a>
+    {/if}
 
     <!-- Spacer pushes actions to the right -->
     <div class="cw-header__spacer"></div>
@@ -125,7 +128,7 @@
     }
 
     .cw-header__hamburger:hover {
-        background-color: var(--cw-bg-muted);
+        background-color: color-mix(in srgb, var(--cw-text-inverse) 20%, transparent);
     }
 
     .cw-header__hamburger:focus-visible {
@@ -172,7 +175,7 @@
     .cw-header__title {
         font-size: var(--cw-text-base);
         font-weight: var(--cw-font-bold);
-        color: var(--cw-text-primary);
+        color: var(--cw-header-text, var(--cw-text-inverse));
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;

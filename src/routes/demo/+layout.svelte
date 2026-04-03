@@ -522,7 +522,7 @@
 					alt="CropWatch Logo"
 					style="width:1.5rem;height:1.5rem"
 				/>
-				<span class="demo-shell__logo-text">CropWatch UI</span>
+				<span class="demo-shell__logo-text">𝘾𝙧𝙤𝙥𝙒𝙖𝙩𝙘𝙝® UI</span>
 			</div>
 		{/snippet}
 			{#snippet aboveContent()}
@@ -565,7 +565,7 @@
 
 	<div class="demo-shell__right">
 		<CwHeader
-			title="CropWatch UI"
+			title="𝘾𝙧𝙤𝙥𝙒𝙖𝙩𝙘𝙝® UI"
 			bind:sideNavMode
 			onToggleNav={handleToggleNav}
 		>
@@ -642,7 +642,7 @@
 	.demo-shell__logo-text {
 		font-size: var(--cw-text-lg);
 		font-weight: var(--cw-font-bold);
-		color: #8eb0e6;
+		color: var(--cw-header-text, var(--cw-text-inverse));
 	}
 
 	:global(.demo-shell__quick-btn) {
