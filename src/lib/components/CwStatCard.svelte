@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CwStatCardData } from "../types/index.js";
+	import type { CwStatCardData, CwStatCardLabels } from "../types/index.js";
 
 	interface Props {
 		/** Display title for the stat card */
@@ -12,6 +12,8 @@
 		accentColor?: string;
 		/** Whether the card can be expanded to show details */
 		expandable?: boolean;
+		/** Override display labels for i18n */
+		labels?: CwStatCardLabels;
 		/** Additional CSS class */
 		class?: string;
 	}
@@ -22,8 +24,24 @@
 		unit = "",
 		accentColor = "var(--cw-primary-500)",
 		expandable = true,
+		labels: rawLabels = {},
 		class: className = "",
 	}: Props = $props();
+
+	const defaultLabels: Required<CwStatCardLabels> = {
+		min: 'Min',
+		avg: 'Avg',
+		max: 'Max',
+		count: 'Count',
+		median: 'Median',
+		stdDev: 'Std Dev',
+		range: 'Range',
+		aboveAvg: 'Above average',
+		belowAvg: 'Below average',
+		atAvg: 'At average',
+	};
+
+	const l = $derived({ ...defaultLabels, ...rawLabels });
 
 	let expanded = $state(false);
 
@@ -86,9 +104,9 @@
 	});
 
 	function deltaLabel(state: "above" | "below" | "at"): string {
-		if (state === "above") return "Above average";
-		if (state === "below") return "Below average";
-		return "At average";
+		if (state === "above") return l.aboveAvg;
+		if (state === "below") return l.belowAvg;
+		return l.atAvg;
 	}
 
 	function toggle() {
@@ -230,22 +248,22 @@
 		{/if}
 	</div>
 	<div class="cw-stat-card__labels">
-		<span>Min</span>
-		<span>Avg</span>
-		<span>Max</span>
+		<span>{l.min}</span>
+		<span>{l.avg}</span>
+		<span>{l.max}</span>
 	</div>
 
 	{#if expanded}
 		<div class="cw-stat-card__details">
 			<div class="cw-stat-card__detail-grid">
 				<div class="cw-stat-card__detail-item">
-					<span class="cw-stat-card__detail-label">Count</span>
+					<span class="cw-stat-card__detail-label">{l.count}</span>
 					<span class="cw-stat-card__detail-value"
 						>{stats.count ?? "—"}</span
 					>
 				</div>
 				<div class="cw-stat-card__detail-item">
-					<span class="cw-stat-card__detail-label">Median</span>
+					<span class="cw-stat-card__detail-label">{l.median}</span>
 					<span class="cw-stat-card__detail-value">
 						{fmt(
 							stats.median,
@@ -253,7 +271,7 @@
 					</span>
 				</div>
 				<div class="cw-stat-card__detail-item">
-					<span class="cw-stat-card__detail-label">Std Dev</span>
+					<span class="cw-stat-card__detail-label">{l.stdDev}</span>
 					<span class="cw-stat-card__detail-value">
 						{fmt(
 							stats.stdDev,
@@ -261,7 +279,7 @@
 					</span>
 				</div>
 				<div class="cw-stat-card__detail-item">
-					<span class="cw-stat-card__detail-label">Range</span>
+					<span class="cw-stat-card__detail-label">{l.range}</span>
 					<span class="cw-stat-card__detail-value">
 						{#if stats.min != null && stats.max != null}
 							{fmt(stats.max - stats.min)}{#if unit}{unit}{/if}

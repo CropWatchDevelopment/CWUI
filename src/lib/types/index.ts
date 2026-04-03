@@ -400,6 +400,19 @@ export interface CwAlertPointsValue {
 
 export type CwStatCardTrend = 'up' | 'down' | 'stable';
 
+export interface CwStatCardLabels {
+	min?: string;
+	avg?: string;
+	max?: string;
+	count?: string;
+	median?: string;
+	stdDev?: string;
+	range?: string;
+	aboveAvg?: string;
+	belowAvg?: string;
+	atAvg?: string;
+}
+
 export interface CwStatCardData {
 	/** Minimum recorded value */
 	min?: number;

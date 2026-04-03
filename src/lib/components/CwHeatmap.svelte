@@ -39,17 +39,21 @@
 
 	/* ── Build grid: columns = days, rows = 24 hours ────────── */
 
-	/** End date = most recent midnight; start = end - days */
+	/** Build date columns from actual data dates, capped to `days`. */
 	const dateColumns = $derived.by(() => {
-		const end = new Date();
-		end.setHours(0, 0, 0, 0);
-		const cols: Date[] = [];
-		for (let i = days - 1; i >= 0; i--) {
-			const d = new Date(end);
-			d.setDate(d.getDate() - i);
-			cols.push(d);
+		const uniqueDates = new Set<string>();
+		for (const pt of data) {
+			const d = new Date(pt.timestamp);
+			uniqueDates.add(fmtDate(d));
 		}
-		return cols;
+		const sorted = [...uniqueDates].sort();
+		// Keep at most `days` most recent dates
+		const sliced = sorted.slice(-days);
+		return sliced.map((s) => {
+			const [y, m, d] = s.split('-').map(Number);
+			const dt = new Date(y, m - 1, d);
+			return dt;
+		});
 	});
 
 	/** Map data into a quick-lookup: "YYYY-MM-DD|HH" → value */

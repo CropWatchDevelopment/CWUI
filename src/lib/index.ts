@@ -106,6 +106,7 @@ export type {
 	CwSensorCardDevice,
 	CwStatCardTrend,
 	CwStatCardData,
+	CwStatCardLabels,
 	CwAlertPointUnit,
 	CwAlertPointCondition,
 	CwAlertPointRule,
