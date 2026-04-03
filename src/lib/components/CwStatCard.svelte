@@ -29,18 +29,18 @@
 	}: Props = $props();
 
 	const defaultLabels: Required<CwStatCardLabels> = {
-		min: 'Min',
-		avg: 'Avg',
-		max: 'Max',
-		count: 'Count',
-		median: 'Median',
-		stdDev: 'Std Dev',
-		range: 'Range',
-		aboveAvg: 'Above average',
-		belowAvg: 'Below average',
-		atAvg: 'At average',
-		clickToExpand: 'Click to expand',
-		clickToCollapse: 'Click to collapse',
+		min: "Min",
+		avg: "Avg",
+		max: "Max",
+		count: "Count",
+		median: "Median",
+		stdDev: "Std Dev",
+		range: "Range",
+		aboveAvg: "Above average",
+		belowAvg: "Below average",
+		atAvg: "At average",
+		clickToExpand: "Click to expand",
+		clickToCollapse: "Click to collapse",
 	};
 
 	const l = $derived({ ...defaultLabels, ...rawLabels });
@@ -56,11 +56,11 @@
 		const rounded = roundForDisplay(v);
 		return Number.isInteger(rounded)
 			? String(rounded)
-			: rounded.toLocaleString('en', {
-				minimumFractionDigits: 1,
-				maximumFractionDigits: 1,
-				useGrouping: true
-			});
+			: rounded.toLocaleString("en", {
+					minimumFractionDigits: 1,
+					maximumFractionDigits: 1,
+					useGrouping: true,
+				});
 	}
 
 	function fmtSigned(v: number): string {
@@ -142,7 +142,11 @@
 	{#if stats.lastReading != null}
 		<div class="cw-stat-card__hero">
 			<span class="cw-stat-card__hero-value">
-				{stats.lastReading.toLocaleString('en', { minimumFractionDigits: 0, maximumFractionDigits: 2, useGrouping: true })}{#if unit}
+				{stats.lastReading.toLocaleString("en", {
+					minimumFractionDigits: 0,
+					maximumFractionDigits: 2,
+					useGrouping: true,
+				})}{#if unit}
 					{#if isCo2Unit(unit)}
 						<span
 							class="cw-stat-card__hero-unit-group cw-stat-card__hero-unit-group--super"
@@ -198,8 +202,11 @@
 						{/if}
 					</svg>
 					<span class="cw-stat-card__comparison-value">
-						{deltaFromAverage.toLocaleString('en', { minimumFractionDigits: 0, maximumFractionDigits: 0, useGrouping: true })}{#if unit}<sup
-								class="cw-stat-card__unit">{unit}</sup
+						{deltaFromAverage.toLocaleString("en", {
+							minimumFractionDigits: 0,
+							maximumFractionDigits: 0,
+							useGrouping: true,
+						})}{#if unit}<sup class="cw-stat-card__unit">{unit}</sup
 							>{/if}
 					</span>
 				</span>
@@ -209,19 +216,23 @@
 
 	<div class="cw-stat-card__values">
 		<span>
-			{fmt(stats.min)}{#if unit && stats.min != null}<sup
+			{fmt(stats.min)}
+			<!-- {#if unit && stats.min != null}<sup
 					class="cw-stat-card__unit">{unit}</sup
-				>{/if}
+				>{/if} -->
 		</span>
 		<span class="cw-stat-card__avg-value">
-			{fmt(stats.avg)}{#if unit && stats.avg != null}<sup
-					class="cw-stat-card__unit">{unit}</sup
-				>{/if}
+			{fmt(stats.avg)}
+			<!-- {#if unit && stats.avg != null}<sup class="cw-stat-card__unit"
+					>{unit}</sup
+				>
+			{/if} -->
 		</span>
 		<span>
-			{fmt(stats.max)}{#if unit && stats.max != null}<sup
+			{fmt(stats.max)}
+			<!-- {#if unit && stats.max != null}<sup
 					class="cw-stat-card__unit">{unit}</sup
-				>{/if}
+				>{/if} -->
 		</span>
 	</div>
 
