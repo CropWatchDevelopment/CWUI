@@ -1,14 +1,24 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { CwLineChartDataPoint, CwLineChartSecondaryDataPoint } from '../types/index.js';
+	import type {
+		CwLineChartAlert,
+		CwLineChartAlertPoint,
+		CwLineChartDataPoint,
+		CwLineChartSecondaryDataPoint,
+		CwLineChartThreshold
+	} from '../types/index.js';
 
 	interface Props {
 		/** Primary data series (required) */
 		data: CwLineChartDataPoint[];
 		/** Optional secondary data series (right Y-axis) */
 		secondaryData?: CwLineChartSecondaryDataPoint[];
-		/** Horizontal threshold line value */
+		/** Optional standalone alert markers */
+		alertPoints?: CwLineChartAlertPoint[];
+		/** Legacy shorthand for a single horizontal threshold line */
 		threshold?: number;
+		/** Named threshold lines shown on the primary axis */
+		thresholds?: CwLineChartThreshold[];
 		/** Left Y-axis label */
 		primaryLabel?: string;
 		/** Right Y-axis label */
@@ -27,7 +37,9 @@
 	let {
 		data,
 		secondaryData = [],
+		alertPoints = [],
 		threshold,
+		thresholds = [],
 		primaryLabel = 'Value',
 		secondaryLabel = 'Secondary',
 		primaryUnit = '',
@@ -44,15 +56,82 @@
 	let mouseY = $state(0);
 	let showPrimary = $state(true);
 	let showSecondary = $state(true);
-	let showThreshold = $state(true);
+	let showThresholds = $state(true);
+
+	interface ResolvedAlertPoint extends CwLineChartAlertPoint {
+		renderId: string;
+		stackIndex: number;
+	}
 
 	interface TooltipPayload {
+		timestamp: string | Date | null;
 		primary: CwLineChartDataPoint | null;
 		secondary: CwLineChartSecondaryDataPoint | null;
+		alerts: ResolvedAlertPoint[];
+		thresholds: CwLineChartThreshold[];
 	}
 	let tooltipData = $state<TooltipPayload | null>(null);
 
 	const uid = $props.id();
+
+	function formatValue(value: number): string {
+		return value.toFixed(2);
+	}
+
+	function getPointAlerts(point: CwLineChartDataPoint): CwLineChartAlert[] {
+		const alertsForPoint: CwLineChartAlert[] = [];
+		if (point.alert) alertsForPoint.push(point.alert);
+		if (point.alerts?.length) alertsForPoint.push(...point.alerts);
+		return alertsForPoint;
+	}
+
+	const resolvedThresholds = $derived.by(() => {
+		if (thresholds.length > 0) return thresholds;
+		if (threshold === undefined) return [];
+		return [
+			{
+				id: `${uid}-legacy-threshold`,
+				name: 'Threshold',
+				value: threshold
+			}
+		];
+	});
+
+	const thresholdComparisonValue = $derived.by(() => {
+		if (resolvedThresholds.length !== 1) return undefined;
+		return resolvedThresholds[0].value;
+	});
+
+	const resolvedAlertPoints = $derived.by(() => {
+		const legacyAlerts = data.flatMap((point) =>
+			getPointAlerts(point).map((alert) => ({
+				id: alert.id,
+				timestamp: point.timestamp,
+				value: point.value,
+				message: alert.message,
+				severity: alert.severity
+			}))
+		);
+
+		const stackCounts = new Map<string, number>();
+
+		return [...legacyAlerts, ...alertPoints]
+			.sort(
+				(a, b) =>
+					new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime() || a.value - b.value
+			)
+			.map((alertPoint, index) => {
+				const key = `${new Date(alertPoint.timestamp).getTime()}::${alertPoint.value}`;
+				const stackIndex = stackCounts.get(key) ?? 0;
+				stackCounts.set(key, stackIndex + 1);
+
+				return {
+					...alertPoint,
+					renderId: `${alertPoint.id}-${index}`,
+					stackIndex
+				};
+			});
+	});
 
 	/* ── Margins ──────────────────────────────────────── */
 	const margin = $derived({
@@ -69,7 +148,8 @@
 	/* ── Y range (primary) ────────────────────────────── */
 	const primaryRange = $derived.by(() => {
 		const vals = showPrimary ? data.map((d) => d.value) : [];
-		if (showThreshold && threshold !== undefined) vals.push(threshold);
+		if (showPrimary) vals.push(...resolvedAlertPoints.map((alertPoint) => alertPoint.value));
+		if (showThresholds) vals.push(...resolvedThresholds.map((thresholdLine) => thresholdLine.value));
 		if (vals.length === 0) return { min: 0, max: 1 };
 		const mn = Math.min(...vals);
 		const mx = Math.max(...vals);
@@ -115,7 +195,8 @@
 	const timeRange = $derived.by(() => {
 		const allTimes = [
 			...data.map((d) => new Date(d.timestamp).getTime()),
-			...secondaryData.map((d) => new Date(d.timestamp).getTime())
+			...secondaryData.map((d) => new Date(d.timestamp).getTime()),
+			...resolvedAlertPoints.map((alertPoint) => new Date(alertPoint.timestamp).getTime())
 		];
 		if (allTimes.length === 0) {
 			const now = Date.now();
@@ -185,10 +266,11 @@
 		if (!chartContainer) return;
 		const rect = chartContainer.getBoundingClientRect();
 		const relX = event.clientX - rect.left - margin.left;
+		const relY = event.clientY - rect.top - margin.top;
 		mouseX = event.clientX - rect.left;
 		mouseY = event.clientY - rect.top;
 
-		if (relX < 0 || relX > chartWidth) {
+		if (relX < 0 || relX > chartWidth || relY < 0 || relY > chartHeight) {
 			tooltipData = null;
 			return;
 		}
@@ -213,7 +295,29 @@
 			}
 		}
 
-		tooltipData = { primary: closestPrimary, secondary: closestSecondary };
+		const hoveredAlerts = showPrimary
+			? resolvedAlertPoints.filter((alertPoint) => Math.abs(scaleX(alertPoint.timestamp) - relX) <= 12)
+			: [];
+		const hoveredThresholds = showThresholds
+			? resolvedThresholds.filter(
+					(thresholdLine) => Math.abs(scalePrimaryY(thresholdLine.value) - relY) <= 6
+				)
+			: [];
+		const hasVisibleSeriesContent = (showPrimary && closestPrimary) || (showSecondary && closestSecondary);
+
+		if (!hasVisibleSeriesContent && hoveredAlerts.length === 0 && hoveredThresholds.length === 0) {
+			tooltipData = null;
+			return;
+		}
+
+		tooltipData = {
+			timestamp:
+				closestPrimary?.timestamp ?? closestSecondary?.timestamp ?? hoveredAlerts[0]?.timestamp ?? null,
+			primary: closestPrimary,
+			secondary: closestSecondary,
+			alerts: hoveredAlerts,
+			thresholds: hoveredThresholds
+		};
 	}
 
 	function handleMouseLeave() {
@@ -221,8 +325,25 @@
 	}
 
 	/* ── Tooltip position (clamped) ───────────────────── */
-	const tooltipLeft = $derived(Math.min(mouseX + 15, width - 180));
-	const tooltipTop = $derived(Math.max(10, mouseY - 70));
+	const tooltipLeft = $derived(Math.min(mouseX + 15, Math.max(10, width - 260)));
+	const tooltipTop = $derived(Math.max(10, mouseY - 115));
+	const hoveredThresholdIds = $derived(tooltipData?.thresholds.map((thresholdLine) => thresholdLine.id) ?? []);
+	const singleThresholdLabel = $derived.by(() => {
+		if (resolvedThresholds.length !== 1) return null;
+		const thresholdLine = resolvedThresholds[0];
+		if (thresholdLine.name === 'Threshold') {
+			return `${formatValue(thresholdLine.value)}${primaryUnit}`;
+		}
+		return thresholdLine.name;
+	});
+	const thresholdLegendLabel = $derived.by(() => {
+		if (resolvedThresholds.length === 0) return '';
+		if (resolvedThresholds.length === 1) {
+			const thresholdLine = resolvedThresholds[0];
+			return `${thresholdLine.name} (${formatValue(thresholdLine.value)}${primaryUnit})`;
+		}
+		return `Thresholds (${resolvedThresholds.length})`;
+	});
 
 	/* ── ResizeObserver ───────────────────────────────── */
 	onMount(() => {
@@ -275,13 +396,24 @@
 				{/each}
 			{/if}
 
-			<!-- Threshold line -->
-			{#if showThreshold && threshold !== undefined}
-				{@const ty = scalePrimaryY(threshold)}
-				<line x1="0" y1={ty} x2={chartWidth} y2={ty} class="cw-lchart__threshold" />
-				<text x={chartWidth + 4} y={ty + 4} class="cw-lchart__threshold-label">
-					{threshold}{primaryUnit}
-				</text>
+			<!-- Threshold lines -->
+			{#if showThresholds}
+				{#each resolvedThresholds as thresholdLine (thresholdLine.id)}
+					{@const ty = scalePrimaryY(thresholdLine.value)}
+					<line
+						x1="0"
+						y1={ty}
+						x2={chartWidth}
+						y2={ty}
+						class="cw-lchart__threshold"
+						class:cw-lchart__threshold--active={hoveredThresholdIds.includes(thresholdLine.id)}
+					/>
+					{#if resolvedThresholds.length === 1 && singleThresholdLabel}
+						<text x={chartWidth + 4} y={ty + 4} class="cw-lchart__threshold-label">
+							{singleThresholdLabel}
+						</text>
+					{/if}
+				{/each}
 			{/if}
 
 			<!-- Primary line -->
@@ -316,7 +448,9 @@
 					{@const cy = scalePrimaryY(point.value)}
 					<circle
 						{cx} {cy} r="3"
-						fill={threshold !== undefined && point.value > threshold ? 'rgb(239 68 68)' : 'rgb(59 130 246)'}
+						fill={showThresholds && thresholdComparisonValue !== undefined && point.value > thresholdComparisonValue
+							? 'rgb(239 68 68)'
+							: 'rgb(59 130 246)'}
 						stroke="var(--cw-linechart-point-stroke)"
 						stroke-width="1"
 					/>
@@ -325,13 +459,13 @@
 
 			<!-- Alert markers -->
 			{#if showPrimary}
-				{#each data.filter((d) => d.alert) as point}
-					{@const ax = scaleX(point.timestamp)}
-					{@const ay = scalePrimaryY(point.value)}
-					<g transform="translate({ax},{ay - 20})">
+				{#each resolvedAlertPoints as alertPoint (alertPoint.renderId)}
+					{@const ax = scaleX(alertPoint.timestamp)}
+					{@const ay = scalePrimaryY(alertPoint.value)}
+					<g transform="translate({ax},{ay - 20 - alertPoint.stackIndex * 22})">
 						<circle
 							r="10"
-							fill={point.alert?.severity === 'critical' ? 'rgb(239 68 68)' : 'rgb(245 158 11)'}
+							fill={alertPoint.severity === 'critical' ? 'rgb(239 68 68)' : 'rgb(245 158 11)'}
 							stroke="var(--cw-linechart-point-stroke)"
 							stroke-width="2"
 							class="cw-lchart__pulse"
@@ -416,23 +550,51 @@
 				<div class="cw-lchart__tt-row">
 					<span class="cw-lchart__dot cw-lchart__dot--sky"></span>
 					<span class="cw-lchart__tt-muted">{primaryLabel}:</span>
-					<span class="cw-lchart__tt-value">{tooltipData.primary.value.toFixed(2)}{primaryUnit}</span>
+					<span class="cw-lchart__tt-value">{formatValue(tooltipData.primary.value)}{primaryUnit}</span>
 				</div>
-				<div class="cw-lchart__tt-time">
-					{new Date(tooltipData.primary.timestamp).toLocaleString()}
-				</div>
-				{#if tooltipData.primary.alert}
-					<div class="cw-lchart__tt-alert">
-						<svg viewBox="0 0 16 16" fill="none" class="cw-lchart__tt-alert-icon"><path d="M8 1l7 14H1L8 1z" stroke="currentColor" stroke-width="1.5"/></svg>
-						{tooltipData.primary.alert.message}
-					</div>
-				{/if}
 			{/if}
 			{#if tooltipData.secondary && showSecondary}
 				<div class="cw-lchart__tt-row" style="margin-top:0.25rem">
 					<span class="cw-lchart__dot cw-lchart__dot--purple"></span>
 					<span class="cw-lchart__tt-muted">{secondaryLabel}:</span>
-					<span class="cw-lchart__tt-value">{tooltipData.secondary.value.toFixed(2)}{secondaryUnit}</span>
+					<span class="cw-lchart__tt-value">{formatValue(tooltipData.secondary.value)}{secondaryUnit}</span>
+				</div>
+			{/if}
+			{#if tooltipData.timestamp && ((tooltipData.primary && showPrimary) || (tooltipData.secondary && showSecondary))}
+				<div class="cw-lchart__tt-time">
+					{new Date(tooltipData.timestamp).toLocaleString()}
+				</div>
+			{/if}
+			{#if tooltipData.thresholds.length > 0}
+				<div class="cw-lchart__tt-section">
+					{#each tooltipData.thresholds as thresholdLine (thresholdLine.id)}
+						<div class="cw-lchart__tt-row">
+							<span class="cw-lchart__tt-threshold-marker"></span>
+							<span class="cw-lchart__tt-muted">{thresholdLine.name}:</span>
+							<span class="cw-lchart__tt-value">{formatValue(thresholdLine.value)}{primaryUnit}</span>
+						</div>
+					{/each}
+				</div>
+			{/if}
+			{#if tooltipData.alerts.length > 0}
+				<div class="cw-lchart__tt-section">
+					{#each tooltipData.alerts as alertPoint (alertPoint.renderId)}
+						<div
+							class="cw-lchart__tt-alert"
+							class:cw-lchart__tt-alert--critical={alertPoint.severity === 'critical'}
+						>
+							<svg viewBox="0 0 16 16" fill="none" class="cw-lchart__tt-alert-icon">
+								<path d="M8 1l7 14H1L8 1z" stroke="currentColor" stroke-width="1.5" />
+							</svg>
+							<div class="cw-lchart__tt-alert-copy">
+								<div class="cw-lchart__tt-alert-head">
+									<span>{alertPoint.severity === 'critical' ? 'Critical alert' : 'Alert'}</span>
+									<span>{formatValue(alertPoint.value)}{primaryUnit}</span>
+								</div>
+								<div>{alertPoint.message}</div>
+							</div>
+						</div>
+					{/each}
 				</div>
 			{/if}
 		</div>
@@ -462,15 +624,15 @@
 			</button>
 		{/if}
 
-		{#if threshold !== undefined}
+		{#if resolvedThresholds.length > 0}
 			<button
 				type="button"
 				class="cw-lchart__legend-btn"
-				class:cw-lchart__legend-btn--inactive={!showThreshold}
-				onclick={() => (showThreshold = !showThreshold)}
+				class:cw-lchart__legend-btn--inactive={!showThresholds}
+				onclick={() => (showThresholds = !showThresholds)}
 			>
 				<span class="cw-lchart__legend-marker cw-lchart__legend-marker--threshold"></span>
-				Threshold ({threshold}{primaryUnit})
+				{thresholdLegendLabel}
 			</button>
 		{/if}
 	</div>
@@ -497,6 +659,9 @@
 		stroke: var(--cw-linechart-threshold);
 		stroke-width: 2;
 		stroke-dasharray: 6,4;
+	}
+	.cw-lchart__threshold--active {
+		stroke-width: 3;
 	}
 	.cw-lchart__threshold-label {
 		fill: var(--cw-linechart-threshold);
@@ -565,6 +730,11 @@
 		align-items: center;
 		gap: 0.5rem;
 	}
+	.cw-lchart__tt-section {
+		margin-top: 0.5rem;
+		display: grid;
+		gap: 0.375rem;
+	}
 	.cw-lchart__tt-muted {
 		color: var(--cw-linechart-tooltip-muted);
 	}
@@ -583,22 +753,45 @@
 		border-radius: 9999px;
 		flex-shrink: 0;
 	}
-	.cw-lchart__dot--sky    { background-color: var(--cw-linechart-dot-sky); }
+	.cw-lchart__dot--sky { background-color: var(--cw-linechart-dot-sky); }
 	.cw-lchart__dot--purple { background-color: var(--cw-linechart-dot-purple); }
+	.cw-lchart__tt-threshold-marker {
+		display: inline-block;
+		width: 0.9rem;
+		border-top: 2px dashed var(--cw-linechart-threshold-marker);
+		flex-shrink: 0;
+	}
 
 	.cw-lchart__tt-alert {
-		margin-top: 0.5rem;
 		display: flex;
-		align-items: center;
-		gap: 0.25rem;
+		align-items: flex-start;
+		gap: 0.375rem;
 		border-radius: 0.25rem;
 		background-color: var(--cw-linechart-tooltip-alert-bg);
 		padding: 0.25rem 0.5rem;
 		color: var(--cw-linechart-tooltip-alert-text);
 	}
+	.cw-lchart__tt-alert--critical {
+		background-color: color-mix(in srgb, var(--cw-danger-500) 88%, white);
+		color: var(--cw-gray-50);
+	}
 	.cw-lchart__tt-alert-icon {
 		height: 12px;
 		width: 12px;
+		flex-shrink: 0;
+		margin-top: 0.125rem;
+	}
+	.cw-lchart__tt-alert-copy {
+		display: grid;
+		gap: 0.125rem;
+	}
+	.cw-lchart__tt-alert-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		font-size: 0.68rem;
+		font-weight: 600;
 	}
 
 	/* ── Legend ────────────────────────────── */

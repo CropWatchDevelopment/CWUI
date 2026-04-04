@@ -72,18 +72,36 @@ export interface CwLineSeries {
 	color?: string;
 }
 
+export type CwLineChartAlertSeverity = 'warning' | 'critical';
+
+export interface CwLineChartAlert {
+	id: string;
+	message: string;
+	severity?: CwLineChartAlertSeverity;
+}
+
 export interface CwLineChartDataPoint {
 	timestamp: string | Date;
 	value: number;
-	alert?: {
-		id: string;
-		message: string;
-		severity?: 'warning' | 'critical';
-	};
+	/** Legacy single-alert shorthand. */
+	alert?: CwLineChartAlert;
+	/** Optional multiple alerts associated with the same data point. */
+	alerts?: CwLineChartAlert[];
 }
 
 export interface CwLineChartSecondaryDataPoint {
 	timestamp: string | Date;
+	value: number;
+}
+
+export interface CwLineChartAlertPoint extends CwLineChartAlert {
+	timestamp: string | Date;
+	value: number;
+}
+
+export interface CwLineChartThreshold {
+	id: string;
+	name: string;
 	value: number;
 }
 
@@ -394,6 +412,85 @@ export interface CwAlertPointsValue {
 	center: string;
 	/** Editable alert point definitions. */
 	points: CwAlertPointRule[];
+}
+
+export interface CwAlertPointsEditorText {
+	/** Unit dropdown label. */
+	unitFieldLabel?: string;
+	/** Base center label before the current unit is appended. */
+	centerFieldLabel?: string;
+	/** Rule name input label. */
+	nameFieldLabel?: string;
+	/** Rule condition dropdown label. */
+	conditionFieldLabel?: string;
+	/** Single-value input label. */
+	valueFieldLabel?: string;
+	/** Range minimum input label. */
+	minValueFieldLabel?: string;
+	/** Range maximum input label. */
+	maxValueFieldLabel?: string;
+	/** Colour input label. */
+	colorFieldLabel?: string;
+	/** Add rule button label. */
+	addAlertPointButton?: string;
+	/** Remove rule button label. */
+	removePointButton?: string;
+	/** Empty-state heading. */
+	emptyTitle?: string;
+	/** Empty-state helper copy. */
+	emptyDescription?: string;
+	/** Generic invalid number validation message. */
+	invalidNumberError?: string;
+	/** Validation formatter for required numeric inputs. */
+	requiredFieldError?: (label: string) => string;
+	/** Formatter for labels that include the current display unit. */
+	fieldLabelWithUnit?: (label: string, unit: string) => string;
+	/** Preview note shown when one or more rules cannot be drawn yet. */
+	invalidPreviewNote?: (count: number) => string;
+	/** Preview note shown when rules overlap. */
+	overlapPreviewNote?: (count: number) => string;
+	/** Warning shown when a range has the same min and max. */
+	minEqualsMaxWarning?: string;
+	/** Default name assigned to newly added rules. */
+	defaultPointName?: (index: number) => string;
+	/** Unit option label for Celsius. */
+	unitCelsiusLabel?: string;
+	/** Unit option label for Fahrenheit. */
+	unitFahrenheitLabel?: string;
+	/** Unit option label for Kelvin. */
+	unitKelvinLabel?: string;
+	/** Condition option label for exact-match rules. */
+	conditionEqualsLabel?: string;
+	/** Condition option label for closed ranges. */
+	conditionRangeLabel?: string;
+	/** Condition option label for less-than rules. */
+	conditionLessThanLabel?: string;
+	/** Condition option label for less-than-or-equal rules. */
+	conditionLessThanOrEqualLabel?: string;
+	/** Condition option label for greater-than rules. */
+	conditionGreaterThanLabel?: string;
+	/** Condition option label for greater-than-or-equal rules. */
+	conditionGreaterThanOrEqualLabel?: string;
+	/** Preview copy when an exact-match rule has no value yet. */
+	pointDescriptionWaitingForValue?: string;
+	/** Preview copy when an open-ended threshold has no value yet. */
+	pointDescriptionWaitingForThreshold?: string;
+	/** Preview copy when a range is missing one or both bounds. */
+	pointDescriptionRangeMissingBounds?: string;
+	/** Formatter for exact-match preview copy. */
+	pointDescriptionEquals?: (value: string, unit: string) => string;
+	/** Formatter for range preview copy. */
+	pointDescriptionRange?: (min: string, max: string, unit: string) => string;
+	/** Formatter for less-than preview copy. */
+	pointDescriptionLessThan?: (value: string, unit: string) => string;
+	/** Formatter for less-than-or-equal preview copy. */
+	pointDescriptionLessThanOrEqual?: (value: string, unit: string) => string;
+	/** Formatter for greater-than preview copy. */
+	pointDescriptionGreaterThan?: (value: string, unit: string) => string;
+	/** Formatter for greater-than-or-equal preview copy. */
+	pointDescriptionGreaterThanOrEqual?: (value: string, unit: string) => string;
+	/** Validation formatter for overlapping rules. */
+	overlapError?: (labels: string[]) => string;
 }
 
 /* ── Stat Card types ────────────────────────────────────── */

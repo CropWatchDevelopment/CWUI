@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { CwStatCardData, CwStatCardLabels } from "../types/index.js";
+	import CwTooltip from "./CwTooltip.svelte";
 
 	interface Props {
 		/** Display title for the stat card */
@@ -201,14 +202,17 @@
 							/>
 						{/if}
 					</svg>
-					<span class="cw-stat-card__comparison-value">
-						{deltaFromAverage.toLocaleString("en", {
-							minimumFractionDigits: 0,
-							maximumFractionDigits: 0,
-							useGrouping: true,
-						})}{#if unit}<sup class="cw-stat-card__unit">{unit}</sup
-							>{/if}
-					</span>
+					<CwTooltip value={deltaLabel(deltaState)}>
+						<span class="cw-stat-card__comparison-value">
+							{deltaFromAverage.toLocaleString("en", {
+								minimumFractionDigits: 0,
+								maximumFractionDigits: 0,
+								useGrouping: true,
+							})}{#if unit}<sup class="cw-stat-card__unit"
+									>{unit}</sup
+								>{/if}
+						</span>
+					</CwTooltip>
 				</span>
 			{/if}
 		</div>
@@ -398,7 +402,7 @@
 	}
 
 	.cw-stat-card__hero-value {
-		font-size: clamp(2.5rem, 9cqw, 4rem);
+		font-size: clamp(2.5rem, 9cqw, 3rem);
 		font-weight: var(--cw-font-bold);
 		line-height: 0.95;
 		letter-spacing: -0.04em;
@@ -434,7 +438,7 @@
 
 	.cw-stat-card__comparison {
 		position: absolute;
-		top: var(--cw-space-1);
+		bottom: var(--cw-space-1);
 		right: var(--cw-space-1);
 		display: inline-flex;
 		align-items: center;

@@ -182,7 +182,7 @@ Override any CSS variable in your own stylesheet:
 | Component | Description |
 |---|---|
 | **`CwDataTable<T>`** | Server-side data table — pagination or virtual scrolling, sorting, column search, external filters, page-size control, toolbar/row action slots, zebra striping |
-| **`CwLineChart`** | SVG line chart — multiple series, gradient fill, responsive, auto-scaling axes |
+| **`CwLineChart`** | SVG line chart — primary/secondary series, named thresholds, alert markers, responsive, auto-scaling axes |
 | **`CwDonutChart`** | SVG donut chart — hover highlighting, center label, configurable thickness, legend |
 | **`CwPPFDChart`** | Horizontal PPFD range gauge — low/optimal/high zones, crop target band, live reading marker, dynamic scaling |
 | **`CwVPDChart`** | Temperature-by-RH VPD matrix — agriculture-style heatmap with selected target overlay and live climate cell |

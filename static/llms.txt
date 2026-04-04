@@ -165,7 +165,7 @@ Create context once in a layout/root component, then call `toast.add(...)` in ch
 - `CwSize`
 - `CwChipVariant`
 - `CwColumnDef`, `CwTableQuery`, `CwTableResult`
-- `CwLineChartDataPoint`, `CwLineChartSecondaryDataPoint`, `CwDonutSegment`, `CwPPFDStatus`, `CwPPFDTick`, `CwPPFDReading`, `CwVPDStatus`, `CwVPDStageBandTone`, `CwVPDTick`, `CwVPDStageBand`, `CwVPDReading`, `CwHeatmapDataPoint`
+- `CwLineChartAlertSeverity`, `CwLineChartAlert`, `CwLineChartDataPoint`, `CwLineChartSecondaryDataPoint`, `CwLineChartAlertPoint`, `CwLineChartThreshold`, `CwDonutSegment`, `CwPPFDStatus`, `CwPPFDTick`, `CwPPFDReading`, `CwVPDStatus`, `CwVPDStageBandTone`, `CwVPDTick`, `CwVPDStageBand`, `CwVPDReading`, `CwHeatmapDataPoint`
 - `CwDatePickerMode`, `CwDateGranularity`, `CwDateValue`
 - `CwDrawerItem`, `CwListBoxItem`, `CwProfileMenuItem`
 - `CwSideNavMode`, `CwSideNavSide`, `CwSideNavIcon`, `CwSideNavItem`

@@ -446,6 +446,259 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			}
 		]
 	},
+	'/demo/linechart': {
+		summary:
+			'CwLineChart is the low-level time-series chart for sensor history. Pass a primary series, optionally add a secondary right-axis series, and the component handles responsive sizing, auto-scaled axes, a hover crosshair, standalone alert markers, named thresholds, and legend toggles.',
+		steps: [
+			{
+				title: 'Start with the primary series',
+				description:
+					'`data` is the only required prop. Each point needs a `timestamp` and `value`, and you can still attach legacy `alert` metadata directly to a point when that is the simplest shape.'
+			},
+			{
+				title: 'Add `secondaryData` only for different units',
+				description:
+					'When the second series needs its own scale, pass `secondaryData` and the matching `secondaryLabel` / `secondaryUnit`. The chart automatically adds a right Y-axis and dashed line.'
+			},
+			{
+				title: 'Prefer `alertPoints` for explicit markers',
+				description:
+					'Use `alertPoints` when alerts should be managed separately from the primary data array. The chart still supports the older `data[].alert` shorthand for one-off cases.'
+			},
+			{
+				title: 'Use `thresholds` for named horizontal rules',
+				description:
+					'`thresholds` is the preferred API for multiple named lines. Hovering near a threshold shows its name and value in the tooltip. The old `threshold` prop remains as a single-line shorthand.'
+			},
+			{
+				title: 'Adjust height to the surface',
+				description:
+					'Use taller charts for analysis views and shorter ones for cards. Set `showGrid={false}` when the surrounding layout already gives enough visual structure.'
+			}
+		],
+		apiTitle: 'Props and data shape',
+		apiNote:
+			'CwLineChart has no slots or callbacks. The hover tooltip, crosshair, responsive width observer, and legend toggles are built in.',
+		apiRows: [
+			{
+				name: 'data',
+				type: 'CwLineChartDataPoint[]',
+				description: 'Primary time-series data rendered against the left Y-axis.',
+				required: true
+			},
+			{
+				name: 'data[].timestamp',
+				type: 'string | Date',
+				description: 'Point timestamp used for X-axis placement and tooltip formatting.'
+			},
+			{
+				name: 'data[].value',
+				type: 'number',
+				description: 'Numeric reading plotted on the primary line and left Y-axis.'
+			},
+			{
+				name: 'data[].alert',
+				type: 'CwLineChartAlert',
+				description:
+					'Legacy single-alert shorthand attached directly to one primary data point.'
+			},
+			{
+				name: 'data[].alerts',
+				type: 'CwLineChartAlert[]',
+				description:
+					'Optional multiple alerts associated with a single primary data point.'
+			},
+			{
+				name: 'alertPoints',
+				type: 'CwLineChartAlertPoint[]',
+				description:
+					'Optional standalone alert markers. Use this when alerts are managed separately from the main data series.',
+				defaultValue: '[]'
+			},
+			{
+				name: 'secondaryData',
+				type: 'CwLineChartSecondaryDataPoint[]',
+				description:
+					'Optional comparison series for the right Y-axis. Each point uses the same `timestamp` + `value` shape without alerts.',
+				defaultValue: '[]'
+			},
+			{
+				name: 'threshold',
+				type: 'number',
+				description:
+					'Legacy single-threshold shorthand for the primary axis. Ignored when `thresholds` is provided.'
+			},
+			{
+				name: 'thresholds',
+				type: 'CwLineChartThreshold[]',
+				description:
+					'Named threshold lines drawn on the primary axis. Hovering near a line shows its name and value in the tooltip.',
+				defaultValue: '[]'
+			},
+			{
+				name: 'primaryLabel',
+				type: 'string',
+				description: 'Left-axis label and primary legend label.',
+				defaultValue: 'Value'
+			},
+			{
+				name: 'secondaryLabel',
+				type: 'string',
+				description: 'Right-axis label and secondary legend label.',
+				defaultValue: 'Secondary'
+			},
+			{
+				name: 'primaryUnit',
+				type: 'string',
+				description: 'Unit suffix used in the primary tooltip and threshold label.',
+				defaultValue: "''"
+			},
+			{
+				name: 'secondaryUnit',
+				type: 'string',
+				description: 'Unit suffix used in the secondary tooltip.',
+				defaultValue: "''"
+			},
+			{
+				name: 'height',
+				type: 'number',
+				description: 'Chart height in pixels.',
+				defaultValue: '300'
+			},
+			{
+				name: 'showGrid',
+				type: 'boolean',
+				description: 'Shows or hides the horizontal and vertical guide lines.',
+				defaultValue: 'true'
+			},
+			{
+				name: 'class',
+				type: 'string',
+				description: 'Optional class forwarded to the chart wrapper element.',
+				defaultValue: "''"
+			}
+		],
+		examples: [
+			{
+				title: 'Named thresholds and standalone alert points',
+				description: 'This is the preferred setup when alert markers and threshold rules come from separate telemetry or rule data.',
+				code: `<script lang="ts">
+	import { CwLineChart } from '@cropwatchdevelopment/cwui';
+	import type {
+		CwLineChartAlertPoint,
+		CwLineChartDataPoint,
+		CwLineChartThreshold
+	} from '@cropwatchdevelopment/cwui';
+
+	const temperatureData: CwLineChartDataPoint[] = [
+		{ timestamp: '2026-04-04T00:00:00Z', value: 21.4 },
+		{ timestamp: '2026-04-04T06:00:00Z', value: 23.1 },
+		{ timestamp: '2026-04-04T12:00:00Z', value: 27.8 },
+		{ timestamp: '2026-04-04T18:00:00Z', value: 25.9 }
+	];
+
+	const temperatureThresholds: CwLineChartThreshold[] = [
+		{ id: 'target-high', name: 'Target high', value: 24 },
+		{ id: 'warning-high', name: 'Warning high', value: 27 },
+		{ id: 'critical-high', name: 'Critical high', value: 29 }
+	];
+
+	const alertPoints: CwLineChartAlertPoint[] = [
+		{
+			id: 'spike',
+			timestamp: '2026-04-04T12:00:00Z',
+			value: 27.8,
+			message: 'Short spike detected during the irrigation cycle.',
+			severity: 'warning'
+		},
+		{
+			id: 'critical',
+			timestamp: '2026-04-04T18:00:00Z',
+			value: 25.9,
+			message: 'Critical thermal alert triggered after a rapid rise.',
+			severity: 'critical'
+		}
+	];
+</script>
+
+<CwLineChart
+	data={temperatureData}
+	alertPoints={alertPoints}
+	thresholds={temperatureThresholds}
+	primaryLabel="Temperature"
+	primaryUnit="°C"
+	height={320}
+/>`
+			},
+			{
+				title: 'Dual-axis comparison chart',
+				description: 'Use a second series when the comparison metric needs its own unit and scale.',
+				code: `<script lang="ts">
+	import { CwLineChart } from '@cropwatchdevelopment/cwui';
+	import type {
+		CwLineChartDataPoint,
+		CwLineChartSecondaryDataPoint
+	} from '@cropwatchdevelopment/cwui';
+
+	const temperatureData: CwLineChartDataPoint[] = [
+		{ timestamp: '2026-04-04T00:00:00Z', value: 21.4 },
+		{ timestamp: '2026-04-04T06:00:00Z', value: 23.1 },
+		{ timestamp: '2026-04-04T12:00:00Z', value: 27.8 },
+		{ timestamp: '2026-04-04T18:00:00Z', value: 25.9 }
+	];
+
+	const humidityData: CwLineChartSecondaryDataPoint[] = [
+		{ timestamp: '2026-04-04T00:00:00Z', value: 61 },
+		{ timestamp: '2026-04-04T06:00:00Z', value: 58 },
+		{ timestamp: '2026-04-04T12:00:00Z', value: 52 },
+		{ timestamp: '2026-04-04T18:00:00Z', value: 56 }
+	];
+</script>
+
+<CwLineChart
+	data={temperatureData}
+	secondaryData={humidityData}
+	primaryLabel="Temperature"
+	secondaryLabel="Humidity"
+	primaryUnit="°C"
+	secondaryUnit="%"
+	height={360}
+/>`
+			},
+			{
+				title: 'Compact chart with the legacy shorthand',
+				description: 'The older `threshold` and `data[].alert` API still works when you only need a single line and one or two inline point alerts.',
+				code: `<script lang="ts">
+	import { CwLineChart } from '@cropwatchdevelopment/cwui';
+	import type { CwLineChartDataPoint } from '@cropwatchdevelopment/cwui';
+
+	const moistureData: CwLineChartDataPoint[] = [
+		{ timestamp: '2026-04-04T00:00:00Z', value: 41 },
+		{
+			timestamp: '2026-04-04T06:00:00Z',
+			value: 37,
+			alert: { id: 'dry-1', message: 'Zone A drifted below the target band.' }
+		},
+		{
+			timestamp: '2026-04-04T12:00:00Z',
+			value: 29,
+			alert: { id: 'dry-2', message: 'Critical dry-back detected.', severity: 'critical' }
+		},
+		{ timestamp: '2026-04-04T18:00:00Z', value: 34 }
+	];
+</script>
+
+<CwLineChart
+	data={moistureData}
+	threshold={35}
+	primaryLabel="Soil moisture"
+	primaryUnit="%"
+	height={220}
+	showGrid={false}
+/>`
+			}
+		]
+	},
 	'/demo/donutchart': {
 		summary:
 			'CwDonutChart renders proportional segment totals with hover feedback. Build the `segments` array first, then adjust chart size and thickness to fit the layout.',
@@ -2896,6 +3149,11 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 					'Numeric fields stay as strings while the user types so partial negatives and decimals do not get wiped out mid-edit.'
 			},
 			{
+				title: 'Route built-in copy through the `text` prop',
+				description:
+					'Pass labels, validation messages, preview sentences, and empty-state copy into `text` so your translation library controls every built-in string.'
+			},
+			{
 				title: 'Use the condition dropdown to decide the shape',
 				description:
 					'`equals` draws a single point, `range` requires both `min` and `max`, and the less-than/greater-than variants render one-sided ranges.'
@@ -2920,6 +3178,12 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 					type: 'CwAlertPointsValue',
 					description:
 						'Bindable editor state containing the visual `unit`, the Celsius-backed `center`, and the editable `points[]` collection.'
+				},
+				{
+					name: 'text',
+					type: 'CwAlertPointsEditorText',
+					description:
+						'Optional copy overrides for labels, validation text, preview sentences, empty states, and condition labels. Dynamic fields accept formatter functions so an external translation library can interpolate counts, units, and lists.'
 				},
 				{
 					name: 'value.unit',
@@ -2975,6 +3239,65 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 </script>
 
 <CwAlertPointsEditor bind:value={alertPoints} />`
+			},
+			{
+				title: 'Translate the editor copy',
+				description: 'Use the `text` prop for built-in UI strings and keep translated point names in your bound value.',
+				code: `<script lang="ts">
+\timport { CwAlertPointsEditor } from '@cropwatchdevelopment/cwui';
+\timport type {
+\t\tCwAlertPointsEditorText,
+\t\tCwAlertPointsValue
+\t} from '@cropwatchdevelopment/cwui';
+\timport { t } from '$lib/i18n';
+
+\tlet alertPoints = $state<CwAlertPointsValue>({
+\t\tunit: 'C',
+\t\tcenter: '0',
+\t\tpoints: [
+\t\t\t{
+\t\t\t\tid: 'alert-1',
+\t\t\t\tname: t('alerts.points.coldEdge'),
+\t\t\t\tcolor: '#f7903b',
+\t\t\t\tcondition: 'lessThanOrEqual',
+\t\t\t\tvalue: '-2',
+\t\t\t\tmin: '',
+\t\t\t\tmax: ''
+\t\t\t}
+\t\t]
+\t});
+
+\tconst alertPointsText: CwAlertPointsEditorText = {
+\t\tunitFieldLabel: t('alerts.labels.unit'),
+\t\tcenterFieldLabel: t('alerts.labels.center'),
+\t\tnameFieldLabel: t('alerts.labels.name'),
+\t\tconditionFieldLabel: t('alerts.labels.condition'),
+\t\tvalueFieldLabel: t('alerts.labels.value'),
+\t\tminValueFieldLabel: t('alerts.labels.min'),
+\t\tmaxValueFieldLabel: t('alerts.labels.max'),
+\t\tcolorFieldLabel: t('alerts.labels.color'),
+\t\taddAlertPointButton: t('alerts.actions.add'),
+\t\tremovePointButton: t('alerts.actions.remove'),
+\t\temptyTitle: t('alerts.empty.title'),
+\t\temptyDescription: t('alerts.empty.description'),
+\t\tfieldLabelWithUnit: (label, unit) =>
+\t\t\tt('alerts.format.fieldWithUnit', { label, unit }),
+\t\trequiredFieldError: (label) =>
+\t\t\tt('alerts.validation.required', { label }),
+\t\tinvalidPreviewNote: (count) =>
+\t\t\tt('alerts.preview.invalidCount', { count }),
+\t\toverlapPreviewNote: (count) =>
+\t\t\tt('alerts.preview.overlapCount', { count }),
+\t\tpointDescriptionEquals: (value, unit) =>
+\t\t\tt('alerts.preview.equals', { value, unit }),
+\t\tpointDescriptionRange: (min, max, unit) =>
+\t\t\tt('alerts.preview.range', { min, max, unit }),
+\t\toverlapError: (labels) =>
+\t\t\tt('alerts.validation.overlap', { labels: labels.join(', ') })
+\t};
+</script>
+
+<CwAlertPointsEditor bind:value={alertPoints} text={alertPointsText} />`
 			},
 				{
 					title: 'Normalize before API submit',

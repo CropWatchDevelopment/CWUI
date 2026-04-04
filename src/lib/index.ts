@@ -71,8 +71,12 @@ export type {
 	CwTableResult,
 	CwColumnDef,
 	CwLineSeries,
+	CwLineChartAlertSeverity,
+	CwLineChartAlert,
 	CwLineChartDataPoint,
 	CwLineChartSecondaryDataPoint,
+	CwLineChartAlertPoint,
+	CwLineChartThreshold,
 	CwDonutSegment,
 	CwPPFDStatus,
 	CwPPFDTick,
@@ -110,5 +114,6 @@ export type {
 	CwAlertPointUnit,
 	CwAlertPointCondition,
 	CwAlertPointRule,
-	CwAlertPointsValue
+	CwAlertPointsValue,
+	CwAlertPointsEditorText
 } from './types/index.js';

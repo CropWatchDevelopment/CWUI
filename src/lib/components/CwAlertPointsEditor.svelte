@@ -3,6 +3,7 @@
 		CwAlertPointCondition,
 		CwAlertPointRule,
 		CwAlertPointUnit,
+		CwAlertPointsEditorText,
 		CwAlertPointsValue,
 	} from "../types/index.js";
 	import CwButton from "./CwButton.svelte";
@@ -15,6 +16,7 @@
 		onchange?: (value: CwAlertPointsValue) => void;
 		tickStep?: number;
 		tickCount?: number;
+		text?: CwAlertPointsEditorText;
 		class?: string;
 	}
 
@@ -49,21 +51,6 @@
 	const CENTER_DRAFT_KEY = "center";
 	const DEFAULT_TICK_INTERVALS = 10;
 
-	const unitOptions = [
-		{ label: "°C", value: "C" },
-		{ label: "°F", value: "F" },
-		{ label: "°K", value: "K" },
-	];
-
-	const conditionOptions = [
-		{ label: "Equals (=)", value: "equals" },
-		{ label: "Range", value: "range" },
-		{ label: "Less than (<)", value: "lessThan" },
-		{ label: "Less than or equal (<=)", value: "lessThanOrEqual" },
-		{ label: "Greater than (>)", value: "greaterThan" },
-		{ label: "Greater than or equal (>=)", value: "greaterThanOrEqual" },
-	];
-
 	const colorPalette = [
 		"#f7903b",
 		"#42edf0",
@@ -75,6 +62,51 @@
 	const numberFormatter = new Intl.NumberFormat(undefined, {
 		maximumFractionDigits: 2,
 	});
+	const defaultText: Required<CwAlertPointsEditorText> = {
+		unitFieldLabel: "Unit",
+		centerFieldLabel: "Center",
+		nameFieldLabel: "Name",
+		conditionFieldLabel: "Condition",
+		valueFieldLabel: "Value",
+		minValueFieldLabel: "Min Value",
+		maxValueFieldLabel: "Max Value",
+		colorFieldLabel: "Color",
+		addAlertPointButton: "Add Alert Point",
+		removePointButton: "Remove",
+		emptyTitle: "No alert points yet.",
+		emptyDescription: "Add one to start mapping values onto the number line.",
+		invalidNumberError: "Enter a valid number.",
+		requiredFieldError: (label) => `${label} is required.`,
+		fieldLabelWithUnit: (label, unit) => `${label} (${unit})`,
+		invalidPreviewNote: (count) =>
+			`${count} rule${count === 1 ? "" : "s"} still need complete values before they can be drawn.`,
+		overlapPreviewNote: (count) =>
+			`${count} rule${count === 1 ? "" : "s"} overlap another rule. Adjust the values so each rule covers a unique part of the number line.`,
+		minEqualsMaxWarning:
+			'Min and Max are the same. Consider using "equals" condition instead for clarity.',
+		defaultPointName: (index) => `Alert Point ${index}`,
+		unitCelsiusLabel: "°C",
+		unitFahrenheitLabel: "°F",
+		unitKelvinLabel: "°K",
+		conditionEqualsLabel: "Equals (=)",
+		conditionRangeLabel: "Range",
+		conditionLessThanLabel: "Less than (<)",
+		conditionLessThanOrEqualLabel: "Less than or equal (<=)",
+		conditionGreaterThanLabel: "Greater than (>)",
+		conditionGreaterThanOrEqualLabel: "Greater than or equal (>=)",
+		pointDescriptionWaitingForValue: "Waiting for a value.",
+		pointDescriptionWaitingForThreshold: "Waiting for a threshold.",
+		pointDescriptionRangeMissingBounds: "Range requires both min and max.",
+		pointDescriptionEquals: (value, unit) => `Equals ${value} ${unit}`,
+		pointDescriptionRange: (min, max, unit) =>
+			`Range ${min} to ${max} ${unit}`,
+		pointDescriptionLessThan: (value, unit) => `< ${value} ${unit}`,
+		pointDescriptionLessThanOrEqual: (value, unit) => `<= ${value} ${unit}`,
+		pointDescriptionGreaterThan: (value, unit) => `> ${value} ${unit}`,
+		pointDescriptionGreaterThanOrEqual: (value, unit) => `>= ${value} ${unit}`,
+		overlapError: (labels) =>
+			`Overlaps with ${labels.join(", ")}. Each alert rule must cover a unique part of the number line.`,
+	};
 
 	function createDefaultValue(): CwAlertPointsValue {
 		return {
@@ -83,7 +115,7 @@
 			points: [
 				{
 					id: "cw-alert-point-1",
-					name: "Alert Point 1",
+					name: defaultText.defaultPointName(1),
 					color: colorPalette[0],
 					condition: "equals",
 					value: "0",
@@ -99,13 +131,34 @@
 		onchange,
 		tickStep,
 		tickCount,
+		text: rawText = {},
 		class: className = "",
 	}: Props = $props();
 
+	const text = $derived({ ...defaultText, ...rawText });
 	let displayUnit = $state<CwAlertPointUnit>(value.unit ?? STORAGE_UNIT);
 	let pointSeed = $state(Math.max(value.points.length, 1));
 	let numericDrafts = $state<Record<string, string>>({});
 	let suppressIncomingNormalization = false;
+	const unitOptions = $derived.by(() => [
+		{ label: text.unitCelsiusLabel, value: "C" },
+		{ label: text.unitFahrenheitLabel, value: "F" },
+		{ label: text.unitKelvinLabel, value: "K" },
+	]);
+	const conditionOptions = $derived.by(() => [
+		{ label: text.conditionEqualsLabel, value: "equals" },
+		{ label: text.conditionRangeLabel, value: "range" },
+		{ label: text.conditionLessThanLabel, value: "lessThan" },
+		{
+			label: text.conditionLessThanOrEqualLabel,
+			value: "lessThanOrEqual",
+		},
+		{ label: text.conditionGreaterThanLabel, value: "greaterThan" },
+		{
+			label: text.conditionGreaterThanOrEqualLabel,
+			value: "greaterThanOrEqual",
+		},
+	]);
 
 	function nextPointId() {
 		pointSeed += 1;
@@ -115,7 +168,7 @@
 	function createPoint(index: number, center = "0"): CwAlertPointRule {
 		return {
 			id: nextPointId(),
-			name: `Alert Point ${index}`,
+			name: text.defaultPointName(index),
 			color: colorPalette[(index - 1) % colorPalette.length],
 			condition: "equals",
 			value: center,
@@ -134,12 +187,16 @@
 
 	function getNumberError(raw: string, label: string): string | undefined {
 		if (!raw.trim()) {
-			return `${label} is required.`;
+			return text.requiredFieldError(label);
 		}
 
 		return parseNumericInput(raw) === null
-			? "Enter a valid number."
+			? text.invalidNumberError
 			: undefined;
+	}
+
+	function getLabelWithUnit(label: string, unit = displayUnit): string {
+		return text.fieldLabelWithUnit(label, unit);
 	}
 
 	function normalizeNumberString(value: number): string {
@@ -273,8 +330,8 @@
 				numericValue,
 				numericMin,
 				numericMax,
-				minError: getNumberError(point.min, "Min value"),
-				maxError: getNumberError(point.max, "Max value"),
+				minError: getNumberError(point.min, text.minValueFieldLabel),
+				maxError: getNumberError(point.max, text.maxValueFieldLabel),
 			};
 		}
 
@@ -283,12 +340,12 @@
 			numericValue,
 			numericMin,
 			numericMax,
-			valueError: getNumberError(point.value, "Value"),
+			valueError: getNumberError(point.value, text.valueFieldLabel),
 		};
 	}
 
 	function getPointLabel(point: CwAlertPointRule, index: number): string {
-		return point.name.trim() || `Alert Point ${index + 1}`;
+		return point.name.trim() || text.defaultPointName(index + 1);
 	}
 
 	function getRuleDomain(point: VisualPoint): RuleDomain | null {
@@ -395,7 +452,7 @@
 		return Object.fromEntries(
 			Object.entries(conflicts).map(([id, labels]) => [
 				id,
-				`Overlaps with ${labels.join(", ")}. Each alert rule must cover a unique part of the number line.`,
+				text.overlapError(labels),
 			]),
 		);
 	}
@@ -555,28 +612,47 @@
 		switch (point.condition) {
 			case "equals":
 				return point.numericValue === null
-					? "Waiting for a value."
-					: `Equals ${formatNumber(point.numericValue)} ${unit}`;
+					? text.pointDescriptionWaitingForValue
+					: text.pointDescriptionEquals(
+							formatNumber(point.numericValue),
+							unit,
+						);
 			case "range":
 				return point.numericMin === null || point.numericMax === null
-					? "Range requires both min and max."
-					: `Range ${formatNumber(point.numericMin)} to ${formatNumber(point.numericMax)} ${unit}`;
+					? text.pointDescriptionRangeMissingBounds
+					: text.pointDescriptionRange(
+							formatNumber(point.numericMin),
+							formatNumber(point.numericMax),
+							unit,
+						);
 			case "lessThan":
 				return point.numericValue === null
-					? "Waiting for a threshold."
-					: `< ${formatNumber(point.numericValue)} ${unit}`;
+					? text.pointDescriptionWaitingForThreshold
+					: text.pointDescriptionLessThan(
+							formatNumber(point.numericValue),
+							unit,
+						);
 			case "lessThanOrEqual":
 				return point.numericValue === null
-					? "Waiting for a threshold."
-					: `<= ${formatNumber(point.numericValue)} ${unit}`;
+					? text.pointDescriptionWaitingForThreshold
+					: text.pointDescriptionLessThanOrEqual(
+							formatNumber(point.numericValue),
+							unit,
+						);
 			case "greaterThan":
 				return point.numericValue === null
-					? "Waiting for a threshold."
-					: `> ${formatNumber(point.numericValue)} ${unit}`;
+					? text.pointDescriptionWaitingForThreshold
+					: text.pointDescriptionGreaterThan(
+							formatNumber(point.numericValue),
+							unit,
+						);
 			case "greaterThanOrEqual":
 				return point.numericValue === null
-					? "Waiting for a threshold."
-					: `>= ${formatNumber(point.numericValue)} ${unit}`;
+					? text.pointDescriptionWaitingForThreshold
+					: text.pointDescriptionGreaterThanOrEqual(
+							formatNumber(point.numericValue),
+							unit,
+						);
 		}
 	}
 
@@ -716,12 +792,9 @@
 	const centerDisplayValue = $derived.by(() =>
 		getDisplayInputValue(value.center, CENTER_DRAFT_KEY),
 	);
-	const centerError = $derived.by(() => {
-		if (!centerDisplayValue.trim()) return "Center is required.";
-		return parseNumericInput(centerDisplayValue) === null
-			? "Enter a valid number."
-			: undefined;
-	});
+	const centerError = $derived.by(() =>
+		getNumberError(centerDisplayValue, text.centerFieldLabel),
+	);
 
 	const centerNumber = $derived(parseNumericInput(centerDisplayValue) ?? 0);
 	const visualPoints = $derived.by(() => {
@@ -783,7 +856,9 @@
 					<div
 						class="cw-alert-points__toolbar-field cw-alert-points__toolbar-field--unit"
 					>
-						<span class="cw-alert-points__toolbar-label">Unit</span>
+						<span class="cw-alert-points__toolbar-label"
+							>{text.unitFieldLabel}</span
+						>
 						<CwDropdown
 							options={unitOptions}
 							value={displayUnit}
@@ -793,7 +868,7 @@
 					</div>
 
 					<CwInput
-						label={`Center (${displayUnit})`}
+						label={getLabelWithUnit(text.centerFieldLabel)}
 						type="numeric"
 						value={centerDisplayValue}
 						error={centerError}
@@ -814,22 +889,19 @@
 							stroke-linecap="round"
 						/>
 					</svg>
-					Add Alert Point
+					{text.addAlertPointButton}
 				</CwButton>
 			</div>
 
 			<div class="cw-alert-points__plot">
 				{#if visualPoints.length === 0}
 					<div class="cw-alert-points__empty">
-						<p>No alert points yet.</p>
-						<span
-							>Add one to start mapping values onto the number
-							line.</span
-						>
+						<p>{text.emptyTitle}</p>
+						<span>{text.emptyDescription}</span>
 					</div>
 				{:else}
 					<div class="cw-alert-points__legend">
-						{#each visualPoints as point (point.id)}
+						{#each visualPoints as point, index (point.id)}
 							{@const geometry = getGeometry(
 								point,
 								axisMin,
@@ -846,7 +918,7 @@
 									aria-hidden="true"
 								></span>
 								<div class="cw-alert-points__legend-copy">
-									<strong>{point.name}</strong>
+									<strong>{getPointLabel(point, index)}</strong>
 									<span
 										>{describePoint(
 											point,
@@ -918,10 +990,7 @@
 
 					{#if invalidPreviewCount > 0}
 						<p class="cw-alert-points__plot-note">
-							{invalidPreviewCount} rule{invalidPreviewCount === 1
-								? ""
-								: "s"} still need complete values before they can
-							be drawn.
+							{text.invalidPreviewNote(invalidPreviewCount)}
 						</p>
 					{/if}
 
@@ -929,10 +998,7 @@
 						<p
 							class="cw-alert-points__plot-note cw-alert-points__plot-note--danger"
 						>
-							{overlapPreviewCount} rule{overlapPreviewCount === 1
-								? ""
-								: "s"} overlap another rule. Adjust the values so
-							each rule covers a unique part of the number line.
+							{text.overlapPreviewNote(overlapPreviewCount)}
 						</p>
 					{/if}
 				{/if}
@@ -969,7 +1035,7 @@
 				<article class="cw-alert-points__card">
 					<div class="cw-alert-points__card-top">
 						<CwInput
-							label="Name"
+							label={text.nameFieldLabel}
 							type="text"
 							value={point.name}
 							oninput={(event) =>
@@ -981,7 +1047,7 @@
 						/>
 
 						<CwDropdown
-							label="Condition"
+							label={text.conditionFieldLabel}
 							options={conditionOptions}
 							value={point.condition}
 							error={point.overlapError}
@@ -1006,7 +1072,7 @@
 										stroke-linecap="round"
 									/>
 								</svg>
-								Remove
+								{text.removePointButton}
 							</CwButton>
 						</div>
 					</div>
@@ -1018,7 +1084,7 @@
 					>
 						{#if point.condition === "range"}
 							<CwInput
-								label={`Min Value (${displayUnit})`}
+								label={getLabelWithUnit(text.minValueFieldLabel)}
 								type="numeric"
 								value={point.min}
 								error={point.minError}
@@ -1036,7 +1102,7 @@
 									)}
 							/>
 							<CwInput
-								label={`Max Value (${displayUnit})`}
+								label={getLabelWithUnit(text.maxValueFieldLabel)}
 								type="numeric"
 								value={point.max}
 								error={point.maxError}
@@ -1055,7 +1121,7 @@
 							/>
 						{:else}
 							<CwInput
-								label={`Value (${displayUnit})`}
+								label={getLabelWithUnit(text.valueFieldLabel)}
 								type="numeric"
 								value={point.value}
 								error={point.valueError}
@@ -1076,7 +1142,7 @@
 
 						<div class="cw-alert-points__color-stack">
 							<CwInput
-								label="Color"
+								label={text.colorFieldLabel}
 								type="color"
 								value={point.color}
 								oninput={(event) =>
@@ -1088,12 +1154,10 @@
 							/>
 						</div>
 					</div>
+
 					{#if point.min && point.max && point.min === point.max}
 						<div class="w-full">
-							<p class="text-red-600">
-								Min and Max are the same. Consider using
-								"equals" condition instead for clarity.
-							</p>
+							<p class="text-red-600">{text.minEqualsMaxWarning}</p>
 						</div>
 					{/if}
 				</article>
