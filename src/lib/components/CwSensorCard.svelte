@@ -9,6 +9,7 @@
 		CwSensorCardDevice
 	} from '../types/index.js';
     import CwDuration from './CwDuration.svelte';
+    import type { Snippet } from 'svelte';
 
 	interface Props {
 		/** Location or site name displayed in the header */
@@ -27,10 +28,14 @@
 		primaryValue?: number;
 		/** Unit for primary value (single-device shorthand) */
 		primaryUnit?: string;
+		/** Primary Icon for primary value (single-device shorthand) */
+		primary_icon?: Snippet;
 		/** Secondary reading value (single-device shorthand) */
 		secondaryValue?: number;
 		/** Unit for secondary value (single-device shorthand) */
 		secondaryUnit?: string;
+		/** Secondary Icon for secondary value (single-device shorthand) */
+		secondary_icon?: Snippet;
 		/** Timestamp of the last data update (single-device shorthand) */
 		lastUpdated?: Date | string | number;
 		/** Expected update interval in minutes (single-device shorthand) */
@@ -54,8 +59,10 @@
 		deviceLabel,
 		primaryValue = 0,
 		primaryUnit = '°C',
+		primary_icon,
 		secondaryValue = 0,
 		secondaryUnit = '%',
+		secondary_icon,
 		lastUpdated,
 		expectedUpdateAfterMinutes,
 		detailRows,
@@ -278,12 +285,13 @@
 											class="cw-sensor-card__stat-icon cw-sensor-card__stat-icon--temp"
 											aria-hidden="true"
 										>
-											<svg viewBox="0 0 24 24" aria-hidden="true">
+											{@render primary_icon?.()}
+											<!-- <svg viewBox="0 0 24 24" aria-hidden="true">
 												<path
 													fill="currentColor"
 													d="M14 14.76V5a2 2 0 0 0-4 0v9.76a3.5 3.5 0 1 0 4 0ZM12 3a2 2 0 0 1 2 2v9.73l.21.12a2.5 2.5 0 1 1-4.42 0l.21-.12V5a2 2 0 0 1 2-2Zm0 9.5a1 1 0 0 0 1-1V7h-2v4.5a1 1 0 0 0 1 1Z"
 												/>
-											</svg>
+											</svg> -->
 										</span>
 										<span class="cw-sensor-card__stat-value"
 											>{dev.primaryValue.toFixed(2)}</span
@@ -299,12 +307,13 @@
 												class="cw-sensor-card__stat-icon cw-sensor-card__stat-icon--humidity"
 												aria-hidden="true"
 											>
-												<svg viewBox="0 0 24 24" aria-hidden="true">
+												<!-- <svg viewBox="0 0 24 24" aria-hidden="true">
 													<path
 														fill="currentColor"
 														d="m12 3.1 4.95 6.17a6 6 0 1 1-9.9 0L12 3.1Zm0 1.52-3.9 4.86a5 5 0 1 0 7.8 0L12 4.62Z"
 													/>
-												</svg>
+												</svg> -->
+												{@render secondary_icon?.()}
 											</span>
 											<span class="cw-sensor-card__stat-value"
 												>{dev.secondaryValue.toFixed(2)}</span

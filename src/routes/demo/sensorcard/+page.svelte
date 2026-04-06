@@ -83,7 +83,7 @@
             secondaryUnit: "%",
             status: "online",
             lastUpdated: new Date(Date.now()),
-            expectedUpdateAfterMinutes: 10,  // expires after 10 minutes without update, triggering the timer alarm callback
+            expectedUpdateAfterMinutes: 10, // expires after 10 minutes without update, triggering the timer alarm callback
         },
         {
             label: "CW-Soil-A2",
@@ -93,7 +93,7 @@
             secondaryUnit: "%",
             status: "online",
             lastUpdated: new Date(Date.now()),
-            expectedUpdateAfterMinutes: 5,  // expires after 5 minutes without update, triggering the timer alarm callback
+            expectedUpdateAfterMinutes: 5, // expires after 5 minutes without update, triggering the timer alarm callback
         },
         {
             label: "CW-Soil-A3",
@@ -174,7 +174,14 @@
             expectedUpdateAfterMinutes={10}
             onNavigate={handleNavigate}
             onTimerExpired={handleTimerExpired}
-        />
+        >
+        {#snippet primary_icon()}
+            🌡️
+        {/snippet} 
+        {#snippet secondary_icon()}
+            💧
+        {/snippet}
+    </CwSensorCard>
     </div>
     <div class="demo-controls">
         <button class="demo-btn" onclick={cycleStatus}>
@@ -215,7 +222,11 @@
             title="Warehouse B (down)"
             status="online"
             devices={allOfflineDevices}
-        />
+        >
+        {#snippet primary_icon()}
+            😔
+        {/snippet}
+    </CwSensorCard>
     </div>
 </div>
 
