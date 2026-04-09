@@ -362,6 +362,10 @@ export interface CwSensorCardDevice {
 	primaryValue: number;
 	/** Unit for primary value */
 	primaryUnit?: string;
+	/** Optional icon for the primary value, rendered left of the number. Can be plain text or a Svelte snippet. */
+	primary_icon?: string | Snippet;
+	/** Optional icon for the secondary value, rendered left of the number. Can be plain text or a Svelte snippet. */
+	secondary_icon?: string | Snippet;
 	/** Secondary reading value (e.g. humidity) */
 	secondaryValue?: number;
 	/** Unit for secondary value */

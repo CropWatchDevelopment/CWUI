@@ -8,8 +8,10 @@
 		CwSensorCardDetailRow,
 		CwSensorCardDevice
 	} from '../types/index.js';
-    import CwDuration from './CwDuration.svelte';
-    import type { Snippet } from 'svelte';
+	import CwDuration from './CwDuration.svelte';
+	import type { Snippet } from 'svelte';
+
+	type IconContent = string | Snippet;
 
 	interface Props {
 		/** Location or site name displayed in the header */
@@ -29,13 +31,13 @@
 		/** Unit for primary value (single-device shorthand) */
 		primaryUnit?: string;
 		/** Primary Icon for primary value (single-device shorthand) */
-		primary_icon?: Snippet;
+		primary_icon?: IconContent;
 		/** Secondary reading value (single-device shorthand) */
 		secondaryValue?: number;
 		/** Unit for secondary value (single-device shorthand) */
 		secondaryUnit?: string;
 		/** Secondary Icon for secondary value (single-device shorthand) */
-		secondary_icon?: Snippet;
+		secondary_icon?: IconContent;
 		/** Timestamp of the last data update (single-device shorthand) */
 		lastUpdated?: Date | string | number;
 		/** Expected update interval in minutes (single-device shorthand) */
@@ -59,10 +61,10 @@
 		deviceLabel,
 		primaryValue = 0,
 		primaryUnit = '°C',
-		primary_icon,
+		primary_icon = '',
 		secondaryValue = 0,
 		secondaryUnit = '%',
-		secondary_icon,
+		secondary_icon = '',
 		lastUpdated,
 		expectedUpdateAfterMinutes,
 		detailRows,
@@ -123,6 +125,33 @@
 		} catch { /* storage unavailable */ }
 	}
 
+	function isSnippetIcon(icon: IconContent | undefined): icon is Snippet {
+		return typeof icon === 'function';
+	}
+
+	/** Resolve the device list: explicit array, single-device props, or empty */
+	const resolvedDevices = $derived<CwSensorCardDevice[]>(
+		devices
+			? devices
+			: deviceLabel != null
+				? [
+						{
+							label: deviceLabel,
+							primaryValue,
+							primaryUnit,
+							primary_icon,
+							secondaryValue,
+							secondaryUnit,
+							secondary_icon,
+							detailRows,
+							lastUpdated,
+							expectedUpdateAfterMinutes,
+							status
+						}
+					]
+				: []
+	);
+
 	/** Aggregate status derived from individual device statuses, falls back to card-level prop */
 	const aggregateStatus = $derived.by<CwStatusDotStatus>(() => {
 		const devStatuses = resolvedDevices
@@ -167,27 +196,6 @@
 					: 'Loading'
 	);
 
-	/** Resolve the device list: explicit array, single-device props, or empty */
-	const resolvedDevices = $derived<CwSensorCardDevice[]>(
-		devices
-			? devices
-			: deviceLabel != null
-				? [
-						{
-							label: deviceLabel,
-							primaryValue,
-							primaryUnit,
-							secondaryValue,
-							secondaryUnit,
-							detailRows,
-							lastUpdated,
-							expectedUpdateAfterMinutes,
-							status
-						}
-					]
-				: []
-	);
-
 	function defaultDetailRows(dev: CwSensorCardDevice): CwSensorCardDetailRow[] {
 		if (dev.detailRows && dev.detailRows.length > 0) return dev.detailRows;
 		const rows: CwSensorCardDetailRow[] = [];
@@ -195,7 +203,7 @@
 			rows.push({
 				id: `${dev.label}-humidity`,
 				label: 'Humidity',
-				value: dev.secondaryValue.toFixed(2),
+				value: dev.secondaryValue?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
 				unit: dev.secondaryUnit ?? '%',
 				icon: 'drop'
 			});
@@ -203,7 +211,7 @@
 		rows.push({
 			id: `${dev.label}-temperature`,
 			label: 'Temperature',
-			value: dev.primaryValue.toFixed(2),
+			value: dev.primaryValue?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
 			unit: dev.primaryUnit ?? '°C',
 			icon: 'thermo'
 		});
@@ -285,20 +293,20 @@
 											class="cw-sensor-card__stat-icon cw-sensor-card__stat-icon--temp"
 											aria-hidden="true"
 										>
-											{@render primary_icon?.()}
-											<!-- <svg viewBox="0 0 24 24" aria-hidden="true">
-												<path
-													fill="currentColor"
-													d="M14 14.76V5a2 2 0 0 0-4 0v9.76a3.5 3.5 0 1 0 4 0ZM12 3a2 2 0 0 1 2 2v9.73l.21.12a2.5 2.5 0 1 1-4.42 0l.21-.12V5a2 2 0 0 1 2-2Zm0 9.5a1 1 0 0 0 1-1V7h-2v4.5a1 1 0 0 0 1 1Z"
-												/>
-											</svg> -->
+											{#if isSnippetIcon(dev.primary_icon)}
+												{@render dev.primary_icon()}
+											{:else if dev.primary_icon}
+												{dev.primary_icon}
+											{/if}
 										</span>
-										<span class="cw-sensor-card__stat-value"
-											>{dev.primaryValue.toFixed(2)}</span
-										>
-										<span class="cw-sensor-card__stat-unit"
-											>{dev.primaryUnit ?? '°C'}</span
-										>
+										<span class="cw-sensor-card__stat-reading">
+											<span class="cw-sensor-card__stat-value"
+												>{dev.primaryValue?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span
+											>
+											<span class="cw-sensor-card__stat-unit"
+												>{dev.primaryUnit ?? '°C'}</span
+											>
+										</span>
 									</div>
 									<!-- Secondary stat -->
 									{#if dev.secondaryValue != null}
@@ -307,20 +315,16 @@
 												class="cw-sensor-card__stat-icon cw-sensor-card__stat-icon--humidity"
 												aria-hidden="true"
 											>
-												<!-- <svg viewBox="0 0 24 24" aria-hidden="true">
-													<path
-														fill="currentColor"
-														d="m12 3.1 4.95 6.17a6 6 0 1 1-9.9 0L12 3.1Zm0 1.52-3.9 4.86a5 5 0 1 0 7.8 0L12 4.62Z"
-													/>
-												</svg> -->
-												{@render secondary_icon?.()}
+												{#if isSnippetIcon(dev.secondary_icon)}
+													{@render dev.secondary_icon()}
+												{:else if dev.secondary_icon}
+													{dev.secondary_icon}
+												{/if}
 											</span>
-											<span class="cw-sensor-card__stat-value"
-												>{dev.secondaryValue.toFixed(2)}</span
-											>
-											<span class="cw-sensor-card__stat-unit"
-												>{dev.secondaryUnit ?? '%'}</span
-											>
+											<span class="cw-sensor-card__stat-reading">
+												<span class="cw-sensor-card__stat-value">{dev.secondaryValue?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+												<span class="cw-sensor-card__stat-unit">{dev.secondaryUnit ?? '%'}</span>
+											</span>
 										</div>
 									{/if}
 								</div>
@@ -615,10 +619,11 @@
 
 	/* ── Content row ── */
 	.cw-sensor-card__content {
-		display: flex;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
 		align-items: center;
-		justify-content: space-between;
 		gap: var(--cw-space-2);
+		min-width: 0;
 	}
 
 	.cw-sensor-card__device {
@@ -627,48 +632,73 @@
 		gap: var(--cw-space-1);
 		flex: 1;
 		min-width: 0;
+		overflow: hidden;
 		border-right: 1px solid var(--cw-border-muted);
+		container-type: inline-size;
 	}
 
 	.cw-sensor-card__label {
 		font-size: var(--cw-text-sm);
+		font-size: clamp(var(--cw-text-xs), 7cqi, var(--cw-text-sm));
 		color: var(--cw-text-secondary);
 		font-weight: var(--cw-font-semibold);
 		letter-spacing: 0.03em;
+		line-height: 1.2;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	/* ── Stats ── */
 	.cw-sensor-card__stats {
 		display: flex;
 		align-items: center;
-		gap: var(--cw-space-4);
+		gap: var(--cw-space-3);
+		gap: clamp(var(--cw-space-2), 3cqi, var(--cw-space-4));
 		flex-wrap: nowrap;
+		min-width: 0;
 	}
 
 	.cw-sensor-card__stat {
-		display: inline-flex;
-		text-align: center;
-		width: 100%;
+		display: flex;
 		align-items: center;
 		gap: var(--cw-space-1);
 		font-weight: var(--cw-font-bold);
-		font-size: var(--cw-text-lg);
 		color: var(--cw-text-primary);
+		flex: 1 1 0;
+		min-width: 0;
+		container-type: inline-size;
 	}
 
 	.cw-sensor-card__stat-icon {
 		width: 1.625rem;
 		height: 1.625rem;
+		min-width: 1.625rem;
+		width: clamp(1rem, 24cqi, 1.625rem);
+		height: clamp(1rem, 24cqi, 1.625rem);
+		min-width: clamp(1rem, 24cqi, 1.625rem);
 		border-radius: var(--cw-radius-full);
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		background: color-mix(in srgb, var(--cw-text-muted) 15%, transparent);
+		overflow: hidden;
+	}
+
+	.cw-sensor-card__stat-reading {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 0.1rem;
+		min-width: 0;
+		flex: 1 1 auto;
+		white-space: nowrap;
 	}
 
 	.cw-sensor-card__stat-icon svg {
 		width: 1rem;
 		height: 1rem;
+		width: clamp(0.75rem, 15cqi, 1rem);
+		height: clamp(0.75rem, 15cqi, 1rem);
 	}
 
 	.cw-sensor-card__stat-icon--temp {
@@ -681,13 +711,22 @@
 
 	.cw-sensor-card__stat-value {
 		line-height: 1;
+		min-width: 0;
+		font-size: var(--cw-text-lg);
+		font-size: clamp(var(--cw-text-xs), 21cqi, var(--cw-text-lg));
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: clip;
 	}
 
 	.cw-sensor-card__stat-unit {
 		font-size: var(--cw-text-xs);
+		font-size: clamp(0.625rem, 10cqi, var(--cw-text-xs));
 		color: var(--cw-text-muted);
-		margin-left: 0.1rem;
+		line-height: 1;
 		font-weight: var(--cw-font-medium);
+		white-space: nowrap;
 	}
 
 	/* ── Collapse toggle ── */
