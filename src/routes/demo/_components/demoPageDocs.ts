@@ -2449,6 +2449,112 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			}
 		]
 	},
+	'/demo/calendar-scroll': {
+		summary:
+			'CwCalendarScroll renders a vertically scrollable list of day rows. Each row keeps the date header, a large content region, and an optional actions rail while staying inside its own bounded scroll viewport.',
+		steps: [
+			{
+				title: 'Pick the visibility mode first',
+				description:
+					'Set `showAllDates={false}` when sparse data should collapse to only populated dates, or turn it on when blank days must remain visible inside a contiguous range.'
+			},
+			{
+				title: 'Use local date keys',
+				description:
+					'Prefer `YYYY-MM-DD` keys in the `data` object so the component can normalize rows without timezone drift.'
+			},
+			{
+				title: 'Keep rendering in snippets',
+				description:
+					'Pass the data map and let the page own the `content` and `actions` snippets. That keeps the list shell reusable while each screen decides what belongs in a row.'
+			}
+		],
+		apiRows: [
+			{
+				name: 'data',
+				type: 'Record<string, T | null | undefined>',
+				description: 'Date-keyed object that supplies the row payload for each day.'
+			},
+			{
+				name: 'showAllDates',
+				type: 'boolean',
+				description: 'Shows all dates in the computed range when true. Otherwise only dates whose values count as present are shown.',
+				defaultValue: 'false'
+			},
+			{
+				name: 'startDate',
+				type: 'Date | string | number',
+				description: 'Inclusive first day used when `showAllDates` is enabled.'
+			},
+			{
+				name: 'endDate',
+				type: 'Date | string | number',
+				description: 'Inclusive last day used when `showAllDates` is enabled.'
+			},
+			{
+				name: 'maxHeight',
+				type: 'string',
+				description: 'CSS size for the internal scroll viewport height cap.',
+				defaultValue: '`min(70dvh, 40rem)`'
+			},
+			{
+				name: 'hasData',
+				type: '(value: T | null | undefined, key: string) => boolean',
+				description: 'Optional custom presence check for deciding whether a value should count as populated.'
+			},
+			{
+				name: 'content',
+				type: 'Snippet<[CwCalendarScrollEntry<T>]>',
+				description: 'Main body content for each row.'
+			},
+			{
+				name: 'actions',
+				type: 'Snippet<[CwCalendarScrollEntry<T>]>',
+				description: 'Optional actions column or action row for each day.'
+			}
+		],
+		examples: [
+			{
+				title: 'Contiguous date range with empty days',
+				description: 'Use this when gaps in the schedule still need to remain visible.',
+				code: `<CwCalendarScroll
+\tdata={plans}
+\tstartDate={new Date(2026, 2, 1)}
+\tendDate={new Date(2026, 2, 9)}
+\tshowAllDates={true}
+>
+\t{#snippet content(entry)}
+\t\t{#if entry.data}
+\t\t\t<h4>{entry.data.title}</h4>
+\t\t\t<p>{entry.data.note}</p>
+\t\t{:else}
+\t\t\t<p>No work scheduled.</p>
+\t\t{/if}
+\t{/snippet}
+
+\t{#snippet actions(entry)}
+\t\t{#if entry.hasData}
+\t\t\t<CwButton size="sm" variant="secondary">Open Day</CwButton>
+\t\t{/if}
+\t{/snippet}
+</CwCalendarScroll>`
+			},
+			{
+				title: 'Only dates with data',
+				description: 'Use this mode for compact activity logs or historical day summaries.',
+				code: `<CwCalendarScroll
+\tdata={plans}
+\tshowAllDates={false}
+\tmaxHeight="28rem"
+>
+\t{#snippet content(entry)}
+\t\t<h4>{entry.data?.title}</h4>
+\t\t<p>{entry.data?.note}</p>
+\t{/snippet}
+</CwCalendarScroll>`
+			}
+		]
+	},
 	'/demo/datepicker': {
 		summary:
 			'CwDateTimeRangePicker covers single dates, ranges, month and year picking, and optional time entry. The returned value shape changes with `mode`, so decide that up front.',

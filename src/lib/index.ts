@@ -33,6 +33,7 @@ export { default as CwSeparator } from './components/CwSeparator.svelte';
 export { default as CwSideNav } from './components/CwSideNav.svelte';
 export { default as CwTooltip } from './components/CwTooltip.svelte';
 export { default as CwCalendar } from './components/CwCalendar.svelte';
+export { default as CwCalendarScroll } from './components/CwCalendarScroll.svelte';
 export { default as CwCopy } from './components/CwCopy.svelte';
 export { default as CwExpandPanel } from './components/CwExpandPanel.svelte';
 export { default as CwHeatmap } from './components/CwHeatmap.svelte';
@@ -93,6 +94,8 @@ export type {
 	CwRangeDateValue,
 	CwDateValue,
 	CwTimeValue,
+	CwCalendarScrollDataMap,
+	CwCalendarScrollEntry,
 	CwDrawerItem,
 	CwListBoxItem,
 	CwProfileMenuItem,

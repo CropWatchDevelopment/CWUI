@@ -310,6 +310,14 @@
 			group: "Components",
 		},
 		{
+			id: "calendar-scroll",
+			label: "Calendar Scroll",
+			icon: icons.calendar,
+			href: "/demo/calendar-scroll",
+			group: "Components",
+			trailing: "new",
+		},
+		{
 			id: "listbox",
 			label: "List Box",
 			icon: icons.listbox,

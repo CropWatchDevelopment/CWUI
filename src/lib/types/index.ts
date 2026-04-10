@@ -210,6 +210,29 @@ export interface CwTimeValue {
 	minutes: number;
 }
 
+/* ── Calendar Scroll types ───────────────────────────── */
+
+export type CwCalendarScrollDataMap<T = unknown> = Record<string, T | null | undefined>;
+
+export interface CwCalendarScrollEntry<T = unknown> {
+	/** Normalized local date key in YYYY-MM-DD format. */
+	key: string;
+	/** Date represented by the row, normalized to the local start of day. */
+	date: Date;
+	/** Value from the passed-in data map for this date, if one exists. */
+	data: T | null;
+	/** Whether this date counts as having data after the presence check runs. */
+	hasData: boolean;
+	/** True when the row represents the current local date. */
+	isToday: boolean;
+	/** True when the row date is before today. */
+	isPast: boolean;
+	/** True when the row date is after today. */
+	isFuture: boolean;
+	/** Zero-based row index after filtering and sorting. */
+	index: number;
+}
+
 /* ── ListBox types ─────────────────────────────────────── */
 
 export interface CwListBoxItem<T = string> {
