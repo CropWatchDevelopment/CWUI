@@ -1686,6 +1686,12 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			},
 			{ name: 'label', type: 'string', description: 'Primary switch text.' },
 			{ name: 'description', type: 'string', description: 'Secondary explanatory text.' },
+			{
+				name: 'labelPosition',
+				type: "'top' | 'bottom' | 'left' | 'right'",
+				description: 'Places the label block on a specific side of the switch control.',
+				defaultValue: "'right'"
+			},
 			{ name: 'id', type: 'string', description: 'Optional explicit input id.' },
 			{
 				name: 'name',
@@ -1734,6 +1740,14 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \toninput={(checked) => console.log('input', checked)}
 \tonchange={(checked) => savePreference('smsAlerts', checked)}
 />`
+			},
+			{
+				title: 'Move the label around the control',
+				description: 'Use `labelPosition` when the surrounding layout needs the text above, below, or to the left of the switch.',
+				code: `<CwSwitch label="Top label" labelPosition="top" />
+<CwSwitch label="Bottom label" labelPosition="bottom" />
+<CwSwitch label="Left label" labelPosition="left" />
+<CwSwitch label="Right label" labelPosition="right" />`
 			}
 		]
 	},
@@ -2459,21 +2473,21 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 					'Set `showAllDates={false}` when sparse data should collapse to only populated dates, or turn it on when blank days must remain visible inside a contiguous range.'
 			},
 			{
-				title: 'Use local date keys',
+				title: 'Give each item a local date',
 				description:
-					'Prefer `YYYY-MM-DD` keys in the `data` object so the component can normalize rows without timezone drift.'
+					'Prefer `YYYY-MM-DD` values in each item’s `date` field so the component can normalize rows without timezone drift.'
 			},
 			{
 				title: 'Keep rendering in snippets',
 				description:
-					'Pass the data map and let the page own the `content` and `actions` snippets. That keeps the list shell reusable while each screen decides what belongs in a row.'
+					'Pass an item array and let the page own the `content` and `actions` snippets. That keeps the list shell reusable while each screen decides what belongs in a row.'
 			}
 		],
 		apiRows: [
 			{
-				name: 'data',
-				type: 'Record<string, T | null | undefined>',
-				description: 'Date-keyed object that supplies the row payload for each day.'
+				name: 'items',
+				type: 'T[]',
+				description: 'Array of dated items that supply the row payload for each day.'
 			},
 			{
 				name: 'showAllDates',
@@ -2499,8 +2513,8 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			},
 			{
 				name: 'hasData',
-				type: '(value: T | null | undefined, key: string) => boolean',
-				description: 'Optional custom presence check for deciding whether a value should count as populated.'
+				type: '(item: T, key: string) => boolean',
+				description: 'Optional custom presence check for deciding whether an item should count as populated.'
 			},
 			{
 				name: 'content',
@@ -2518,7 +2532,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				title: 'Contiguous date range with empty days',
 				description: 'Use this when gaps in the schedule still need to remain visible.',
 				code: `<CwCalendarScroll
-\tdata={plans}
+\titems={plans}
 \tstartDate={new Date(2026, 2, 1)}
 \tendDate={new Date(2026, 2, 9)}
 \tshowAllDates={true}
@@ -2543,7 +2557,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				title: 'Only dates with data',
 				description: 'Use this mode for compact activity logs or historical day summaries.',
 				code: `<CwCalendarScroll
-\tdata={plans}
+\titems={plans}
 \tshowAllDates={false}
 \tmaxHeight="28rem"
 >

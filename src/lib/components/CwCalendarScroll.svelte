@@ -1,15 +1,15 @@
-<script lang="ts" generics="T = unknown">
+<script lang="ts" generics="T extends CwCalendarScrollItem = CwCalendarScrollItem">
 	import type { Snippet } from 'svelte';
 	import type {
-		CwCalendarScrollDataMap,
+		CwCalendarScrollItem,
 		CwCalendarScrollEntry,
 		CwDateTimeInput
 	} from '../types/index.js';
 	import { buildCalendarScrollEntries } from './cwCalendarScrollUtils.js';
 
 	interface Props {
-		/** Date-keyed object that supplies row data. Keys should be local dates like YYYY-MM-DD when possible. */
-		data?: CwCalendarScrollDataMap<T>;
+		/** Dated items rendered as rows. Item dates should prefer local values like YYYY-MM-DD when possible. */
+		items?: T[];
 		/** When true, shows every date in the computed range. When false, only rows with data are shown. */
 		showAllDates?: boolean;
 		/** Inclusive first date shown when `showAllDates` is true. */
@@ -18,8 +18,8 @@
 		endDate?: CwDateTimeInput;
 		/** Max height of the internal scroll area. */
 		maxHeight?: string;
-		/** Custom presence check for deciding whether a data value counts as populated. */
-		hasData?: (value: T | null | undefined, key: string) => boolean;
+		/** Custom presence check for deciding whether an item counts as populated. */
+		hasData?: (item: T, key: string) => boolean;
 		/** Main content region for each date row. */
 		content?: Snippet<[CwCalendarScrollEntry<T>]>;
 		/** Optional actions region for each date row. */
@@ -32,7 +32,7 @@
 	}
 
 	let {
-		data = {},
+		items = [],
 		showAllDates = false,
 		startDate,
 		endDate,
@@ -47,7 +47,7 @@
 
 	const rows = $derived.by(() =>
 		buildCalendarScrollEntries({
-			data,
+			items,
 			showAllDates,
 			startDate,
 			endDate,
@@ -134,7 +134,7 @@
 			<div class="cw-calendar-scroll__empty">
 				<p class="cw-calendar-scroll__empty-title">No dated rows to show.</p>
 				<p class="cw-calendar-scroll__empty-copy">
-					Add date-keyed data or enable `showAllDates` with a range.
+					Add dated items or enable `showAllDates` with a range.
 				</p>
 			</div>
 		{/if}

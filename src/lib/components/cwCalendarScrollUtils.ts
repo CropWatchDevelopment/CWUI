@@ -1,5 +1,5 @@
 import type {
-	CwCalendarScrollDataMap,
+	CwCalendarScrollItem,
 	CwCalendarScrollEntry,
 	CwDateTimeInput
 } from '../types/index.js';
@@ -8,17 +8,17 @@ const LOCAL_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const INTEGER_PATTERN = /^-?\d+$/;
 const MS_PER_DAY = 86_400_000;
 
-type PresenceCheck<T> = (value: T | null | undefined, key: string) => boolean;
+type PresenceCheck<T extends CwCalendarScrollItem> = (item: T, key: string) => boolean;
 
-interface BuildCalendarScrollEntriesOptions<T> {
-	data?: CwCalendarScrollDataMap<T>;
+interface BuildCalendarScrollEntriesOptions<T extends CwCalendarScrollItem> {
+	items?: T[];
 	showAllDates: boolean;
 	startDate?: CwDateTimeInput;
 	endDate?: CwDateTimeInput;
 	hasData?: PresenceCheck<T>;
 }
 
-interface ParsedCalendarScrollRow<T> {
+interface ParsedCalendarScrollRow<T extends CwCalendarScrollItem> {
 	key: string;
 	date: Date;
 	data: T | null;
@@ -73,11 +73,8 @@ export function toCalendarDateKey(date: Date): string {
 	].join('-');
 }
 
-function defaultHasData<T>(value: T | null | undefined): boolean {
-	if (value == null) return false;
-	if (Array.isArray(value)) return value.length > 0;
-	if (typeof value === 'string') return value.trim().length > 0;
-	return true;
+function defaultHasData<T extends CwCalendarScrollItem>(item: T): boolean {
+	return item != null;
 }
 
 function compareDates(a: Date, b: Date): number {
@@ -87,7 +84,7 @@ function compareDates(a: Date, b: Date): number {
 function normalizeRange(
 	startDate: CwDateTimeInput | undefined,
 	endDate: CwDateTimeInput | undefined,
-	parsedRows: ParsedCalendarScrollRow<unknown>[]
+	parsedRows: ParsedCalendarScrollRow<CwCalendarScrollItem>[]
 ): { start: Date; end: Date } {
 	const sortedDataDates = parsedRows
 		.map((row) => row.date)
@@ -109,8 +106,8 @@ function normalizeRange(
 	return { start, end };
 }
 
-export function buildCalendarScrollEntries<T>({
-	data = {},
+export function buildCalendarScrollEntries<T extends CwCalendarScrollItem>({
+	items = [],
 	showAllDates,
 	startDate,
 	endDate,
@@ -119,16 +116,16 @@ export function buildCalendarScrollEntries<T>({
 	const presenceCheck = hasData ?? defaultHasData<T>;
 	const parsedByKey = new Map<string, ParsedCalendarScrollRow<T>>();
 
-	for (const [rawKey, rawValue] of Object.entries(data)) {
-		const parsedDate = startOfLocalDay(rawKey);
+	for (const item of items) {
+		const parsedDate = startOfLocalDay(item.date);
 		if (!parsedDate) continue;
 
 		const key = toCalendarDateKey(parsedDate);
 		parsedByKey.set(key, {
 			key,
 			date: parsedDate,
-			data: rawValue ?? null,
-			hasData: presenceCheck(rawValue, key)
+			data: item,
+			hasData: presenceCheck(item, key)
 		});
 	}
 

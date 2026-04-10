@@ -22,6 +22,9 @@ export type CwRadioValue = string | number | boolean;
 /** Badge anchor position */
 export type CwBadgePosition = 'top_left' | 'top_right' | 'bottom_left' | 'bottom_right';
 
+/** Switch label placement relative to the control */
+export type CwSwitchLabelPosition = 'top' | 'bottom' | 'left' | 'right';
+
 /** Status dot semantic state */
 export type CwStatusDotStatus = 'online' | 'offline' | 'loading' | 'warning';
 
@@ -212,14 +215,17 @@ export interface CwTimeValue {
 
 /* ── Calendar Scroll types ───────────────────────────── */
 
-export type CwCalendarScrollDataMap<T = unknown> = Record<string, T | null | undefined>;
+export interface CwCalendarScrollItem {
+	/** Date represented by this row. Prefer local date strings like YYYY-MM-DD when possible. */
+	date: CwDateTimeInput;
+}
 
-export interface CwCalendarScrollEntry<T = unknown> {
+export interface CwCalendarScrollEntry<T extends CwCalendarScrollItem = CwCalendarScrollItem> {
 	/** Normalized local date key in YYYY-MM-DD format. */
 	key: string;
 	/** Date represented by the row, normalized to the local start of day. */
 	date: Date;
-	/** Value from the passed-in data map for this date, if one exists. */
+	/** Item from the passed-in array for this date, if one exists. */
 	data: T | null;
 	/** Whether this date counts as having data after the presence check runs. */
 	hasData: boolean;

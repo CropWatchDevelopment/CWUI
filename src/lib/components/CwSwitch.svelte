@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { HTMLInputAttributes } from 'svelte/elements';
+	import type { CwSwitchLabelPosition } from '../types/index.js';
 
 	interface Props extends Omit<HTMLInputAttributes, 'type' | 'onchange' | 'oninput'> {
 		checked?: boolean;
@@ -7,6 +8,7 @@
 		name?: HTMLInputAttributes['name'];
 		label?: string;
 		description?: string;
+		labelPosition?: CwSwitchLabelPosition;
 		onchange?: (checked: boolean, event: Event) => void;
 		oninput?: (checked: boolean, event: Event) => void;
 		class?: string;
@@ -18,6 +20,7 @@
 		name,
 		label,
 		description,
+		labelPosition = 'right' as CwSwitchLabelPosition,
 		disabled = false,
 		onchange,
 		oninput,
@@ -27,6 +30,19 @@
 
 	const uid = $props.id();
 	const inputId = $derived(id ?? `${uid}-input`);
+	const resolvedLabelPosition = $derived(normalizeLabelPosition(labelPosition));
+
+	function normalizeLabelPosition(value: CwSwitchLabelPosition | undefined): CwSwitchLabelPosition {
+		switch (value) {
+			case 'top':
+			case 'bottom':
+			case 'left':
+			case 'right':
+				return value;
+			default:
+				return 'right';
+		}
+	}
 
 	function handleInput(event: Event) {
 		const target = event.currentTarget as HTMLInputElement;
@@ -41,7 +57,14 @@
 	}
 </script>
 
-<div class="cw-switch {className}" class:cw-switch--disabled={disabled}>
+<div
+	class="cw-switch {className}"
+	class:cw-switch--disabled={disabled}
+	class:cw-switch--label-top={resolvedLabelPosition === 'top'}
+	class:cw-switch--label-bottom={resolvedLabelPosition === 'bottom'}
+	class:cw-switch--label-left={resolvedLabelPosition === 'left'}
+	class:cw-switch--label-right={resolvedLabelPosition === 'right'}
+>
 	<label class="cw-switch__label" for={inputId}>
 		<input
 			id={inputId}
@@ -84,6 +107,23 @@
 		gap: var(--cw-space-3);
 		cursor: pointer;
 		user-select: none;
+	}
+
+	.cw-switch--label-left .cw-switch__label {
+		flex-direction: row-reverse;
+	}
+
+	.cw-switch--label-top .cw-switch__label,
+	.cw-switch--label-bottom .cw-switch__label {
+		align-items: flex-start;
+	}
+
+	.cw-switch--label-top .cw-switch__label {
+		flex-direction: column-reverse;
+	}
+
+	.cw-switch--label-bottom .cw-switch__label {
+		flex-direction: column;
 	}
 
 	.cw-switch__input {

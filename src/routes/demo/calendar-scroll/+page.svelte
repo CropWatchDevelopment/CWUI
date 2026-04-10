@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { CwButton, CwCalendarScroll, CwChip, CwSwitch } from '$lib/index.js';
-	import type { CwCalendarScrollDataMap } from '$lib/index.js';
+	import type { CwCalendarScrollItem } from '$lib/index.js';
 	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	interface DemoTask {
@@ -9,7 +9,7 @@
 		done?: boolean;
 	}
 
-	interface DemoDayData {
+	interface DemoDayData extends CwCalendarScrollItem {
 		title: string;
 		window: string;
 		note: string;
@@ -20,8 +20,9 @@
 	const startDate = new Date(2026, 2, 1);
 	const endDate = new Date(2026, 2, 9);
 
-	const calendarData: CwCalendarScrollDataMap<DemoDayData> = {
-		'2026-03-01': {
+	const calendarItems: DemoDayData[] = [
+		{
+			date: '2026-03-01',
 			title: 'Propagation zone inspection',
 			window: '06:00 - 08:30',
 			note: 'Verify mist cadence, record tray temperatures, and confirm the overnight alarm cleared.',
@@ -31,7 +32,8 @@
 				{ id: 'trays', label: 'Spot-check tray temperatures' }
 			]
 		},
-		'2026-03-02': {
+		{
+			date: '2026-03-02',
 			title: 'Irrigation review',
 			window: '09:00 - 11:00',
 			note: 'Compare yesterday’s EC swing against the fertigation recipe before the afternoon feed.',
@@ -42,7 +44,8 @@
 				{ id: 'lineflush', label: 'Flush line 3' }
 			]
 		},
-		'2026-03-04': {
+		{
+			date: '2026-03-04',
 			title: 'Labor planning',
 			window: '13:00 - 15:00',
 			note: 'Finalize tomorrow’s canopy work and prep the west house handoff.',
@@ -52,7 +55,8 @@
 				{ id: 'handoff', label: 'Post west-house notes' }
 			]
 		},
-		'2026-03-07': {
+		{
+			date: '2026-03-07',
 			title: 'Nutrient tank reset',
 			window: '07:30 - 09:00',
 			note: 'Drain tank B, verify fresh stock, then sign off the mixing checklist.',
@@ -62,7 +66,8 @@
 				{ id: 'stock', label: 'Verify stock concentrate', done: true }
 			]
 		},
-		'2026-03-09': {
+		{
+			date: '2026-03-09',
 			title: 'Harvest prep',
 			window: '10:30 - 12:00',
 			note: 'Stage carts, re-check cooler capacity, and confirm the outbound pickup window.',
@@ -72,7 +77,7 @@
 				{ id: 'cooler', label: 'Confirm cooler space' }
 			]
 		}
-	};
+	];
 
 	let showAllDates = $state(true);
 
@@ -89,21 +94,21 @@
 
 	const basicExample = `<script lang="ts">
 \timport { CwCalendarScroll } from '@cropwatchdevelopment/cwui';
-\timport type { CwCalendarScrollDataMap } from '@cropwatchdevelopment/cwui';
+\timport type { CwCalendarScrollItem } from '@cropwatchdevelopment/cwui';
 
-\tinterface DayPlan {
+\tinterface DayPlan extends CwCalendarScrollItem {
 \t\ttitle: string;
 \t\tnote: string;
 \t}
 
-\tconst plans: CwCalendarScrollDataMap<DayPlan> = {
-\t\t'2026-03-01': { title: 'Propagation zone inspection', note: 'Check tray temperatures.' },
-\t\t'2026-03-04': { title: 'Labor planning', note: 'Finalize tomorrow\\'s canopy work.' }
-\t};
+\tconst plans: DayPlan[] = [
+\t\t{ date: '2026-03-01', title: 'Propagation zone inspection', note: 'Check tray temperatures.' },
+\t\t{ date: '2026-03-04', title: 'Labor planning', note: 'Finalize tomorrow\\'s canopy work.' }
+\t];
 <\/script>
 
 <CwCalendarScroll
-\tdata={plans}
+\titems={plans}
 \tstartDate={new Date(2026, 2, 1)}
 \tendDate={new Date(2026, 2, 9)}
 \tshowAllDates={true}
@@ -125,7 +130,7 @@
 </CwCalendarScroll>`;
 
 	const filteredExample = `<CwCalendarScroll
-\tdata={plans}
+\titems={plans}
 \tshowAllDates={false}
 \tmaxHeight="28rem"
 >
@@ -159,7 +164,7 @@
 	<div class="demo-feature-grid">
 		<div class="demo-feature-main">
 			<CwCalendarScroll
-				data={calendarData}
+				items={calendarItems}
 				{startDate}
 				{endDate}
 				{showAllDates}
@@ -218,15 +223,15 @@
 				<strong>{showAllDates ? 'All dates in range' : 'Only dates with data'}</strong>
 				<p>
 					When enabled, rows from {startDate.toLocaleDateString()} through
-					{endDate.toLocaleDateString()} stay visible even if the data map has no entry.
+					{endDate.toLocaleDateString()} stay visible even if the item array has no row for a date.
 				</p>
 			</div>
 
 			<div class="demo-summary-card">
 				<span class="demo-summary-card__eyebrow">Data model</span>
-				<strong>Date-keyed object</strong>
+				<strong>Array of dated items</strong>
 				<p>
-					Keys should be local dates like <code>YYYY-MM-DD</code>. Values stay strongly typed inside the snippet.
+					Each item carries its own <code>date</code>, preferably as a local string like <code>YYYY-MM-DD</code>.
 				</p>
 			</div>
 
