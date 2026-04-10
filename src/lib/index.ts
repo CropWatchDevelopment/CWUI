@@ -96,6 +96,7 @@ export type {
 	CwDateValue,
 	CwTimeValue,
 	CwCalendarScrollItem,
+	CwCalendarScrollMeta,
 	CwCalendarScrollEntry,
 	CwDrawerItem,
 	CwListBoxItem,

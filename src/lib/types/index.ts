@@ -220,13 +220,11 @@ export interface CwCalendarScrollItem {
 	date: CwDateTimeInput;
 }
 
-export interface CwCalendarScrollEntry<T extends CwCalendarScrollItem = CwCalendarScrollItem> {
+export interface CwCalendarScrollMeta {
 	/** Normalized local date key in YYYY-MM-DD format. */
 	key: string;
 	/** Date represented by the row, normalized to the local start of day. */
 	date: Date;
-	/** Item from the passed-in array for this date, if one exists. */
-	data: T | null;
 	/** Whether this date counts as having data after the presence check runs. */
 	hasData: boolean;
 	/** True when the row represents the current local date. */
@@ -237,6 +235,12 @@ export interface CwCalendarScrollEntry<T extends CwCalendarScrollItem = CwCalend
 	isFuture: boolean;
 	/** Zero-based row index after filtering and sorting. */
 	index: number;
+}
+
+export interface CwCalendarScrollEntry<T extends CwCalendarScrollItem = CwCalendarScrollItem>
+	extends CwCalendarScrollMeta {
+	/** Item from the passed-in array for this date, if one exists. */
+	item: T | null;
 }
 
 /* ── ListBox types ─────────────────────────────────────── */

@@ -21,7 +21,7 @@ interface BuildCalendarScrollEntriesOptions<T extends CwCalendarScrollItem> {
 interface ParsedCalendarScrollRow<T extends CwCalendarScrollItem> {
 	key: string;
 	date: Date;
-	data: T | null;
+	item: T | null;
 	hasData: boolean;
 }
 
@@ -124,7 +124,7 @@ export function buildCalendarScrollEntries<T extends CwCalendarScrollItem>({
 		parsedByKey.set(key, {
 			key,
 			date: parsedDate,
-			data: item,
+			item,
 			hasData: presenceCheck(item, key)
 		});
 	}
@@ -144,12 +144,12 @@ export function buildCalendarScrollEntries<T extends CwCalendarScrollItem>({
 			const existing = parsedByKey.get(key);
 
 			return (
-				existing ?? {
-					key,
-					date,
-					data: null,
-					hasData: false
-				}
+					existing ?? {
+						key,
+						date,
+						item: null,
+						hasData: false
+					}
 			);
 		});
 	} else {

@@ -2518,13 +2518,13 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			},
 			{
 				name: 'content',
-				type: 'Snippet<[CwCalendarScrollEntry<T>]>',
-				description: 'Main body content for each row.'
+				type: 'Snippet<[T | null, CwCalendarScrollMeta]>',
+				description: 'Main body content for each row. The first argument is the original item.'
 			},
 			{
 				name: 'actions',
-				type: 'Snippet<[CwCalendarScrollEntry<T>]>',
-				description: 'Optional actions column or action row for each day.'
+				type: 'Snippet<[T | null, CwCalendarScrollMeta]>',
+				description: 'Optional actions column or action row for each day. The first argument is the original item.'
 			}
 		],
 		examples: [
@@ -2537,17 +2537,17 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \tendDate={new Date(2026, 2, 9)}
 \tshowAllDates={true}
 >
-\t{#snippet content(entry)}
-\t\t{#if entry.data}
-\t\t\t<h4>{entry.data.title}</h4>
-\t\t\t<p>{entry.data.note}</p>
+\t{#snippet content(item)}
+\t\t{#if item}
+\t\t\t<h4>{item.title}</h4>
+\t\t\t<p>{item.note}</p>
 \t\t{:else}
 \t\t\t<p>No work scheduled.</p>
 \t\t{/if}
 \t{/snippet}
 
-\t{#snippet actions(entry)}
-\t\t{#if entry.hasData}
+\t{#snippet actions(item)}
+\t\t{#if item}
 \t\t\t<CwButton size="sm" variant="secondary">Open Day</CwButton>
 \t\t{/if}
 \t{/snippet}
@@ -2561,9 +2561,9 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \tshowAllDates={false}
 \tmaxHeight="28rem"
 >
-\t{#snippet content(entry)}
-\t\t<h4>{entry.data?.title}</h4>
-\t\t<p>{entry.data?.note}</p>
+\t{#snippet content(item)}
+\t\t<h4>{item?.title}</h4>
+\t\t<p>{item?.note}</p>
 \t{/snippet}
 </CwCalendarScroll>`
 			}

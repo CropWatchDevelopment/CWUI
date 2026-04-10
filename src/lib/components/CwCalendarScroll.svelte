@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import type {
 		CwCalendarScrollItem,
-		CwCalendarScrollEntry,
+		CwCalendarScrollMeta,
 		CwDateTimeInput
 	} from '../types/index.js';
 	import { buildCalendarScrollEntries } from './cwCalendarScrollUtils.js';
@@ -21,9 +21,9 @@
 		/** Custom presence check for deciding whether an item counts as populated. */
 		hasData?: (item: T, key: string) => boolean;
 		/** Main content region for each date row. */
-		content?: Snippet<[CwCalendarScrollEntry<T>]>;
+		content?: Snippet<[T | null, CwCalendarScrollMeta]>;
 		/** Optional actions region for each date row. */
-		actions?: Snippet<[CwCalendarScrollEntry<T>]>;
+		actions?: Snippet<[T | null, CwCalendarScrollMeta]>;
 		/** Optional empty-state content rendered when no rows are visible. */
 		emptyState?: Snippet;
 		/** Accessible label for the scrollable list. */
@@ -64,38 +64,38 @@
 		year: 'numeric'
 	});
 
-	function formatDateMeta(entry: CwCalendarScrollEntry<T>): string {
-		const parts = [weekdayFormatter.format(entry.date), fullDateFormatter.format(entry.date)];
-		if (entry.isToday) parts.push('Today');
+	function formatDateMeta(meta: CwCalendarScrollMeta): string {
+		const parts = [weekdayFormatter.format(meta.date), fullDateFormatter.format(meta.date)];
+		if (meta.isToday) parts.push('Today');
 		return parts.join(' • ');
 	}
 
-	function getRowStatus(entry: CwCalendarScrollEntry<T>): string {
-		return entry.hasData ? 'Data available' : 'No data';
+	function getRowStatus(meta: CwCalendarScrollMeta): string {
+		return meta.hasData ? 'Data available' : 'No data';
 	}
 </script>
 
 <div class="cw-calendar-scroll {className}" style={viewportStyle}>
 	<div class="cw-calendar-scroll__viewport" role="list" aria-label={ariaLabel}>
 		{#if rows.length > 0}
-			{#each rows as entry (entry.key)}
+			{#each rows as row (row.key)}
 				<article
 					class="cw-calendar-scroll__item"
-					class:cw-calendar-scroll__item--today={entry.isToday}
-					class:cw-calendar-scroll__item--has-data={entry.hasData}
+					class:cw-calendar-scroll__item--today={row.isToday}
+					class:cw-calendar-scroll__item--has-data={row.hasData}
 					role="listitem"
-					aria-label={`${entry.key}, ${getRowStatus(entry)}`}
+					aria-label={`${row.key}, ${getRowStatus(row)}`}
 				>
 					<header class="cw-calendar-scroll__header">
 						<div class="cw-calendar-scroll__date-block">
-							<span class="cw-calendar-scroll__date-key">{entry.key}</span>
-							<span class="cw-calendar-scroll__date-meta">{formatDateMeta(entry)}</span>
+							<span class="cw-calendar-scroll__date-key">{row.key}</span>
+							<span class="cw-calendar-scroll__date-meta">{formatDateMeta(row)}</span>
 						</div>
 						<span
 							class="cw-calendar-scroll__status"
-							class:cw-calendar-scroll__status--empty={!entry.hasData}
+							class:cw-calendar-scroll__status--empty={!row.hasData}
 						>
-							{getRowStatus(entry)}
+							{getRowStatus(row)}
 						</span>
 					</header>
 
@@ -105,13 +105,13 @@
 					>
 						<div
 							class="cw-calendar-scroll__content"
-							class:cw-calendar-scroll__content--empty={!entry.hasData}
+							class:cw-calendar-scroll__content--empty={!row.hasData}
 						>
 							{#if content}
-								{@render content(entry)}
-							{:else if entry.hasData}
+								{@render content(row.item, row)}
+							{:else if row.hasData}
 								<p class="cw-calendar-scroll__placeholder">
-									Data exists for this date. Provide a `content` snippet to render it.
+									An item exists for this date. Provide a `content` snippet to render it.
 								</p>
 							{:else}
 								<p class="cw-calendar-scroll__placeholder">No data for this date.</p>
@@ -119,8 +119,8 @@
 						</div>
 
 						{#if actions}
-							<aside class="cw-calendar-scroll__actions" aria-label={`Actions for ${entry.key}`}>
-								{@render actions(entry)}
+							<aside class="cw-calendar-scroll__actions" aria-label={`Actions for ${row.key}`}>
+								{@render actions(row.item, row)}
 							</aside>
 						{/if}
 					</div>

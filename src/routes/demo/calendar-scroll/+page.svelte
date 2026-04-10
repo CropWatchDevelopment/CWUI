@@ -113,17 +113,17 @@
 \tendDate={new Date(2026, 2, 9)}
 \tshowAllDates={true}
 >
-\t{#snippet content(entry)}
-\t\t{#if entry.data}
-\t\t\t<h4>{entry.data.title}</h4>
-\t\t\t<p>{entry.data.note}</p>
+\t{#snippet content(item)}
+\t\t{#if item}
+\t\t\t<h4>{item.title}</h4>
+\t\t\t<p>{item.note}</p>
 \t\t{:else}
 \t\t\t<p>No work scheduled.</p>
 \t\t{/if}
 \t{/snippet}
 
-\t{#snippet actions(entry)}
-\t\t{#if entry.hasData}
+\t{#snippet actions(item)}
+\t\t{#if item}
 \t\t\t<button type="button">Open day</button>
 \t\t{/if}
 \t{/snippet}
@@ -134,9 +134,9 @@
 \tshowAllDates={false}
 \tmaxHeight="28rem"
 >
-\t{#snippet content(entry)}
-\t\t<h4>{entry.data?.title}</h4>
-\t\t<p>{entry.data?.note}</p>
+\t{#snippet content(item)}
+\t\t<h4>{item?.title}</h4>
+\t\t<p>{item?.note}</p>
 \t{/snippet}
 </CwCalendarScroll>`;
 </script>
@@ -170,22 +170,22 @@
 				{showAllDates}
 				maxHeight="min(68dvh, 38rem)"
 			>
-				{#snippet content(entry)}
-					{#if entry.data}
+				{#snippet content(item)}
+					{#if item}
 						<div class="demo-entry">
 							<div class="demo-entry__topline">
-								<strong>{entry.data.title}</strong>
+								<strong>{item.title}</strong>
 								<CwChip
-									label={entry.data.status}
-									tone={toneFor(entry.data.status)}
+									label={item.status}
+									tone={toneFor(item.status)}
 									variant="soft"
 									size="sm"
 								/>
 							</div>
-							<div class="demo-entry__window">{entry.data.window}</div>
-							<p class="demo-entry__note">{entry.data.note}</p>
+							<div class="demo-entry__window">{item.window}</div>
+							<p class="demo-entry__note">{item.note}</p>
 							<ul class="demo-entry__tasks">
-								{#each entry.data.tasks as task (task.id)}
+								{#each item.tasks as task (task.id)}
 									<li class:demo-entry__task--done={task.done}>
 										{task.label}
 									</li>
@@ -200,8 +200,8 @@
 					{/if}
 				{/snippet}
 
-				{#snippet actions(entry)}
-					{#if entry.data}
+				{#snippet actions(item)}
+					{#if item}
 						<CwButton variant="secondary" size="sm">
 							Open Day
 						</CwButton>
