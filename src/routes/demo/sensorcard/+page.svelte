@@ -1,6 +1,46 @@
 <script lang="ts">
     import { CwSensorCard } from "$lib/index.js";
-    import type { CwStatusDotStatus, CwSensorCardDevice } from "$lib/index.js";
+    import type { CwStatusDotStatus, CwSensorCardDevice, CwSensorCardDetailRow } from "$lib/index.js";
+
+    function makeRows(dev: {
+        label: string;
+        primaryValue?: number;
+        primaryUnit?: string;
+        secondaryValue?: number;
+        secondaryUnit?: string;
+        lastUpdated?: Date;
+        expectedUpdateAfterMinutes?: number;
+    }): CwSensorCardDetailRow[] {
+        const rows: CwSensorCardDetailRow[] = [];
+        if (dev.secondaryValue != null) {
+            rows.push({
+                id: `${dev.label}-humidity`,
+                label: "Humidity",
+                value: dev.secondaryValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                unit: dev.secondaryUnit ?? "%",
+                icon: "drop",
+            });
+        }
+        if (dev.primaryValue != null) {
+            rows.push({
+                id: `${dev.label}-temp`,
+                label: "Temperature",
+                value: dev.primaryValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                unit: dev.primaryUnit ?? "°C",
+                icon: "thermo",
+            });
+        }
+        if (dev.lastUpdated) {
+            rows.push({
+                id: `${dev.label}-updated`,
+                label: "Last Update",
+                icon: "timer",
+                lastUpdated: dev.lastUpdated,
+                expectedUpdateAfter: dev.expectedUpdateAfterMinutes,
+            });
+        }
+        return rows;
+    }
     import DemoCodeExample from "../_components/DemoCodeExample.svelte";
 
     let demoStatus = $state<CwStatusDotStatus>("online");
@@ -64,6 +104,7 @@
             status: "online",
             lastUpdated: new Date(Date.now() - 90_000),
             expectedUpdateAfterMinutes: 10,
+            detailRows: makeRows({ label: "CW-Temp-01", primaryValue: 21.5, primaryUnit: "°C", secondaryValue: 58.2, secondaryUnit: "%", lastUpdated: new Date(Date.now() - 90_000), expectedUpdateAfterMinutes: 10 }),
         },
         {
             label: "CW-Temp-02",
@@ -75,6 +116,7 @@
             secondary_icon: "💧",
             status: "online",
             lastUpdated: new Date(Date.now() - 300_000),
+            detailRows: makeRows({ label: "CW-Temp-02", primaryValue: 19.8, primaryUnit: "°C", secondaryValue: 62.1, secondaryUnit: "%", lastUpdated: new Date(Date.now() - 300_000) }),
         },
     ];
 
@@ -88,7 +130,8 @@
             secondary_icon: "💧",
             status: "online",
             lastUpdated: new Date(Date.now()),
-            expectedUpdateAfterMinutes: 10, // expires after 10 minutes without update, triggering the timer alarm callback
+            expectedUpdateAfterMinutes: 10,
+            detailRows: makeRows({ label: "CW-Soil-A1", primaryValue: 14.3, primaryUnit: "°C", secondaryValue: 38.9, secondaryUnit: "%", lastUpdated: new Date(Date.now()), expectedUpdateAfterMinutes: 10 }),
         },
         {
             label: "CW-Soil-A2",
@@ -100,7 +143,8 @@
             secondary_icon: "💧",
             status: "online",
             lastUpdated: new Date(Date.now()),
-            expectedUpdateAfterMinutes: 5, // expires after 5 minutes without update, triggering the timer alarm callback
+            expectedUpdateAfterMinutes: 5,
+            detailRows: makeRows({ label: "CW-Soil-A2", primaryValue: 1525.1, primaryUnit: "°C", secondaryValue: 41.2, secondaryUnit: "%", lastUpdated: new Date(Date.now()), expectedUpdateAfterMinutes: 5 }),
         },
         {
             label: "CW-Soil-A3",
@@ -112,7 +156,8 @@
             secondary_icon: "💧",
             status: "online",
             lastUpdated: new Date(Date.now()),
-            expectedUpdateAfterMinutes: 1, // expires after 1 minute without update, triggering the timer alarm callback
+            expectedUpdateAfterMinutes: 1,
+            detailRows: makeRows({ label: "CW-Soil-A3", primaryValue: 13.7, primaryUnit: "°C", secondaryValue: 44.5, secondaryUnit: "%", lastUpdated: new Date(Date.now()), expectedUpdateAfterMinutes: 1 }),
         },
     ];
 
@@ -123,6 +168,7 @@
             primaryUnit: "°C",
             status: "offline",
             lastUpdated: new Date(Date.now() - 7_200_000),
+            detailRows: makeRows({ label: "CW-Down-01", primaryValue: 0, primaryUnit: "°C", lastUpdated: new Date(Date.now() - 7_200_000) }),
         },
         {
             label: "CW-Down-02",
@@ -130,6 +176,7 @@
             primaryUnit: "°C",
             status: "offline",
             lastUpdated: new Date(Date.now() - 3_600_000),
+            detailRows: makeRows({ label: "CW-Down-02", primaryValue: 0, primaryUnit: "°C", lastUpdated: new Date(Date.now() - 3_600_000) }),
         },
     ];
 
@@ -139,14 +186,55 @@
             primaryValue: 0,
             primaryUnit: "°C",
             status: "loading",
+            detailRows: makeRows({ label: "CW-New-01", primaryValue: 0, primaryUnit: "°C" }),
         },
         {
             label: "CW-New-02",
             primaryValue: 0,
             primaryUnit: "°C",
             status: "loading",
+            detailRows: makeRows({ label: "CW-New-02", primaryValue: 0, primaryUnit: "°C" }),
         },
     ];
+
+    const weatherStation: CwSensorCardDevice = {
+        label: "CW-Weather-01",
+        primaryValue: 22.4,
+        primaryUnit: "°C",
+        primary_icon: "thermo",
+        secondaryValue: 67.3,
+        secondaryUnit: "%",
+        secondary_icon: "drop",
+        status: "online",
+        lastUpdated: new Date(Date.now() - 60_000),
+        expectedUpdateAfterMinutes: 10,
+        detailRows: [
+            { id: "w01-temp",     label: "Temperature", value: "22.40",   unit: "°C",   icon: "thermo" },
+            { id: "w01-humidity", label: "Humidity",    value: "67.30",   unit: "%",    icon: "drop" },
+            { id: "w01-rain",     label: "Rain Amount", value: "3.20",    unit: "mm",   icon: "🌧️" },
+            { id: "w01-wind",     label: "Wind Speed",  value: "12.50",   unit: "km/h", icon: "💨" },
+            { id: "w01-lux",      label: "Lux Level",   value: "48500",   unit: "lx",   icon: "☀️" },
+            { id: "w01-pressure", label: "Air Pressure", value: "1013.25", unit: "hPa", icon: "🔵" },
+            { id: "w01-relay",    label: "Relay State",  value: "On",                   icon: "⚡" },
+            { id: "w01-updated",  label: "Last Update",  icon: "timer",
+              lastUpdated: new Date(Date.now() - 60_000), expectedUpdateAfter: 10 },
+        ],
+    };
+
+    const waterLevelSensor: CwSensorCardDevice = {
+        label: "CW-Tank-01",
+        primaryValue: 74.5,
+        primaryUnit: "%",
+        primary_icon: "drop",
+        status: "online",
+        lastUpdated: new Date(Date.now() - 300_000),
+        expectedUpdateAfterMinutes: 15,
+        detailRows: [
+            { id: "tank01-level",   label: "Water Level", value: "74.50", unit: "%", icon: "drop" },
+            { id: "tank01-updated", label: "Last Update",  icon: "timer",
+              lastUpdated: new Date(Date.now() - 300_000), expectedUpdateAfter: 15 },
+        ],
+    };
 </script>
 
 <h2>CwSensorCard</h2>
@@ -181,6 +269,7 @@
             secondaryUnit="%"
             lastUpdated={new Date(Date.now() - 120_000)}
             expectedUpdateAfterMinutes={10}
+            detailRows={makeRows({ label: "CW-SS-TMEPNCO2-18", primaryValue: -22.93, primaryUnit: "°C", secondaryValue: 79.61, secondaryUnit: "%", lastUpdated: new Date(Date.now() - 120_000), expectedUpdateAfterMinutes: 10 })}
             onNavigate={handleNavigate}
             onTimerExpired={handleTimerExpired}
         >
@@ -265,8 +354,33 @@
                     secondaryUnit: "%",
                     status: "offline",
                     lastUpdated: new Date(Date.now() - 10_800_000),
+                    detailRows: makeRows({ label: "CW-Freeze-007", primaryValue: -40.12, primaryUnit: "°C", secondaryValue: 95.0, secondaryUnit: "%", lastUpdated: new Date(Date.now() - 10_800_000) }),
                 },
             ]}
+        />
+    </div>
+</div>
+
+<div class="demo-section">
+    <span class="demo-label">Many data points — weather station</span>
+    <div class="demo-center">
+        <CwSensorCard
+            title="Weather Station Alpha"
+            status="online"
+            devices={[weatherStation]}
+            defaultExpanded={true}
+        />
+    </div>
+</div>
+
+<div class="demo-section">
+    <span class="demo-label">Few data points — water level sensor</span>
+    <div class="demo-center">
+        <CwSensorCard
+            title="Tank Monitor"
+            status="online"
+            devices={[waterLevelSensor]}
+            defaultExpanded={true}
         />
     </div>
 </div>
@@ -288,6 +402,7 @@
             primaryValue={24.5}
             secondaryValue={65.2}
             lastUpdated={new Date()}
+            detailRows={makeRows({ label: "CW-Sensor-001", primaryValue: 24.5, secondaryValue: 65.2, lastUpdated: new Date() })}
             defaultExpanded={false}
         />
         <CwSensorCard
@@ -297,6 +412,7 @@
             primaryValue={-5.1}
             secondaryValue={88.0}
             lastUpdated={new Date(Date.now() - 10_800_000)}
+            detailRows={makeRows({ label: "CW-Sensor-042", primaryValue: -5.1, secondaryValue: 88.0, lastUpdated: new Date(Date.now() - 10_800_000) })}
             defaultExpanded={false}
         />
         <CwSensorCard
@@ -305,6 +421,7 @@
             status="loading"
             primaryValue={0}
             secondaryValue={0}
+            detailRows={makeRows({ label: "CW-Sensor-077", primaryValue: 0, secondaryValue: 0 })}
             defaultExpanded={false}
         />
         <CwSensorCard
@@ -314,6 +431,7 @@
             primaryValue={-18.25}
             secondaryValue={72.4}
             lastUpdated={new Date(Date.now() - 600_000)}
+            detailRows={makeRows({ label: "CW-Sensor-099", primaryValue: -18.25, secondaryValue: 72.4, lastUpdated: new Date(Date.now() - 600_000) })}
             defaultExpanded={false}
         />
     </div>

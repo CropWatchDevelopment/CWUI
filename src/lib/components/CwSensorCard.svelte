@@ -46,6 +46,10 @@
 		detailRows?: CwSensorCardDetailRow[];
 		/** Called when user clicks a navigation action */
 		onNavigate?: (target: string) => void;
+		/** Called when a device slot is expanded */
+		onDeviceExpand?: (deviceLabel: string) => void;
+		/** Called when a device slot is collapsed */
+		onDeviceCollapse?: (deviceLabel: string) => void;
 		/** Called when a device's CwDuration alarm fires (update overdue) */
 		onTimerExpired?: (deviceLabel: string) => void;
 		/** Additional CSS class */
@@ -69,6 +73,8 @@
 		expectedUpdateAfterMinutes,
 		detailRows,
 		onNavigate,
+		onDeviceExpand,
+		onDeviceCollapse,
 		onTimerExpired,
 		class: className = ''
 	}: Props = $props();
@@ -119,7 +125,13 @@
 	}
 
 	function toggleDevice(label: string) {
-		expandedMap[label] = !isExpanded(label);
+		const nextExpanded = !isExpanded(label);
+		expandedMap[label] = nextExpanded;
+		if (nextExpanded) {
+			onDeviceExpand?.(label);
+		} else {
+			onDeviceCollapse?.(label);
+		}
 		try {
 			localStorage.setItem(STORAGE_PREFIX + resolvedStorageKey, JSON.stringify(expandedMap));
 		} catch { /* storage unavailable */ }
@@ -196,35 +208,8 @@
 					: 'Loading'
 	);
 
-	function defaultDetailRows(dev: CwSensorCardDevice): CwSensorCardDetailRow[] {
-		if (dev.detailRows && dev.detailRows.length > 0) return dev.detailRows;
-		const rows: CwSensorCardDetailRow[] = [];
-		if (dev.secondaryValue != null) {
-			rows.push({
-				id: `${dev.label}-humidity`,
-				label: 'Humidity',
-				value: dev.secondaryValue?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-				unit: dev.secondaryUnit ?? '%',
-				icon: 'drop'
-			});
-		}
-		rows.push({
-			id: `${dev.label}-temperature`,
-			label: 'Temperature',
-			value: dev.primaryValue?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-			unit: dev.primaryUnit ?? '°C',
-			icon: 'thermo'
-		});
-		if (dev.lastUpdated != null) {
-			rows.push({
-				id: `${dev.label}-updated`,
-				label: 'Last Update',
-				icon: 'timer',
-				lastUpdated: dev.lastUpdated instanceof Date ? dev.lastUpdated : new Date(dev.lastUpdated),
-				expectedUpdateAfter: dev.expectedUpdateAfterMinutes
-			});
-		}
-		return rows;
+	function isSnippetDetailIcon(icon: CwSensorCardDetailRow['icon']): icon is Snippet {
+		return typeof icon === 'function';
 	}
 
 	function slotStatusClass(devStatus?: string): string {
@@ -280,7 +265,7 @@
 		{:else}
 			<div class="cw-sensor-card__devices">
 				{#each resolvedDevices as dev, i (dev.label)}
-					{@const rows = defaultDetailRows(dev)}
+					{@const rows = dev.detailRows ?? []}
 					{@const devExpanded = isExpanded(dev.label)}
 					<div class="cw-sensor-card__slot {slotStatusClass(effectiveDeviceStatus(dev))}" class:cw-sensor-card__slot--expanded={devExpanded}>
 						<div class="cw-sensor-card__content">
@@ -354,11 +339,12 @@
 											<li class="cw-sensor-card__detail-item">
 												<div class="cw-sensor-card__detail-info">
 													<span
-														class="cw-sensor-card__detail-icon cw-sensor-card__detail-icon--{row.icon ??
-															'timer'}"
+														class="cw-sensor-card__detail-icon {typeof row.icon === 'string' && ['drop','thermo','timer'].includes(row.icon) ? `cw-sensor-card__detail-icon--${row.icon}` : ''}"
 														aria-hidden="true"
 													>
-														{#if row.icon === 'drop'}
+														{#if isSnippetDetailIcon(row.icon)}
+															{@render row.icon()}
+														{:else if row.icon === 'drop'}
 															<svg viewBox="0 0 24 24" aria-hidden="true">
 																<path
 																	fill="currentColor"
@@ -372,13 +358,15 @@
 																	d="M14 14.76V5a2 2 0 1 0-4 0v9.76a3.5 3.5 0 1 0 4 0Z"
 																/>
 															</svg>
-														{:else}
+														{:else if row.icon === 'timer'}
 															<svg viewBox="0 0 24 24" aria-hidden="true">
 																<path
 																	fill="currentColor"
 																	d="M12 7v5l4.3 2.6-.8 1.3L11 13V7h1Z"
 																/>
 															</svg>
+														{:else if row.icon}
+															{row.icon}
 														{/if}
 													</span>
 													<span class="cw-sensor-card__detail-label"

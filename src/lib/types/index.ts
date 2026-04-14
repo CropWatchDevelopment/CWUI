@@ -378,8 +378,8 @@ export interface CwSensorCardDetailRow {
 	value?: string | number | null;
 	/** Unit suffix */
 	unit?: string;
-	/** Icon type for the row */
-	icon?: 'drop' | 'thermo' | 'timer';
+	/** Icon for the row — a Svelte Snippet, a named built-in ('drop' | 'thermo' | 'timer'), or any string rendered as text */
+	icon?: string | Snippet;
 	/** Device online status */
 	status?: 'online' | 'offline' | 'warning' | 'loading';
 	/** Last Updated **/
