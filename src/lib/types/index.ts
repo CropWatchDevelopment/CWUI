@@ -369,7 +369,7 @@ export interface CwAlarmRegistration {
 
 /* ── Sensor Card types ──────────────────────────────────── */
 
-export interface CwSensorCardDetailRow {
+export interface CwCardDataRowItemData {
 	/** Unique identifier */
 	id: string;
 	/** Display label */
@@ -382,11 +382,17 @@ export interface CwSensorCardDetailRow {
 	icon?: string | Snippet;
 	/** Device online status */
 	status?: 'online' | 'offline' | 'warning' | 'loading';
-	/** Last Updated **/
-	lastUpdated?: Date;
-	/** Duration since last update */
+	/** Preferred freshness timestamp shown through CwDuration. */
+	lastSeenAt?: CwDateTimeInput;
+	/** Preferred freshness timeout threshold in minutes. */
+	expireAfterMinutes?: number;
+	/** Last updated timestamp shown through CwDuration. Kept for backwards compatibility. */
+	lastUpdated?: Date | string | number;
+	/** Freshness timeout threshold in minutes. Kept for backwards compatibility. */
 	expectedUpdateAfter?: number; // in minutes
 }
+
+export interface CwSensorCardDetailRow extends CwCardDataRowItemData {}
 
 export interface CwSensorCardDevice {
 	/** Device name or label */
@@ -407,9 +413,13 @@ export interface CwSensorCardDevice {
 	detailRows?: CwSensorCardDetailRow[];
 	/** Device online status */
 	status?: 'online' | 'offline' | 'warning' | 'loading';
-	/** Timestamp of the last data update — used for the live elapsed timer */
+	/** Preferred freshness timestamp for this device. */
+	lastSeenAt?: CwDateTimeInput;
+	/** Preferred freshness timeout threshold in minutes. */
+	expireAfterMinutes?: number;
+	/** Timestamp of the last data update — used for the live elapsed timer. Kept for backwards compatibility. */
 	lastUpdated?: Date | string | number;
-	/** Expected update interval in minutes. CwDuration alarm fires when exceeded. */
+	/** Expected update interval in minutes. Kept for backwards compatibility. */
 	expectedUpdateAfterMinutes?: number;
 }
 

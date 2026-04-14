@@ -3,6 +3,7 @@ export { default as CwButton } from './components/CwButton.svelte';
 export { default as CwBadge } from './components/CwBadge.svelte';
 export { default as CwChip } from './components/CwChip.svelte';
 export { default as CwCard } from './components/CwCard.svelte';
+export { default as CwCardDataRowItem } from './components/CwCardDataRowItem.svelte';
 export { default as CwInput } from './components/CwInput.svelte';
 export { default as CwCheckbox } from './components/CwCheckbox.svelte';
 export { default as CwRadio } from './components/CwRadio.svelte';
@@ -111,6 +112,7 @@ export type {
 	CwAlarmApi,
 	CwLanguageFlagType,
 	CwLanguageOption,
+	CwCardDataRowItemData,
 	CwSensorCardDetailRow,
 	CwSensorCardDevice,
 	CwStatCardTrend,

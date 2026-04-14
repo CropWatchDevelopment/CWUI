@@ -1,17 +1,26 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import CwStatusDot from './CwStatusDot.svelte';
 	import CwChip from './CwChip.svelte';
 	import CwButton from './CwButton.svelte';
+	import CwCardDataRowItem from './CwCardDataRowItem.svelte';
+	import CwDataIcon from './CwDataIcon.svelte';
+	import { createCwAlarmScheduler } from './cwAlarmContext.svelte.js';
+	import { buildCwSensorCardDetailRows, getCwSensorReadingIcon } from './cwSensorCardRows.js';
+	import {
+		isCwWithinTimeout,
+		resolveCwExpireAfterMinutes,
+		resolveCwLastSeenAt
+	} from '../utils/cwTimeout.js';
 	import type {
+		CwDateTimeInput,
 		CwStatusDotStatus,
 		CwTone,
 		CwSensorCardDetailRow,
 		CwSensorCardDevice
 	} from '../types/index.js';
-	import CwDuration from './CwDuration.svelte';
-	import type { Snippet } from 'svelte';
 
-	type IconContent = string | Snippet;
+	type IconContent = CwSensorCardDevice['primary_icon'];
 
 	interface Props {
 		/** Location or site name displayed in the header */
@@ -40,18 +49,30 @@
 		secondary_icon?: IconContent;
 		/** Timestamp of the last data update (single-device shorthand) */
 		lastUpdated?: Date | string | number;
+		/** Preferred freshness timestamp (single-device shorthand). Alias for lastUpdated. */
+		lastSeenAt?: CwDateTimeInput;
 		/** Expected update interval in minutes (single-device shorthand) */
 		expectedUpdateAfterMinutes?: number;
+		/** Preferred freshness timeout threshold in minutes (single-device shorthand). Alias for expectedUpdateAfterMinutes. */
+		expireAfterMinutes?: number;
 		/** Custom detail rows — used only when devices is not provided (single-device shorthand) */
 		detailRows?: CwSensorCardDetailRow[];
 		/** Called when user clicks a navigation action */
 		onNavigate?: (target: string) => void;
+		/** Called when a device slot is expanded. Alias for onDeviceExpand. */
+		onExpand?: (deviceLabel: string) => void;
 		/** Called when a device slot is expanded */
 		onDeviceExpand?: (deviceLabel: string) => void;
+		/** Called when a device slot is collapsed. Alias for onDeviceCollapse. */
+		onCollapse?: (deviceLabel: string) => void;
 		/** Called when a device slot is collapsed */
 		onDeviceCollapse?: (deviceLabel: string) => void;
-		/** Called when a device's CwDuration alarm fires (update overdue) */
+		/** Called when a device freshness timer expires. Alias for onTimerExpired. */
+		onExpire?: (deviceLabel: string) => void;
+		/** Called when a device freshness row expires. */
 		onTimerExpired?: (deviceLabel: string) => void;
+		/** Bindable per-device freshness map. `true` = fresh, `false` = expired, omitted = no timer configured. */
+		deviceWithinTimeoutMap?: Record<string, boolean | null>;
 		/** Additional CSS class */
 		class?: string;
 	}
@@ -66,25 +87,34 @@
 		primaryValue = 0,
 		primaryUnit = '°C',
 		primary_icon = '',
-		secondaryValue = 0,
+		secondaryValue,
 		secondaryUnit = '%',
 		secondary_icon = '',
 		lastUpdated,
+		lastSeenAt,
 		expectedUpdateAfterMinutes,
+		expireAfterMinutes,
 		detailRows,
 		onNavigate,
+		onExpand,
 		onDeviceExpand,
+		onCollapse,
 		onDeviceCollapse,
+		onExpire,
 		onTimerExpired,
+		deviceWithinTimeoutMap = $bindable<Record<string, boolean | null>>({}),
 		class: className = ''
 	}: Props = $props();
 
 	const STORAGE_PREFIX = 'cw-sensor-card-expand:';
 	const resolvedStorageKey = $derived(storageKey ?? title);
+	const rowAlarmScheduler = createCwAlarmScheduler();
 
 	let expandedMap = $state<Record<string, boolean>>({});
-	/** Tracks which devices have been flagged overdue by CwDuration alarms */
-	let overdueMap = $state<Record<string, boolean>>({});
+
+	onDestroy(() => {
+		rowAlarmScheduler.clear();
+	});
 
 	$effect(() => {
 		try {
@@ -95,28 +125,73 @@
 		} catch { /* SSR or storage unavailable */ }
 	});
 
-	function markDeviceOverdue(label: string) {
-		overdueMap[label] = true;
-		onTimerExpired?.(label);
+	function notifyDeviceHandler(
+		handlers: Array<((deviceLabel: string) => void) | undefined>,
+		label: string
+	) {
+		const calledHandlers = new Set<((deviceLabel: string) => void) | undefined>();
+
+		for (const handler of handlers) {
+			if (!handler || calledHandlers.has(handler)) {
+				continue;
+			}
+
+			calledHandlers.add(handler);
+			handler(label);
+		}
 	}
 
-	function clearDeviceOverdue(label: string) {
-		delete overdueMap[label];
-		overdueMap = { ...overdueMap };
+	function resolveDeviceLastSeenAt(device: CwSensorCardDevice) {
+		return resolveCwLastSeenAt(device.lastSeenAt, device.lastUpdated);
+	}
+
+	function resolveDeviceExpireAfterMinutes(device: CwSensorCardDevice) {
+		return resolveCwExpireAfterMinutes(device.expireAfterMinutes, device.expectedUpdateAfterMinutes);
+	}
+
+	function updateDeviceWithinTimeout(label: string, nextState: boolean | null) {
+		const currentState = deviceWithinTimeoutMap[label] ?? null;
+		if (currentState === nextState) {
+			return;
+		}
+
+		if (nextState == null) {
+			if (!(label in deviceWithinTimeoutMap)) {
+				return;
+			}
+
+			const nextMap = { ...deviceWithinTimeoutMap };
+			delete nextMap[label];
+			deviceWithinTimeoutMap = nextMap;
+			return;
+		}
+
+		deviceWithinTimeoutMap = {
+			...deviceWithinTimeoutMap,
+			[label]: nextState
+		};
+	}
+
+	function handleDeviceExpire(device: CwSensorCardDevice) {
+		updateDeviceWithinTimeout(device.label, false);
+		notifyDeviceHandler([onExpire, onTimerExpired], device.label);
 	}
 
 	/**
 	 * Returns the effective status for a device, accounting for overdue state.
-	 * If the device's CwDuration alarm has fired, or the device is already
-	 * past its expected update window on first render, status becomes 'offline'.
+	 * If the device freshness state is expired, status becomes 'offline'.
 	 */
 	function effectiveDeviceStatus(dev: CwSensorCardDevice): CwStatusDotStatus {
-		if (overdueMap[dev.label]) return 'offline';
-		// Eagerly detect overdue on first render (before CwDuration ticks)
-		if (dev.lastUpdated != null && dev.expectedUpdateAfterMinutes != null) {
-			const ts = dev.lastUpdated instanceof Date ? dev.lastUpdated.getTime() : new Date(dev.lastUpdated as string | number).getTime();
-			if (Date.now() - ts > dev.expectedUpdateAfterMinutes * 60_000) return 'offline';
+		if (deviceWithinTimeoutMap[dev.label] === false) return 'offline';
+
+		const freshnessState = isCwWithinTimeout(
+			resolveDeviceLastSeenAt(dev),
+			resolveDeviceExpireAfterMinutes(dev)
+		);
+		if (freshnessState === false) {
+			return 'offline';
 		}
+
 		return dev.status ?? status;
 	}
 
@@ -128,17 +203,19 @@
 		const nextExpanded = !isExpanded(label);
 		expandedMap[label] = nextExpanded;
 		if (nextExpanded) {
-			onDeviceExpand?.(label);
+			notifyDeviceHandler([onExpand, onDeviceExpand], label);
 		} else {
-			onDeviceCollapse?.(label);
+			notifyDeviceHandler([onCollapse, onDeviceCollapse], label);
 		}
 		try {
 			localStorage.setItem(STORAGE_PREFIX + resolvedStorageKey, JSON.stringify(expandedMap));
 		} catch { /* storage unavailable */ }
 	}
 
-	function isSnippetIcon(icon: IconContent | undefined): icon is Snippet {
-		return typeof icon === 'function';
+	function sensorStatIconClass(icon: IconContent | undefined): string {
+		if (icon === 'thermo') return 'cw-sensor-card__stat-icon--temp';
+		if (icon === 'drop') return 'cw-sensor-card__stat-icon--humidity';
+		return '';
 	}
 
 	/** Resolve the device list: explicit array, single-device props, or empty */
@@ -156,6 +233,8 @@
 							secondaryUnit,
 							secondary_icon,
 							detailRows,
+							lastSeenAt,
+							expireAfterMinutes,
 							lastUpdated,
 							expectedUpdateAfterMinutes,
 							status
@@ -163,6 +242,20 @@
 					]
 				: []
 	);
+
+	$effect(() => {
+		const activeLabels = new Set(resolvedDevices.map((device) => device.label));
+		const staleLabels = Object.keys(deviceWithinTimeoutMap).filter((label) => !activeLabels.has(label));
+		if (staleLabels.length === 0) {
+			return;
+		}
+
+		const nextMap = { ...deviceWithinTimeoutMap };
+		for (const label of staleLabels) {
+			delete nextMap[label];
+		}
+		deviceWithinTimeoutMap = nextMap;
+	});
 
 	/** Aggregate status derived from individual device statuses, falls back to card-level prop */
 	const aggregateStatus = $derived.by<CwStatusDotStatus>(() => {
@@ -208,10 +301,6 @@
 					: 'Loading'
 	);
 
-	function isSnippetDetailIcon(icon: CwSensorCardDetailRow['icon']): icon is Snippet {
-		return typeof icon === 'function';
-	}
-
 	function slotStatusClass(devStatus?: string): string {
 		switch (devStatus) {
 			case 'online': return 'cw-sensor-card__slot--online';
@@ -220,6 +309,10 @@
 			case 'warning': return 'cw-sensor-card__slot--warning';
 			default: return '';
 		}
+	}
+
+	function resolveDetailRows(dev: CwSensorCardDevice): CwSensorCardDetailRow[] {
+		return dev.detailRows ?? buildCwSensorCardDetailRows(dev);
 	}
 
 </script>
@@ -264,9 +357,11 @@
 			</div>
 		{:else}
 			<div class="cw-sensor-card__devices">
-				{#each resolvedDevices as dev, i (dev.label)}
-					{@const rows = dev.detailRows ?? []}
+				{#each resolvedDevices as dev (dev.label)}
+					{@const rows = resolveDetailRows(dev)}
 					{@const devExpanded = isExpanded(dev.label)}
+					{@const primaryIcon = getCwSensorReadingIcon('primary', dev)}
+					{@const secondaryIcon = getCwSensorReadingIcon('secondary', dev)}
 					<div class="cw-sensor-card__slot {slotStatusClass(effectiveDeviceStatus(dev))}" class:cw-sensor-card__slot--expanded={devExpanded}>
 						<div class="cw-sensor-card__content">
 							<div class="cw-sensor-card__device">
@@ -275,14 +370,10 @@
 									<!-- Primary stat -->
 									<div class="cw-sensor-card__stat">
 										<span
-											class="cw-sensor-card__stat-icon cw-sensor-card__stat-icon--temp"
+											class="cw-sensor-card__stat-icon {sensorStatIconClass(primaryIcon)}"
 											aria-hidden="true"
 										>
-											{#if isSnippetIcon(dev.primary_icon)}
-												{@render dev.primary_icon()}
-											{:else if dev.primary_icon}
-												{dev.primary_icon}
-											{/if}
+											<CwDataIcon icon={primaryIcon} />
 										</span>
 										<span class="cw-sensor-card__stat-reading">
 											<span class="cw-sensor-card__stat-value"
@@ -297,14 +388,10 @@
 									{#if dev.secondaryValue != null}
 										<div class="cw-sensor-card__stat">
 											<span
-												class="cw-sensor-card__stat-icon cw-sensor-card__stat-icon--humidity"
+												class="cw-sensor-card__stat-icon {sensorStatIconClass(secondaryIcon)}"
 												aria-hidden="true"
 											>
-												{#if isSnippetIcon(dev.secondary_icon)}
-													{@render dev.secondary_icon()}
-												{:else if dev.secondary_icon}
-													{dev.secondary_icon}
-												{/if}
+												<CwDataIcon icon={secondaryIcon} />
 											</span>
 											<span class="cw-sensor-card__stat-reading">
 												<span class="cw-sensor-card__stat-value">{dev.secondaryValue?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -334,69 +421,23 @@
 							<div class="cw-sensor-card__details">
 								<div class="cw-sensor-card__details-inner">
 									<h4 class="cw-sensor-card__details-heading">Details</h4>
-									<ul class="cw-sensor-card__detail-list">
-										{#each rows as row (row.id)}
-											<li class="cw-sensor-card__detail-item">
-												<div class="cw-sensor-card__detail-info">
-													<span
-														class="cw-sensor-card__detail-icon {typeof row.icon === 'string' && ['drop','thermo','timer'].includes(row.icon) ? `cw-sensor-card__detail-icon--${row.icon}` : ''}"
-														aria-hidden="true"
-													>
-														{#if isSnippetDetailIcon(row.icon)}
-															{@render row.icon()}
-														{:else if row.icon === 'drop'}
-															<svg viewBox="0 0 24 24" aria-hidden="true">
-																<path
-																	fill="currentColor"
-																	d="M12 3c-.3 0-.6.1-.8.4l-4 5c-.8 1-1.2 2.3-1.2 3.6C6 15.9 8.7 18.5 12 18.5s6-2.6 6-6c0-1.3-.4-2.6-1.2-3.6l-4-5c-.2-.3-.5-.4-.8-.4Z"
-																/>
-															</svg>
-														{:else if row.icon === 'thermo'}
-															<svg viewBox="0 0 24 24" aria-hidden="true">
-																<path
-																	fill="currentColor"
-																	d="M14 14.76V5a2 2 0 1 0-4 0v9.76a3.5 3.5 0 1 0 4 0Z"
-																/>
-															</svg>
-														{:else if row.icon === 'timer'}
-															<svg viewBox="0 0 24 24" aria-hidden="true">
-																<path
-																	fill="currentColor"
-																	d="M12 7v5l4.3 2.6-.8 1.3L11 13V7h1Z"
-																/>
-															</svg>
-														{:else if row.icon}
-															{row.icon}
-														{/if}
-													</span>
-													<span class="cw-sensor-card__detail-label"
-														>{row.label}</span
-													>
-												</div>
-												<div
-													class="cw-sensor-card__detail-value"
-													class:cw-sensor-card__detail-value--muted={!row.unit && !row.lastUpdated}
-												>
-													{#if row.lastUpdated}
-														<span class="cw-sensor-card__detail-number">
-															<CwDuration
-																from={row.lastUpdated}
-																alarmAfterMinutes={row.expectedUpdateAfter}
-															alarmCallback={() => markDeviceOverdue(dev.label)}
-															alarmResetCallback={() => clearDeviceOverdue(dev.label)}
-															/>
-															<span class="cw-sensor-card__detail-unit">ago</span>
-														</span>
-													{:else}
-														<span class="cw-sensor-card__detail-number">{row.value ?? 'N/A'}</span>
-														{#if row.unit}
-															<span class="cw-sensor-card__detail-unit">{row.unit}</span>
-														{/if}
-													{/if}
-												</div>
-											</li>
-										{/each}
-									</ul>
+									{#if rows.length > 0}
+										<ul class="cw-sensor-card__detail-list">
+											{#each rows as row (row.id)}
+												{@const rowHasFreshness = row.lastSeenAt != null || row.lastUpdated != null}
+												<CwCardDataRowItem
+													{...row}
+													alarmScheduler={rowAlarmScheduler}
+													onExpire={rowHasFreshness ? () => handleDeviceExpire(dev) : undefined}
+													onWithinTimeoutChange={rowHasFreshness
+														? (nextState) => updateDeviceWithinTimeout(dev.label, nextState)
+														: undefined}
+												/>
+											{/each}
+										</ul>
+									{:else}
+										<p class="cw-sensor-card__details-empty">No detailed readings available yet.</p>
+									{/if}
 									<div class="cw-sensor-card__cta">
 										<CwButton
 											variant="secondary"
@@ -778,73 +819,10 @@
 		padding: 0;
 	}
 
-	.cw-sensor-card__detail-item {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: var(--cw-space-2) 0;
-	}
-
-	.cw-sensor-card__detail-item + .cw-sensor-card__detail-item {
-		border-top: 1px solid var(--cw-border-muted);
-	}
-
-	.cw-sensor-card__detail-info {
-		display: flex;
-		align-items: center;
-		gap: var(--cw-space-2);
-		color: var(--cw-text-secondary);
+	.cw-sensor-card__details-empty {
+		margin: 0;
 		font-size: var(--cw-text-sm);
-	}
-
-	.cw-sensor-card__detail-icon {
-		width: 1.75rem;
-		height: 1.75rem;
-		border-radius: var(--cw-radius-full);
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		background: color-mix(in srgb, var(--cw-text-muted) 15%, transparent);
-	}
-
-	.cw-sensor-card__detail-icon svg {
-		width: 1rem;
-		height: 1rem;
-	}
-
-	.cw-sensor-card__detail-icon--drop {
-		color: var(--cw-info-300);
-	}
-
-	.cw-sensor-card__detail-icon--thermo {
-		color: #f36d5b;
-	}
-
-	.cw-sensor-card__detail-icon--timer {
-		color: var(--cw-warning-300);
-	}
-
-	.cw-sensor-card__detail-value {
-		display: flex;
-		align-items: baseline;
-		gap: var(--cw-space-1);
-		font-weight: var(--cw-font-bold);
-		color: var(--cw-text-primary);
-	}
-
-	.cw-sensor-card__detail-number {
-		font-size: var(--cw-text-base);
-	}
-
-	.cw-sensor-card__detail-unit {
-		font-size: var(--cw-text-xs);
 		color: var(--cw-text-muted);
-	}
-
-	.cw-sensor-card__detail-value--muted {
-		font-weight: var(--cw-font-medium);
-		color: var(--cw-text-muted);
-		font-size: var(--cw-text-sm);
 	}
 
 	/* ── CTA button wrapper ── */

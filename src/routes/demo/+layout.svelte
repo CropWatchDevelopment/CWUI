@@ -22,6 +22,8 @@
 		chip: "M4 6.5a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM2 6.5A3.5 3.5 0 015.5 3h5A3.5 3.5 0 0114 6.5v3A3.5 3.5 0 0110.5 13h-5A3.5 3.5 0 012 9.5v-3z",
 		badge: "M2 4h8a2 2 0 012 2v6H2V4zm10 1.5a2.5 2.5 0 115 0 2.5 2.5 0 01-5 0z",
 		card: "M2 4a1 1 0 011-1h10a1 1 0 011 1v8a1 1 0 01-1 1H3a1 1 0 01-1-1V4zm0 3h12",
+		cardDataRow:
+			"M2.5 4h11M2.5 8h11M2.5 12h11M4 4a.5.5 0 100 1 .5.5 0 000-1zm0 4a.5.5 0 100 1 .5.5 0 000-1zm0 4a.5.5 0 100 1 .5.5 0 000-1z",
 		input: "M3 4h10a1 1 0 011 1v6a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1zM5 7v2",
 		alertPoints:
 			"M2 8h12M4.5 6.5v3M8 4v8M11.5 6.5v3M9.5 8a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0",
@@ -192,6 +194,14 @@
 			icon: icons.card,
 			href: "/demo/cards",
 			group: "Components",
+		},
+		{
+			id: "card-data-row-item",
+			label: "Card Data Row",
+			icon: icons.cardDataRow,
+			href: "/demo/card-data-row-item",
+			group: "Components",
+			trailing: "new",
 		},
 		{
 			id: "inputs",
