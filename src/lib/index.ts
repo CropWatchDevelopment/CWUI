@@ -4,6 +4,7 @@ export { default as CwBadge } from './components/CwBadge.svelte';
 export { default as CwChip } from './components/CwChip.svelte';
 export { default as CwCard } from './components/CwCard.svelte';
 export { default as CwCardDataRowItem } from './components/CwCardDataRowItem.svelte';
+export { default as CwDataList } from './components/CwDataList.svelte';
 export { default as CwInput } from './components/CwInput.svelte';
 export { default as CwCheckbox } from './components/CwCheckbox.svelte';
 export { default as CwRadio } from './components/CwRadio.svelte';
@@ -38,6 +39,7 @@ export { default as CwCalendarScroll } from './components/CwCalendarScroll.svelt
 export { default as CwCopy } from './components/CwCopy.svelte';
 export { default as CwExpandPanel } from './components/CwExpandPanel.svelte';
 export { default as CwHeatmap } from './components/CwHeatmap.svelte';
+export { default as CwLocationCard } from './components/CwLocationCard.svelte';
 export { default as CwSensorCard } from './components/CwSensorCard.svelte';
 export { default as CwStatCard } from './components/CwStatCard.svelte';
 export { default as CwAlertPointsEditor } from './components/CwAlertPointsEditor.svelte';
@@ -113,6 +115,8 @@ export type {
 	CwLanguageFlagType,
 	CwLanguageOption,
 	CwCardDataRowItemData,
+	CwDataListRow,
+	CwSensorCardData,
 	CwSensorCardDetailRow,
 	CwSensorCardDevice,
 	CwStatCardTrend,

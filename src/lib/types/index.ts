@@ -384,17 +384,35 @@ export interface CwCardDataRowItemData {
 	status?: 'online' | 'offline' | 'warning' | 'loading';
 	/** Preferred freshness timestamp shown through CwDuration. */
 	lastSeenAt?: CwDateTimeInput;
+	/** Alias for `lastSeenAt`. */
+	lastSeen?: CwDateTimeInput;
+	/** PascalCase alias for `lastSeenAt`. */
+	LastSeen?: CwDateTimeInput;
 	/** Preferred freshness timeout threshold in minutes. */
 	expireAfterMinutes?: number;
+	/** Alias for `expireAfterMinutes`. */
+	alarmTimeoutMinutes?: number;
+	/** PascalCase alias for `expireAfterMinutes`. */
+	AlarmTimeoutMinutes?: number;
 	/** Last updated timestamp shown through CwDuration. Kept for backwards compatibility. */
 	lastUpdated?: Date | string | number;
 	/** Freshness timeout threshold in minutes. Kept for backwards compatibility. */
 	expectedUpdateAfter?: number; // in minutes
+	/** Optional alarm callback alias used by freshness-driven rows. */
+	alarmCallback?: () => void;
+	/** PascalCase alias for `alarmCallback`. */
+	AlarmCallback?: () => void;
+	/** Optional alarm reset callback alias used by freshness-driven rows. */
+	alarmResetCallback?: () => void;
+	/** PascalCase alias for `alarmResetCallback`. */
+	AlarmResetCallback?: () => void;
 }
 
-export interface CwSensorCardDetailRow extends CwCardDataRowItemData {}
+export interface CwDataListRow extends CwCardDataRowItemData {}
 
-export interface CwSensorCardDevice {
+export interface CwSensorCardDetailRow extends CwDataListRow {}
+
+export interface CwSensorCardData {
 	/** Device name or label */
 	label: string;
 	/** Primary reading value (e.g. temperature) */
@@ -415,13 +433,27 @@ export interface CwSensorCardDevice {
 	status?: 'online' | 'offline' | 'warning' | 'loading';
 	/** Preferred freshness timestamp for this device. */
 	lastSeenAt?: CwDateTimeInput;
+	/** Alias for `lastSeenAt`. */
+	lastSeen?: CwDateTimeInput;
+	/** PascalCase alias for `lastSeenAt`. */
+	LastSeen?: CwDateTimeInput;
 	/** Preferred freshness timeout threshold in minutes. */
 	expireAfterMinutes?: number;
+	/** Alias for `expireAfterMinutes`. */
+	alarmTimeoutMinutes?: number;
+	/** PascalCase alias for `expireAfterMinutes`. */
+	AlarmTimeoutMinutes?: number;
 	/** Timestamp of the last data update — used for the live elapsed timer. Kept for backwards compatibility. */
 	lastUpdated?: Date | string | number;
 	/** Expected update interval in minutes. Kept for backwards compatibility. */
 	expectedUpdateAfterMinutes?: number;
+	/** Alias for the sensor-level expiry callback. */
+	alarmCallback?: (label: string) => void;
+	/** PascalCase alias for the sensor-level expiry callback. */
+	AlarmCallback?: (label: string) => void;
 }
+
+export interface CwSensorCardDevice extends CwSensorCardData {}
 
 /* ── Alert Points Editor types ─────────────────────────── */
 

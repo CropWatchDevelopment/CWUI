@@ -196,6 +196,7 @@
 	--cw-accent-active: var(--cw-primary-600);
 	--cw-accent-bg: var(--cw-primary-900);
 	--cw-accent-text: var(--cw-primary-300);
+	--cw-status-loading: var(--cw-linechart-dot-purple);
 
 	/* ── Tone: Primary ─────────────────────────────────── */
 	--cw-tone-primary-bg: var(--cw-primary-900);

@@ -98,7 +98,7 @@
 	}
 
 	.cw-status-dot__dot--loading {
-		background-color: var(--cw-warning-500);
+		background-color: var(--cw-status-loading);
 		animation: cw-status-dot-pulse 1.1s ease-in-out infinite;
 	}
 

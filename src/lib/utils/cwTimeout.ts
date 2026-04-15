@@ -1,17 +1,27 @@
 import type { CwDateTimeInput } from '../types/index.js';
 
 export function resolveCwLastSeenAt(
-	lastSeenAt?: CwDateTimeInput | null,
-	lastUpdated?: CwDateTimeInput | null
+	...candidates: Array<CwDateTimeInput | null | undefined>
 ): CwDateTimeInput | undefined {
-	return lastSeenAt ?? lastUpdated ?? undefined;
+	for (const candidate of candidates) {
+		if (candidate != null) {
+			return candidate;
+		}
+	}
+
+	return undefined;
 }
 
 export function resolveCwExpireAfterMinutes(
-	expireAfterMinutes?: number | null,
-	legacyExpireAfterMinutes?: number | null
+	...candidates: Array<number | null | undefined>
 ): number | undefined {
-	return expireAfterMinutes ?? legacyExpireAfterMinutes ?? undefined;
+	for (const candidate of candidates) {
+		if (candidate != null) {
+			return candidate;
+		}
+	}
+
+	return undefined;
 }
 
 export function resolveCwDateTimeMs(value?: CwDateTimeInput | null): number | null {
@@ -24,10 +34,9 @@ export function resolveCwDateTimeMs(value?: CwDateTimeInput | null): number | nu
 }
 
 export function resolveCwExpireAfterMs(
-	expireAfterMinutes?: number | null,
-	legacyExpireAfterMinutes?: number | null
+	...candidates: Array<number | null | undefined>
 ): number | null {
-	const resolvedMinutes = resolveCwExpireAfterMinutes(expireAfterMinutes, legacyExpireAfterMinutes);
+	const resolvedMinutes = resolveCwExpireAfterMinutes(...candidates);
 	if (resolvedMinutes == null || !Number.isFinite(resolvedMinutes) || resolvedMinutes < 0) {
 		return null;
 	}
@@ -37,11 +46,10 @@ export function resolveCwExpireAfterMs(
 
 export function isCwWithinTimeout(
 	lastSeenAt?: CwDateTimeInput | null,
-	expireAfterMinutes?: number | null,
-	legacyExpireAfterMinutes?: number | null
+	...expireAfterCandidates: Array<number | null | undefined>
 ): boolean | null {
 	const lastSeenAtMs = resolveCwDateTimeMs(lastSeenAt);
-	const expireAfterMs = resolveCwExpireAfterMs(expireAfterMinutes, legacyExpireAfterMinutes);
+	const expireAfterMs = resolveCwExpireAfterMs(...expireAfterCandidates);
 
 	if (lastSeenAtMs == null || expireAfterMs == null) {
 		return null;

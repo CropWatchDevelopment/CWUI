@@ -43,7 +43,11 @@
 		icon,
 		status,
 		lastSeenAt,
+		lastSeen,
+		LastSeen,
 		expireAfterMinutes,
+		alarmTimeoutMinutes,
+		AlarmTimeoutMinutes,
 		lastUpdated,
 		expectedUpdateAfter,
 		class: className = '',
@@ -53,7 +57,9 @@
 		withinTimeout = $bindable<boolean | null>(null),
 		onWithinTimeoutChange,
 		alarmCallback,
-		alarmResetCallback
+		AlarmCallback,
+		alarmResetCallback,
+		AlarmResetCallback
 	}: Props = $props();
 
 	onDestroy(() => {
@@ -66,9 +72,16 @@
 			: ''
 	);
 
-	const resolvedLastSeenAt = $derived(resolveCwLastSeenAt(lastSeenAt, lastUpdated));
+	const resolvedLastSeenAt = $derived(
+		resolveCwLastSeenAt(lastSeenAt, lastSeen, LastSeen, lastUpdated)
+	);
 	const resolvedExpireAfterMinutes = $derived(
-		resolveCwExpireAfterMinutes(expireAfterMinutes, expectedUpdateAfter)
+		resolveCwExpireAfterMinutes(
+			expireAfterMinutes,
+			alarmTimeoutMinutes,
+			AlarmTimeoutMinutes,
+			expectedUpdateAfter
+		)
 	);
 	const resolvedLastSeenAtMs = $derived(resolveCwDateTimeMs(resolvedLastSeenAt));
 	const resolvedExpireAfterMs = $derived(resolveCwExpireAfterMs(resolvedExpireAfterMinutes));
@@ -97,12 +110,14 @@
 		if (nextState === false) {
 			onExpire?.();
 			alarmCallback?.();
+			AlarmCallback?.();
 			return;
 		}
 
 		if (previousState === false) {
 			onTimeoutReset?.();
 			alarmResetCallback?.();
+			AlarmResetCallback?.();
 		}
 	}
 

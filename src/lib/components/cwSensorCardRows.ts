@@ -55,9 +55,16 @@ export function formatCwSensorValue(value: number): string {
 
 export function buildCwSensorCardDetailRows(device: CwSensorCardDevice): CwCardDataRowItemData[] {
 	const rows: CwCardDataRowItemData[] = [];
-	const lastSeenAt = resolveCwLastSeenAt(device.lastSeenAt, device.lastUpdated);
+	const lastSeenAt = resolveCwLastSeenAt(
+		device.lastSeenAt,
+		device.lastSeen,
+		device.LastSeen,
+		device.lastUpdated
+	);
 	const expireAfterMinutes = resolveCwExpireAfterMinutes(
 		device.expireAfterMinutes,
+		device.alarmTimeoutMinutes,
+		device.AlarmTimeoutMinutes,
 		device.expectedUpdateAfterMinutes
 	);
 

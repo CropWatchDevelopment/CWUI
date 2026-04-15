@@ -190,6 +190,7 @@
 	--cw-accent-active: #194a7d;
 	--cw-accent-bg: #dbeafe;
 	--cw-accent-text: #1d4f8e;
+	--cw-status-loading: var(--cw-linechart-dot-purple);
 
 	/* ── Tone: Status ──────────────────────────────────── */
 	--cw-tone-primary-bg: #dbeafe;

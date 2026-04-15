@@ -1,6 +1,6 @@
 import type {
 	CwCardDataRowItemData,
-	CwSensorCardDevice,
+	CwSensorCardData,
 	CwStatusDotStatus
 } from '$lib/index.js';
 import { formatCwSensorValue } from '$lib/components/cwSensorCardRows.js';
@@ -48,7 +48,7 @@ export const rowPreviewRows: CwCardDataRowItemData[] = [
 	}
 ];
 
-export const researchLabDevices: CwSensorCardDevice[] = [
+export const researchLabDevices: CwSensorCardData[] = [
 	{
 		label: 'CW-Temp-01',
 		primaryValue: 21.5,
@@ -71,7 +71,7 @@ export const researchLabDevices: CwSensorCardDevice[] = [
 	}
 ];
 
-export const sensorArrayDevices: CwSensorCardDevice[] = [
+export const sensorArrayDevices: CwSensorCardData[] = [
 	{
 		label: 'CW-Soil-A1',
 		primaryValue: 14.3,
@@ -104,7 +104,7 @@ export const sensorArrayDevices: CwSensorCardDevice[] = [
 	}
 ];
 
-export const allOfflineDevices: CwSensorCardDevice[] = [
+export const allOfflineDevices: CwSensorCardData[] = [
 	{
 		label: 'CW-Down-01',
 		primaryValue: 0,
@@ -121,7 +121,7 @@ export const allOfflineDevices: CwSensorCardDevice[] = [
 	}
 ];
 
-export const allLoadingDevices: CwSensorCardDevice[] = [
+export const allLoadingDevices: CwSensorCardData[] = [
 	{
 		label: 'CW-New-01',
 		primaryValue: 0,
@@ -136,7 +136,7 @@ export const allLoadingDevices: CwSensorCardDevice[] = [
 	}
 ];
 
-export const weatherStationDevice: CwSensorCardDevice = {
+export const weatherStationDevice: CwSensorCardData = {
 	label: 'CW-Weather-01',
 	primaryValue: 22.4,
 	primaryUnit: '°C',
@@ -206,7 +206,7 @@ export const weatherStationDevice: CwSensorCardDevice = {
 	]
 };
 
-export const waterLevelDevice: CwSensorCardDevice = {
+export const waterLevelDevice: CwSensorCardData = {
 	label: 'CW-Tank-01',
 	primaryValue: 74.5,
 	primaryUnit: '%',
@@ -269,26 +269,36 @@ export const collapsedStatusCards: SensorCardCollapsedDemo[] = [
 	}
 ];
 
-export const sensorCardSingleDeviceExample = `<CwSensorCard
-\ttitle="Greenhouse A"
-\tdeviceLabel="CW-SS-TMEPNCO2-18"
-\tstatus="online"
-\tprimaryValue={-22.93}
-\tprimaryUnit="°C"
-\tprimary_icon="thermo"
-\tsecondaryValue={79.61}
-\tsecondaryUnit="%"
-\tsecondary_icon="drop"
-\tlastSeenAt={new Date(Date.now() - 120_000)}
-\texpireAfterMinutes={10}
-\tonExpand={(label) => console.log('expanded:', label)}
-\tonCollapse={(label) => console.log('collapsed:', label)}
-\tonExpire={(label) => console.log('overdue:', label)}
-/>`;
+export const sensorCardSingleDeviceExample = `<CwLocationCard title="Greenhouse A">
+\t<CwSensorCard
+\t\tlabel="CW-SS-TMEPNCO2-18"
+\t\tstatus="online"
+\t\tprimaryValue={-22.93}
+\t\tprimaryUnit="°C"
+\t\tprimary_icon="thermo"
+\t\tsecondaryValue={79.61}
+\t\tsecondaryUnit="%"
+\t\tsecondary_icon="drop"
+\t\tlastSeenAt={new Date(Date.now() - 120_000)}
+\t\texpireAfterMinutes={10}
+\t\tonExpand={(label) => console.log('expanded:', label)}
+\t\tonCollapse={(label) => console.log('collapsed:', label)}
+\t\tonExpire={(label) => console.log('overdue:', label)}
+\t>
+\t\t<CwDataList
+\t\t\trows={[
+\t\t\t\t{ id: 'temperature', label: 'Temperature', value: '-22.93', unit: '°C', icon: 'thermo' },
+\t\t\t\t{ id: 'humidity', label: 'Humidity', value: '79.61', unit: '%', icon: 'drop' },
+\t\t\t\t{ id: 'updated', label: 'Last Update', icon: 'timer', lastSeenAt: new Date(Date.now() - 120_000), expireAfterMinutes: 10 }
+\t\t\t]}
+\t\t/>
+\t</CwSensorCard>
+</CwLocationCard>`;
 
-export const sensorCardMultiDeviceExample = `<CwSensorCard
-\ttitle="Research Lab"
-\tdevices={[
+export const sensorCardMultiDeviceExample = `<script lang="ts">
+\timport { buildCwSensorCardDetailRows } from '$lib/components/cwSensorCardRows.js';
+
+\tconst sensors = [
 \t\t{
 \t\t\tlabel: 'CW-Temp-01',
 \t\t\tprimaryValue: 21.5,
@@ -307,8 +317,25 @@ export const sensorCardMultiDeviceExample = `<CwSensorCard
 \t\t\tlastSeenAt: new Date(Date.now() - 300_000),
 \t\t\texpireAfterMinutes: 15
 \t\t}
-\t]}
-/>`;
+\t];
+</script>
+
+<CwLocationCard title="Research Lab">
+\t{#each sensors as sensor (sensor.label)}
+\t\t<CwSensorCard
+\t\t\tlabel={sensor.label}
+\t\t\tstatus={sensor.status ?? 'online'}
+\t\t\tprimaryValue={sensor.primaryValue}
+\t\t\tprimaryUnit={sensor.primaryUnit ?? '°C'}
+\t\t\tsecondaryValue={sensor.secondaryValue}
+\t\t\tsecondaryUnit={sensor.secondaryUnit ?? '%'}
+\t\t\tlastSeenAt={sensor.lastSeenAt}
+\t\t\texpireAfterMinutes={sensor.expireAfterMinutes}
+\t\t>
+\t\t\t<CwDataList rows={buildCwSensorCardDetailRows(sensor)} />
+\t\t</CwSensorCard>
+\t{/each}
+</CwLocationCard>`;
 
 export const sensorCardCustomRowsExample = `<script lang="ts">
 \tconst weatherDevice = {
@@ -329,7 +356,31 @@ export const sensorCardCustomRowsExample = `<script lang="ts">
 \t};
 </script>
 
-<CwSensorCard title="Weather Station Alpha" devices={[weatherDevice]} defaultExpanded />`;
+<CwLocationCard title="Weather Station Alpha">
+\t<CwSensorCard
+\t\tlabel={weatherDevice.label}
+\t\tstatus="online"
+\t\tprimaryValue={weatherDevice.primaryValue}
+\t\tprimaryUnit={weatherDevice.primaryUnit}
+\t\tprimary_icon={weatherDevice.primary_icon}
+\t\tsecondaryValue={weatherDevice.secondaryValue}
+\t\tsecondaryUnit={weatherDevice.secondaryUnit}
+\t\tsecondary_icon={weatherDevice.secondary_icon}
+\t\tlastSeenAt={weatherDevice.lastSeenAt}
+\t\texpireAfterMinutes={weatherDevice.expireAfterMinutes}
+\t\tdefaultExpanded
+\t>
+\t\t<CwDataList rows={weatherDevice.detailRows} />
+\t</CwSensorCard>
+</CwLocationCard>`;
+
+export const dataListExample = `<CwDataList
+\trows={[
+\t\t{ id: 'temperature', label: 'Temperature', value: '22.40', unit: '°C', icon: 'thermo' },
+\t\t{ id: 'humidity', label: 'Humidity', value: '67.30', unit: '%', icon: 'drop' },
+\t\t{ id: 'updated', label: 'Last Update', icon: 'timer', lastSeenAt: new Date(Date.now() - 120_000), expireAfterMinutes: 10 }
+\t]}
+/>`;
 
 export const cardDataRowListExample = `<ul>
 \t<CwCardDataRowItem
@@ -376,26 +427,35 @@ export const cardDataRowTimeoutExample = `<script lang="ts">
 <p>Expired callback fired: {expired}</p>`;
 
 export const sensorCardFreshnessExample = `<script lang="ts">
-\tlet deviceWithinTimeoutMap = $state<Record<string, boolean | null>>({});
+\tlet sensorWithinTimeout = $state<boolean | null>(null);
 </script>
 
-<CwSensorCard
-\ttitle="Greenhouse A"
-\tdeviceLabel="CW-SS-TMEPNCO2-18"
-\tstatus="online"
-\tprimaryValue={22.93}
-\tprimaryUnit="°C"
-\tsecondaryValue={79.61}
-\tsecondaryUnit="%"
-\tlastSeenAt={new Date(Date.now() - 120_000)}
-\texpireAfterMinutes={10}
-\tonExpand={(label) => console.log('expanded:', label)}
-\tonCollapse={(label) => console.log('collapsed:', label)}
-\tonExpire={(label) => console.log('expired:', label)}
-\tbind:deviceWithinTimeoutMap
-/>
+<CwLocationCard title="Greenhouse A">
+\t<CwSensorCard
+\t\tlabel="CW-SS-TMEPNCO2-18"
+\t\tstatus="online"
+\t\tprimaryValue={22.93}
+\t\tprimaryUnit="°C"
+\t\tsecondaryValue={79.61}
+\t\tsecondaryUnit="%"
+\t\tlastSeenAt={new Date(Date.now() - 120_000)}
+\t\texpireAfterMinutes={10}
+\t\tonExpand={(label) => console.log('expanded:', label)}
+\t\tonCollapse={(label) => console.log('collapsed:', label)}
+\t\tonExpire={(label) => console.log('expired:', label)}
+\t\tbind:withinTimeout={sensorWithinTimeout}
+\t>
+\t\t<CwDataList
+\t\t\trows={[
+\t\t\t\t{ id: 'temperature', label: 'Temperature', value: '22.93', unit: '°C', icon: 'thermo' },
+\t\t\t\t{ id: 'humidity', label: 'Humidity', value: '79.61', unit: '%', icon: 'drop' },
+\t\t\t\t{ id: 'updated', label: 'Last Update', icon: 'timer', lastSeenAt: new Date(Date.now() - 120_000), expireAfterMinutes: 10 }
+\t\t\t]}
+\t\t/>
+\t</CwSensorCard>
+</CwLocationCard>
 
-<pre>{JSON.stringify(deviceWithinTimeoutMap, null, 2)}</pre>`;
+<pre>{JSON.stringify({ sensorWithinTimeout }, null, 2)}</pre>`;
 
 export const cardDataRowCustomIconExample = `<CwCardDataRowItem
 \tid="relay-state"

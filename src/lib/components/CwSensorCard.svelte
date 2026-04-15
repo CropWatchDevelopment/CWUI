@@ -1,215 +1,223 @@
 <script lang="ts">
-	import { onDestroy } from 'svelte';
-	import CwStatusDot from './CwStatusDot.svelte';
-	import CwChip from './CwChip.svelte';
-	import CwButton from './CwButton.svelte';
-	import CwCardDataRowItem from './CwCardDataRowItem.svelte';
+	import { onDestroy, untrack } from 'svelte';
+	import type { Snippet } from 'svelte';
 	import CwDataIcon from './CwDataIcon.svelte';
+	import CwExpandPanel from './CwExpandPanel.svelte';
 	import { createCwAlarmScheduler } from './cwAlarmContext.svelte.js';
-	import { buildCwSensorCardDetailRows, getCwSensorReadingIcon } from './cwSensorCardRows.js';
+	import { useCwLocationCard } from './cwLocationCardContext.svelte.js';
+	import { formatCwSensorValue, getCwSensorReadingIcon } from './cwSensorCardRows.js';
+	import { getCwSensorStatusLabel } from './cwSensorCardStatus.js';
 	import {
 		isCwWithinTimeout,
+		resolveCwDateTimeMs,
 		resolveCwExpireAfterMinutes,
+		resolveCwExpireAfterMs,
 		resolveCwLastSeenAt
 	} from '../utils/cwTimeout.js';
-	import type {
-		CwDateTimeInput,
-		CwStatusDotStatus,
-		CwTone,
-		CwSensorCardDetailRow,
-		CwSensorCardDevice
-	} from '../types/index.js';
+	import type { CwDateTimeInput, CwStatusDotStatus } from '../types/index.js';
 
-	type IconContent = CwSensorCardDevice['primary_icon'];
+	type IconContent = string | Snippet;
 
 	interface Props {
-		/** Location or site name displayed in the header */
-		title?: string;
-		/** Current device connection status */
+		/** Sensor or device label shown in the panel header. */
+		label?: string;
+		/** Current sensor status before freshness overrides are applied. */
 		status?: CwStatusDotStatus;
-		/** Initial expanded state for devices when no localStorage entry exists (default: false) */
+		/** Bindable expanded state. */
+		open?: boolean;
+		/** Initial expanded state when no `open` prop has been set yet. */
 		defaultExpanded?: boolean;
-		/** Storage key for persisting expand states. Defaults to title. */
+		/** Optional storage key used to persist the expanded state. */
 		storageKey?: string;
-		/** Array of devices to display. Overrides single-device props when provided. */
-		devices?: CwSensorCardDevice[];
-		/** Device name or label displayed in the body (single-device shorthand) */
-		deviceLabel?: string;
-		/** Primary reading value (single-device shorthand) */
-		primaryValue?: number;
-		/** Unit for primary value (single-device shorthand) */
+		/** Primary reading value. */
+		primaryValue?: number | null;
+		/** Unit for the primary reading. */
 		primaryUnit?: string;
-		/** Primary Icon for primary value (single-device shorthand) */
+		/** Optional icon for the primary reading. */
 		primary_icon?: IconContent;
-		/** Secondary reading value (single-device shorthand) */
-		secondaryValue?: number;
-		/** Unit for secondary value (single-device shorthand) */
+		/** Secondary reading value. */
+		secondaryValue?: number | null;
+		/** Unit for the secondary reading. */
 		secondaryUnit?: string;
-		/** Secondary Icon for secondary value (single-device shorthand) */
+		/** Optional icon for the secondary reading. */
 		secondary_icon?: IconContent;
-		/** Timestamp of the last data update (single-device shorthand) */
-		lastUpdated?: Date | string | number;
-		/** Preferred freshness timestamp (single-device shorthand). Alias for lastUpdated. */
+		/** Preferred freshness timestamp. */
 		lastSeenAt?: CwDateTimeInput;
-		/** Expected update interval in minutes (single-device shorthand) */
-		expectedUpdateAfterMinutes?: number;
-		/** Preferred freshness timeout threshold in minutes (single-device shorthand). Alias for expectedUpdateAfterMinutes. */
+		/** Alias for `lastSeenAt`. */
+		lastSeen?: CwDateTimeInput;
+		/** PascalCase alias for `lastSeenAt`. */
+		LastSeen?: CwDateTimeInput;
+		/** Preferred freshness threshold in minutes. */
 		expireAfterMinutes?: number;
-		/** Custom detail rows — used only when devices is not provided (single-device shorthand) */
-		detailRows?: CwSensorCardDetailRow[];
-		/** Called when user clicks a navigation action */
-		onNavigate?: (target: string) => void;
-		/** Called when a device slot is expanded. Alias for onDeviceExpand. */
-		onExpand?: (deviceLabel: string) => void;
-		/** Called when a device slot is expanded */
-		onDeviceExpand?: (deviceLabel: string) => void;
-		/** Called when a device slot is collapsed. Alias for onDeviceCollapse. */
-		onCollapse?: (deviceLabel: string) => void;
-		/** Called when a device slot is collapsed */
-		onDeviceCollapse?: (deviceLabel: string) => void;
-		/** Called when a device freshness timer expires. Alias for onTimerExpired. */
-		onExpire?: (deviceLabel: string) => void;
-		/** Called when a device freshness row expires. */
-		onTimerExpired?: (deviceLabel: string) => void;
-		/** Bindable per-device freshness map. `true` = fresh, `false` = expired, omitted = no timer configured. */
-		deviceWithinTimeoutMap?: Record<string, boolean | null>;
-		/** Additional CSS class */
+		/** Alias for `expireAfterMinutes`. */
+		alarmTimeoutMinutes?: number;
+		/** PascalCase alias for `expireAfterMinutes`. */
+		AlarmTimeoutMinutes?: number;
+		/** Backwards-compatible freshness timestamp alias. */
+		lastUpdated?: Date | string | number;
+		/** Backwards-compatible freshness threshold alias. */
+		expectedUpdateAfterMinutes?: number;
+		/** Bindable freshness state for this sensor. */
+		withinTimeout?: boolean | null;
+		/** Details heading shown above the child content. */
+		detailsHeading?: string;
+		/** Optional content rendered in the expanded area. */
+		children?: Snippet;
+		/** Called when the sensor is expanded. */
+		onExpand?: (label: string) => void;
+		/** Called when the sensor is collapsed. */
+		onCollapse?: (label: string) => void;
+		/** Called when freshness crosses into the expired state. */
+		onExpire?: (label: string) => void;
+		/** Alias for `onExpire`. */
+		alarmCallback?: (label: string) => void;
+		/** PascalCase alias for `onExpire`. */
+		AlarmCallback?: (label: string) => void;
+		/** Called when freshness returns from expired to non-expired. */
+		onTimeoutReset?: (label: string) => void;
+		/** Called whenever the freshness state changes. */
+		onWithinTimeoutChange?: (withinTimeout: boolean | null) => void;
+		/** Extra CSS class for the sensor panel root. */
 		class?: string;
 	}
 
+	const STORAGE_PREFIX = 'cw-sensor-card-expand:';
+	const locationCardContext = useCwLocationCard();
+	const alarmScheduler = createCwAlarmScheduler();
+	const sensorId = $props.id();
+
 	let {
-		title = 'Location',
+		label = 'Sensor',
 		status = 'loading' as CwStatusDotStatus,
+		open = $bindable<boolean | undefined>(undefined),
 		defaultExpanded = false,
 		storageKey,
-		devices,
-		deviceLabel,
-		primaryValue = 0,
+		primaryValue = null,
 		primaryUnit = '°C',
 		primary_icon = '',
-		secondaryValue,
+		secondaryValue = null,
 		secondaryUnit = '%',
 		secondary_icon = '',
-		lastUpdated,
 		lastSeenAt,
-		expectedUpdateAfterMinutes,
+		lastSeen,
+		LastSeen,
 		expireAfterMinutes,
-		detailRows,
-		onNavigate,
+		alarmTimeoutMinutes,
+		AlarmTimeoutMinutes,
+		lastUpdated,
+		expectedUpdateAfterMinutes,
+		withinTimeout = $bindable<boolean | null>(null),
+		detailsHeading = 'Details',
+		children,
 		onExpand,
-		onDeviceExpand,
 		onCollapse,
-		onDeviceCollapse,
 		onExpire,
-		onTimerExpired,
-		deviceWithinTimeoutMap = $bindable<Record<string, boolean | null>>({}),
+		alarmCallback,
+		AlarmCallback,
+		onTimeoutReset,
+		onWithinTimeoutChange,
 		class: className = ''
 	}: Props = $props();
 
-	const STORAGE_PREFIX = 'cw-sensor-card-expand:';
-	const resolvedStorageKey = $derived(storageKey ?? title);
-	const rowAlarmScheduler = createCwAlarmScheduler();
-
-	let expandedMap = $state<Record<string, boolean>>({});
+	let hasResolvedInitialOpen = false;
+	let lastReportedTimeoutState: boolean | null = null;
+	let panelOpen = $state(false);
 
 	onDestroy(() => {
-		rowAlarmScheduler.clear();
+		alarmScheduler.clear();
+		locationCardContext.removeSensor(sensorId);
 	});
 
-	$effect(() => {
-		try {
-			const stored = localStorage.getItem(STORAGE_PREFIX + resolvedStorageKey);
-			if (stored) {
-				expandedMap = JSON.parse(stored);
-			}
-		} catch { /* SSR or storage unavailable */ }
-	});
+	const resolvedStorageKey = $derived(storageKey ?? label);
+	const isOpenControlled = $derived(open !== undefined);
+	const resolvedLastSeenAt = $derived(
+		resolveCwLastSeenAt(lastSeenAt, lastSeen, LastSeen, lastUpdated)
+	);
+	const resolvedExpireAfterMinutes = $derived(
+		resolveCwExpireAfterMinutes(
+			expireAfterMinutes,
+			alarmTimeoutMinutes,
+			AlarmTimeoutMinutes,
+			expectedUpdateAfterMinutes
+		)
+	);
+	const resolvedLastSeenAtMs = $derived(resolveCwDateTimeMs(resolvedLastSeenAt));
+	const resolvedExpireAfterMs = $derived(resolveCwExpireAfterMs(resolvedExpireAfterMinutes));
+	const freshnessState = $derived(isCwWithinTimeout(resolvedLastSeenAt, resolvedExpireAfterMinutes));
+	const effectiveStatus = $derived(freshnessState === false ? 'offline' : status);
+	const statusLabel = $derived(getCwSensorStatusLabel(effectiveStatus));
+	const primaryIcon = $derived(
+		getCwSensorReadingIcon('primary', {
+			label,
+			primaryValue: primaryValue ?? 0,
+			primaryUnit,
+			primary_icon,
+			secondaryValue: secondaryValue ?? undefined,
+			secondaryUnit,
+			secondary_icon
+		})
+	);
+	const secondaryIcon = $derived(
+		getCwSensorReadingIcon('secondary', {
+			label,
+			primaryValue: primaryValue ?? 0,
+			primaryUnit,
+			primary_icon,
+			secondaryValue: secondaryValue ?? undefined,
+			secondaryUnit,
+			secondary_icon
+		})
+	);
+	const expandClassName = $derived(
+		['cw-sensor-card', className, slotStatusClass(effectiveStatus)].filter(Boolean).join(' ')
+	);
 
-	function notifyDeviceHandler(
-		handlers: Array<((deviceLabel: string) => void) | undefined>,
-		label: string
-	) {
-		const calledHandlers = new Set<((deviceLabel: string) => void) | undefined>();
-
-		for (const handler of handlers) {
-			if (!handler || calledHandlers.has(handler)) {
-				continue;
-			}
-
-			calledHandlers.add(handler);
-			handler(label);
+	function updateWithinTimeoutState(nextState: boolean | null) {
+		if (withinTimeout !== nextState) {
+			withinTimeout = nextState;
 		}
-	}
 
-	function resolveDeviceLastSeenAt(device: CwSensorCardDevice) {
-		return resolveCwLastSeenAt(device.lastSeenAt, device.lastUpdated);
-	}
-
-	function resolveDeviceExpireAfterMinutes(device: CwSensorCardDevice) {
-		return resolveCwExpireAfterMinutes(device.expireAfterMinutes, device.expectedUpdateAfterMinutes);
-	}
-
-	function updateDeviceWithinTimeout(label: string, nextState: boolean | null) {
-		const currentState = deviceWithinTimeoutMap[label] ?? null;
-		if (currentState === nextState) {
+		const previousState = lastReportedTimeoutState;
+		if (previousState === nextState) {
 			return;
 		}
 
-		if (nextState == null) {
-			if (!(label in deviceWithinTimeoutMap)) {
-				return;
-			}
+		lastReportedTimeoutState = nextState;
+		onWithinTimeoutChange?.(nextState);
 
-			const nextMap = { ...deviceWithinTimeoutMap };
-			delete nextMap[label];
-			deviceWithinTimeoutMap = nextMap;
+		if (nextState === false) {
+			onExpire?.(label);
+			alarmCallback?.(label);
+			AlarmCallback?.(label);
 			return;
 		}
 
-		deviceWithinTimeoutMap = {
-			...deviceWithinTimeoutMap,
-			[label]: nextState
-		};
-	}
-
-	function handleDeviceExpire(device: CwSensorCardDevice) {
-		updateDeviceWithinTimeout(device.label, false);
-		notifyDeviceHandler([onExpire, onTimerExpired], device.label);
-	}
-
-	/**
-	 * Returns the effective status for a device, accounting for overdue state.
-	 * If the device freshness state is expired, status becomes 'offline'.
-	 */
-	function effectiveDeviceStatus(dev: CwSensorCardDevice): CwStatusDotStatus {
-		if (deviceWithinTimeoutMap[dev.label] === false) return 'offline';
-
-		const freshnessState = isCwWithinTimeout(
-			resolveDeviceLastSeenAt(dev),
-			resolveDeviceExpireAfterMinutes(dev)
-		);
-		if (freshnessState === false) {
-			return 'offline';
+		if (previousState === false) {
+			onTimeoutReset?.(label);
 		}
-
-		return dev.status ?? status;
 	}
 
-	function isExpanded(label: string): boolean {
-		return expandedMap[label] ?? defaultExpanded;
-	}
-
-	function toggleDevice(label: string) {
-		const nextExpanded = !isExpanded(label);
-		expandedMap[label] = nextExpanded;
-		if (nextExpanded) {
-			notifyDeviceHandler([onExpand, onDeviceExpand], label);
-		} else {
-			notifyDeviceHandler([onCollapse, onDeviceCollapse], label);
-		}
+	function persistOpen(nextOpen: boolean) {
 		try {
-			localStorage.setItem(STORAGE_PREFIX + resolvedStorageKey, JSON.stringify(expandedMap));
-		} catch { /* storage unavailable */ }
+			localStorage.setItem(STORAGE_PREFIX + resolvedStorageKey, JSON.stringify(nextOpen));
+		} catch {
+			/* storage unavailable */
+		}
+	}
+
+	function handleToggle(nextOpen: boolean) {
+		if (open !== nextOpen) {
+			open = nextOpen;
+		}
+
+		persistOpen(nextOpen);
+
+		if (nextOpen) {
+			onExpand?.(label);
+			return;
+		}
+
+		onCollapse?.(label);
 	}
 
 	function sensorStatIconClass(icon: IconContent | undefined): string {
@@ -218,516 +226,263 @@
 		return '';
 	}
 
-	/** Resolve the device list: explicit array, single-device props, or empty */
-	const resolvedDevices = $derived<CwSensorCardDevice[]>(
-		devices
-			? devices
-			: deviceLabel != null
-				? [
-						{
-							label: deviceLabel,
-							primaryValue,
-							primaryUnit,
-							primary_icon,
-							secondaryValue,
-							secondaryUnit,
-							secondary_icon,
-							detailRows,
-							lastSeenAt,
-							expireAfterMinutes,
-							lastUpdated,
-							expectedUpdateAfterMinutes,
-							status
-						}
-					]
-				: []
-	);
+	function formatReading(value: number | null | undefined): string {
+		return value == null ? 'N/A' : formatCwSensorValue(value);
+	}
+
+	function slotStatusClass(devStatus?: string): string {
+		if (devStatus === 'online') return 'cw-sensor-card__slot--online';
+		if (devStatus === 'offline') return 'cw-sensor-card__slot--offline';
+		if (devStatus === 'loading') return 'cw-sensor-card__slot--loading';
+		if (devStatus === 'warning') return 'cw-sensor-card__slot--warning';
+		return '';
+	}
 
 	$effect(() => {
-		const activeLabels = new Set(resolvedDevices.map((device) => device.label));
-		const staleLabels = Object.keys(deviceWithinTimeoutMap).filter((label) => !activeLabels.has(label));
-		if (staleLabels.length === 0) {
+		const controlledOpen = open;
+		if (!isOpenControlled || controlledOpen === undefined || controlledOpen === panelOpen) {
 			return;
 		}
 
-		const nextMap = { ...deviceWithinTimeoutMap };
-		for (const label of staleLabels) {
-			delete nextMap[label];
-		}
-		deviceWithinTimeoutMap = nextMap;
+		panelOpen = controlledOpen;
 	});
 
-	/** Aggregate status derived from individual device statuses, falls back to card-level prop */
-	const aggregateStatus = $derived.by<CwStatusDotStatus>(() => {
-		const devStatuses = resolvedDevices
-			.map((d) => effectiveDeviceStatus(d))
-			.filter((s): s is NonNullable<typeof s> => s != null);
+	$effect(() => {
+		if (hasResolvedInitialOpen || isOpenControlled) {
+			hasResolvedInitialOpen = true;
+			return;
+		}
 
-		if (devStatuses.length === 0) return status;
+		let nextOpen = defaultExpanded;
 
-		const allOnline = devStatuses.every((s) => s === 'online');
-		if (allOnline) return 'online';
+		try {
+			const stored = localStorage.getItem(STORAGE_PREFIX + resolvedStorageKey);
+			if (stored != null) {
+				nextOpen = JSON.parse(stored);
+			}
+		} catch {
+			/* SSR or storage unavailable */
+		}
 
-		const allOffline = devStatuses.every((s) => s === 'offline');
-		if (allOffline) return 'offline';
+		if (panelOpen !== nextOpen) {
+			panelOpen = nextOpen;
+		}
 
-		const allLoading = devStatuses.every((s) => s === 'loading');
-		if (allLoading) return 'loading';
-
-		const hasOnline = devStatuses.some((s) => s === 'online');
-		const hasOffline = devStatuses.some((s) => s === 'offline');
-		if (hasOnline && hasOffline) return 'warning';
-
-		return 'warning';
+		hasResolvedInitialOpen = true;
 	});
 
-	const statusTone = $derived<CwTone>(
-		aggregateStatus === 'online'
-			? 'success'
-			: aggregateStatus === 'offline'
-				? 'danger'
-				: aggregateStatus === 'loading'
-					? 'info'
-					: 'warning'
-	);
+	$effect(() => {
+		updateWithinTimeoutState(freshnessState);
+	});
 
-	const statusLabel = $derived(
-		aggregateStatus === 'online'
-			? 'Online'
-			: aggregateStatus === 'offline'
-				? 'Offline'
-				: aggregateStatus === 'warning'
-					? 'Warning'
-					: 'Loading'
-	);
-
-	function slotStatusClass(devStatus?: string): string {
-		switch (devStatus) {
-			case 'online': return 'cw-sensor-card__slot--online';
-			case 'offline': return 'cw-sensor-card__slot--offline';
-			case 'loading': return 'cw-sensor-card__slot--loading';
-			case 'warning': return 'cw-sensor-card__slot--warning';
-			default: return '';
+	$effect(() => {
+		if (resolvedLastSeenAtMs == null || resolvedExpireAfterMs == null) {
+			return;
 		}
-	}
 
-	function resolveDetailRows(dev: CwSensorCardDevice): CwSensorCardDetailRow[] {
-		return dev.detailRows ?? buildCwSensorCardDetailRows(dev);
-	}
+		const scheduledAlarmId = alarmScheduler.schedule({
+			id: `cw-sensor-card:${sensorId}:${resolvedLastSeenAtMs}:${resolvedExpireAfterMs}`,
+			from: resolvedLastSeenAtMs,
+			alarmAfterMs: resolvedExpireAfterMs,
+			callback: () => {
+				updateWithinTimeoutState(false);
+			}
+		});
 
+		return () => {
+			alarmScheduler.cancel(scheduledAlarmId);
+		};
+	});
+
+	$effect(() => {
+		const sensor = {
+			id: sensorId,
+			label,
+			status: effectiveStatus
+		};
+
+		untrack(() => {
+			locationCardContext.setSensor(sensor);
+		});
+	});
 </script>
 
-<div
-	class="cw-sensor-card cw-sensor-card--{aggregateStatus} {className}"
+<CwExpandPanel
+	bind:open={panelOpen}
+	class={expandClassName}
+	onToggle={handleToggle}
 >
-	<!-- Header -->
-	<header class="cw-sensor-card__header">
-		<div class="cw-sensor-card__status-indicator">
-			{#if resolvedDevices.length > 0}
-				<CwStatusDot status={aggregateStatus} size="lg" />
-			{/if}
-		</div>
-		<div class="cw-sensor-card__title-group">
-			<div class="cw-sensor-card__title">{title}</div>
-			<CwChip label={statusLabel} tone={statusTone} variant="soft" size="sm" />
-		</div>
-		<button
-			class="cw-sensor-card__nav-action"
-			type="button"
-			aria-label="View location"
-			onclick={() => onNavigate?.('location')}
-		>
-			<svg viewBox="0 0 24 24" aria-hidden="true">
-				<path fill="currentColor" d="M10 6v12l6-6-6-6Z" />
-			</svg>
-		</button>
-	</header>
+	{#snippet header()}
+		<div class="cw-sensor-card__content">
+			<div class="cw-sensor-card__device">
+				<div class="cw-sensor-card__header-copy">
+					<span class="cw-sensor-card__label">{label}</span>
+				</div>
 
-	<!-- Body -->
-	<section class="cw-sensor-card__body">
-		{#if resolvedDevices.length === 0}
-			<div class="cw-sensor-card__empty">
-				<svg class="cw-sensor-card__empty-icon" viewBox="0 0 24 24" aria-hidden="true">
-					<path
-						fill="currentColor"
-						d="M13 13h-2V7h2m0 10h-2v-2h2M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2Z"
-					/>
-				</svg>
-				<span class="cw-sensor-card__empty-text">No devices assigned</span>
-			</div>
-		{:else}
-			<div class="cw-sensor-card__devices">
-				{#each resolvedDevices as dev (dev.label)}
-					{@const rows = resolveDetailRows(dev)}
-					{@const devExpanded = isExpanded(dev.label)}
-					{@const primaryIcon = getCwSensorReadingIcon('primary', dev)}
-					{@const secondaryIcon = getCwSensorReadingIcon('secondary', dev)}
-					<div class="cw-sensor-card__slot {slotStatusClass(effectiveDeviceStatus(dev))}" class:cw-sensor-card__slot--expanded={devExpanded}>
-						<div class="cw-sensor-card__content">
-							<div class="cw-sensor-card__device">
-								<span class="cw-sensor-card__label">{dev.label}</span>
-								<div class="cw-sensor-card__stats">
-									<!-- Primary stat -->
-									<div class="cw-sensor-card__stat">
-										<span
-											class="cw-sensor-card__stat-icon {sensorStatIconClass(primaryIcon)}"
-											aria-hidden="true"
-										>
-											<CwDataIcon icon={primaryIcon} />
-										</span>
-										<span class="cw-sensor-card__stat-reading">
-											<span class="cw-sensor-card__stat-value"
-												>{dev.primaryValue?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span
-											>
-											<span class="cw-sensor-card__stat-unit"
-												>{dev.primaryUnit ?? '°C'}</span
-											>
-										</span>
-									</div>
-									<!-- Secondary stat -->
-									{#if dev.secondaryValue != null}
-										<div class="cw-sensor-card__stat">
-											<span
-												class="cw-sensor-card__stat-icon {sensorStatIconClass(secondaryIcon)}"
-												aria-hidden="true"
-											>
-												<CwDataIcon icon={secondaryIcon} />
-											</span>
-											<span class="cw-sensor-card__stat-reading">
-												<span class="cw-sensor-card__stat-value">{dev.secondaryValue?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-												<span class="cw-sensor-card__stat-unit">{dev.secondaryUnit ?? '%'}</span>
-											</span>
-										</div>
-									{/if}
-								</div>
-							</div>
-							<button
-								class="cw-sensor-card__collapse"
-								type="button"
-								aria-label={devExpanded ? 'Collapse details' : 'Expand details'}
-								onclick={() => toggleDevice(dev.label)}
-							>
-								<svg viewBox="0 0 24 24" aria-hidden="true">
-									<path
-										fill="currentColor"
-										d={devExpanded ? 'M7 14l5-5 5 5H7Z' : 'M7 10l5 5 5-5H7Z'}
-									/>
-								</svg>
-							</button>
-						</div>
-
-						<!-- Expandable details -->
-						<div class="cw-sensor-card__details-wrapper" aria-hidden={!devExpanded}>
-							<div class="cw-sensor-card__details">
-								<div class="cw-sensor-card__details-inner">
-									<h4 class="cw-sensor-card__details-heading">Details</h4>
-									{#if rows.length > 0}
-										<ul class="cw-sensor-card__detail-list">
-											{#each rows as row (row.id)}
-												{@const rowHasFreshness = row.lastSeenAt != null || row.lastUpdated != null}
-												<CwCardDataRowItem
-													{...row}
-													alarmScheduler={rowAlarmScheduler}
-													onExpire={rowHasFreshness ? () => handleDeviceExpire(dev) : undefined}
-													onWithinTimeoutChange={rowHasFreshness
-														? (nextState) => updateDeviceWithinTimeout(dev.label, nextState)
-														: undefined}
-												/>
-											{/each}
-										</ul>
-									{:else}
-										<p class="cw-sensor-card__details-empty">No detailed readings available yet.</p>
-									{/if}
-									<div class="cw-sensor-card__cta">
-										<CwButton
-											variant="secondary"
-											size="sm"
-											fullWidth
-											onclick={() => onNavigate?.(`device-detail:${dev.label}`)}
-										>
-											<span class="cw-sensor-card__cta-content">
-												View Device Details
-												<svg viewBox="0 0 24 24" aria-hidden="true">
-													<path fill="currentColor" d="M10 6v12l6-6-6-6Z" />
-												</svg>
-											</span>
-										</CwButton>
-									</div>
-								</div>
-							</div>
-						</div>
+				<div class="cw-sensor-card__stats">
+					<div class="cw-sensor-card__stat">
+						<span
+							class={[
+								'cw-sensor-card__stat-icon',
+								sensorStatIconClass(primaryIcon)
+							]}
+							aria-hidden="true"
+						>
+							<CwDataIcon icon={primaryIcon} />
+						</span>
+						<span class="cw-sensor-card__stat-reading">
+							<span class="cw-sensor-card__stat-value">{formatReading(primaryValue)}</span>
+							{#if primaryValue != null}
+								<span class="cw-sensor-card__stat-unit">{primaryUnit}</span>
+							{/if}
+						</span>
 					</div>
-				{/each}
+
+					{#if secondaryValue != null}
+						<div class="cw-sensor-card__stat">
+							<span
+								class={[
+									'cw-sensor-card__stat-icon',
+									sensorStatIconClass(secondaryIcon)
+								]}
+								aria-hidden="true"
+							>
+								<CwDataIcon icon={secondaryIcon} />
+							</span>
+							<span class="cw-sensor-card__stat-reading">
+								<span class="cw-sensor-card__stat-value">{formatReading(secondaryValue)}</span>
+								<span class="cw-sensor-card__stat-unit">{secondaryUnit}</span>
+							</span>
+						</div>
+					{/if}
+				</div>
 			</div>
-		{/if}
-	</section>
-</div>
+		</div>
+	{/snippet}
+
+	{#if children}
+		<div class="cw-sensor-card__details-inner">
+			<h4 class="cw-sensor-card__details-heading">{detailsHeading}</h4>
+			{@render children()}
+		</div>
+	{:else}
+		<p class="cw-sensor-card__details-empty">No detailed readings available yet.</p>
+	{/if}
+</CwExpandPanel>
 
 <style>
-	.cw-sensor-card {
-		position: relative;
-		width: min(390px, 100%);
-		border-radius: var(--cw-radius-2xl);
-		background: var(--cw-bg-surface);
+	:global(.cw-sensor-card.cw-expand) {
 		border: 1px solid var(--cw-border-default);
-		box-shadow: var(--cw-shadow-lg);
-		color: var(--cw-text-primary);
-		overflow: hidden;
-		font-family: var(--cw-font-family);
-	}
-
-	/* ── Status-dependent custom properties ── */
-	.cw-sensor-card--online {
-		--_sensor-color: var(--cw-success-500);
-		--_sensor-glow: color-mix(in srgb, var(--cw-success-500) 50%, transparent);
-	}
-	.cw-sensor-card--offline {
-		--_sensor-color: var(--cw-danger-500);
-		--_sensor-glow: color-mix(in srgb, var(--cw-danger-500) 45%, transparent);
-	}
-	.cw-sensor-card--loading {
-		--_sensor-color: var(--cw-warning-500);
-		--_sensor-glow: color-mix(in srgb, var(--cw-warning-500) 50%, transparent);
-	}
-	.cw-sensor-card--warning {
-		--_sensor-color: var(--cw-warning-400);
-		--_sensor-glow: color-mix(in srgb, var(--cw-warning-400) 45%, transparent);
-	}
-
-	/* ── Header ── */
-	.cw-sensor-card__header {
-		display: flex;
-		align-items: center;
-		padding: var(--cw-space-2) var(--cw-space-4);
-		gap: var(--cw-space-3);
+		border-radius: var(--cw-radius-xl);
 		background: var(--cw-bg-elevated);
-		border-bottom: 1px solid var(--cw-border-muted);
+		box-shadow: var(--cw-shadow-sm);
+		overflow: hidden;
 	}
 
-	.cw-sensor-card__status-indicator {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 2rem;
-		height: 2rem;
-		border-radius: var(--cw-radius-full);
-		border: 1px solid var(--cw-border-default);
-		background: var(--cw-bg-surface);
-		flex-shrink: 0;
+	:global(.cw-sensor-card.cw-expand.cw-sensor-card__slot--online) {
+		--_sensor-color: var(--cw-success-500);
 	}
 
-	.cw-sensor-card__title-group {
-		display: flex;
-		flex-direction: column;
-		gap: var(--cw-space-1);
-		flex: 1;
+	:global(.cw-sensor-card.cw-expand.cw-sensor-card__slot--offline) {
+		--_sensor-color: var(--cw-danger-500);
+	}
+
+	:global(.cw-sensor-card.cw-expand.cw-sensor-card__slot--loading) {
+		--_sensor-color: var(--cw-status-loading);
+	}
+
+	:global(.cw-sensor-card.cw-expand.cw-sensor-card__slot--warning) {
+		--_sensor-color: var(--cw-warning-400);
+	}
+
+	:global(.cw-sensor-card .cw-expand__header) {
+		padding: 0;
+		gap: var(--cw-space-2);
+		background: transparent;
+		border-left: 3px solid var(--_sensor-color, var(--cw-border-default));
+	}
+
+	:global(.cw-sensor-card .cw-expand__header-content) {
 		min-width: 0;
 	}
 
-	.cw-sensor-card__title {
-		font-weight: var(--cw-font-bold);
-		color: var(--cw-text-primary);
-		font-size: var(--cw-text-base);
-		line-height: var(--cw-leading-tight);
+	:global(.cw-sensor-card .cw-expand__chevron) {
+		margin-right: var(--cw-space-4);
+		color: var(--cw-text-secondary);
 	}
 
-	.cw-sensor-card__nav-action {
-		width: 2.125rem;
-		height: 2.125rem;
-		border-radius: var(--cw-radius-full);
-		background: var(--cw-bg-muted);
-		border: 1px solid var(--cw-border-default);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: var(--cw-accent-text);
-		cursor: pointer;
-		flex-shrink: 0;
-		transition:
-			transform var(--cw-duration-fast) var(--cw-ease-default),
-			background var(--cw-duration-fast) var(--cw-ease-default);
+	:global(.cw-sensor-card .cw-expand__body) {
+		padding: 0;
 	}
 
-	.cw-sensor-card__nav-action:hover {
-		transform: translateX(1px);
-		background: var(--cw-bg-subtle);
+	:global(.cw-sensor-card.cw-expand--open .cw-expand__body) {
+		padding: 0;
 	}
 
-	.cw-sensor-card__nav-action:focus-visible {
-		outline: var(--cw-focus-ring-width) solid var(--cw-focus-ring-color);
-		outline-offset: var(--cw-focus-ring-offset);
-	}
-
-	.cw-sensor-card__nav-action svg {
-		width: 1.125rem;
-		height: 1.125rem;
-	}
-
-	/* ── Body ── */
-	.cw-sensor-card__body {
-		background: var(--cw-bg-muted);
-		padding: var(--cw-space-1);
-	}
-
-	/* ── Devices container ── */
-	.cw-sensor-card__devices {
-		display: flex;
-		flex-direction: column;
-		gap: var(--cw-space-1);
-	}
-
-	/* ── Empty state ── */
-	.cw-sensor-card__empty {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: var(--cw-space-2);
-		padding: var(--cw-space-6) var(--cw-space-4);
-		border-radius: var(--cw-radius-xl);
-		background: var(--cw-bg-elevated);
-		border: 1px dashed var(--cw-border-default);
-	}
-
-	.cw-sensor-card__empty-icon {
-		width: 2rem;
-		height: 2rem;
-		color: var(--cw-text-muted);
-		opacity: 0.6;
-	}
-
-	.cw-sensor-card__empty-text {
-		font-size: var(--cw-text-sm);
-		color: var(--cw-text-muted);
-		font-weight: var(--cw-font-medium);
-	}
-
-	/* ── Slot (content area with side status indicator bar) ── */
-	.cw-sensor-card__slot {
-		position: relative;
-		padding: var(--cw-space-1) var(--cw-space-3) var(--cw-space-1) var(--cw-space-8);
-		border-radius: var(--cw-radius-xl);
-		background: var(--cw-bg-elevated2);
-		border: 1px solid var(--cw-border-muted);
-	}
-
-	.cw-sensor-card__slot::before {
-		content: '';
-		position: absolute;
-		left: 0.75rem;
-		top: 0.75rem;
-		bottom: 0.75rem;
-		width: 5px;
-		border-radius: var(--cw-radius-full);
-		/* background: linear-gradient(
-			180deg,
-			var(--_slot-color, var(--_sensor-color, var(--cw-success-500))),
-			var(--cw-bg-surface)
-		); */
-		background: var(--_slot-color, var(--_sensor-color, var(--cw-success-500)));
-		box-shadow: 0 0 10px var(--_slot-glow, var(--_sensor-glow, color-mix(in srgb, var(--cw-success-500) 50%, transparent)));
-	}
-
-	/* Per-slot status colors */
-	.cw-sensor-card__slot--online {
-		--_slot-color: var(--cw-success-500);
-		--_slot-glow: color-mix(in srgb, var(--cw-success-500) 50%, transparent);
-	}
-	.cw-sensor-card__slot--offline {
-		--_slot-color: var(--cw-danger-500);
-		--_slot-glow: color-mix(in srgb, var(--cw-danger-500) 45%, transparent);
-	}
-	.cw-sensor-card__slot--loading {
-		--_slot-color: var(--cw-info-500);
-		--_slot-glow: color-mix(in srgb, var(--cw-info-500) 50%, transparent);
-	}
-	.cw-sensor-card__slot--warning {
-		--_slot-color: var(--cw-warning-400);
-		--_slot-glow: color-mix(in srgb, var(--cw-warning-400) 45%, transparent);
-	}
-
-	/* ── Content row ── */
 	.cw-sensor-card__content {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
+		grid-template-columns: minmax(0, 1fr);
 		align-items: center;
-		gap: var(--cw-space-2);
-		min-width: 0;
+		gap: var(--cw-space-3);
+		padding: var(--cw-space-3) var(--cw-space-4);
+		width: 100%;
 	}
 
 	.cw-sensor-card__device {
-		display: flex;
-		flex-direction: column;
-		gap: var(--cw-space-1);
-		flex: 1;
+		display: grid;
+		gap: 0.3rem;
 		min-width: 0;
-		overflow: hidden;
-		border-right: 1px solid var(--cw-border-muted);
-		container-type: inline-size;
+	}
+
+	.cw-sensor-card__header-copy {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--cw-space-3);
+		min-width: 0;
 	}
 
 	.cw-sensor-card__label {
+		min-width: 0;
 		font-size: var(--cw-text-sm);
-		font-size: clamp(var(--cw-text-xs), 7cqi, var(--cw-text-sm));
-		color: var(--cw-text-secondary);
 		font-weight: var(--cw-font-semibold);
-		letter-spacing: 0.03em;
-		line-height: 1.2;
-		white-space: nowrap;
+		color: var(--cw-text-primary);
 		overflow: hidden;
 		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
-	/* ── Stats ── */
+	.cw-sensor-card__status {
+		flex-shrink: 0;
+		font-size: var(--cw-text-xs);
+		color: var(--cw-text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+	}
+
 	.cw-sensor-card__stats {
 		display: flex;
-		align-items: center;
+		flex-wrap: wrap;
 		gap: var(--cw-space-3);
-		gap: clamp(var(--cw-space-2), 3cqi, var(--cw-space-4));
-		flex-wrap: nowrap;
-		min-width: 0;
 	}
 
 	.cw-sensor-card__stat {
-		display: flex;
+		display: inline-flex;
 		align-items: center;
 		gap: var(--cw-space-1);
-		font-weight: var(--cw-font-bold);
-		color: var(--cw-text-primary);
-		flex: 1 1 0;
 		min-width: 0;
-		container-type: inline-size;
 	}
 
 	.cw-sensor-card__stat-icon {
-		width: 1.625rem;
-		height: 1.625rem;
-		min-width: 1.625rem;
-		width: clamp(1rem, 24cqi, 1.625rem);
-		height: clamp(1rem, 24cqi, 1.625rem);
-		min-width: clamp(1rem, 24cqi, 1.625rem);
-		border-radius: var(--cw-radius-full);
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
+		width: 1.35rem;
+		height: 1.35rem;
+		border-radius: var(--cw-radius-full);
 		background: color-mix(in srgb, var(--cw-text-muted) 15%, transparent);
-		overflow: hidden;
-	}
-
-	.cw-sensor-card__stat-reading {
-		display: inline-flex;
-		align-items: baseline;
-		gap: 0.1rem;
-		min-width: 0;
-		flex: 1 1 auto;
-		white-space: nowrap;
-	}
-
-	.cw-sensor-card__stat-icon svg {
-		width: 1rem;
-		height: 1rem;
-		width: clamp(0.75rem, 15cqi, 1rem);
-		height: clamp(0.75rem, 15cqi, 1rem);
+		color: var(--cw-text-muted);
+		flex-shrink: 0;
 	}
 
 	.cw-sensor-card__stat-icon--temp {
@@ -738,109 +493,52 @@
 		color: var(--cw-info-300);
 	}
 
-	.cw-sensor-card__stat-value {
-		line-height: 1;
+	:global(.cw-sensor-card__stat-icon svg) {
+		width: 0.85rem;
+		height: 0.85rem;
+	}
+
+	.cw-sensor-card__stat-reading {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 0.2rem;
 		min-width: 0;
+	}
+
+	.cw-sensor-card__stat-value {
 		font-size: var(--cw-text-lg);
-		font-size: clamp(var(--cw-text-xs), 21cqi, var(--cw-text-lg));
-		font-variant-numeric: tabular-nums;
+		font-weight: var(--cw-font-bold);
+		line-height: 1;
+		color: var(--cw-text-primary);
 		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: clip;
 	}
 
 	.cw-sensor-card__stat-unit {
 		font-size: var(--cw-text-xs);
-		font-size: clamp(0.625rem, 10cqi, var(--cw-text-xs));
+		font-weight: var(--cw-font-semibold);
 		color: var(--cw-text-muted);
-		line-height: 1;
-		font-weight: var(--cw-font-medium);
 		white-space: nowrap;
 	}
 
-	/* ── Collapse toggle ── */
-	.cw-sensor-card__collapse {
-		border: 0;
-		background: transparent;
-		color: var(--cw-text-muted);
-		cursor: pointer;
-		padding: var(--cw-space-1);
-		flex-shrink: 0;
-		transition: transform var(--cw-duration-fast) var(--cw-ease-default);
-	}
-
-	.cw-sensor-card__collapse:hover {
-		transform: translateY(1px);
-		color: var(--cw-text-secondary);
-	}
-
-	.cw-sensor-card__collapse:focus-visible {
-		outline: var(--cw-focus-ring-width) solid var(--cw-focus-ring-color);
-		outline-offset: var(--cw-focus-ring-offset);
-		border-radius: var(--cw-radius-sm);
-	}
-
-	.cw-sensor-card__collapse svg {
-		width: 1.125rem;
-		height: 1.125rem;
-	}
-
-	/* ── Details (expandable via grid-template-rows) ── */
-	.cw-sensor-card__details-wrapper {
-		display: grid;
-		grid-template-rows: 0fr;
-		transition: grid-template-rows var(--cw-duration-normal) var(--cw-ease-default);
-	}
-
-	.cw-sensor-card__slot--expanded .cw-sensor-card__details-wrapper {
-		grid-template-rows: 1fr;
-	}
-
-	.cw-sensor-card__details {
-		overflow: hidden;
-	}
-
 	.cw-sensor-card__details-inner {
-		padding-top: var(--cw-space-3);
-		margin-top: var(--cw-space-3);
-		border-top: 1px solid var(--cw-border-muted);
+		display: grid;
+		gap: var(--cw-space-3);
+		padding: 0 var(--cw-space-4) var(--cw-space-4);
 	}
 
 	.cw-sensor-card__details-heading {
-		margin: 0 0 var(--cw-space-2);
+		margin: 0;
+		padding-top: var(--cw-space-1);
 		font-size: var(--cw-text-sm);
 		font-weight: var(--cw-font-semibold);
-		color: var(--cw-accent-text);
-	}
-
-	.cw-sensor-card__detail-list {
-		list-style: none;
-		margin: 0;
-		padding: 0;
+		color: var(--cw-accent);
 	}
 
 	.cw-sensor-card__details-empty {
 		margin: 0;
+		padding: 0 var(--cw-space-4) var(--cw-space-4);
 		font-size: var(--cw-text-sm);
 		color: var(--cw-text-muted);
-	}
-
-	/* ── CTA button wrapper ── */
-	.cw-sensor-card__cta {
-		margin-top: var(--cw-space-3);
-	}
-
-	.cw-sensor-card__cta-content {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--cw-space-2);
-		justify-content: center;
-		width: 100%;
-	}
-
-	.cw-sensor-card__cta-content svg {
-		width: 1rem;
-		height: 1rem;
-		color: var(--cw-accent);
+		line-height: 1.6;
 	}
 </style>

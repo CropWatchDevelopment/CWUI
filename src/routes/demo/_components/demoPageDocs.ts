@@ -3460,7 +3460,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 	},
 	'/demo/card-data-row-item': {
 		summary:
-			'CwCardDataRowItem is the reusable detail-row primitive behind CwSensorCard. Use it anywhere you need a compact sensor-style label/value row with optional built-in icons and freshness timers.',
+			'CwCardDataRowItem is the reusable detail-row primitive behind CwDataList and the expanded CwSensorCard panel. Use it anywhere you need a compact sensor-style label/value row with optional built-in icons and freshness timers.',
 		steps: [
 			{
 				title: 'Wrap it in a real list',
@@ -3512,12 +3512,12 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				description: 'Built-in icon keyword, plain string content such as emoji, or a custom snippet.'
 			},
 			{
-				name: 'lastSeenAt / lastUpdated',
+				name: 'lastSeenAt / lastSeen / LastSeen / lastUpdated',
 				type: 'Date | string | number',
 				description: 'Switches the row into live timer mode via `CwDuration`. Prefer `lastSeenAt`; `lastUpdated` remains supported for compatibility.'
 			},
 			{
-				name: 'expireAfterMinutes / expectedUpdateAfter',
+				name: 'expireAfterMinutes / alarmTimeoutMinutes / AlarmTimeoutMinutes / expectedUpdateAfter',
 				type: 'number',
 				description: 'Minutes until the freshness alarm is considered overdue. Prefer `expireAfterMinutes`; `expectedUpdateAfter` remains supported for compatibility.'
 			},
@@ -3542,7 +3542,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				description: 'Optional shared scheduler. Omit it to let the row create and manage its own alarm scheduler internally.'
 			},
 			{
-				name: 'alarmCallback / alarmResetCallback',
+				name: 'alarmCallback / AlarmCallback / alarmResetCallback / AlarmResetCallback',
 				type: '() => void',
 				description: 'Legacy callback aliases preserved for existing integrations.'
 			},
@@ -3600,143 +3600,140 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 	},
 	'/demo/sensorcard': {
 		summary:
-			'CwSensorCard groups one or more devices under a location header. Most integrations only need the reading props plus freshness data, because the detail rows are now derived automatically unless you explicitly override them.',
+			'CwLocationCard, CwSensorCard, and CwDataList now split the old monolithic sensor-card API into three focused pieces. Compose them in markup so location state, sensor state, and detail rows stay reactive without pushing a devices array into one component.',
 		steps: [
 			{
-				title: 'Start with the shorthand props',
+				title: 'Start with the location shell',
 				description:
-					'For one device, pass `deviceLabel`, the primary and secondary readings, plus `lastSeenAt` and `expireAfterMinutes`. The card now derives the matching detail rows on its own.'
+					'Wrap each sensor stack in `CwLocationCard`. The location header derives aggregate status from nested `CwSensorCard` children, but you can still pass a fallback `status` for empty locations.'
 			},
 			{
-				title: 'Switch to `devices` for multi-device locations',
+				title: 'Render one sensor per CwSensorCard',
 				description:
-					'Pass an array when a location has multiple sensors. Each device keeps its own expand state and contributes to the aggregate header status.'
+					'Each expandable panel now owns exactly one sensor. Pass the readings and freshness props directly to that card, and use `defaultExpanded`, `storageKey`, or `bind:open` when you need expand-state control.'
 			},
 			{
-				title: 'Only override `detailRows` for specialized sensors',
+				title: 'Feed the expanded body with CwDataList',
 				description:
-					'Weather stations, relay controllers, and tank monitors often need custom labels or extra metadata. That is the point where explicit rows add value.'
+					'Pass `rows` into `CwDataList` for the standard detail layout. Use explicit row arrays when the sensor needs custom metadata, or fall back to `buildCwSensorCardDetailRows(sensor)` for common temperature and humidity cases.'
 			},
 			{
-				title: 'Use the callbacks and freshness binding',
+				title: 'Bind freshness where you need it',
 				description:
-					'`onNavigate`, `onExpand`, `onCollapse`, `onExpire`, and `bind:deviceWithinTimeoutMap` let the host app react without mutating the card internals. The older `onDeviceExpand`, `onDeviceCollapse`, and `onTimerExpired` aliases still work.'
+					'Use `onNavigate` on the location shell, `onExpand`, `onCollapse`, `onExpire`, and `bind:withinTimeout` on the sensor card, and `bind:rowWithinTimeoutMap` on the data list when the host app needs row-level freshness state.'
 			}
 		],
 		apiRows: [
 			{
-				name: 'title',
+				name: 'CwLocationCard.title',
 				type: 'string',
-				description: 'Location or site label shown in the card header.',
+				description: 'Location or site label shown in the outer shell header.',
 				defaultValue: 'Location'
 			},
 			{
-				name: 'status',
-				type: "CwStatusDotStatus",
-				description: 'Fallback card-level status. When devices are provided, the header status is derived from them.',
+				name: 'CwLocationCard.status',
+				type: 'CwStatusDotStatus',
+				description: 'Fallback location status used when no nested sensor cards are registered.',
 				defaultValue: 'loading'
 			},
 			{
-				name: 'devices',
-				type: 'CwSensorCardDevice[]',
-				description: 'Full multi-device configuration. When set, this overrides the single-device shorthand props.'
+				name: 'CwLocationCard.onNavigate',
+				type: '(target: string) => void',
+				description: 'Called from the location header action button.'
 			},
 			{
-				name: 'deviceLabel',
+				name: 'CwSensorCard.label',
 				type: 'string',
-				description: 'Single-device label used when you are not passing the `devices` array.'
+				description: 'Sensor or device label shown in the expandable panel header.'
 			},
 			{
-				name: 'primaryValue / primaryUnit / primary_icon',
+				name: 'CwSensorCard.status',
+				type: 'CwStatusDotStatus',
+				description: 'Base sensor status before freshness overrides are applied.',
+				defaultValue: 'loading'
+			},
+			{
+				name: 'CwSensorCard.primaryValue / primaryUnit / primary_icon',
 				type: 'number / string / string | Snippet',
-				description: 'Main reading shown on the card face. If the icon is omitted, the card infers a sensible built-in icon from the unit.'
+				description: 'Main reading shown in the sensor panel header. If the icon is omitted, the card infers a sensible built-in icon from the unit.'
 			},
 			{
-				name: 'secondaryValue / secondaryUnit / secondary_icon',
+				name: 'CwSensorCard.secondaryValue / secondaryUnit / secondary_icon',
 				type: 'number / string / string | Snippet',
 				description: 'Optional supporting reading rendered next to the primary reading.'
 			},
 			{
-				name: 'lastSeenAt / lastUpdated',
+				name: 'CwSensorCard.lastSeenAt / lastSeen / LastSeen / lastUpdated',
 				type: 'Date | string | number',
-				description: 'Freshness timestamp used for the derived detail row and overdue detection. Prefer `lastSeenAt`; `lastUpdated` remains supported for compatibility.'
+				description: 'Freshness timestamp used for overdue detection on the sensor card. Prefer `lastSeenAt`; `lastUpdated` remains supported for compatibility.'
 			},
 			{
-				name: 'expireAfterMinutes / expectedUpdateAfterMinutes',
+				name: 'CwSensorCard.expireAfterMinutes / alarmTimeoutMinutes / AlarmTimeoutMinutes / expectedUpdateAfterMinutes',
 				type: 'number',
-				description: 'Threshold used by the freshness timer to decide when a device should be considered overdue. Prefer `expireAfterMinutes`; `expectedUpdateAfterMinutes` remains supported for compatibility.'
+				description: 'Threshold used by the sensor-card freshness timer. Prefer `expireAfterMinutes`; `expectedUpdateAfterMinutes` remains supported for compatibility.'
 			},
 			{
-				name: 'detailRows',
-				type: 'CwCardDataRowItemData[]',
-				description: 'Optional explicit detail rows. Omit this for the default generated rows and only pass it when you need custom metadata.'
+				name: 'CwSensorCard.open / defaultExpanded / storageKey',
+				type: 'boolean / boolean / string',
+				description: 'Use these to control or persist the expanded state for an individual sensor panel.'
 			},
 			{
-				name: 'defaultExpanded',
-				type: 'boolean',
-				description: 'Initial expand state for devices that do not have a saved localStorage entry.',
-				defaultValue: 'false'
+				name: 'CwSensorCard.onExpand / onCollapse / onExpire / alarmCallback / AlarmCallback',
+				type: '(label: string) => void',
+				description: 'Lifecycle callbacks for panel toggles and freshness expiry. `alarmCallback` and `AlarmCallback` are accepted as aliases for expiry handling.'
 			},
 			{
-				name: 'storageKey',
-				type: 'string',
-				description: 'Custom key used to persist each card’s expand state in localStorage. Defaults to the title.'
+				name: 'bind:CwSensorCard.withinTimeout',
+				type: 'boolean | null',
+				description: 'Bindable freshness state for the sensor card itself. `true` means fresh, `false` means expired, and `null` means no timer inputs were supplied.'
 			},
 			{
-				name: 'onNavigate',
-				type: '(target: string) => void',
-				description: 'Called from the header action and the per-device CTA button.'
+				name: 'CwDataList.rows',
+				type: 'CwDataListRow[]',
+				description: 'Detail rows rendered inside the expanded sensor body.'
 			},
 			{
-				name: 'onExpand / onCollapse',
-				type: '(deviceLabel: string) => void',
-				description: 'Preferred callbacks for analytics or host-side reactions to device panel toggles. The older `onDeviceExpand` and `onDeviceCollapse` aliases still work.'
-			},
-			{
-				name: 'onExpire / onTimerExpired',
-				type: '(deviceLabel: string) => void',
-				description: 'Called when a device freshness row crosses its overdue threshold. Prefer `onExpire`; `onTimerExpired` remains supported for compatibility.'
-			},
-			{
-				name: 'bind:deviceWithinTimeoutMap',
+				name: 'bind:CwDataList.rowWithinTimeoutMap',
 				type: 'Record<string, boolean | null>',
-				description: 'Bindable per-device freshness state keyed by device label. Fresh devices are `true`, expired devices are `false`, and devices without timer inputs are omitted.'
+				description: 'Bindable row freshness state keyed by row id. Rows without timer inputs are omitted from the map.'
 			},
 			{
 				name: 'class',
 				type: 'string',
-				description: 'Extra class applied to the card root.'
+				description: 'Each component also accepts an extra `class` prop on its own root element.'
 			}
 		],
-		apiTitle: 'Card props and callbacks',
+		apiTitle: 'Composition props',
 		apiNote:
-			'The `detailRows` shape matches `CwCardDataRowItem`, because the card now renders those rows directly under the hood.',
+			'The intended structure is `CwLocationCard` -> `CwSensorCard` -> `CwDataList`. Use `CwCardDataRowItem` directly only when you need row-level control outside the shared list wrapper.',
 		examples: [
 			{
-				title: 'Single device shorthand',
-				description: 'This is the quickest path for the common one-device-per-location case.',
-				code: `<CwSensorCard
-\ttitle="Greenhouse A"
-\tdeviceLabel="CW-SS-TMEPNCO2-18"
-\tstatus="online"
-\tprimaryValue={-22.93}
-\tprimaryUnit="°C"
-\tsecondaryValue={79.61}
-\tsecondaryUnit="%"
-\tlastSeenAt={new Date(Date.now() - 120_000)}
-\texpireAfterMinutes={10}
-/>`
+				title: 'Single sensor inside a location shell',
+				description: 'The default composed structure for one sensor per location.',
+				code: `<CwLocationCard title="Greenhouse A">
+\t<CwSensorCard
+\t\tlabel="CW-SS-TMEPNCO2-18"
+\t\tstatus="online"
+\t\tprimaryValue={-22.93}
+\t\tprimaryUnit="°C"
+\t\tsecondaryValue={79.61}
+\t\tsecondaryUnit="%"
+\t\tlastSeenAt={new Date(Date.now() - 120_000)}
+\t\texpireAfterMinutes={10}
+\t>
+\t\t<CwDataList rows={rows} />
+\t</CwSensorCard>
+</CwLocationCard>`
 			},
 			{
-				title: 'Callbacks and bindable freshness map',
-				description: 'Use this when the host application needs expand, collapse, expiry, or per-device freshness state.',
+				title: 'Bindable sensor freshness',
+				description: 'Use this when the host application needs sensor-level expiry state.',
 				code: `<script lang="ts">
-\tlet deviceWithinTimeoutMap = $state<Record<string, boolean | null>>({});
+\tlet sensorWithinTimeout = $state<boolean | null>(null);
 </script>
 
 <CwSensorCard
-\ttitle="Greenhouse A"
-\tdeviceLabel="CW-SS-TMEPNCO2-18"
+\tlabel="CW-SS-TMEPNCO2-18"
 \tstatus="online"
 \tprimaryValue={22.93}
 \tprimaryUnit="°C"
@@ -3744,42 +3741,24 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \tsecondaryUnit="%"
 \tlastSeenAt={new Date(Date.now() - 120_000)}
 \texpireAfterMinutes={10}
-\tonExpand={(label) => console.log('expanded:', label)}
-\tonCollapse={(label) => console.log('collapsed:', label)}
 \tonExpire={(label) => console.log('expired:', label)}
-\tbind:deviceWithinTimeoutMap
+\tbind:withinTimeout={sensorWithinTimeout}
 />`
 			},
 			{
-				title: 'Multiple devices',
-				description: 'Use `devices` when a location has more than one sensor.',
-				code: `<CwSensorCard
-\ttitle="Research Lab"
-\tdevices={[
-\t\t{
-\t\t\tlabel: 'CW-Temp-01',
-\t\t\tprimaryValue: 21.5,
-\t\t\tprimaryUnit: '°C',
-\t\t\tsecondaryValue: 58.2,
-\t\t\tsecondaryUnit: '%',
-\t\t\tlastSeenAt: new Date(Date.now() - 60_000),
-\t\t\texpireAfterMinutes: 10
-\t\t},
-\t\t{
-\t\t\tlabel: 'CW-Temp-02',
-\t\t\tprimaryValue: 19.8,
-\t\t\tprimaryUnit: '°C',
-\t\t\tsecondaryValue: 62.1,
-\t\t\tsecondaryUnit: '%',
-\t\t\tlastSeenAt: new Date(Date.now() - 300_000),
-\t\t\texpireAfterMinutes: 15
-\t\t}
-\t]}
-/>`
+				title: 'Multiple sensors under one location',
+				description: 'Render one `CwSensorCard` per sensor and let the location shell aggregate the status.',
+				code: `<CwLocationCard title="Research Lab">
+\t{#each sensors as sensor (sensor.label)}
+\t\t<CwSensorCard label={sensor.label} status={sensor.status ?? 'online'} primaryValue={sensor.primaryValue}>
+\t\t\t<CwDataList rows={buildCwSensorCardDetailRows(sensor)} />
+\t\t</CwSensorCard>
+\t{/each}
+</CwLocationCard>`
 			},
 			{
-				title: 'Custom rows for specialized sensors',
-				description: 'Only pass explicit rows when the default labels or values are not enough.',
+				title: 'Custom detail rows',
+				description: 'Pass explicit rows into `CwDataList` when the sensor needs custom metadata.',
 				code: `<script lang="ts">
 \tconst weatherDevice = {
 \t\tlabel: 'CW-Weather-01',
@@ -3797,7 +3776,9 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \t};
 </script>
 
-<CwSensorCard title="Weather Station Alpha" devices={[weatherDevice]} defaultExpanded />`
+<CwSensorCard label={weatherDevice.label} defaultExpanded>
+\t<CwDataList rows={weatherDevice.detailRows} />
+</CwSensorCard>`
 			}
 		]
 	}

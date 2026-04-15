@@ -24,8 +24,9 @@
 <h2>CwCardDataRowItem</h2>
 <p class="demo-desc">
 	Reusable sensor-style key/value row for detail panels, cards, and metadata lists. This is the
-	same component used inside <code>CwSensorCard</code>, now with built-in freshness scheduling
-	and a bindable timeout state.
+	same component used inside <code>CwDataList</code> and the expanded
+	<code>CwSensorCard</code>, now with built-in freshness scheduling and a bindable timeout
+	state.
 </p>
 
 <section class="demo-section">
