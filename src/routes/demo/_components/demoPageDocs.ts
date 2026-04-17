@@ -2586,7 +2586,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			{
 				title: 'Enable time only when the workflow needs it',
 				description:
-					'Including time adds more controls and more value fields, so keep it off for date-only filters.'
+					'Including time adds more controls, more value fields, and explicit Set/Cancel confirmation, so keep it off for date-only filters.'
 			}
 		],
 		apiRows: [
@@ -2605,7 +2605,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			{
 				name: 'includeTime',
 				type: 'boolean',
-				description: 'Adds time selection to the returned value.',
+				description: 'Adds time selection, along with Set/Cancel controls, to the returned value.',
 				defaultValue: 'false'
 			},
 			{

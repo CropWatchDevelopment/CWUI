@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { CwDatePickerMode, CwDateGranularity, CwDateValue, CwSingleDateValue, CwRangeDateValue } from '../types/index.js';
 	import type { HTMLInputAttributes } from 'svelte/elements';
+	import CwButton from './CwButton.svelte';
 
 	interface Props {
 		mode?: CwDatePickerMode;
@@ -31,6 +32,8 @@
 	}: Props = $props();
 
 	const uid = $props.id();
+	const defaultStartTime = { hours: 0, minutes: 0 };
+	const defaultEndTime = { hours: 23, minutes: 59 };
 
 	// View state
 	let viewYear = $state(new Date().getFullYear());
@@ -53,32 +56,7 @@
 
 	// Initialize from value
 	$effect(() => {
-		if (!value) return;
-		if ('start' in value) {
-			const rv = value as CwRangeDateValue;
-			rangeStart = rv.start;
-			rangeEnd = rv.end;
-			viewYear = rv.start.getFullYear();
-			viewMonth = rv.start.getMonth();
-			if (rv.startTime) {
-				startHours = rv.startTime.hours;
-				startMinutes = rv.startTime.minutes;
-			}
-			if (rv.endTime) {
-				endHours = rv.endTime.hours;
-				endMinutes = rv.endTime.minutes;
-			}
-		} else if ('date' in value) {
-			const sv = value as CwSingleDateValue;
-			rangeStart = sv.date;
-			rangeEnd = null;
-			viewYear = sv.date.getFullYear();
-			viewMonth = sv.date.getMonth();
-			if (sv.time) {
-				startHours = sv.time.hours;
-				startMinutes = sv.time.minutes;
-			}
-		}
+		syncSelectionFromValue(value);
 	});
 
 	const maxDateCeiled = $derived((() => {
@@ -150,6 +128,10 @@
 		}));
 	});
 
+	const hasCompleteSelection = $derived(
+		mode === 'single' ? rangeStart != null : rangeStart != null && rangeEnd != null
+	);
+
 	function isSameDay(a: Date, b: Date): boolean {
 		return a.getFullYear() === b.getFullYear() &&
 			a.getMonth() === b.getMonth() &&
@@ -187,13 +169,108 @@
 		return isRangeStart(d) || isRangeEnd(d);
 	}
 
+	function clampTimePart(value: number, min: number, max: number, fallback: number): number {
+		if (!Number.isFinite(value)) return fallback;
+		return Math.min(max, Math.max(min, Math.trunc(value)));
+	}
+
+	function getNormalizedStartTime() {
+		return {
+			hours: clampTimePart(startHours, 0, 23, defaultStartTime.hours),
+			minutes: clampTimePart(startMinutes, 0, 59, defaultStartTime.minutes)
+		};
+	}
+
+	function getNormalizedEndTime() {
+		return {
+			hours: clampTimePart(endHours, 0, 23, defaultEndTime.hours),
+			minutes: clampTimePart(endMinutes, 0, 59, defaultEndTime.minutes)
+		};
+	}
+
+	function normalizeDraftTime() {
+		const nextStart = getNormalizedStartTime();
+		const nextEnd = getNormalizedEndTime();
+		startHours = nextStart.hours;
+		startMinutes = nextStart.minutes;
+		endHours = nextEnd.hours;
+		endMinutes = nextEnd.minutes;
+	}
+
+	function syncSelectionFromValue(nextValue: CwDateValue | undefined = value) {
+		hoverDate = null;
+
+		if (!nextValue) {
+			rangeStart = null;
+			rangeEnd = null;
+			startHours = defaultStartTime.hours;
+			startMinutes = defaultStartTime.minutes;
+			endHours = defaultEndTime.hours;
+			endMinutes = defaultEndTime.minutes;
+			return;
+		}
+
+		if ('start' in nextValue) {
+			const rv = nextValue as CwRangeDateValue;
+			const nextStart = rv.startTime ?? defaultStartTime;
+			const nextEnd = rv.endTime ?? defaultEndTime;
+			rangeStart = rv.start;
+			rangeEnd = rv.end;
+			viewYear = rv.start.getFullYear();
+			viewMonth = rv.start.getMonth();
+			startHours = clampTimePart(nextStart.hours, 0, 23, defaultStartTime.hours);
+			startMinutes = clampTimePart(nextStart.minutes, 0, 59, defaultStartTime.minutes);
+			endHours = clampTimePart(nextEnd.hours, 0, 23, defaultEndTime.hours);
+			endMinutes = clampTimePart(nextEnd.minutes, 0, 59, defaultEndTime.minutes);
+			return;
+		}
+
+		const sv = nextValue as CwSingleDateValue;
+		const nextTime = sv.time ?? defaultStartTime;
+		rangeStart = sv.date;
+		rangeEnd = null;
+		viewYear = sv.date.getFullYear();
+		viewMonth = sv.date.getMonth();
+		startHours = clampTimePart(nextTime.hours, 0, 23, defaultStartTime.hours);
+		startMinutes = clampTimePart(nextTime.minutes, 0, 59, defaultStartTime.minutes);
+		endHours = defaultEndTime.hours;
+		endMinutes = defaultEndTime.minutes;
+	}
+
+	function buildValue(): CwDateValue | undefined {
+		const nextStartTime = getNormalizedStartTime();
+		const nextEndTime = getNormalizedEndTime();
+
+		if (mode === 'single' && rangeStart) {
+			return {
+				date: rangeStart,
+				...(includeTime ? { time: nextStartTime } : {})
+			};
+		}
+
+		if (mode === 'range' && rangeStart && rangeEnd) {
+			return {
+				start: rangeStart,
+				end: rangeEnd,
+				...(includeTime
+					? {
+							startTime: nextStartTime,
+							endTime: nextEndTime
+						}
+					: {})
+			};
+		}
+	}
+
 	function selectDay(d: Date) {
 		if (isFuture(d)) return;
 
 		if (mode === 'single') {
 			rangeStart = d;
 			rangeEnd = null;
-			emit();
+			if (!includeTime) {
+				commitSelection({ closeAfterCommit: true });
+			}
 		} else {
 			// Range mode
 			if (!rangeStart || rangeEnd) {
@@ -208,7 +285,9 @@
 				} else {
 					rangeEnd = d;
 				}
-				emit();
+				if (!includeTime) {
+					commitSelection({ closeAfterCommit: true });
+				}
 			}
 		}
 	}
@@ -233,26 +312,65 @@
 		}
 	}
 
-	function emit() {
-		if (mode === 'single' && rangeStart) {
-			const v: CwSingleDateValue = {
-				date: rangeStart,
-				...(includeTime ? { time: { hours: startHours, minutes: startMinutes } } : {})
-			};
-			value = v;
-			onchange?.(v);
-		} else if (mode === 'range' && rangeStart && rangeEnd) {
-			const v: CwRangeDateValue = {
-				start: rangeStart,
-				end: rangeEnd,
-				...(includeTime ? {
-					startTime: { hours: startHours, minutes: startMinutes },
-					endTime: { hours: endHours, minutes: endMinutes }
-				} : {})
-			};
-			value = v;
-			onchange?.(v);
+	function emit(): boolean {
+		const nextValue = buildValue();
+		if (!nextValue) return false;
+
+		value = nextValue;
+		onchange?.(nextValue);
+		return true;
+	}
+
+	function openPicker() {
+		if (includeTime) {
+			syncSelectionFromValue(value);
 		}
+		open = true;
+	}
+
+	function closePicker({
+		restoreCommittedValue = false,
+		focusTrigger = false
+	}: {
+		restoreCommittedValue?: boolean;
+		focusTrigger?: boolean;
+	} = {}) {
+		if (restoreCommittedValue) {
+			syncSelectionFromValue(value);
+		} else {
+			hoverDate = null;
+		}
+
+		open = false;
+		if (focusTrigger) {
+			triggerRef?.focus();
+		}
+	}
+
+	function togglePicker() {
+		if (open) {
+			closePicker({ restoreCommittedValue: includeTime });
+			return;
+		}
+
+		openPicker();
+	}
+
+	function commitSelection({ closeAfterCommit = false }: { closeAfterCommit?: boolean } = {}) {
+		normalizeDraftTime();
+		const emitted = emit();
+		if (emitted && closeAfterCommit) {
+			closePicker();
+		}
+		return emitted;
+	}
+
+	function handleSet() {
+		commitSelection({ closeAfterCommit: true });
+	}
+
+	function handleCancel() {
+		closePicker({ restoreCommittedValue: true, focusTrigger: true });
 	}
 
 	function prevMonth() {
@@ -324,27 +442,25 @@
 	function handleTriggerKeydown(e: KeyboardEvent) {
 		if (e.key === 'Enter' || e.key === ' ') {
 			e.preventDefault();
-			open = !open;
+			togglePicker();
 		} else if (e.key === 'Escape') {
-			open = false;
+			closePicker({ restoreCommittedValue: includeTime });
 		}
 	}
 
 	function handleOutsideClick() {
-		open = false;
+		closePicker({ restoreCommittedValue: includeTime });
 	}
 
 	function handleDropdownKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
 			e.preventDefault();
-			open = false;
-			triggerRef?.focus();
+			closePicker({ restoreCommittedValue: includeTime, focusTrigger: true });
 		}
 	}
 
 	function handleTimeChange() {
-		// Re-emit when time changes
-		if (value) emit();
+		normalizeDraftTime();
 	}
 
 	function updateDropdownPosition() {
@@ -425,7 +541,7 @@
 		class="cw-date-picker__trigger"
 		class:cw-date-picker__trigger--open={open}
 		class:cw-date-picker__trigger--placeholder={!value}
-		onclick={() => (open = !open)}
+		onclick={togglePicker}
 		onkeydown={handleTriggerKeydown}
 		aria-haspopup="dialog"
 		aria-expanded={open}
@@ -592,6 +708,14 @@
 							</div>
 						</div>
 					{/if}
+					<div class="cw-date-picker__time-actions">
+						<CwButton type="button" variant="ghost" size="sm" onclick={handleCancel}>
+							Cancel
+						</CwButton>
+						<CwButton type="button" size="sm" onclick={handleSet} disabled={!hasCompleteSelection}>
+							Set
+						</CwButton>
+					</div>
 				</div>
 			{/if}
 		</div>
@@ -839,6 +963,7 @@
 	/* ── Time inputs ─────────────────────── */
 	.cw-date-picker__time {
 		display: flex;
+		flex-wrap: wrap;
 		gap: var(--cw-space-4);
 		margin-top: var(--cw-space-3);
 		padding-top: var(--cw-space-3);
@@ -882,5 +1007,12 @@
 	.cw-date-picker__time-input::-webkit-outer-spin-button {
 		-webkit-appearance: none;
 		margin: 0;
+	}
+
+	.cw-date-picker__time-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: var(--cw-space-2);
+		width: 100%;
 	}
 </style>
