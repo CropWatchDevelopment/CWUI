@@ -122,6 +122,7 @@
 	let hasResolvedInitialOpen = false;
 	let lastReportedTimeoutState: boolean | null = null;
 	let panelOpen = $state(false);
+	let freshnessState = $state<boolean | null>(null);
 
 	onDestroy(() => {
 		alarmScheduler.clear();
@@ -143,7 +144,6 @@
 	);
 	const resolvedLastSeenAtMs = $derived(resolveCwDateTimeMs(resolvedLastSeenAt));
 	const resolvedExpireAfterMs = $derived(resolveCwExpireAfterMs(resolvedExpireAfterMinutes));
-	const freshnessState = $derived(isCwWithinTimeout(resolvedLastSeenAt, resolvedExpireAfterMinutes));
 	const effectiveStatus = $derived(freshnessState === false ? 'offline' : status);
 	const statusLabel = $derived(getCwSensorStatusLabel(effectiveStatus));
 	const primaryIcon = $derived(
@@ -272,6 +272,10 @@
 	});
 
 	$effect(() => {
+		freshnessState = isCwWithinTimeout(resolvedLastSeenAt, resolvedExpireAfterMinutes);
+	});
+
+	$effect(() => {
 		updateWithinTimeoutState(freshnessState);
 	});
 
@@ -285,6 +289,7 @@
 			from: resolvedLastSeenAtMs,
 			alarmAfterMs: resolvedExpireAfterMs,
 			callback: () => {
+				freshnessState = false;
 				updateWithinTimeoutState(false);
 			}
 		});
