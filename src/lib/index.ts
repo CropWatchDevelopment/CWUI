@@ -14,6 +14,7 @@ export { default as CwSpinner } from './components/CwSpinner.svelte';
 export { default as CwSwitch } from './components/CwSwitch.svelte';
 export { default as CwStatusDot } from './components/CwStatusDot.svelte';
 export { default as CwDropdown } from './components/CwDropdown.svelte';
+export { default as CwMultiSelect } from './components/CwMultiSelect.svelte';
 export { default as CwDialog } from './components/CwDialog.svelte';
 export { default as CwDrawer } from './components/CwDrawer.svelte';
 export { default as CwDuration } from './components/CwDuration.svelte';

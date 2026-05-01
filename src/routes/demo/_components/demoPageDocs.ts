@@ -883,6 +883,151 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			}
 		]
 	},
+	'/demo/multi-select': {
+		summary:
+			'CwMultiSelect mirrors CwDropdown but allows multiple options to be selected at once. The bound `value` is an array of `{ id, label }` entries, ready to send to a backend or render as chips elsewhere in your UI.',
+		steps: [
+			{
+				title: 'Build the option list',
+				description:
+					'Each option needs a `label` and `value`. Add `disabled` to make an item visible but not selectable.'
+			},
+			{
+				title: 'Bind an array',
+				description:
+					'`value` is an array of `{ id, label }`. Use `bind:value` if the parent owns the selection state, or `onchange` if you only need a callback.'
+			},
+			{
+				title: 'Toggle to select / deselect',
+				description:
+					'Clicking an option (or pressing Enter/Space while focused in the listbox) toggles its membership in the array. The list stays open so users can pick more than one.'
+			},
+			{
+				title: 'Clear or remove individual chips',
+				description:
+					'A "Clear all" action appears in the listbox while items are selected (`clearable` defaults to true). Individual chips can be dismissed by clicking the small × on the trigger.'
+			}
+		],
+		apiRows: [
+			{
+				name: 'options',
+				type: 'Array<{ label: string; value: string; disabled?: boolean }>',
+				description: 'Items shown in the listbox.',
+				required: true
+			},
+			{
+				name: 'value',
+				type: 'Array<{ id: string; label: string }>',
+				description: 'Selected entries. Bind this when the parent owns state.',
+				defaultValue: '[]'
+			},
+			{ name: 'label', type: 'string', description: 'Visible field label.' },
+			{
+				name: 'placeholder',
+				type: 'string',
+				description: 'Text shown when nothing is selected.',
+				defaultValue: 'Select...'
+			},
+			{
+				name: 'maxVisibleChips',
+				type: 'number',
+				description: 'How many chips to render in the trigger before collapsing into "+N more". Ignored when `showAllSelectedItems` is true.',
+				defaultValue: '3'
+			},
+			{
+				name: 'showAllSelectedItems',
+				type: 'boolean',
+				description: 'Render every selected chip in the trigger and let it wrap. Overrides `maxVisibleChips`.',
+				defaultValue: 'false'
+			},
+			{
+				name: 'clearable',
+				type: 'boolean',
+				description: 'Show a "Clear all" action inside the listbox when at least one item is selected.',
+				defaultValue: 'true'
+			},
+			{
+				name: 'clearLabel',
+				type: 'string',
+				description: 'Label used for the "Clear all" action.',
+				defaultValue: "'Clear all'"
+			},
+			{
+				name: 'required',
+				type: 'boolean',
+				description: 'Marks the hidden native input as required for form validation when nothing is selected.',
+				defaultValue: 'false'
+			},
+			{
+				name: 'disabled',
+				type: 'boolean',
+				description: 'Prevents opening the list, removing chips, or changing the value.',
+				defaultValue: 'false'
+			},
+			{ name: 'error', type: 'string', description: 'Validation message rendered below the field.' },
+			{
+				name: 'onchange',
+				type: '(value: Array<{ id: string; label: string }>) => void',
+				description: 'Called whenever the selection array changes.'
+			},
+			{
+				name: 'name / autocomplete',
+				type: 'string',
+				description: 'Optional native form attributes forwarded to the hidden input. The hidden input value is the comma-joined list of ids.'
+			}
+		],
+		examples: [
+			{
+				title: 'Controlled multi-select',
+				description: 'The bound value is an array of `{ id, label }` entries — easy to render or persist.',
+				code: `<script lang="ts">
+\timport { CwMultiSelect } from '@cropwatchdevelopment/cwui';
+
+\tconst options = [
+\t\t{ label: 'Apple', value: 'apple' },
+\t\t{ label: 'Banana', value: 'banana' },
+\t\t{ label: 'Dragonfruit', value: 'dragonfruit' }
+\t];
+
+\tlet selected = $state<{ id: string; label: string }[]>([]);
+<\/script>
+
+<CwMultiSelect
+\toptions={options}
+\tlabel="Fruit"
+\tplaceholder="Choose one or more..."
+\tbind:value={selected}
+/>`
+			},
+			{
+				title: 'Pre-selected values + onchange callback',
+				description: 'Seed the array with existing selections and listen for changes.',
+				code: `<script lang="ts">
+\tconst siteOptions = [
+\t\t{ label: 'North greenhouse', value: 'north' },
+\t\t{ label: 'South greenhouse', value: 'south' },
+\t\t{ label: 'East greenhouse', value: 'east' }
+\t];
+
+\tlet sites = $state([
+\t\t{ id: 'north', label: 'North greenhouse' }
+\t]);
+
+\tfunction handleChange(value: { id: string; label: string }[]) {
+\t\tconsole.log('Selected sites:', value.map((v) => v.id));
+\t}
+<\/script>
+
+<CwMultiSelect
+\toptions={siteOptions}
+\tname="sites"
+\tlabel="Deployment sites"
+\tbind:value={sites}
+\tonchange={handleChange}
+/>`
+			}
+		]
+	},
 	'/demo/dialog': {
 		summary:
 			'CwDialog wraps a native `<dialog>` element with the behavior most apps want by default: open state binding, title, actions, escape handling, and backdrop close.',
