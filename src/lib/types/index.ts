@@ -486,6 +486,11 @@ export interface CwAlertPointRule {
 	min: string;
 	/** Range upper bound input. */
 	max: string;
+	/**
+	 * Optional hysteresis reset value used by downstream rules. Stored in Celsius like the other numeric fields.
+	 * Ignored by the editor's overlap detection — supplied as a string so partial input stays editable.
+	 */
+	reset?: string;
 }
 
 export interface CwAlertPointsValue {
@@ -512,6 +517,8 @@ export interface CwAlertPointsEditorText {
 	minValueFieldLabel?: string;
 	/** Range maximum input label. */
 	maxValueFieldLabel?: string;
+	/** Optional reset (hysteresis) input label. */
+	resetFieldLabel?: string;
 	/** Colour input label. */
 	colorFieldLabel?: string;
 	/** Add rule button label. */

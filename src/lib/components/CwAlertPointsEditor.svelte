@@ -24,9 +24,11 @@
 		numericValue: number | null;
 		numericMin: number | null;
 		numericMax: number | null;
+		numericReset: number | null;
 		valueError?: string;
 		minError?: string;
 		maxError?: string;
+		resetError?: string;
 		overlapError?: string;
 	}
 
@@ -45,7 +47,7 @@
 		endInclusive: boolean;
 	}
 
-	type PointNumericField = "value" | "min" | "max";
+	type PointNumericField = "value" | "min" | "max" | "reset";
 
 	const STORAGE_UNIT: CwAlertPointUnit = "C";
 	const CENTER_DRAFT_KEY = "center";
@@ -70,6 +72,7 @@
 		valueFieldLabel: "Value",
 		minValueFieldLabel: "Min Value",
 		maxValueFieldLabel: "Max Value",
+		resetFieldLabel: "Reset",
 		colorFieldLabel: "Color",
 		addAlertPointButton: "Add Alert Point",
 		removePointButton: "Remove",
@@ -140,6 +143,9 @@
 	let pointSeed = $state(Math.max(value.points.length, 1));
 	let numericDrafts = $state<Record<string, string>>({});
 	let suppressIncomingNormalization = false;
+	let lastKnownResetShape = $state(
+		value.points.some((point) => point.reset !== undefined),
+	);
 	const unitOptions = $derived.by(() => [
 		{ label: text.unitCelsiusLabel, value: "C" },
 		{ label: text.unitFahrenheitLabel, value: "F" },
@@ -166,7 +172,7 @@
 	}
 
 	function createPoint(index: number, center = "0"): CwAlertPointRule {
-		return {
+		const point: CwAlertPointRule = {
 			id: nextPointId(),
 			name: text.defaultPointName(index),
 			color: colorPalette[(index - 1) % colorPalette.length],
@@ -175,6 +181,12 @@
 			min: "",
 			max: "",
 		};
+
+		if (lastKnownResetShape) {
+			point.reset = "";
+		}
+
+		return point;
 	}
 
 	function parseNumericInput(raw: string): number | null {
@@ -190,6 +202,15 @@
 			return text.requiredFieldError(label);
 		}
 
+		return parseNumericInput(raw) === null
+			? text.invalidNumberError
+			: undefined;
+	}
+
+	function getOptionalNumberError(
+		raw: string | undefined,
+	): string | undefined {
+		if (!raw || !raw.trim()) return undefined;
 		return parseNumericInput(raw) === null
 			? text.invalidNumberError
 			: undefined;
@@ -257,18 +278,28 @@
 			center: nextValue.center.trim()
 				? convertDisplayToStorage(nextValue.center, sourceUnit)
 				: "",
-			points: nextValue.points.map((point) => ({
-				...point,
-				value: point.value.trim()
-					? convertDisplayToStorage(point.value, sourceUnit)
-					: "",
-				min: point.min.trim()
-					? convertDisplayToStorage(point.min, sourceUnit)
-					: "",
-				max: point.max.trim()
-					? convertDisplayToStorage(point.max, sourceUnit)
-					: "",
-			})),
+			points: nextValue.points.map((point) => {
+				const next: CwAlertPointRule = {
+					...point,
+					value: point.value.trim()
+						? convertDisplayToStorage(point.value, sourceUnit)
+						: "",
+					min: point.min.trim()
+						? convertDisplayToStorage(point.min, sourceUnit)
+						: "",
+					max: point.max.trim()
+						? convertDisplayToStorage(point.max, sourceUnit)
+						: "",
+				};
+
+				if (point.reset !== undefined) {
+					next.reset = point.reset.trim()
+						? convertDisplayToStorage(point.reset, sourceUnit)
+						: "";
+				}
+
+				return next;
+			}),
 		};
 	}
 
@@ -323,6 +354,9 @@
 		const numericValue = parseNumericInput(point.value);
 		const numericMin = parseNumericInput(point.min);
 		const numericMax = parseNumericInput(point.max);
+		const numericReset =
+			point.reset === undefined ? null : parseNumericInput(point.reset);
+		const resetError = getOptionalNumberError(point.reset);
 
 		if (point.condition === "range") {
 			return {
@@ -330,8 +364,10 @@
 				numericValue,
 				numericMin,
 				numericMax,
+				numericReset,
 				minError: getNumberError(point.min, text.minValueFieldLabel),
 				maxError: getNumberError(point.max, text.maxValueFieldLabel),
+				resetError,
 			};
 		}
 
@@ -340,7 +376,9 @@
 			numericValue,
 			numericMin,
 			numericMax,
+			numericReset,
 			valueError: getNumberError(point.value, text.valueFieldLabel),
+			resetError,
 		};
 	}
 
@@ -789,6 +827,13 @@
 		});
 	});
 
+	$effect(() => {
+		if (value.points.length === 0) return;
+		lastKnownResetShape = value.points.some(
+			(point) => point.reset !== undefined,
+		);
+	});
+
 	const centerDisplayValue = $derived.by(() =>
 		getDisplayInputValue(value.center, CENTER_DRAFT_KEY),
 	);
@@ -798,8 +843,16 @@
 
 	const centerNumber = $derived(parseNumericInput(centerDisplayValue) ?? 0);
 	const visualPoints = $derived.by(() => {
-		const normalizedPoints = value.points.map((point) =>
-			normalizePoint({
+		const normalizedPoints = value.points.map((point) => {
+			const resetDisplay =
+				point.reset === undefined
+					? undefined
+					: getDisplayInputValue(
+							point.reset,
+							getPointDraftKey(point.id, "reset"),
+						);
+
+			return normalizePoint({
 				...point,
 				value: getDisplayInputValue(
 					point.value,
@@ -813,8 +866,9 @@
 					point.max,
 					getPointDraftKey(point.id, "max"),
 				),
-			}),
-		);
+				reset: resetDisplay,
+			});
+		});
 		const overlapErrors = buildOverlapErrors(normalizedPoints);
 
 		return normalizedPoints.map((point) => ({
@@ -1081,6 +1135,8 @@
 						class="cw-alert-points__values"
 						class:cw-alert-points__values--range={point.condition ===
 							"range"}
+						class:cw-alert-points__values--with-reset={point.condition !==
+							"range" && point.reset !== undefined}
 					>
 						{#if point.condition === "range"}
 							<CwInput
@@ -1138,6 +1194,26 @@
 										getPointDraftKey(point.id, "value"),
 									)}
 							/>
+							{#if point.reset !== undefined}
+								<CwInput
+									label={getLabelWithUnit(text.resetFieldLabel)}
+									type="numeric"
+									value={point.reset}
+									error={point.resetError}
+									oninput={(event) =>
+										updatePointFromDisplay(
+											point.id,
+											"reset",
+											(
+												event.currentTarget as HTMLInputElement
+											).value,
+										)}
+									onblur={() =>
+										maybeClearDraft(
+											getPointDraftKey(point.id, "reset"),
+										)}
+								/>
+							{/if}
 						{/if}
 
 						<div class="cw-alert-points__color-stack">
@@ -1513,7 +1589,8 @@
 		align-items: end;
 	}
 
-	.cw-alert-points__values--range {
+	.cw-alert-points__values--range,
+	.cw-alert-points__values--with-reset {
 		grid-template-columns: minmax(12rem, 1fr) minmax(12rem, 1fr) minmax(
 				9rem,
 				11rem

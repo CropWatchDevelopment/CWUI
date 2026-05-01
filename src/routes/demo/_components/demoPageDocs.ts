@@ -3423,6 +3423,11 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				description:
 					'`equals` draws a single point, `range` requires both `min` and `max`, and the less-than/greater-than variants render one-sided ranges.'
 			},
+			{
+				title: 'Add an optional reset for hysteresis-aware rules',
+				description:
+					'Every non-range condition exposes an optional `reset` input alongside the threshold value. Capture it in your bound state to feed downstream alarm logic — leaving it blank or omitting the property keeps backward-compatible payloads.'
+			},
 				{
 					title: 'Normalize before you submit',
 					description:
@@ -3465,7 +3470,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'value.points',
 				type: 'CwAlertPointRule[]',
 				description:
-					'Editable list of alert rules. Each rule includes `id`, `name`, `color`, `condition`, `value`, `min`, and `max`.'
+					'Editable list of alert rules. Each rule includes `id`, `name`, `color`, `condition`, `value`, `min`, `max`, and an optional `reset`.'
 			},
 			{
 				name: 'point.condition',
@@ -3476,6 +3481,12 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'point.color',
 				type: 'string',
 				description: 'Hex colour used for the point or range and preserved in the bound output object.'
+			},
+			{
+				name: 'point.reset',
+				type: 'string (optional)',
+				description:
+					'Optional hysteresis threshold for downstream rule engines. Stored in Celsius like the other numeric fields, validated only when present, and shown as an extra input on every non-range condition. Omit the field entirely on rules that do not need it — the editor will not add it.'
 			},
 			{
 				name: 'onchange',
@@ -3500,6 +3511,34 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \t\tunit: 'C',
 \t\tcenter: '0',
 \t\tpoints: []
+\t});
+</script>
+
+<CwAlertPointsEditor bind:value={alertPoints} />`
+			},
+			{
+				title: 'Capture a hysteresis reset on a rule',
+				description:
+					'`reset` is optional, so existing payloads keep working. Add it to any non-range rule to record the value at which a downstream alarm engine should clear the alert.',
+				code: `<script lang="ts">
+\timport { CwAlertPointsEditor } from '@cropwatchdevelopment/cwui';
+\timport type { CwAlertPointsValue } from '@cropwatchdevelopment/cwui';
+
+\tlet alertPoints = $state<CwAlertPointsValue>({
+\t\tunit: 'C',
+\t\tcenter: '0',
+\t\tpoints: [
+\t\t\t{
+\t\t\t\tid: 'high-temp',
+\t\t\t\tname: 'High temp alarm',
+\t\t\t\tcolor: '#e35c8d',
+\t\t\t\tcondition: 'greaterThan',
+\t\t\t\tvalue: '30',
+\t\t\t\tmin: '',
+\t\t\t\tmax: '',
+\t\t\t\treset: '25'  // alert clears once the value drops back below 25 °C
+\t\t\t}
+\t\t]
 \t});
 </script>
 
@@ -3566,7 +3605,8 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			},
 				{
 					title: 'Normalize before API submit',
-					description: 'Convert the Celsius-backed string fields into numbers once the user is done building the rule set.',
+					description:
+						'Convert the Celsius-backed string fields into numbers once the user is done building the rule set. Forward `reset` only when the user supplied it.',
 					code: `<script lang="ts">
 \tlet alertPoints = $state({
 \t\tunit: 'C',
@@ -3579,7 +3619,8 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \t\t\t\tcondition: 'lessThanOrEqual',
 \t\t\t\tvalue: '-2',
 \t\t\t\tmin: '',
-\t\t\t\tmax: ''
+\t\t\t\tmax: '',
+\t\t\t\treset: '0'
 \t\t\t}
 \t\t]
 \t});
@@ -3593,11 +3634,15 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 
 \tconst normalized = $derived({
 \t\tcenter: toNumber(alertPoints.center) ?? 0,
-\t\tpoints: alertPoints.points.map((point) =>
-\t\t\tpoint.condition === 'range'
+\t\tpoints: alertPoints.points.map((point) => {
+\t\t\tconst base = point.condition === 'range'
 \t\t\t\t? { ...point, min: toNumber(point.min), max: toNumber(point.max) }
-\t\t\t\t: { ...point, value: toNumber(point.value) }
-\t\t)
+\t\t\t\t: { ...point, value: toNumber(point.value) };
+
+\t\t\treturn point.reset === undefined
+\t\t\t\t? base
+\t\t\t\t: { ...base, reset: toNumber(point.reset) };
+\t\t})
 \t});
 </script>`
 			}
