@@ -62,22 +62,22 @@
 		points: [
 			{
 				id: 'with-reset-1',
-				name: 'Alert Point 1',
+				name: 'Cold edge',
 				color: '#f7903b',
-				condition: 'equals',
-				value: '1.12',
+				condition: 'lessThan',
+				value: '0',
 				min: '',
 				max: '',
-				reset: ''
+				reset: '4'
 			},
 			{
 				id: 'with-reset-2',
-				name: 'Alert Point 2',
+				name: 'Exact target',
 				color: '#42edf0',
-				condition: 'range',
-				value: '',
-				min: '5',
-				max: '10',
+				condition: 'equals',
+				value: '5',
+				min: '',
+				max: '',
 				reset: ''
 			},
 			{
@@ -85,10 +85,10 @@
 				name: 'High temp alarm',
 				color: '#e35c8d',
 				condition: 'greaterThan',
-				value: '30',
+				value: '10',
 				min: '',
 				max: '',
-				reset: '25'
+				reset: '0'
 			}
 		]
 	});
@@ -162,11 +162,11 @@ ${SCRIPT_CLOSE}
 \t\t\t\tid: 'high-temp',
 \t\t\t\tname: 'High temp alarm',
 \t\t\t\tcolor: '#e35c8d',
-\t\t\t\tcondition: 'greaterThan',
-\t\t\t\tvalue: '30',
+\t\t\t\tcondition: 'greaterThanOrEqual',
+\t\t\t\tvalue: '100',
 \t\t\t\tmin: '',
 \t\t\t\tmax: '',
-\t\t\t\treset: '25'  // alert clears after value drops back below 25 °C
+\t\t\t\treset: '22'  // alert clears at or below 22 °C
 \t\t\t}
 \t\t]
 \t});
@@ -219,6 +219,9 @@ ${SCRIPT_CLOSE}
 \t\t\tt('alerts.preview.invalidCount', { count }),
 \t\toverlapPreviewNote: (count) =>
 \t\t\tt('alerts.preview.overlapCount', { count }),
+\t\tresetNeverHappensPreviewNote: (count) =>
+\t\t\tt('alerts.preview.resetNeverHappensCount', { count }),
+\t\tresetNeverHappensError: t('alerts.validation.resetNeverHappens'),
 \t\tpointDescriptionEquals: (value, unit) =>
 \t\t\tt('alerts.preview.equals', { value, unit }),
 \t\tpointDescriptionRange: (min, max, unit) =>
@@ -231,6 +234,17 @@ ${SCRIPT_CLOSE}
 \t\t\tt('alerts.preview.greaterThan', { value, unit }),
 \t\tpointDescriptionGreaterThanOrEqual: (value, unit) =>
 \t\t\tt('alerts.preview.greaterThanOrEqual', { value, unit }),
+\t\tresetDescriptionWaitingForValue: t('alerts.preview.resetWaiting'),
+\t\tresetDescriptionNotEquals: (value, unit) =>
+\t\t\tt('alerts.preview.resetNotEquals', { value, unit }),
+\t\tresetDescriptionLessThan: (value, unit) =>
+\t\t\tt('alerts.preview.resetLessThan', { value, unit }),
+\t\tresetDescriptionLessThanOrEqual: (value, unit) =>
+\t\t\tt('alerts.preview.resetLessThanOrEqual', { value, unit }),
+\t\tresetDescriptionGreaterThan: (value, unit) =>
+\t\t\tt('alerts.preview.resetGreaterThan', { value, unit }),
+\t\tresetDescriptionGreaterThanOrEqual: (value, unit) =>
+\t\t\tt('alerts.preview.resetGreaterThanOrEqual', { value, unit }),
 \t\toverlapError: (labels) =>
 \t\t\tt('alerts.validation.overlap', { labels: labels.join(', ') })
 \t};
@@ -247,13 +261,13 @@ ${SCRIPT_CLOSE}
 	All built-in labels, validation messages, empty states, and preview sentences can now be passed through the <code>text</code> prop. Rule names are still part of the bound <code>value.points[]</code> data, so translate those in your own state as well.
 </p>
 <p class="demo-desc">
-	Each non-range rule also exposes an optional <code>reset</code> field for hysteresis. Provide a value to capture the threshold at which a downstream rule engine should clear the alert; leave the property off entirely to skip it. The two editors below show both shapes side-by-side.
+	Each non-range rule also exposes an optional <code>reset</code> field for hysteresis. The preview draws that reset as the opposite side of the rule: <code>&gt;</code> resets with <code>&lt;</code>, <code>&gt;=</code> resets with <code>&lt;=</code>, and <code>=</code> resets anywhere that is not the trigger value.
 </p>
 
 <section class="demo-section">
 	<h3 class="demo-subhead">Editor with <code>reset</code> on every point</h3>
 	<p class="demo-desc">
-		Each point's bound data carries a <code>reset</code> property (empty string by default), so the optional reset input renders alongside the value field for every non-range condition.
+		The reset lane uses the same colour as the trigger and a reset icon marker. The high-temp reset below is fully covered by the cold-edge trigger, so it surfaces a validation error.
 	</p>
 	<CwAlertPointsEditor bind:value={alertPointsWithReset} tickCount={1} />
 </section>

@@ -539,8 +539,12 @@ export interface CwAlertPointsEditorText {
 	invalidPreviewNote?: (count: number) => string;
 	/** Preview note shown when rules overlap. */
 	overlapPreviewNote?: (count: number) => string;
+	/** Preview note shown when reset ranges are fully covered by other alert rules. */
+	resetNeverHappensPreviewNote?: (count: number) => string;
 	/** Warning shown when a range has the same min and max. */
 	minEqualsMaxWarning?: string;
+	/** Validation text shown when a reset can never happen. */
+	resetNeverHappensError?: string;
 	/** Default name assigned to newly added rules. */
 	defaultPointName?: (index: number) => string;
 	/** Unit option label for Celsius. */
@@ -579,6 +583,18 @@ export interface CwAlertPointsEditorText {
 	pointDescriptionGreaterThan?: (value: string, unit: string) => string;
 	/** Formatter for greater-than-or-equal preview copy. */
 	pointDescriptionGreaterThanOrEqual?: (value: string, unit: string) => string;
+	/** Preview copy when a reset cannot be drawn yet. */
+	resetDescriptionWaitingForValue?: string;
+	/** Formatter for exact-match reset preview copy. */
+	resetDescriptionNotEquals?: (value: string, unit: string) => string;
+	/** Formatter for less-than reset preview copy. */
+	resetDescriptionLessThan?: (value: string, unit: string) => string;
+	/** Formatter for less-than-or-equal reset preview copy. */
+	resetDescriptionLessThanOrEqual?: (value: string, unit: string) => string;
+	/** Formatter for greater-than reset preview copy. */
+	resetDescriptionGreaterThan?: (value: string, unit: string) => string;
+	/** Formatter for greater-than-or-equal reset preview copy. */
+	resetDescriptionGreaterThanOrEqual?: (value: string, unit: string) => string;
 	/** Validation formatter for overlapping rules. */
 	overlapError?: (labels: string[]) => string;
 }

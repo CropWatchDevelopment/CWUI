@@ -3426,12 +3426,12 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			{
 				title: 'Add an optional reset for hysteresis-aware rules',
 				description:
-					'Every non-range condition exposes an optional `reset` input alongside the threshold value. Capture it in your bound state to feed downstream alarm logic — leaving it blank or omitting the property keeps backward-compatible payloads.'
+					'Every non-range condition exposes an optional `reset` input alongside the threshold value. The preview draws resets as the opposite side of the rule and warns when another alert rule fully covers the reset range.'
 			},
 				{
 					title: 'Normalize before you submit',
 					description:
-						'When you need a payload for storage or an API, convert the Celsius-backed `center`, `value`, `min`, and `max` fields into numbers or `null`.'
+						'When you need a payload for storage or an API, convert the Celsius-backed `center`, `value`, `min`, `max`, and `reset` fields into numbers or `null`.'
 				},
 			{
 				title: 'Let the scale breathe around the center',
@@ -3486,7 +3486,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'point.reset',
 				type: 'string (optional)',
 				description:
-					'Optional hysteresis threshold for downstream rule engines. Stored in Celsius like the other numeric fields, validated only when present, and shown as an extra input on every non-range condition. Omit the field entirely on rules that do not need it — the editor will not add it.'
+					'Optional hysteresis threshold for downstream rule engines. Stored in Celsius like the other numeric fields and shown as the opposite reset range on the number line. Omit the field entirely on rules that do not need it — the editor will not add it.'
 			},
 			{
 				name: 'onchange',
@@ -3532,11 +3532,11 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \t\t\t\tid: 'high-temp',
 \t\t\t\tname: 'High temp alarm',
 \t\t\t\tcolor: '#e35c8d',
-\t\t\t\tcondition: 'greaterThan',
-\t\t\t\tvalue: '30',
+\t\t\t\tcondition: 'greaterThanOrEqual',
+\t\t\t\tvalue: '100',
 \t\t\t\tmin: '',
 \t\t\t\tmax: '',
-\t\t\t\treset: '25'  // alert clears once the value drops back below 25 °C
+\t\t\t\treset: '22'  // alert clears once the value is at or below 22 °C
 \t\t\t}
 \t\t]
 \t});
@@ -3592,10 +3592,24 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \t\t\tt('alerts.preview.invalidCount', { count }),
 \t\toverlapPreviewNote: (count) =>
 \t\t\tt('alerts.preview.overlapCount', { count }),
+\t\tresetNeverHappensPreviewNote: (count) =>
+\t\t\tt('alerts.preview.resetNeverHappensCount', { count }),
+\t\tresetNeverHappensError: t('alerts.validation.resetNeverHappens'),
 \t\tpointDescriptionEquals: (value, unit) =>
 \t\t\tt('alerts.preview.equals', { value, unit }),
 \t\tpointDescriptionRange: (min, max, unit) =>
 \t\t\tt('alerts.preview.range', { min, max, unit }),
+\t\tresetDescriptionWaitingForValue: t('alerts.preview.resetWaiting'),
+\t\tresetDescriptionNotEquals: (value, unit) =>
+\t\t\tt('alerts.preview.resetNotEquals', { value, unit }),
+\t\tresetDescriptionLessThan: (value, unit) =>
+\t\t\tt('alerts.preview.resetLessThan', { value, unit }),
+\t\tresetDescriptionLessThanOrEqual: (value, unit) =>
+\t\t\tt('alerts.preview.resetLessThanOrEqual', { value, unit }),
+\t\tresetDescriptionGreaterThan: (value, unit) =>
+\t\t\tt('alerts.preview.resetGreaterThan', { value, unit }),
+\t\tresetDescriptionGreaterThanOrEqual: (value, unit) =>
+\t\t\tt('alerts.preview.resetGreaterThanOrEqual', { value, unit }),
 \t\toverlapError: (labels) =>
 \t\t\tt('alerts.validation.overlap', { labels: labels.join(', ') })
 \t};

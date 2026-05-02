@@ -10,6 +10,14 @@
 	import CwCard from "./CwCard.svelte";
 	import CwDropdown from "./CwDropdown.svelte";
 	import CwInput from "./CwInput.svelte";
+	import ResetIcon from "./alert-points/ResetIcon.svelte";
+	import {
+		areDomainsFullyCovered,
+		domainsOverlap,
+		getResetDomains,
+		getTriggerDomain,
+		type RuleDomain,
+	} from "./alert-points/ruleDomains.js";
 
 	interface Props {
 		value?: CwAlertPointsValue;
@@ -29,6 +37,7 @@
 		minError?: string;
 		maxError?: string;
 		resetError?: string;
+		resetClearError?: string;
 		overlapError?: string;
 	}
 
@@ -40,11 +49,15 @@
 		inclusive?: boolean;
 	}
 
-	interface RuleDomain {
-		start: number;
-		end: number;
-		startInclusive: boolean;
-		endInclusive: boolean;
+	interface ResetGeometry {
+		type: "none" | "invalid" | "ray-left" | "ray-right" | "split-ray";
+		anchor?: number;
+		left?: number;
+		width?: number;
+		leftWidth?: number;
+		rightLeft?: number;
+		rightWidth?: number;
+		inclusive?: boolean;
 	}
 
 	type PointNumericField = "value" | "min" | "max" | "reset";
@@ -85,8 +98,12 @@
 			`${count} rule${count === 1 ? "" : "s"} still need complete values before they can be drawn.`,
 		overlapPreviewNote: (count) =>
 			`${count} rule${count === 1 ? "" : "s"} overlap another rule. Adjust the values so each rule covers a unique part of the number line.`,
+		resetNeverHappensPreviewNote: (count) =>
+			`${count} reset${count === 1 ? "" : "s"} will never happen because every reset value is covered by another alert rule.`,
 		minEqualsMaxWarning:
 			'Min and Max are the same. Consider using "equals" condition instead for clarity.',
+		resetNeverHappensError:
+			"Reset will never happen because every reset value is covered by another alert rule.",
 		defaultPointName: (index) => `Alert Point ${index}`,
 		unitCelsiusLabel: "°C",
 		unitFahrenheitLabel: "°F",
@@ -107,6 +124,14 @@
 		pointDescriptionLessThanOrEqual: (value, unit) => `<= ${value} ${unit}`,
 		pointDescriptionGreaterThan: (value, unit) => `> ${value} ${unit}`,
 		pointDescriptionGreaterThanOrEqual: (value, unit) => `>= ${value} ${unit}`,
+		resetDescriptionWaitingForValue: "Reset waiting for a value.",
+		resetDescriptionNotEquals: (value, unit) => `Reset != ${value} ${unit}`,
+		resetDescriptionLessThan: (value, unit) => `Reset < ${value} ${unit}`,
+		resetDescriptionLessThanOrEqual: (value, unit) =>
+			`Reset <= ${value} ${unit}`,
+		resetDescriptionGreaterThan: (value, unit) => `Reset > ${value} ${unit}`,
+		resetDescriptionGreaterThanOrEqual: (value, unit) =>
+			`Reset >= ${value} ${unit}`,
 		overlapError: (labels) =>
 			`Overlaps with ${labels.join(", ")}. Each alert rule must cover a unique part of the number line.`,
 	};
@@ -386,80 +411,12 @@
 		return point.name.trim() || text.defaultPointName(index + 1);
 	}
 
-	function getRuleDomain(point: VisualPoint): RuleDomain | null {
-		switch (point.condition) {
-			case "equals":
-				return point.numericValue === null
-					? null
-					: {
-							start: point.numericValue,
-							end: point.numericValue,
-							startInclusive: true,
-							endInclusive: true,
-						};
-			case "range": {
-				if (point.numericMin === null || point.numericMax === null)
-					return null;
-
-				return {
-					start: Math.min(point.numericMin, point.numericMax),
-					end: Math.max(point.numericMin, point.numericMax),
-					startInclusive: true,
-					endInclusive: true,
-				};
-			}
-			case "lessThan":
-				return point.numericValue === null
-					? null
-					: {
-							start: Number.NEGATIVE_INFINITY,
-							end: point.numericValue,
-							startInclusive: false,
-							endInclusive: false,
-						};
-			case "lessThanOrEqual":
-				return point.numericValue === null
-					? null
-					: {
-							start: Number.NEGATIVE_INFINITY,
-							end: point.numericValue,
-							startInclusive: false,
-							endInclusive: true,
-						};
-			case "greaterThan":
-				return point.numericValue === null
-					? null
-					: {
-							start: point.numericValue,
-							end: Number.POSITIVE_INFINITY,
-							startInclusive: false,
-							endInclusive: false,
-						};
-			case "greaterThanOrEqual":
-				return point.numericValue === null
-					? null
-					: {
-							start: point.numericValue,
-							end: Number.POSITIVE_INFINITY,
-							startInclusive: true,
-							endInclusive: false,
-						};
-		}
-	}
-
-	function domainsOverlap(a: RuleDomain, b: RuleDomain): boolean {
-		if (a.end < b.start || b.end < a.start) return false;
-		if (a.end === b.start) return a.endInclusive && b.startInclusive;
-		if (b.end === a.start) return b.endInclusive && a.startInclusive;
-		return true;
-	}
-
 	function buildOverlapErrors(points: VisualPoint[]): Record<string, string> {
 		const conflicts: Record<string, string[]> = {};
 
 		for (let index = 0; index < points.length; index += 1) {
 			const current = points[index];
-			const currentDomain = getRuleDomain(current);
+			const currentDomain = getTriggerDomain(current);
 			if (!currentDomain) continue;
 
 			for (
@@ -468,7 +425,7 @@
 				compareIndex += 1
 			) {
 				const comparison = points[compareIndex];
-				const comparisonDomain = getRuleDomain(comparison);
+				const comparisonDomain = getTriggerDomain(comparison);
 				if (
 					!comparisonDomain ||
 					!domainsOverlap(currentDomain, comparisonDomain)
@@ -493,6 +450,58 @@
 				text.overlapError(labels),
 			]),
 		);
+	}
+
+	function isRuleDomain(domain: RuleDomain | null): domain is RuleDomain {
+		return domain !== null;
+	}
+
+	function hasResetOption(point: VisualPoint): boolean {
+		return point.condition !== "range" && point.reset !== undefined;
+	}
+
+	function getPointResetDomains(point: VisualPoint): RuleDomain[] | null {
+		if (!hasResetOption(point)) return null;
+		if (point.condition !== "equals" && !point.reset?.trim()) return null;
+
+		return getResetDomains(point);
+	}
+
+	function buildResetClearErrors(
+		points: VisualPoint[],
+	): Record<string, string> {
+		const errors: Record<string, string> = {};
+
+		for (const point of points) {
+			const resetDomains = getPointResetDomains(point);
+			if (!resetDomains) continue;
+
+			const otherTriggerDomains = points
+				.filter((otherPoint) => otherPoint.id !== point.id)
+				.map((otherPoint) => getTriggerDomain(otherPoint))
+				.filter(isRuleDomain);
+
+			if (areDomainsFullyCovered(resetDomains, otherTriggerDomains)) {
+				errors[point.id] = text.resetNeverHappensError;
+			}
+		}
+
+		return errors;
+	}
+
+	function getPointError(point: VisualPoint): string | undefined {
+		return (
+			point.valueError ??
+			point.minError ??
+			point.maxError ??
+			point.resetError ??
+			point.resetClearError ??
+			point.overlapError
+		);
+	}
+
+	function getResetInputError(point: VisualPoint): string | undefined {
+		return point.resetError ?? point.resetClearError;
 	}
 
 	function niceStep(raw: number): number {
@@ -535,6 +544,10 @@
 
 			if (point.numericValue !== null) {
 				distances.push(Math.abs(point.numericValue - center));
+			}
+
+			if (point.numericReset !== null) {
+				distances.push(Math.abs(point.numericReset - center));
 			}
 		}
 
@@ -646,6 +659,59 @@
 		}
 	}
 
+	function getResetGeometry(
+		point: VisualPoint,
+		min: number,
+		max: number,
+	): ResetGeometry {
+		if (!hasResetOption(point)) return { type: "none" };
+
+		switch (point.condition) {
+			case "equals": {
+				if (point.numericValue === null) return { type: "invalid" };
+
+				const anchor = toPercent(point.numericValue, min, max);
+				return {
+					type: "split-ray",
+					anchor,
+					leftWidth: anchor,
+					rightLeft: anchor,
+					rightWidth: 100 - anchor,
+					inclusive: false,
+				};
+			}
+			case "range":
+				return { type: "none" };
+			case "lessThan":
+			case "lessThanOrEqual": {
+				if (!point.reset?.trim()) return { type: "none" };
+				if (point.numericReset === null) return { type: "invalid" };
+
+				const anchor = toPercent(point.numericReset, min, max);
+				return {
+					type: "ray-right",
+					anchor,
+					left: anchor,
+					width: 100 - anchor,
+					inclusive: point.condition === "lessThanOrEqual",
+				};
+			}
+			case "greaterThan":
+			case "greaterThanOrEqual": {
+				if (!point.reset?.trim()) return { type: "none" };
+				if (point.numericReset === null) return { type: "invalid" };
+
+				const anchor = toPercent(point.numericReset, min, max);
+				return {
+					type: "ray-left",
+					anchor,
+					width: anchor,
+					inclusive: point.condition === "greaterThanOrEqual",
+				};
+			}
+		}
+	}
+
 	function describePoint(point: VisualPoint, unit: CwAlertPointUnit): string {
 		switch (point.condition) {
 			case "equals":
@@ -689,6 +755,48 @@
 					? text.pointDescriptionWaitingForThreshold
 					: text.pointDescriptionGreaterThanOrEqual(
 							formatNumber(point.numericValue),
+							unit,
+						);
+		}
+	}
+
+	function describeReset(point: VisualPoint, unit: CwAlertPointUnit): string {
+		switch (point.condition) {
+			case "equals":
+				return point.numericValue === null
+					? text.resetDescriptionWaitingForValue
+					: text.resetDescriptionNotEquals(
+							formatNumber(point.numericValue),
+							unit,
+						);
+			case "range":
+				return "";
+			case "lessThan":
+				return point.numericReset === null
+					? text.resetDescriptionWaitingForValue
+					: text.resetDescriptionGreaterThan(
+							formatNumber(point.numericReset),
+							unit,
+						);
+			case "lessThanOrEqual":
+				return point.numericReset === null
+					? text.resetDescriptionWaitingForValue
+					: text.resetDescriptionGreaterThanOrEqual(
+							formatNumber(point.numericReset),
+							unit,
+						);
+			case "greaterThan":
+				return point.numericReset === null
+					? text.resetDescriptionWaitingForValue
+					: text.resetDescriptionLessThan(
+							formatNumber(point.numericReset),
+							unit,
+						);
+			case "greaterThanOrEqual":
+				return point.numericReset === null
+					? text.resetDescriptionWaitingForValue
+					: text.resetDescriptionLessThanOrEqual(
+							formatNumber(point.numericReset),
 							unit,
 						);
 		}
@@ -870,10 +978,12 @@
 			});
 		});
 		const overlapErrors = buildOverlapErrors(normalizedPoints);
+		const resetClearErrors = buildResetClearErrors(normalizedPoints);
 
 		return normalizedPoints.map((point) => ({
 			...point,
 			overlapError: overlapErrors[point.id],
+			resetClearError: resetClearErrors[point.id],
 		}));
 	});
 	const axisExtent = $derived.by(() => getExtent(centerNumber, visualPoints));
@@ -890,11 +1000,23 @@
 	const overlapPreviewCount = $derived.by(
 		() => visualPoints.filter((point) => point.overlapError).length,
 	);
+	const resetNeverHappensCount = $derived.by(
+		() => visualPoints.filter((point) => point.resetClearError).length,
+	);
+	const resetLineVisible = $derived.by(() =>
+		visualPoints.some((point) => {
+			const resetGeometry = getResetGeometry(point, axisMin, axisMax);
+			return (
+				resetGeometry.type !== "none" && resetGeometry.type !== "invalid"
+			);
+		}),
+	);
 	const invalidPreviewCount = $derived.by(
 		() =>
 			visualPoints.filter(
 				(point) =>
-					getGeometry(point, axisMin, axisMax).type === "invalid",
+					getGeometry(point, axisMin, axisMax).type === "invalid" ||
+					getResetGeometry(point, axisMin, axisMax).type === "invalid",
 			).length,
 	);
 </script>
@@ -961,6 +1083,11 @@
 								axisMin,
 								axisMax,
 							)}
+							{@const resetGeometry = getResetGeometry(
+								point,
+								axisMin,
+								axisMax,
+							)}
 							<div
 								class="cw-alert-points__legend-item"
 								class:cw-alert-points__legend-item--inactive={geometry.type ===
@@ -979,13 +1106,30 @@
 											displayUnit,
 										)}</span
 									>
+									{#if resetGeometry.type !== "none"}
+										<span
+											class="cw-alert-points__legend-reset"
+											class:cw-alert-points__legend-reset--inactive={resetGeometry.type ===
+												"invalid"}
+											class:cw-alert-points__legend-reset--danger={!!point.resetClearError}
+										>
+											<ResetIcon />
+											{describeReset(point, displayUnit)}
+										</span>
+									{/if}
 								</div>
 							</div>
 						{/each}
 					</div>
 
-					<div class="cw-alert-points__line-visual">
+					<div
+						class="cw-alert-points__line-visual"
+						class:cw-alert-points__line-visual--with-reset={resetLineVisible}
+					>
 						<div class="cw-alert-points__line-guide"></div>
+						{#if resetLineVisible}
+							<div class="cw-alert-points__reset-guide"></div>
+						{/if}
 						<div
 							class="cw-alert-points__line-center"
 							aria-hidden="true"
@@ -1040,6 +1184,60 @@
 								></div>
 							{/if}
 						{/each}
+
+						{#each visualPoints as point (point.id)}
+							{@const resetGeometry = getResetGeometry(
+								point,
+								axisMin,
+								axisMax,
+							)}
+							{#if resetGeometry.type === "ray-left"}
+								<div
+									class="cw-alert-points__reset-ray cw-alert-points__reset-ray--left"
+									style={`--cw-alert-color:${point.color};width:${resetGeometry.width}%`}
+								></div>
+								<div
+									class="cw-alert-points__reset-marker"
+									class:cw-alert-points__reset-marker--filled={resetGeometry.inclusive}
+									class:cw-alert-points__reset-marker--danger={!!point.resetClearError}
+									style={`--cw-alert-color:${point.color};left:${resetGeometry.anchor}%`}
+									aria-hidden="true"
+								>
+									<ResetIcon />
+								</div>
+							{:else if resetGeometry.type === "ray-right"}
+								<div
+									class="cw-alert-points__reset-ray cw-alert-points__reset-ray--right"
+									style={`--cw-alert-color:${point.color};left:${resetGeometry.left}%;width:${resetGeometry.width}%`}
+								></div>
+								<div
+									class="cw-alert-points__reset-marker"
+									class:cw-alert-points__reset-marker--filled={resetGeometry.inclusive}
+									class:cw-alert-points__reset-marker--danger={!!point.resetClearError}
+									style={`--cw-alert-color:${point.color};left:${resetGeometry.anchor}%`}
+									aria-hidden="true"
+								>
+									<ResetIcon />
+								</div>
+							{:else if resetGeometry.type === "split-ray"}
+								<div
+									class="cw-alert-points__reset-ray cw-alert-points__reset-ray--left"
+									style={`--cw-alert-color:${point.color};width:${resetGeometry.leftWidth}%`}
+								></div>
+								<div
+									class="cw-alert-points__reset-ray cw-alert-points__reset-ray--right"
+									style={`--cw-alert-color:${point.color};left:${resetGeometry.rightLeft}%;width:${resetGeometry.rightWidth}%`}
+								></div>
+								<div
+									class="cw-alert-points__reset-marker"
+									class:cw-alert-points__reset-marker--danger={!!point.resetClearError}
+									style={`--cw-alert-color:${point.color};left:${resetGeometry.anchor}%`}
+									aria-hidden="true"
+								>
+									<ResetIcon />
+								</div>
+							{/if}
+						{/each}
 					</div>
 
 					{#if invalidPreviewCount > 0}
@@ -1053,6 +1251,16 @@
 							class="cw-alert-points__plot-note cw-alert-points__plot-note--danger"
 						>
 							{text.overlapPreviewNote(overlapPreviewCount)}
+						</p>
+					{/if}
+
+					{#if resetNeverHappensCount > 0}
+						<p
+							class="cw-alert-points__plot-note cw-alert-points__plot-note--danger"
+						>
+							{text.resetNeverHappensPreviewNote(
+								resetNeverHappensCount,
+							)}
 						</p>
 					{/if}
 				{/if}
@@ -1083,7 +1291,7 @@
 	<div class="cw-alert-points__editor">
 		{#each visualPoints as point (point.id)}
 			<CwCard
-				class={`cw-alert-points__card-shell${!!point.valueError || !!point.minError || !!point.maxError || !!point.overlapError ? " cw-alert-points__card-shell--invalid" : ""}`}
+				class={`cw-alert-points__card-shell${getPointError(point) ? " cw-alert-points__card-shell--invalid" : ""}`}
 				padded={false}
 			>
 				<article class="cw-alert-points__card">
@@ -1199,7 +1407,7 @@
 									label={getLabelWithUnit(text.resetFieldLabel)}
 									type="numeric"
 									value={point.reset}
-									error={point.resetError}
+									error={getResetInputError(point)}
 									oninput={(event) =>
 										updatePointFromDisplay(
 											point.id,
@@ -1373,6 +1581,27 @@
 		color: var(--cw-text-muted);
 	}
 
+	.cw-alert-points__legend-reset {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--cw-space-1);
+		color: color-mix(in srgb, var(--cw-alert-color) 70%, var(--cw-text-muted));
+	}
+
+	.cw-alert-points__legend-reset :global(svg) {
+		width: 0.82rem;
+		height: 0.82rem;
+		flex: 0 0 auto;
+	}
+
+	.cw-alert-points__legend-reset--inactive {
+		color: var(--cw-text-muted);
+	}
+
+	.cw-alert-points__legend-reset--danger {
+		color: var(--cw-danger-500);
+	}
+
 	.cw-alert-points__line-visual {
 		position: relative;
 		height: 3rem;
@@ -1383,12 +1612,22 @@
 			color-mix(in srgb, var(--cw-border-default) 72%, transparent);
 	}
 
+	.cw-alert-points__line-visual--with-reset {
+		height: 5.2rem;
+	}
+
 	.cw-alert-points__line-guide,
 	.cw-alert-points__ray,
 	.cw-alert-points__segment {
 		position: absolute;
 		top: 50%;
 		transform: translateY(-50%);
+	}
+
+	.cw-alert-points__line-visual--with-reset .cw-alert-points__line-guide,
+	.cw-alert-points__line-visual--with-reset .cw-alert-points__ray,
+	.cw-alert-points__line-visual--with-reset .cw-alert-points__segment {
+		top: 36%;
 	}
 
 	.cw-alert-points__line-guide {
@@ -1424,6 +1663,11 @@
 		box-shadow: 0 0 0 4px
 			color-mix(in srgb, var(--cw-alert-color) 14%, transparent);
 		z-index: 2;
+	}
+
+	.cw-alert-points__line-visual--with-reset .cw-alert-points__dot,
+	.cw-alert-points__line-visual--with-reset .cw-alert-points__endpoint {
+		top: 36%;
 	}
 
 	.cw-alert-points__dot-core {
@@ -1485,6 +1729,74 @@
 
 	.cw-alert-points__ray-arrow--right::before {
 		transform: rotate(45deg);
+	}
+
+	.cw-alert-points__reset-guide {
+		position: absolute;
+		top: 68%;
+		left: 0.75rem;
+		right: 0.75rem;
+		border-top: 1px dashed
+			color-mix(in srgb, var(--cw-border-strong) 48%, transparent);
+	}
+
+	.cw-alert-points__reset-ray {
+		position: absolute;
+		top: 68%;
+		transform: translateY(-50%);
+		height: 0.42rem;
+		border-radius: var(--cw-radius-full);
+		border: 1px dashed
+			color-mix(in srgb, var(--cw-alert-color) 74%, transparent);
+		background-color: color-mix(
+			in srgb,
+			var(--cw-alert-color) 18%,
+			transparent
+		);
+		z-index: 1;
+	}
+
+	.cw-alert-points__reset-ray--left {
+		left: 0;
+	}
+
+	.cw-alert-points__reset-marker {
+		position: absolute;
+		top: 68%;
+		transform: translate(-50%, -50%);
+		display: grid;
+		place-items: center;
+		width: 1.35rem;
+		height: 1.35rem;
+		border-radius: 999px;
+		border: 2px solid var(--cw-alert-color);
+		background: var(--cw-bg-base);
+		color: var(--cw-alert-color);
+		box-shadow: 0 0 0 4px
+			color-mix(in srgb, var(--cw-alert-color) 12%, transparent);
+		z-index: 3;
+	}
+
+	.cw-alert-points__reset-marker :global(svg) {
+		width: 0.82rem;
+		height: 0.82rem;
+	}
+
+	.cw-alert-points__reset-marker--filled {
+		background: var(--cw-alert-color);
+		color: var(--cw-bg-base);
+	}
+
+	.cw-alert-points__reset-marker--danger {
+		border-color: var(--cw-danger-500);
+		color: var(--cw-danger-500);
+		box-shadow: 0 0 0 4px
+			color-mix(in srgb, var(--cw-danger-500) 12%, transparent);
+	}
+
+	.cw-alert-points__reset-marker--filled.cw-alert-points__reset-marker--danger {
+		background: var(--cw-danger-500);
+		color: var(--cw-bg-base);
 	}
 
 	.cw-alert-points__empty {
