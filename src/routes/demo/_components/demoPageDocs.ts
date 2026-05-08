@@ -3404,6 +3404,177 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			}
 		]
 	},
+		'/demo/windcompass': {
+			summary:
+				'CwWindCompass is an aviation-style heading dial that shows wind direction and speed in a single instrument. The dial uses cardinal letters and ten-degree numerical markers around the bezel, an arrow with a shaft and fletching that rotates to flow direction, and a digital readout in the centre of the instrument for live speed.',
+			steps: [
+				{
+					title: 'Pick the direction convention up front',
+					description:
+						'Set `convention="from"` for meteorological readings (the wind is blowing FROM the bearing) or `convention="to"` for oceanographic data. The arrow always shows the direction of flow regardless of which convention is used.'
+				},
+				{
+					title: 'Match the unit to your sensor',
+					description:
+						'`unit` accepts `m/s`, `km/h`, `mph`, or `knots`. The Beaufort scale lookup is normalized internally, so the same speed produces the same Beaufort force regardless of the chosen unit.'
+				},
+				{
+					title: 'Show dual-unit readouts when needed',
+					description:
+						'Pass `secondaryUnit` to display the same speed in a second unit (e.g. `unit="mph"` + `secondaryUnit="km/h"` for an MPH/KPH readout). The conversion runs through internal m/s normalization.'
+				},
+				{
+					title: 'Bind the cardinal abbreviation back when you need it',
+					description:
+						'`bind:cardinal` makes the component push the current FROM-bearing abbreviation ("N", "NE", "ESE", …) to a parent variable. Useful for status banners, screen reader copy, or downstream rule logic.'
+				},
+				{
+					title: 'Hide chrome for compact placements',
+					description:
+						'Disable `showSummary` to drop the stats grid and `showLegend` to drop the Beaufort scale reference. The instrument itself stays the same.'
+				}
+			],
+			apiRows: [
+				{
+					name: 'direction',
+					type: 'number',
+					description: 'Direction in degrees, 0 = North, 90 = East. Interpreted by `convention`.',
+					required: true
+				},
+				{
+					name: 'speed',
+					type: 'number',
+					description: 'Wind speed expressed in `unit`.',
+					required: true
+				},
+				{
+					name: 'unit',
+					type: "'m/s' | 'km/h' | 'mph' | 'knots'",
+					description: 'Display unit shown beneath the digital speed readout.',
+					defaultValue: "'m/s'"
+				},
+				{
+					name: 'secondaryUnit',
+					type: "'m/s' | 'km/h' | 'mph' | 'knots'",
+					description: 'Optional secondary unit. When set, the readout shows the same speed converted into this unit on a second line (e.g. MPH primary + KPH secondary).'
+				},
+				{
+					name: 'cardinal',
+					type: 'string (bindable)',
+					description: 'Bindable output. Updated to the current cardinal abbreviation ("N", "NE", "ESE", …) of the FROM bearing. Use with `bind:cardinal`.'
+				},
+				{
+					name: 'convention',
+					type: "'from' | 'to'",
+					description: 'Whether `direction` is the bearing the wind is blowing FROM (meteorological) or TO (oceanographic).',
+					defaultValue: "'from'"
+				},
+				{
+					name: 'location',
+					type: 'string',
+					description: 'Optional label shown in the heading.',
+					defaultValue: "''"
+				},
+				{
+					name: 'timestamp',
+					type: 'string | Date | number',
+					description: 'Optional reading timestamp shown in the reading panel.'
+				},
+				{
+					name: 'size',
+					type: 'number',
+					description: 'Pixel size of the dial.',
+					defaultValue: '320'
+				},
+				{
+					name: 'showSummary',
+					type: 'boolean',
+					description: 'Show the stats grid below the dial.',
+					defaultValue: 'true'
+				},
+				{
+					name: 'showLegend',
+					type: 'boolean',
+					description: 'Show the Beaufort scale reference panel.',
+					defaultValue: 'true'
+				},
+				{
+					name: 'class',
+					type: 'string',
+					description: 'Optional class hook applied to the outer wrapper.'
+				}
+			],
+			examples: [
+				{
+					title: 'Standard meteorological reading',
+					description: 'A typical weather-station integration. Wind is reported FROM 220° at 6.4 m/s.',
+					code: `<CwWindCompass
+\tlocation="Field Station 12"
+\tdirection={220}
+\tspeed={6.4}
+\ttimestamp={Date.now()}
+/>`
+				},
+				{
+					title: 'Imperial units',
+					description: 'Set `unit="mph"` and pass speed in matching units. The Beaufort lookup still works because conversion happens internally.',
+					code: `<CwWindCompass
+\tlocation="Greenhouse Roof"
+\tdirection={45}
+\tspeed={28}
+\tunit="mph"
+/>`
+				},
+				{
+					title: 'Compact dial without summary or legend',
+					description: 'Drop the surrounding chrome for dashboards where the dial sits beside other widgets.',
+					code: `<CwWindCompass
+\tdirection={310}
+\tspeed={3.1}
+\tsize={220}
+\tshowSummary={false}
+\tshowLegend={false}
+/>`
+				},
+				{
+					title: 'Oceanographic ("to") convention',
+					description: 'Drift charts often report the direction the wind is blowing TOWARD. The arrow rotates accordingly.',
+					code: `<CwWindCompass
+\tlocation="Buoy 4-A"
+\tdirection={90}
+\tspeed={11}
+\tunit="knots"
+\tconvention="to"
+/>`
+				},
+				{
+					title: 'Dual-unit readout (MPH + KPH)',
+					description: 'Pass `secondaryUnit` to add a converted line under the primary speed. Any pair from the four supported units works.',
+					code: `<CwWindCompass
+\tlocation="Highway Sensor"
+\tdirection={140}
+\tspeed={28}
+\tunit="mph"
+\tsecondaryUnit="km/h"
+/>`
+				},
+				{
+					title: 'Bind the cardinal abbreviation',
+					description: 'Use `bind:cardinal` to receive the current FROM-bearing abbreviation in your parent component.',
+					code: `<script lang="ts">
+\tlet windCardinal = $state('');
+</` + `script>
+
+<CwWindCompass
+\tdirection={direction}
+\tspeed={speed}
+\tbind:cardinal={windCardinal}
+/>
+
+<p>Wind from: {windCardinal}</p>`
+				}
+			]
+		},
 		'/demo/alert-points': {
 			summary:
 				'CwAlertPointsEditor is a number-line editor for threshold rules. It keeps the center point anchored, lets users add exact points, open-ended thresholds, and ranges, and keeps the bound values normalized in Celsius while the selected unit stays visual-only.',

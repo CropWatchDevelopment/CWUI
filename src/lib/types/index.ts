@@ -179,6 +179,28 @@ export interface CwHeatmapDataPoint {
 	value: number;
 }
 
+/* ── Wind chart types ──────────────────────────────────── */
+
+export type CwWindSpeedUnit = 'm/s' | 'km/h' | 'mph' | 'knots';
+
+/**
+ * Convention for `direction`.
+ *  - 'from' (meteorological, default) — the direction the wind is blowing FROM.
+ *  - 'to'   (oceanographic)            — the direction the wind is blowing TO.
+ */
+export type CwWindDirectionConvention = 'from' | 'to';
+
+export interface CwWindReading {
+	/** Direction in degrees, 0 = North, 90 = East. */
+	direction: number;
+	/** Wind speed in the chosen unit. */
+	speed: number;
+	/** Optional location label shown in the header. */
+	location?: string;
+	/** Optional timestamp shown in the summary. */
+	timestamp?: string | Date | number;
+}
+
 /* ── Toast types ───────────────────────────────────────── */
 
 export interface CwToastItem {

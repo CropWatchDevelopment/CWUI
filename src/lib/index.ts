@@ -27,6 +27,7 @@ export { default as CwDeviceLineChartSection } from './components/CwDeviceLineCh
 export { default as CwDonutChart } from './components/CwDonutChart.svelte';
 export { default as CwPPFDChart } from './components/CwPPFDChart.svelte';
 export { default as CwVPDChart } from './components/CwVPDChart.svelte';
+export { default as CwWindCompass } from './components/CwWindCompass.svelte';
 export { default as CwDateTimeRangePicker } from './components/CwDateTimeRangePicker.svelte';
 export { default as CwThemePicker } from './components/CwThemePicker.svelte';
 export { default as CwLanguageSwitcher } from './components/CwLanguageSwitcher.svelte';
@@ -92,6 +93,9 @@ export type {
 	CwVPDTick,
 	CwVPDStageBand,
 	CwVPDReading,
+	CwWindReading,
+	CwWindSpeedUnit,
+	CwWindDirectionConvention,
 	CwToastItem,
 	CwDatePickerMode,
 	CwDateGranularity,
