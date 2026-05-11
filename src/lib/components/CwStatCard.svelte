@@ -257,12 +257,12 @@
 			></div>
 		{/if}
 
-		{#if medianPercent != null}
+		<!-- {#if medianPercent != null}
 			<div
 				class="cw-stat-card__dot cw-stat-card__dot--median"
 				style:left="{medianPercent}%"
 			></div>
-		{/if}
+		{/if} -->
 	</div>
 	<div class="cw-stat-card__labels">
 		<span>{l.min}</span>
@@ -380,8 +380,8 @@
 		display: grid;
 		place-items: center;
 		width: 100%;
-		min-height: 6.25rem;
-		padding: var(--cw-space-3) var(--cw-space-2);
+		min-height: 5rem;
+		padding: 0.15rem;
 		text-align: center;
 		border: 1px solid
 			color-mix(
