@@ -699,6 +699,308 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			}
 		]
 	},
+	'/demo/responsive-linechart': {
+		summary:
+			'CwResponsiveLineChart is a Canvas2D, touch-first multi-series time chart for farm sensor telemetry. Every visible series gets its own Y-axis colored to match its line; axes auto-distribute (or use the per-series `axisSide` opt-in) and stack on each side. The legend lives below the chart so the canvas stays as wide as possible. Built-in features: value-mapped temperature gradient, named threshold lines, anomaly markers, explicit data-gap bands, night-time shading, light/dark theming (manual or auto), and a responsive shell.',
+		steps: [
+			{
+				title: 'Shape your data as { t, v } points',
+				description:
+					'Each series carries a `data` array of `{ t: epochMs, v: number | null }` points sorted ascending by `t`. Use `v: null` for a missing reading — combined with `gapMs`, this draws an explicit "no signal" band.'
+			},
+			{
+				title: 'Pick an id, label, unit, and color per series',
+				description:
+					'`id` is referenced by `initialHidden`, legend chips, and onchange events. `color` drives both the line and its dedicated Y-axis ticks/unit label. Set `gradient: true` to use the value-mapped temperature gradient instead (the axis still falls back to `color`).'
+			},
+			{
+				title: 'Each visible series gets its own axis',
+				description:
+					'Axes auto-distribute: series index 0 → left, 1 → right, 2 → left, etc. Override per series with `axisSide: \'left\' | \'right\'` when you want to force a side. Hiding a series via the legend removes both its line and its axis, which also reclaims the horizontal space.'
+			},
+			{
+				title: 'Toggle visibility with the legend below the chart',
+				description:
+					'The legend chips live under the canvas as a horizontal wrap to maximize chart width. Click a chip to hide/show its series; the chip dims, the line disappears, and its Y-axis collapses. `L`/`R` badges indicate which side each visible series is on.'
+			},
+			{
+				title: 'Tune the chrome to the surface',
+				description:
+					'Toggle `showLegend`, `showLegendStats`, `showThemeToggle`, `showAnomalies`, `showThresholds`, `showDataGaps`, and `showNightBands` to strip or restore individual layers. For dense dashboard tiles, set `bare`, drop the legend, and pass `ranges={[]}` to hide the time-range pills.'
+			},
+			{
+				title: 'Pick a theme',
+				description:
+					'Pass `theme="light"` or `theme="dark"` for a fixed surface. Pass `themeAuto` to follow `prefers-color-scheme` (the manual toggle button hides automatically in auto mode). You can bind `theme` to react to user actions outside the component.'
+			},
+			{
+				title: 'Use the built-in gestures',
+				description:
+					'Drag (one finger / mouse) pans the X view, two-finger pinch zooms with the midpoint as anchor. Wheel zooms on desktop (shift+wheel pans). A single tap/click locks the crosshair; double-tap/double-click resets the zoom to the full data range.'
+			},
+			{
+				title: 'Listen for state changes',
+				description:
+					'Provide `onchange` to be notified when the user pans, zooms, toggles a series, or picks a range. The handler receives `{ viewStart, viewEnd, hidden, legendStats }` — use it to drive deep-linkable URLs or persist user preferences.'
+			}
+		],
+		apiTitle: 'Props and data shape',
+		apiNote:
+			'All controls (range pills, theme toggle, legend chips) are built in. The component renders to a single internal canvas; no SVG fallback. Bindable props: `theme`.',
+		apiRows: [
+			{
+				name: 'series',
+				type: 'CwResponsiveLineSeries[]',
+				description: 'Series rendered on the chart. Each series carries its own `data: { t, v }[]`, color, unit, and optional thresholds.',
+				required: true
+			},
+			{
+				name: 'series[].id',
+				type: 'string',
+				description: 'Stable identifier referenced by axis props, legend toggles, and onchange events.'
+			},
+			{
+				name: 'series[].label',
+				type: 'string',
+				description: 'Human-readable label shown in legend chips, tooltip rows, and axis selectors.'
+			},
+			{
+				name: 'series[].unit',
+				type: 'string',
+				description: 'Unit suffix shown beside last-value readouts and axis crowns (e.g. "°C", "%RH", "ppm").'
+			},
+			{
+				name: 'series[].color',
+				type: 'string',
+				description: 'Solid line color. Ignored when `gradient` is true.'
+			},
+			{
+				name: 'series[].gradient',
+				type: 'boolean',
+				description: 'When true, color each segment by mean value using the temperature gradient (black → blue → cyan → green → amber → red).',
+				defaultValue: 'false'
+			},
+			{
+				name: 'series[].data',
+				type: '{ t: number; v: number | null }[]',
+				description: 'Samples sorted ascending by `t` (epoch ms). Use `v: null` for missing readings.'
+			},
+			{
+				name: 'series[].decimals',
+				type: 'number',
+				description: 'Decimals used in tooltips and legend readouts.',
+				defaultValue: '1'
+			},
+			{
+				name: 'series[].gapMs',
+				type: 'number',
+				description: 'When set, gaps between consecutive samples greater than this many ms render as an explicit "no signal" band.'
+			},
+			{
+				name: 'series[].thresholds',
+				type: 'CwResponsiveLineThreshold[]',
+				description: 'Optional named horizontal reference lines drawn on the series\' axis. Each entry is `{ value, label, color? }`.'
+			},
+			{
+				name: 'series[].axisSide',
+				type: "'left' | 'right'",
+				description: 'Force this series\' Y axis to a specific side. When omitted, axes auto-distribute (index 0 → left, 1 → right, 2 → left, …).'
+			},
+			{
+				name: 'dataStart',
+				type: 'number',
+				description: 'Earliest selectable timestamp (epoch ms). Computed from `series` when omitted.'
+			},
+			{
+				name: 'dataEnd',
+				type: 'number',
+				description: 'Latest selectable timestamp (epoch ms). Computed from `series` when omitted.'
+			},
+			{
+				name: 'title',
+				type: 'string',
+				description: 'Heading shown above the chart.',
+				defaultValue: "''"
+			},
+			{
+				name: 'subtitle',
+				type: 'string',
+				description: 'Sub-heading shown beneath the title.',
+				defaultValue: "''"
+			},
+			{
+				name: 'theme',
+				type: "'light' | 'dark'",
+				description: 'Theme palette. Bindable.',
+				defaultValue: "'light'"
+			},
+			{
+				name: 'themeAuto',
+				type: 'boolean',
+				description: 'When true, follows `prefers-color-scheme` and hides the manual toggle.',
+				defaultValue: 'false'
+			},
+			{
+				name: 'showThemeToggle',
+				type: 'boolean',
+				description: 'Show the sun/moon theme toggle in the header.',
+				defaultValue: 'true'
+			},
+			{
+				name: 'ranges',
+				type: 'CwResponsiveLineRangePreset[]',
+				description: 'Range pill presets shown in the header. Each entry is `{ id, label, ms }`. Pass `[]` to hide the row.',
+				defaultValue: "[ '1H', '24H', '7D' ]"
+			},
+			{
+				name: 'initialRange',
+				type: 'string',
+				description: 'Range preset id used on mount when its `ms` is shorter than the full dataset span.',
+				defaultValue: "'24h'"
+			},
+			{
+				name: 'initialHidden',
+				type: 'string[]',
+				description: 'Series ids hidden at mount time. Mutable thereafter via legend chips.',
+				defaultValue: '[]'
+			},
+			{
+				name: 'showLegend',
+				type: 'boolean',
+				description: 'Show the legend panel at all (chips, axis picker, stats).',
+				defaultValue: 'true'
+			},
+			{
+				name: 'showLegendStats',
+				type: 'boolean',
+				description: 'Show min / avg / max under each legend chip.',
+				defaultValue: 'true'
+			},
+			{
+				name: 'showAnomalies',
+				type: 'boolean',
+				description: 'Render ringed dots for z-score > 2.5σ within the current viewport.',
+				defaultValue: 'true'
+			},
+			{
+				name: 'showThresholds',
+				type: 'boolean',
+				description: 'Render named threshold lines from each series\' `thresholds` array.',
+				defaultValue: 'true'
+			},
+			{
+				name: 'showDataGaps',
+				type: 'boolean',
+				description: 'Render explicit "no signal" bands when a series has `gapMs` set and a gap occurs.',
+				defaultValue: 'true'
+			},
+			{
+				name: 'showNightBands',
+				type: 'boolean',
+				description: 'Shade 18:00–06:00 local time when the view spans less than 14 days.',
+				defaultValue: 'true'
+			},
+			{
+				name: 'layout',
+				type: "'auto' | 'desktop' | 'tablet-land' | 'tablet' | 'phone-land' | 'phone'",
+				description: 'Forced layout variant. `auto` (default) picks one from the container width.',
+				defaultValue: "'auto'"
+			},
+			{
+				name: 'height',
+				type: 'number | string',
+				description: 'Component height. Number is treated as pixels; strings are passed through verbatim (e.g. "60vh").',
+				defaultValue: '480'
+			},
+			{
+				name: 'bare',
+				type: 'boolean',
+				description: 'Strip the card chrome (background, border, padding) for embedding inside other cards.',
+				defaultValue: 'false'
+			},
+			{
+				name: 'class',
+				type: 'string',
+				description: 'Optional class forwarded to the root element.',
+				defaultValue: "''"
+			},
+			{
+				name: 'onchange',
+				type: '(e: CwResponsiveLineChangeEvent) => void',
+				description: 'Called whenever the view or visibility changes. Receives `{ viewStart, viewEnd, hidden, legendStats }`.'
+			}
+		],
+		examples: [
+			{
+				title: 'Minimal example — one series',
+				description: 'The simplest possible usage. Pass an array with a single series and let the chart size to its container.',
+				code: `<script lang="ts">
+	import { CwResponsiveLineChart } from '@cropwatchdevelopment/cwui';
+	import type { CwResponsiveLineSeries } from '@cropwatchdevelopment/cwui';
+
+	const series: CwResponsiveLineSeries[] = [{
+		id: 'temp',
+		label: 'Temperature',
+		unit: '°C',
+		color: '#ef4444',
+		data: readings.map(r => ({ t: r.epochMs, v: r.celsius })),
+		decimals: 1
+	}];
+<\/script>
+
+<CwResponsiveLineChart {series} title="Greenhouse temperature" />`
+			},
+			{
+				title: 'Two color-matched axes + gradient temperature + frost threshold',
+				description: 'Two series → axes auto-distribute (temp on the left in red, humidity on the right in blue). Temperature uses the value-mapped gradient and a Frost line at 0 °C. Auto-follow the OS color scheme.',
+				code: `const series: CwResponsiveLineSeries[] = [
+	{
+		id: 'airTemp', label: 'Air temperature', unit: '°C',
+		color: '#ef4444', gradient: true,
+		data: tempPoints, decimals: 1,
+		gapMs: 8 * 60 * 1000,
+		thresholds: [{ value: 0, label: 'Frost', color: 'rgba(59,130,246,0.6)' }]
+	},
+	{
+		id: 'airHumidity', label: 'Air humidity', unit: '%RH',
+		color: '#3b82f6', data: humidityPoints, decimals: 0
+	}
+];
+
+<CwResponsiveLineChart
+	{series}
+	title="North Greenhouse · Bay 3"
+	subtitle="Live sensor telemetry"
+	initialRange="24h"
+	themeAuto
+/>`
+			},
+			{
+				title: 'Compact dashboard tile (no chrome)',
+				description: 'Inside a card, hide everything but the canvas. The tooltip still appears on hover/touch.',
+				code: `<CwResponsiveLineChart
+	{series}
+	bare
+	height={220}
+	showLegend={false}
+	showThemeToggle={false}
+	ranges={[]}
+/>`
+			},
+			{
+				title: 'React to view changes',
+				description: 'Persist the viewport and visible series whenever the user interacts. The handler fires on pan, zoom, range pill, axis change, and legend toggle.',
+				code: `function handleChange(e: CwResponsiveLineChangeEvent) {
+	url.searchParams.set('from', String(e.viewStart));
+	url.searchParams.set('to', String(e.viewEnd));
+	url.searchParams.set('hidden', e.hidden.join(','));
+	history.replaceState(null, '', url);
+}
+
+<CwResponsiveLineChart {series} onchange={handleChange} />`
+			}
+		]
+	},
 	'/demo/donutchart': {
 		summary:
 			'CwDonutChart renders proportional segment totals with hover feedback. Build the `segments` array first, then adjust chart size and thickness to fit the layout.',

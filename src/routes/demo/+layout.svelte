@@ -138,6 +138,14 @@
 			trailing: 2,
 		},
 		{
+			id: "responsive-linechart",
+			label: "Responsive Line Chart",
+			icon: icons.linechart,
+			href: "/demo/responsive-linechart",
+			group: "Charts",
+			trailing: "new",
+		},
+		{
 			id: "donutchart",
 			label: "Donut Chart",
 			icon: icons.donut,
@@ -660,13 +668,22 @@
 
 	.demo-shell__main {
 		flex: 1;
+		min-width: 0;
 		padding: var(--cw-space-6);
+		overflow-x: hidden;
 		overflow-y: auto;
 		background-color: var(--cw-bg-base);
 	}
 
+	@media (max-width: 600px) {
+		.demo-shell__main {
+			padding: var(--cw-space-2);
+		}
+	}
+
 	.demo-shell__page {
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--cw-space-1);
 	}
 

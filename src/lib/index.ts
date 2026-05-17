@@ -23,6 +23,7 @@ export { default as CwOfflineOverlay } from './components/CwOfflineOverlay.svelt
 export { default as CwSearchInput } from './components/CwSearchInput.svelte';
 export { default as CwDataTable } from './components/CwDataTable.svelte';
 export { default as CwLineChart } from './components/CwLineChart.svelte';
+export { default as CwResponsiveLineChart } from './components/CwResponsiveLineChart.svelte';
 export { default as CwDeviceLineChartSection } from './components/CwDeviceLineChartSection.svelte';
 export { default as CwDonutChart } from './components/CwDonutChart.svelte';
 export { default as CwPPFDChart } from './components/CwPPFDChart.svelte';
@@ -84,6 +85,14 @@ export type {
 	CwLineChartSecondaryDataPoint,
 	CwLineChartAlertPoint,
 	CwLineChartThreshold,
+	CwResponsiveLineDataPoint,
+	CwResponsiveLineThreshold,
+	CwResponsiveLineSeries,
+	CwResponsiveLineTheme,
+	CwResponsiveLineLayout,
+	CwResponsiveLineRangePreset,
+	CwResponsiveLineSeriesStats,
+	CwResponsiveLineChangeEvent,
 	CwDonutSegment,
 	CwPPFDStatus,
 	CwPPFDTick,

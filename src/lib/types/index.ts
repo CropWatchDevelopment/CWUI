@@ -659,6 +659,79 @@ export interface CwStatCardData {
 	trend?: CwStatCardTrend;
 }
 
+/* ── Responsive Line Chart types ──────────────────────── */
+
+/** A single sample. Pass `null` for `v` to mark a missing reading (renders as a data gap). */
+export interface CwResponsiveLineDataPoint {
+	/** Unix epoch in milliseconds. */
+	t: number;
+	/** Numeric value, or `null` when the reading is missing. */
+	v: number | null;
+}
+
+/** Optional horizontal reference line attached to a series (e.g. frost @ 0 °C). */
+export interface CwResponsiveLineThreshold {
+	value: number;
+	label: string;
+	/** Optional CSS color. Falls back to a subtle theme color. */
+	color?: string;
+}
+
+/** A series rendered on the chart. The first matching `leftAxis`/`rightAxis` id drives the corresponding Y axis. */
+export interface CwResponsiveLineSeries {
+	/** Stable identifier used for axis selection and legend toggles. */
+	id: string;
+	/** Human-readable label shown in legend, tooltip, and axis picker. */
+	label: string;
+	/** Unit shown in legend tail and axis crown (e.g. "°C", "%RH", "ppm"). */
+	unit?: string;
+	/** Solid-line color (ignored when `gradient` is true). */
+	color: string;
+	/** When true, the line is colored per-segment by a value-mapped temperature gradient. */
+	gradient?: boolean;
+	/** Sample points sorted ascending by `t`. Values of `null` produce a gap. */
+	data: CwResponsiveLineDataPoint[];
+	/** Decimals shown in tooltips and the legend chip. Defaults to 1. */
+	decimals?: number;
+	/** Gap detection threshold in ms. Stretches longer than this render as an explicit "no signal" band. */
+	gapMs?: number;
+	/** Optional named horizontal lines for the series axis. */
+	thresholds?: CwResponsiveLineThreshold[];
+	/** Optional side for this series' Y axis. When omitted, axes alternate left/right by series order. */
+	axisSide?: 'left' | 'right';
+}
+
+export type CwResponsiveLineTheme = 'light' | 'dark';
+
+export type CwResponsiveLineLayout =
+	| 'auto'
+	| 'desktop'
+	| 'tablet-land'
+	| 'tablet'
+	| 'phone-land'
+	| 'phone';
+
+export interface CwResponsiveLineRangePreset {
+	id: string;
+	label: string;
+	/** Range duration in milliseconds. */
+	ms: number;
+}
+
+export interface CwResponsiveLineSeriesStats {
+	min: number | null;
+	max: number | null;
+	avg: number | null;
+	last: number | null;
+}
+
+export interface CwResponsiveLineChangeEvent {
+	viewStart: number;
+	viewEnd: number;
+	hidden: string[];
+	legendStats: Record<string, CwResponsiveLineSeriesStats>;
+}
+
 /* ── Alarm Scheduler types ─────────────────────────────── */
 
 export interface CwAlarmApi {
