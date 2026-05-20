@@ -221,8 +221,8 @@
 
 <h2>CwResponsiveLineChart</h2>
 <p class="demo-desc">
-	A Canvas2D, touch-first multi-series time chart for farm sensor telemetry. Pan with one finger, pinch
-	to zoom (or wheel on desktop), tap to lock the crosshair, double-tap to reset. Built-in support for
+	A Canvas2D, touch-first multi-series time chart for farm sensor telemetry. Drag horizontally to pan,
+	pinch (two fingers) or Ctrl + scroll to zoom, tap to lock the crosshair, double-tap to reset. Built-in support for
 	dual Y-axes, a value-mapped temperature gradient, named threshold lines, anomaly markers, explicit
 	data-gap bands, night-time shading, and a fully responsive shell that picks a layout from its
 	container width.

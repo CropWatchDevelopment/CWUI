@@ -736,7 +736,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			{
 				title: 'Use the built-in gestures',
 				description:
-					'Drag (one finger / mouse) pans the X view, two-finger pinch zooms with the midpoint as anchor. Wheel zooms on desktop (shift+wheel pans). A single tap/click locks the crosshair; double-tap/double-click resets the zoom to the full data range.'
+					'Drag horizontally (one finger / mouse) pans the X view; a one-finger vertical swipe scrolls the page so the chart never traps the gesture. Two-finger pinch zooms with the midpoint as anchor. On desktop you must hold Ctrl (or ⌘) while scrolling to zoom — Ctrl+Shift+scroll pans — so a plain wheel scrolls past the chart. A single tap/click locks the crosshair; double-tap/double-click resets the zoom to the full data range.'
 			},
 			{
 				title: 'Listen for state changes',

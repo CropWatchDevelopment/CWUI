@@ -393,6 +393,15 @@
 	let crosshairX = $state<number | null>(null);
 	let crosshairLocked = $state(false);
 
+	/** Transient overlay shown when the user scrolls over the chart without Ctrl. */
+	let zoomHintVisible = $state(false);
+	let zoomHintTimer: ReturnType<typeof setTimeout> | null = null;
+	function flashZoomHint() {
+		zoomHintVisible = true;
+		if (zoomHintTimer) clearTimeout(zoomHintTimer);
+		zoomHintTimer = setTimeout(() => (zoomHintVisible = false), 1200);
+	}
+
 	let visibleSeries = $derived(series.filter((s) => !hidden.includes(s.id)));
 
 	interface AxisPlacement {
@@ -435,6 +444,9 @@
 			hi: dataEnd ?? (hi === -Infinity ? 0 : hi)
 		};
 	});
+
+	/** True once at least one series carries a real data point. */
+	let hasData = $derived(series.some((s) => (s.data?.length ?? 0) > 0));
 
 	let resolvedLayout: CwResponsiveLineLayout = $derived.by(() => {
 		if (layout !== 'auto') return layout;
@@ -495,8 +507,14 @@
 	});
 
 	function toggleSeries(id: string) {
-		if (hidden.includes(id)) hidden = hidden.filter((x) => x !== id);
-		else hidden = [...hidden, id];
+		if (hidden.includes(id)) {
+			hidden = hidden.filter((x) => x !== id);
+		} else {
+			// Never let the user hide every series — keep the chart from
+			// going blank while there is still data to show.
+			if (series.length - hidden.length <= 1) return;
+			hidden = [...hidden, id];
+		}
 		schedule();
 		fireChange();
 	}
@@ -1228,6 +1246,13 @@
 	}
 
 	function onWheel(e: WheelEvent) {
+		// Require Ctrl (or ⌘) to interact, so a plain scroll moves the page
+		// instead of trapping the wheel inside the chart. A Mac trackpad
+		// pinch-zoom also arrives as a ctrlKey wheel event.
+		if (!e.ctrlKey && !e.metaKey) {
+			flashZoomHint();
+			return;
+		}
 		e.preventDefault();
 		const rect = canvasEl.getBoundingClientRect();
 		const { plotX, plotW } = plotGeometry();
@@ -1281,6 +1306,7 @@
 	onDestroy(() => {
 		if (ro) ro.disconnect();
 		if (raf != null) cancelAnimationFrame(raf);
+		if (zoomHintTimer) clearTimeout(zoomHintTimer);
 	});
 
 	const heightCss = $derived(
@@ -1388,6 +1414,14 @@
 				data gap
 			</span>
 		</div>
+		{#if zoomHintVisible}
+			<div class="cw-rlc__zoom-hint" aria-hidden="true">
+				Hold <kbd>Ctrl</kbd> + scroll to zoom
+			</div>
+		{/if}
+		{#if !hasData}
+			<div class="cw-rlc__no-data" role="status">No Data Available</div>
+		{/if}
 	</div>
 
 	{#if showLegend}
@@ -1400,12 +1434,18 @@
 					{@const on = !hidden.includes(s.id)}
 					{@const st = stats[s.id]}
 					{@const side = axisSideFor(s.id)}
+					{@const isLastOn = on && series.length - hidden.length <= 1}
 					<button
 						type="button"
 						class="cw-rlc__chip {on ? 'is-on' : 'is-off'}"
 						onclick={() => toggleSeries(s.id)}
 						aria-pressed={on}
-						title={on ? `Hide ${s.label}` : `Show ${s.label}`}
+						disabled={isLastOn}
+						title={isLastOn
+							? `${s.label} — at least one sensor must stay visible`
+							: on
+								? `Hide ${s.label}`
+								: `Show ${s.label}`}
 						style={on && !s.gradient ? `--cw-rlc-chip-accent:${s.color}` : ''}
 					>
 						<span class="cw-rlc__chip-swatch" style={swatchStyle(s)}></span>
@@ -1576,7 +1616,10 @@
 		display: block;
 		width: 100%;
 		height: 100%;
-		touch-action: none;
+		/* pan-y lets a one-finger vertical swipe scroll the page so the user
+		   never gets trapped in the chart; horizontal drag still pans and a
+		   two-finger pinch still zooms. */
+		touch-action: pan-y;
 		user-select: none;
 		cursor: crosshair;
 	}
@@ -1596,6 +1639,46 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 4px;
+	}
+	.cw-rlc__zoom-hint {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+		font-size: 13px;
+		font-weight: 600;
+		color: #fff;
+		background: rgba(0, 0, 0, 0.45);
+		pointer-events: none;
+		animation: cw-rlc-hint-fade 1.2s ease forwards;
+	}
+	.cw-rlc__zoom-hint kbd {
+		font: inherit;
+		padding: 1px 6px;
+		border-radius: 4px;
+		background: rgba(255, 255, 255, 0.22);
+		border: 1px solid rgba(255, 255, 255, 0.35);
+	}
+	@keyframes cw-rlc-hint-fade {
+		0% { opacity: 0; }
+		15% { opacity: 1; }
+		70% { opacity: 1; }
+		100% { opacity: 0; }
+	}
+	.cw-rlc__no-data {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 14px;
+		font-weight: 600;
+		letter-spacing: 0.01em;
+		color: var(--cw-rlc-faint);
+		background: var(--cw-rlc-panel-inset);
+		pointer-events: none;
 	}
 
 	.cw-rlc__legend {
@@ -1647,6 +1730,9 @@
 	.cw-rlc__chip.is-on {
 		border-color: var(--cw-rlc-chip-accent, var(--cw-rlc-border));
 		box-shadow: inset 0 0 0 1px var(--cw-rlc-chip-accent, transparent);
+	}
+	.cw-rlc__chip:disabled {
+		cursor: not-allowed;
 	}
 	.cw-rlc__chip.is-off {
 		background: var(--cw-rlc-chip-bg-off);
