@@ -37,6 +37,8 @@
 			"M8.288 15.038a5.25 5.25 0 017.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 011.06 0M3 3l18 18",
 		dropdown:
 			"M3 4h10a1 1 0 011 1v6a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1zM6 8l2 2 2-2",
+		multiSelect:
+			"M3 4h10a1 1 0 011 1v6a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1zM5 6.5h2v2H5v-2zm0 3h2v2H5v-2zM8.5 7h3M8.5 10h3",
 		dialog: "M2 3h12v10H2V3zm5 4h2m-1-1v2",
 		toast: "M2 4h12v3H2V4zm1 6h10v2H3v-2z",
 		duration: "M8 2a6 6 0 110 12A6 6 0 018 2zm0 3v3l2 2",
@@ -50,6 +52,7 @@
 		donut: "M8 2a6 6 0 110 12A6 6 0 018 2zm0 3a3 3 0 100 6 3 3 0 000-6z",
 		ppfd: "M2 11a6 6 0 1112 0H2zm6-3 2.75-2.25M8 6.5v.01",
 		vpd: "M2.5 11a5.5 5.5 0 1111 0h-11zm5.5-4.2v2.7m0 0L6.4 8.1M8 9.5l1.6-1.4",
+		wind: "M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM8 8L11 4M8 8L4 11M8 8a1 1 0 100-2 1 1 0 000 2z",
 		calendar:
 			"M3 4h10a1 1 0 011 1v8a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1zm2-2v3m6-3v3M2 7h12",
 		theme: "M8 2a6 6 0 100 12V2z",
@@ -135,6 +138,14 @@
 			trailing: 2,
 		},
 		{
+			id: "responsive-linechart",
+			label: "Responsive Line Chart",
+			icon: icons.linechart,
+			href: "/demo/responsive-linechart",
+			group: "Charts",
+			trailing: "new",
+		},
+		{
 			id: "donutchart",
 			label: "Donut Chart",
 			icon: icons.donut,
@@ -155,6 +166,14 @@
 			label: "VPD Chart",
 			icon: icons.vpd,
 			href: "/demo/vpdchart",
+			group: "Charts",
+			trailing: "new",
+		},
+		{
+			id: "windcompass",
+			label: "Wind Compass",
+			icon: icons.wind,
+			href: "/demo/windcompass",
 			group: "Charts",
 			trailing: "new",
 		},
@@ -274,6 +293,14 @@
 			icon: icons.dropdown,
 			href: "/demo/dropdown",
 			group: "Components",
+		},
+		{
+			id: "multi-select",
+			label: "Multi Select",
+			icon: icons.multiSelect,
+			href: "/demo/multi-select",
+			group: "Components",
+			trailing: "new",
 		},
 		{
 			id: "dialog",
@@ -641,13 +668,22 @@
 
 	.demo-shell__main {
 		flex: 1;
+		min-width: 0;
 		padding: var(--cw-space-6);
+		overflow-x: hidden;
 		overflow-y: auto;
 		background-color: var(--cw-bg-base);
 	}
 
+	@media (max-width: 600px) {
+		.demo-shell__main {
+			padding: var(--cw-space-2);
+		}
+	}
+
 	.demo-shell__page {
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--cw-space-1);
 	}
 

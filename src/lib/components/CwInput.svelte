@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import type { HTMLInputAttributes } from 'svelte/elements';
 
-	type InputType = 'text' | 'numeric' | 'email' | 'password' | 'color' | 'devEui' | 'creditCard' | 'cardExpiry';
+	type InputType = 'text' | 'numeric' | 'email' | 'password' | 'color' | 'devEui' | 'creditCard' | 'cardExpiry' | 'phone';
 	type NumericConstraint = number | string;
 
 	const DEFAULT_COLOR = '#000000';
@@ -71,6 +71,9 @@
 		if (type === 'password') {
 			return showPassword ? 'text' : 'password';
 		}
+		if (type === 'phone') {
+			return 'tel';
+		}
 		return type === 'numeric' || type === 'devEui' || type === 'creditCard' || type === 'cardExpiry'
 			? 'text'
 			: type;
@@ -81,11 +84,13 @@
 			? 'decimal'
 			: type === 'creditCard' || type === 'cardExpiry'
 				? 'numeric'
-				: type === 'email'
-					? 'email'
-					: type === 'color'
-						? undefined
-						: 'text'
+				: type === 'phone'
+					? 'tel'
+					: type === 'email'
+						? 'email'
+						: type === 'color'
+							? undefined
+							: 'text'
 	);
 	const displayValue = $derived.by(() => (type === 'color' ? normalizeColorValue(value) : value));
 	const numericMin = $derived.by(() => parseNumericConstraint(min));
@@ -135,6 +140,8 @@
 			raw = formatCreditCard(raw);
 		} else if (type === 'cardExpiry') {
 			raw = formatCardExpiry(raw);
+		} else if (type === 'phone') {
+			raw = normalizePhone(raw);
 		} else if (type === 'color') {
 			raw = normalizeColorValue(raw);
 		}
@@ -234,6 +241,16 @@
 			return digits.slice(0, 2) + '/' + digits.slice(2);
 		}
 		return digits;
+	}
+
+	function normalizePhone(input: string): string {
+		// Strip disallowed chars but preserve the user's formatting choice
+		// (dashes, spaces, parens common across US/JP/EU formats).
+		const cleaned = input.replace(/[^0-9+\-\s()]/g, '');
+		// Only a single leading '+' is valid in E.164 — drop any others.
+		const hasPlus = cleaned.trimStart().startsWith('+');
+		const withoutPluses = cleaned.replace(/\+/g, '');
+		return hasPlus ? `+${withoutPluses.trimStart()}` : withoutPluses;
 	}
 
 	function normalizeColorValue(input: string): string {

@@ -31,6 +31,13 @@
 	<svg viewBox="0 0 24 24" aria-hidden="true">
 		<path fill="currentColor" d="M12 7v5l4.3 2.6-.8 1.3L11 13V7h1Z" />
 	</svg>
+{:else if icon === 'relay'}
+	<svg viewBox="0 0 24 24" aria-hidden="true">
+		<path
+			fill="currentColor"
+			d="M9 2v4H7v3a5 5 0 0 0 4 4.9V22h2v-8.1A5 5 0 0 0 17 9V6h-2V2h-2v4h-2V2H9Z"
+		/>
+	</svg>
 {:else if icon}
 	{icon}
 {/if}

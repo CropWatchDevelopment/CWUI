@@ -11,6 +11,7 @@
 		value?: number | null;
 		min?: number | null;
 		max?: number | null;
+		reset?: number | null;
 	}
 
 	function parseNumericInput(raw: string): number | null {
@@ -28,12 +29,16 @@
 		return {
 			center: parseNumericInput(value.center) ?? 0,
 			points: value.points.map((point) => {
-				const base = {
+				const base: NormalizedAlertPoint = {
 					id: point.id,
 					name: point.name,
 					color: point.color,
 					condition: point.condition
 				};
+
+				if (point.reset !== undefined) {
+					base.reset = parseNumericInput(point.reset);
+				}
 
 				if (point.condition === 'range') {
 					return {
@@ -51,12 +56,49 @@
 		};
 	}
 
-	let alertPoints = $state<CwAlertPointsValue>({
+	let alertPointsWithReset = $state<CwAlertPointsValue>({
 		unit: 'C',
 		center: '0',
 		points: [
 			{
-				id: 'alert-demo-1',
+				id: 'with-reset-1',
+				name: 'Cold edge',
+				color: '#f7903b',
+				condition: 'lessThan',
+				value: '0',
+				min: '',
+				max: '',
+				reset: '4'
+			},
+			{
+				id: 'with-reset-2',
+				name: 'Exact target',
+				color: '#42edf0',
+				condition: 'equals',
+				value: '5',
+				min: '',
+				max: '',
+				reset: ''
+			},
+			{
+				id: 'with-reset-3',
+				name: 'High temp alarm',
+				color: '#e35c8d',
+				condition: 'greaterThan',
+				value: '10',
+				min: '',
+				max: '',
+				reset: '0'
+			}
+		]
+	});
+
+	let alertPointsWithoutReset = $state<CwAlertPointsValue>({
+		unit: 'C',
+		center: '0',
+		points: [
+			{
+				id: 'no-reset-1',
 				name: 'Alert Point 1',
 				color: '#f7903b',
 				condition: 'equals',
@@ -65,19 +107,32 @@
 				max: ''
 			},
 			{
-				id: 'alert-demo-2',
+				id: 'no-reset-2',
 				name: 'Alert Point 2',
 				color: '#42edf0',
 				condition: 'range',
 				value: '',
 				min: '5',
 				max: '10'
+			},
+			{
+				id: 'no-reset-3',
+				name: 'High temp alarm',
+				color: '#e35c8d',
+				condition: 'greaterThan',
+				value: '30',
+				min: '',
+				max: ''
 			}
 		]
 	});
 
-	const normalizedOutput = $derived.by(() => normalizeAlertPoints(alertPoints));
-	const outputJson = $derived.by(() => JSON.stringify(normalizedOutput, null, 2));
+	const normalizedWithReset = $derived.by(() => normalizeAlertPoints(alertPointsWithReset));
+	const normalizedWithoutReset = $derived.by(() => normalizeAlertPoints(alertPointsWithoutReset));
+	const outputJsonWithReset = $derived.by(() => JSON.stringify(normalizedWithReset, null, 2));
+	const outputJsonWithoutReset = $derived.by(() =>
+		JSON.stringify(normalizedWithoutReset, null, 2)
+	);
 	const SCRIPT_CLOSE = '</' + 'script>';
 
 	const componentExample = `<script lang="ts">
@@ -88,6 +143,32 @@
 \t\tunit: 'C',
 \t\tcenter: '0',
 \t\tpoints: []
+\t});
+${SCRIPT_CLOSE}
+
+<CwAlertPointsEditor bind:value={alertPoints} />`;
+
+	const resetExample = `<script lang="ts">
+\timport { CwAlertPointsEditor } from '@cropwatchdevelopment/cwui';
+\timport type { CwAlertPointsValue } from '@cropwatchdevelopment/cwui';
+
+\t// 'reset' is optional — provide it to capture a hysteresis threshold
+\t// for downstream rule evaluation. Existing rules without 'reset' still work.
+\tlet alertPoints = $state<CwAlertPointsValue>({
+\t\tunit: 'C',
+\t\tcenter: '0',
+\t\tpoints: [
+\t\t\t{
+\t\t\t\tid: 'high-temp',
+\t\t\t\tname: 'High temp alarm',
+\t\t\t\tcolor: '#e35c8d',
+\t\t\t\tcondition: 'greaterThanOrEqual',
+\t\t\t\tvalue: '100',
+\t\t\t\tmin: '',
+\t\t\t\tmax: '',
+\t\t\t\treset: '22'  // alert clears at or below 22 °C
+\t\t\t}
+\t\t]
 \t});
 ${SCRIPT_CLOSE}
 
@@ -138,6 +219,9 @@ ${SCRIPT_CLOSE}
 \t\t\tt('alerts.preview.invalidCount', { count }),
 \t\toverlapPreviewNote: (count) =>
 \t\t\tt('alerts.preview.overlapCount', { count }),
+\t\tresetNeverHappensPreviewNote: (count) =>
+\t\t\tt('alerts.preview.resetNeverHappensCount', { count }),
+\t\tresetNeverHappensError: t('alerts.validation.resetNeverHappens'),
 \t\tpointDescriptionEquals: (value, unit) =>
 \t\t\tt('alerts.preview.equals', { value, unit }),
 \t\tpointDescriptionRange: (min, max, unit) =>
@@ -150,6 +234,17 @@ ${SCRIPT_CLOSE}
 \t\t\tt('alerts.preview.greaterThan', { value, unit }),
 \t\tpointDescriptionGreaterThanOrEqual: (value, unit) =>
 \t\t\tt('alerts.preview.greaterThanOrEqual', { value, unit }),
+\t\tresetDescriptionWaitingForValue: t('alerts.preview.resetWaiting'),
+\t\tresetDescriptionNotEquals: (value, unit) =>
+\t\t\tt('alerts.preview.resetNotEquals', { value, unit }),
+\t\tresetDescriptionLessThan: (value, unit) =>
+\t\t\tt('alerts.preview.resetLessThan', { value, unit }),
+\t\tresetDescriptionLessThanOrEqual: (value, unit) =>
+\t\t\tt('alerts.preview.resetLessThanOrEqual', { value, unit }),
+\t\tresetDescriptionGreaterThan: (value, unit) =>
+\t\t\tt('alerts.preview.resetGreaterThan', { value, unit }),
+\t\tresetDescriptionGreaterThanOrEqual: (value, unit) =>
+\t\t\tt('alerts.preview.resetGreaterThanOrEqual', { value, unit }),
 \t\toverlapError: (labels) =>
 \t\t\tt('alerts.validation.overlap', { labels: labels.join(', ') })
 \t};
@@ -165,9 +260,24 @@ ${SCRIPT_CLOSE}
 <p class="demo-desc">
 	All built-in labels, validation messages, empty states, and preview sentences can now be passed through the <code>text</code> prop. Rule names are still part of the bound <code>value.points[]</code> data, so translate those in your own state as well.
 </p>
+<p class="demo-desc">
+	Each non-range rule also exposes an optional <code>reset</code> field for hysteresis. The preview draws that reset as the opposite side of the rule: <code>&gt;</code> resets with <code>&lt;</code>, <code>&gt;=</code> resets with <code>&lt;=</code>, and <code>=</code> resets anywhere that is not the trigger value.
+</p>
 
 <section class="demo-section">
-	<CwAlertPointsEditor bind:value={alertPoints} tickCount={1} />
+	<h3 class="demo-subhead">Editor with <code>reset</code> on every point</h3>
+	<p class="demo-desc">
+		The reset lane uses the same colour as the trigger and a reset icon marker. The high-temp reset below is fully covered by the cold-edge trigger, so it surfaces a validation error.
+	</p>
+	<CwAlertPointsEditor bind:value={alertPointsWithReset} tickCount={1} />
+</section>
+
+<section class="demo-section">
+	<h3 class="demo-subhead">Editor without <code>reset</code> on any point</h3>
+	<p class="demo-desc">
+		The same starting points, but with the <code>reset</code> property omitted. The editor hides the reset input entirely — the existing API stays unchanged.
+	</p>
+	<CwAlertPointsEditor bind:value={alertPointsWithoutReset} tickCount={1} />
 </section>
 
 <section class="demo-grid">
@@ -175,13 +285,27 @@ ${SCRIPT_CLOSE}
 		<article class="demo-panel__content">
 			<div class="demo-panel__head">
 				<div>
-					<p class="demo-panel__eyebrow">Reactive output</p>
+					<p class="demo-panel__eyebrow">Reactive output — with reset</p>
 					<h3>Normalized object preview</h3>
 				</div>
-				<p>Numeric fields are converted from the editable strings into Celsius numbers or <code>null</code>.</p>
+				<p>The <code>reset</code> field is forwarded as a Celsius number (or <code>null</code> when blank).</p>
 			</div>
 
-			<pre class="demo-code"><code>{outputJson}</code></pre>
+			<pre class="demo-code"><code>{outputJsonWithReset}</code></pre>
+		</article>
+	</CwCard>
+
+	<CwCard class="demo-panel" padded={false}>
+		<article class="demo-panel__content">
+			<div class="demo-panel__head">
+				<div>
+					<p class="demo-panel__eyebrow">Reactive output — no reset</p>
+					<h3>Normalized object preview</h3>
+				</div>
+				<p>No <code>reset</code> field is emitted because the source data never declared one.</p>
+			</div>
+
+			<pre class="demo-code"><code>{outputJsonWithoutReset}</code></pre>
 		</article>
 	</CwCard>
 
@@ -196,6 +320,20 @@ ${SCRIPT_CLOSE}
 			</div>
 
 			<DemoCodeExample code={componentExample} title="CwAlertPointsEditor example" />
+		</article>
+	</CwCard>
+
+	<CwCard class="demo-panel" padded={false}>
+		<article class="demo-panel__content">
+			<div class="demo-panel__head">
+				<div>
+					<p class="demo-panel__eyebrow">Hysteresis</p>
+					<h3>Optional reset value for rules</h3>
+				</div>
+				<p>Add <code>reset</code> on any non-range rule to record the value at which a downstream alarm engine should clear the alert.</p>
+			</div>
+
+			<DemoCodeExample code={resetExample} title="CwAlertPointsEditor reset example" />
 		</article>
 	</CwCard>
 
@@ -223,6 +361,13 @@ ${SCRIPT_CLOSE}
 
 	h3 {
 		margin: 0;
+		font-size: var(--cw-text-base);
+		font-weight: var(--cw-font-semibold);
+		color: var(--cw-text-primary);
+	}
+
+	.demo-subhead {
+		margin: 0 0 var(--cw-space-2);
 		font-size: var(--cw-text-base);
 		font-weight: var(--cw-font-semibold);
 		color: var(--cw-text-primary);

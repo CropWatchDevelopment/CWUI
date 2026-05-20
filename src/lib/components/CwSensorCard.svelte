@@ -35,12 +35,16 @@
 		primaryUnit?: string;
 		/** Optional icon for the primary reading. */
 		primary_icon?: IconContent;
+		/** Optional text override for the primary reading. When set, replaces the formatted number — useful for state values like ON/OFF. */
+		primaryLabel?: string;
 		/** Secondary reading value. */
 		secondaryValue?: number | null;
 		/** Unit for the secondary reading. */
 		secondaryUnit?: string;
 		/** Optional icon for the secondary reading. */
 		secondary_icon?: IconContent;
+		/** Optional text override for the secondary reading. When set, replaces the formatted number. */
+		secondaryLabel?: string;
 		/** Preferred freshness timestamp. */
 		lastSeenAt?: CwDateTimeInput;
 		/** Alias for `lastSeenAt`. */
@@ -95,9 +99,11 @@
 		primaryValue = null,
 		primaryUnit = '°C',
 		primary_icon = '',
+		primaryLabel,
 		secondaryValue = null,
 		secondaryUnit = '%',
 		secondary_icon = '',
+		secondaryLabel,
 		lastSeenAt,
 		lastSeen,
 		LastSeen,
@@ -122,6 +128,7 @@
 	let hasResolvedInitialOpen = false;
 	let lastReportedTimeoutState: boolean | null = null;
 	let panelOpen = $state(false);
+	let freshnessState = $state<boolean | null>(null);
 
 	onDestroy(() => {
 		alarmScheduler.clear();
@@ -143,7 +150,6 @@
 	);
 	const resolvedLastSeenAtMs = $derived(resolveCwDateTimeMs(resolvedLastSeenAt));
 	const resolvedExpireAfterMs = $derived(resolveCwExpireAfterMs(resolvedExpireAfterMinutes));
-	const freshnessState = $derived(isCwWithinTimeout(resolvedLastSeenAt, resolvedExpireAfterMinutes));
 	const effectiveStatus = $derived(freshnessState === false ? 'offline' : status);
 	const statusLabel = $derived(getCwSensorStatusLabel(effectiveStatus));
 	const primaryIcon = $derived(
@@ -272,6 +278,10 @@
 	});
 
 	$effect(() => {
+		freshnessState = isCwWithinTimeout(resolvedLastSeenAt, resolvedExpireAfterMinutes);
+	});
+
+	$effect(() => {
 		updateWithinTimeoutState(freshnessState);
 	});
 
@@ -285,6 +295,7 @@
 			from: resolvedLastSeenAtMs,
 			alarmAfterMs: resolvedExpireAfterMs,
 			callback: () => {
+				freshnessState = false;
 				updateWithinTimeoutState(false);
 			}
 		});
@@ -331,14 +342,16 @@
 							<CwDataIcon icon={primaryIcon} />
 						</span>
 						<span class="cw-sensor-card__stat-reading">
-							<span class="cw-sensor-card__stat-value">{formatReading(primaryValue)}</span>
-							{#if primaryValue != null}
+							<span class="cw-sensor-card__stat-value">
+								{primaryLabel ?? formatReading(primaryValue)}
+							</span>
+							{#if primaryValue != null || primaryLabel != null}
 								<span class="cw-sensor-card__stat-unit">{primaryUnit}</span>
 							{/if}
 						</span>
 					</div>
 
-					{#if secondaryValue != null}
+					{#if secondaryValue != null || secondaryLabel != null}
 						<div class="cw-sensor-card__stat">
 							<span
 								class={[
@@ -350,7 +363,9 @@
 								<CwDataIcon icon={secondaryIcon} />
 							</span>
 							<span class="cw-sensor-card__stat-reading">
-								<span class="cw-sensor-card__stat-value">{formatReading(secondaryValue)}</span>
+								<span class="cw-sensor-card__stat-value">
+									{secondaryLabel ?? formatReading(secondaryValue)}
+								</span>
 								<span class="cw-sensor-card__stat-unit">{secondaryUnit}</span>
 							</span>
 						</div>

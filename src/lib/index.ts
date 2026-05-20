@@ -14,6 +14,7 @@ export { default as CwSpinner } from './components/CwSpinner.svelte';
 export { default as CwSwitch } from './components/CwSwitch.svelte';
 export { default as CwStatusDot } from './components/CwStatusDot.svelte';
 export { default as CwDropdown } from './components/CwDropdown.svelte';
+export { default as CwMultiSelect } from './components/CwMultiSelect.svelte';
 export { default as CwDialog } from './components/CwDialog.svelte';
 export { default as CwDrawer } from './components/CwDrawer.svelte';
 export { default as CwDuration } from './components/CwDuration.svelte';
@@ -22,10 +23,12 @@ export { default as CwOfflineOverlay } from './components/CwOfflineOverlay.svelt
 export { default as CwSearchInput } from './components/CwSearchInput.svelte';
 export { default as CwDataTable } from './components/CwDataTable.svelte';
 export { default as CwLineChart } from './components/CwLineChart.svelte';
+export { default as CwResponsiveLineChart } from './components/CwResponsiveLineChart.svelte';
 export { default as CwDeviceLineChartSection } from './components/CwDeviceLineChartSection.svelte';
 export { default as CwDonutChart } from './components/CwDonutChart.svelte';
 export { default as CwPPFDChart } from './components/CwPPFDChart.svelte';
 export { default as CwVPDChart } from './components/CwVPDChart.svelte';
+export { default as CwWindCompass } from './components/CwWindCompass.svelte';
 export { default as CwDateTimeRangePicker } from './components/CwDateTimeRangePicker.svelte';
 export { default as CwThemePicker } from './components/CwThemePicker.svelte';
 export { default as CwLanguageSwitcher } from './components/CwLanguageSwitcher.svelte';
@@ -82,6 +85,14 @@ export type {
 	CwLineChartSecondaryDataPoint,
 	CwLineChartAlertPoint,
 	CwLineChartThreshold,
+	CwResponsiveLineDataPoint,
+	CwResponsiveLineThreshold,
+	CwResponsiveLineSeries,
+	CwResponsiveLineTheme,
+	CwResponsiveLineLayout,
+	CwResponsiveLineRangePreset,
+	CwResponsiveLineSeriesStats,
+	CwResponsiveLineChangeEvent,
 	CwDonutSegment,
 	CwPPFDStatus,
 	CwPPFDTick,
@@ -91,6 +102,9 @@ export type {
 	CwVPDTick,
 	CwVPDStageBand,
 	CwVPDReading,
+	CwWindReading,
+	CwWindSpeedUnit,
+	CwWindDirectionConvention,
 	CwToastItem,
 	CwDatePickerMode,
 	CwDateGranularity,

@@ -1017,63 +1017,6 @@
 						debounceMs={0}
 					/>
 				</div>
-				{#if isCwPhoneView(containerWidth)}
-					<CwButton
-						variant="ghost"
-						size="sm"
-						type="button"
-						aria-label="Open table options"
-						aria-expanded={toolbarMenuOpen}
-						aria-haspopup="menu"
-						aria-controls={`${uid}-toolbar-menu`}
-						class="cw-data-table__toolbar-menu-button"
-						onclick={toggleToolbarMenu}
-						style="padding: 0;"
-					>
-						<span
-							class="cw-data-table__toolbar-menu-icon"
-							aria-hidden="true"
-						>
-							{@html moreVertIcon}
-						</span>
-					</CwButton>
-				{/if}
-
-				<div class="cw-data-table__toolbar-menu">
-					{#if toolbarMenuOpen}
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div
-							class="cw-data-table__toolbar-menu-backdrop"
-							onclick={closeToolbarMenu}
-							onkeydown={() => {}}
-						></div>
-					{/if}
-
-					{#if toolbarMenuOpen}
-						<div
-							class="cw-data-table__toolbar-menu-dropdown"
-							id={`${uid}-toolbar-menu`}
-							role="menu"
-						>
-							<button
-								type="button"
-								class="cw-data-table__toolbar-menu-item"
-								role="menuitem"
-								onclick={openColumnSettings}
-							>
-								Columns Settings
-							</button>
-							<button
-								type="button"
-								class="cw-data-table__toolbar-menu-item"
-								role="menuitem"
-								onclick={refreshTable}
-							>
-								Refresh
-							</button>
-						</div>
-					{/if}
-				</div>
 			{/if}
 
 			<span class="cw-data-table__toolbar-spacer"></span>
@@ -1107,25 +1050,58 @@
 						{@render toolbarActionsSnippet()}
 					{/if}
 				</div>
-				<CwButton
-					variant="ghost"
-					size="sm"
-					type="button"
-					aria-label="Open table options"
-					aria-expanded={toolbarMenuOpen}
-					aria-haspopup="menu"
-					aria-controls={`${uid}-toolbar-menu`}
-					class="cw-data-table__toolbar-menu-button"
-					onclick={toggleToolbarMenu}
-					style="padding: 0;"
-				>
-					<span
-						class="cw-data-table__toolbar-menu-icon"
-						aria-hidden="true"
+				<div class="cw-data-table__toolbar-menu">
+					<CwButton
+						variant="ghost"
+						size="sm"
+						type="button"
+						aria-label="Open table options"
+						aria-expanded={toolbarMenuOpen}
+						aria-haspopup="menu"
+						aria-controls={`${uid}-toolbar-menu`}
+						class="cw-data-table__toolbar-menu-button"
+						onclick={toggleToolbarMenu}
+						style="padding: 0;"
 					>
-						{@html moreVertIcon}
-					</span>
-				</CwButton>
+						<span
+							class="cw-data-table__toolbar-menu-icon"
+							aria-hidden="true"
+						>
+							{@html moreVertIcon}
+						</span>
+					</CwButton>
+
+					{#if toolbarMenuOpen}
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div
+							class="cw-data-table__toolbar-menu-backdrop"
+							onclick={closeToolbarMenu}
+							onkeydown={() => {}}
+						></div>
+						<div
+							class="cw-data-table__toolbar-menu-dropdown"
+							id={`${uid}-toolbar-menu`}
+							role="menu"
+						>
+							<button
+								type="button"
+								class="cw-data-table__toolbar-menu-item"
+								role="menuitem"
+								onclick={openColumnSettings}
+							>
+								Columns Settings
+							</button>
+							<button
+								type="button"
+								class="cw-data-table__toolbar-menu-item"
+								role="menuitem"
+								onclick={refreshTable}
+							>
+								Refresh
+							</button>
+						</div>
+					{/if}
+				</div>
 			</div>
 		</div>
 

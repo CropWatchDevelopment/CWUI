@@ -179,6 +179,28 @@ export interface CwHeatmapDataPoint {
 	value: number;
 }
 
+/* ── Wind chart types ──────────────────────────────────── */
+
+export type CwWindSpeedUnit = 'm/s' | 'km/h' | 'mph' | 'knots';
+
+/**
+ * Convention for `direction`.
+ *  - 'from' (meteorological, default) — the direction the wind is blowing FROM.
+ *  - 'to'   (oceanographic)            — the direction the wind is blowing TO.
+ */
+export type CwWindDirectionConvention = 'from' | 'to';
+
+export interface CwWindReading {
+	/** Direction in degrees, 0 = North, 90 = East. */
+	direction: number;
+	/** Wind speed in the chosen unit. */
+	speed: number;
+	/** Optional location label shown in the header. */
+	location?: string;
+	/** Optional timestamp shown in the summary. */
+	timestamp?: string | Date | number;
+}
+
 /* ── Toast types ───────────────────────────────────────── */
 
 export interface CwToastItem {
@@ -421,12 +443,16 @@ export interface CwSensorCardData {
 	primaryUnit?: string;
 	/** Optional icon for the primary value, rendered left of the number. Can be plain text or a Svelte snippet. */
 	primary_icon?: string | Snippet;
+	/** Optional text override for the primary value. When set, replaces the formatted number — useful for state values like ON/OFF. */
+	primaryLabel?: string;
 	/** Optional icon for the secondary value, rendered left of the number. Can be plain text or a Svelte snippet. */
 	secondary_icon?: string | Snippet;
 	/** Secondary reading value (e.g. humidity) */
 	secondaryValue?: number;
 	/** Unit for secondary value */
 	secondaryUnit?: string;
+	/** Optional text override for the secondary value. When set, replaces the formatted number. */
+	secondaryLabel?: string;
 	/** Custom detail rows for this device */
 	detailRows?: CwSensorCardDetailRow[];
 	/** Device online status */
@@ -482,6 +508,11 @@ export interface CwAlertPointRule {
 	min: string;
 	/** Range upper bound input. */
 	max: string;
+	/**
+	 * Optional hysteresis reset value used by downstream rules. Stored in Celsius like the other numeric fields.
+	 * Ignored by the editor's overlap detection — supplied as a string so partial input stays editable.
+	 */
+	reset?: string;
 }
 
 export interface CwAlertPointsValue {
@@ -508,6 +539,8 @@ export interface CwAlertPointsEditorText {
 	minValueFieldLabel?: string;
 	/** Range maximum input label. */
 	maxValueFieldLabel?: string;
+	/** Optional reset (hysteresis) input label. */
+	resetFieldLabel?: string;
 	/** Colour input label. */
 	colorFieldLabel?: string;
 	/** Add rule button label. */
@@ -528,8 +561,12 @@ export interface CwAlertPointsEditorText {
 	invalidPreviewNote?: (count: number) => string;
 	/** Preview note shown when rules overlap. */
 	overlapPreviewNote?: (count: number) => string;
+	/** Preview note shown when reset ranges are fully covered by other alert rules. */
+	resetNeverHappensPreviewNote?: (count: number) => string;
 	/** Warning shown when a range has the same min and max. */
 	minEqualsMaxWarning?: string;
+	/** Validation text shown when a reset can never happen. */
+	resetNeverHappensError?: string;
 	/** Default name assigned to newly added rules. */
 	defaultPointName?: (index: number) => string;
 	/** Unit option label for Celsius. */
@@ -568,6 +605,18 @@ export interface CwAlertPointsEditorText {
 	pointDescriptionGreaterThan?: (value: string, unit: string) => string;
 	/** Formatter for greater-than-or-equal preview copy. */
 	pointDescriptionGreaterThanOrEqual?: (value: string, unit: string) => string;
+	/** Preview copy when a reset cannot be drawn yet. */
+	resetDescriptionWaitingForValue?: string;
+	/** Formatter for exact-match reset preview copy. */
+	resetDescriptionNotEquals?: (value: string, unit: string) => string;
+	/** Formatter for less-than reset preview copy. */
+	resetDescriptionLessThan?: (value: string, unit: string) => string;
+	/** Formatter for less-than-or-equal reset preview copy. */
+	resetDescriptionLessThanOrEqual?: (value: string, unit: string) => string;
+	/** Formatter for greater-than reset preview copy. */
+	resetDescriptionGreaterThan?: (value: string, unit: string) => string;
+	/** Formatter for greater-than-or-equal reset preview copy. */
+	resetDescriptionGreaterThanOrEqual?: (value: string, unit: string) => string;
 	/** Validation formatter for overlapping rules. */
 	overlapError?: (labels: string[]) => string;
 }
@@ -608,6 +657,79 @@ export interface CwStatCardData {
 	lastReading?: number;
 	/** Trend direction */
 	trend?: CwStatCardTrend;
+}
+
+/* ── Responsive Line Chart types ──────────────────────── */
+
+/** A single sample. Pass `null` for `v` to mark a missing reading (renders as a data gap). */
+export interface CwResponsiveLineDataPoint {
+	/** Unix epoch in milliseconds. */
+	t: number;
+	/** Numeric value, or `null` when the reading is missing. */
+	v: number | null;
+}
+
+/** Optional horizontal reference line attached to a series (e.g. frost @ 0 °C). */
+export interface CwResponsiveLineThreshold {
+	value: number;
+	label: string;
+	/** Optional CSS color. Falls back to a subtle theme color. */
+	color?: string;
+}
+
+/** A series rendered on the chart. The first matching `leftAxis`/`rightAxis` id drives the corresponding Y axis. */
+export interface CwResponsiveLineSeries {
+	/** Stable identifier used for axis selection and legend toggles. */
+	id: string;
+	/** Human-readable label shown in legend, tooltip, and axis picker. */
+	label: string;
+	/** Unit shown in legend tail and axis crown (e.g. "°C", "%RH", "ppm"). */
+	unit?: string;
+	/** Solid-line color (ignored when `gradient` is true). */
+	color: string;
+	/** When true, the line is colored per-segment by a value-mapped temperature gradient. */
+	gradient?: boolean;
+	/** Sample points sorted ascending by `t`. Values of `null` produce a gap. */
+	data: CwResponsiveLineDataPoint[];
+	/** Decimals shown in tooltips and the legend chip. Defaults to 1. */
+	decimals?: number;
+	/** Gap detection threshold in ms. Stretches longer than this render as an explicit "no signal" band. */
+	gapMs?: number;
+	/** Optional named horizontal lines for the series axis. */
+	thresholds?: CwResponsiveLineThreshold[];
+	/** Optional side for this series' Y axis. When omitted, axes alternate left/right by series order. */
+	axisSide?: 'left' | 'right';
+}
+
+export type CwResponsiveLineTheme = 'light' | 'dark';
+
+export type CwResponsiveLineLayout =
+	| 'auto'
+	| 'desktop'
+	| 'tablet-land'
+	| 'tablet'
+	| 'phone-land'
+	| 'phone';
+
+export interface CwResponsiveLineRangePreset {
+	id: string;
+	label: string;
+	/** Range duration in milliseconds. */
+	ms: number;
+}
+
+export interface CwResponsiveLineSeriesStats {
+	min: number | null;
+	max: number | null;
+	avg: number | null;
+	last: number | null;
+}
+
+export interface CwResponsiveLineChangeEvent {
+	viewStart: number;
+	viewEnd: number;
+	hidden: string[];
+	legendStats: Record<string, CwResponsiveLineSeriesStats>;
 }
 
 /* ── Alarm Scheduler types ─────────────────────────────── */

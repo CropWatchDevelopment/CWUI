@@ -71,16 +71,16 @@ export function buildCwSensorCardDetailRows(device: CwSensorCardDevice): CwCardD
 	rows.push({
 		id: `${device.label}-primary`,
 		label: inferReadingLabel('primary', device),
-		value: formatCwSensorValue(device.primaryValue),
+		value: device.primaryLabel ?? formatCwSensorValue(device.primaryValue),
 		unit: device.primaryUnit ?? '°C',
 		icon: getCwSensorReadingIcon('primary', device)
 	});
 
-	if (device.secondaryValue != null) {
+	if (device.secondaryValue != null || device.secondaryLabel != null) {
 		rows.push({
 			id: `${device.label}-secondary`,
 			label: inferReadingLabel('secondary', device),
-			value: formatCwSensorValue(device.secondaryValue),
+			value: device.secondaryLabel ?? formatCwSensorValue(device.secondaryValue ?? 0),
 			unit: device.secondaryUnit ?? '%',
 			icon: getCwSensorReadingIcon('secondary', device)
 		});

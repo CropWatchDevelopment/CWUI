@@ -699,6 +699,308 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			}
 		]
 	},
+	'/demo/responsive-linechart': {
+		summary:
+			'CwResponsiveLineChart is a Canvas2D, touch-first multi-series time chart for farm sensor telemetry. Every visible series gets its own Y-axis colored to match its line; axes auto-distribute (or use the per-series `axisSide` opt-in) and stack on each side. The legend lives below the chart so the canvas stays as wide as possible. Built-in features: value-mapped temperature gradient, named threshold lines, anomaly markers, explicit data-gap bands, night-time shading, light/dark theming (manual or auto), and a responsive shell.',
+		steps: [
+			{
+				title: 'Shape your data as { t, v } points',
+				description:
+					'Each series carries a `data` array of `{ t: epochMs, v: number | null }` points sorted ascending by `t`. Use `v: null` for a missing reading — combined with `gapMs`, this draws an explicit "no signal" band.'
+			},
+			{
+				title: 'Pick an id, label, unit, and color per series',
+				description:
+					'`id` is referenced by `initialHidden`, legend chips, and onchange events. `color` drives both the line and its dedicated Y-axis ticks/unit label. Set `gradient: true` to use the value-mapped temperature gradient instead (the axis still falls back to `color`).'
+			},
+			{
+				title: 'Each visible series gets its own axis',
+				description:
+					'Axes auto-distribute: series index 0 → left, 1 → right, 2 → left, etc. Override per series with `axisSide: \'left\' | \'right\'` when you want to force a side. Hiding a series via the legend removes both its line and its axis, which also reclaims the horizontal space.'
+			},
+			{
+				title: 'Toggle visibility with the legend below the chart',
+				description:
+					'The legend chips live under the canvas as a horizontal wrap to maximize chart width. Click a chip to hide/show its series; the chip dims, the line disappears, and its Y-axis collapses. `L`/`R` badges indicate which side each visible series is on.'
+			},
+			{
+				title: 'Tune the chrome to the surface',
+				description:
+					'Toggle `showLegend`, `showLegendStats`, `showThemeToggle`, `showAnomalies`, `showThresholds`, `showDataGaps`, and `showNightBands` to strip or restore individual layers. For dense dashboard tiles, set `bare`, drop the legend, and pass `ranges={[]}` to hide the time-range pills.'
+			},
+			{
+				title: 'Pick a theme',
+				description:
+					'Pass `theme="light"` or `theme="dark"` for a fixed surface. Pass `themeAuto` to follow `prefers-color-scheme` (the manual toggle button hides automatically in auto mode). You can bind `theme` to react to user actions outside the component.'
+			},
+			{
+				title: 'Use the built-in gestures',
+				description:
+					'Drag (one finger / mouse) pans the X view, two-finger pinch zooms with the midpoint as anchor. Wheel zooms on desktop (shift+wheel pans). A single tap/click locks the crosshair; double-tap/double-click resets the zoom to the full data range.'
+			},
+			{
+				title: 'Listen for state changes',
+				description:
+					'Provide `onchange` to be notified when the user pans, zooms, toggles a series, or picks a range. The handler receives `{ viewStart, viewEnd, hidden, legendStats }` — use it to drive deep-linkable URLs or persist user preferences.'
+			}
+		],
+		apiTitle: 'Props and data shape',
+		apiNote:
+			'All controls (range pills, theme toggle, legend chips) are built in. The component renders to a single internal canvas; no SVG fallback. Bindable props: `theme`.',
+		apiRows: [
+			{
+				name: 'series',
+				type: 'CwResponsiveLineSeries[]',
+				description: 'Series rendered on the chart. Each series carries its own `data: { t, v }[]`, color, unit, and optional thresholds.',
+				required: true
+			},
+			{
+				name: 'series[].id',
+				type: 'string',
+				description: 'Stable identifier referenced by axis props, legend toggles, and onchange events.'
+			},
+			{
+				name: 'series[].label',
+				type: 'string',
+				description: 'Human-readable label shown in legend chips, tooltip rows, and axis selectors.'
+			},
+			{
+				name: 'series[].unit',
+				type: 'string',
+				description: 'Unit suffix shown beside last-value readouts and axis crowns (e.g. "°C", "%RH", "ppm").'
+			},
+			{
+				name: 'series[].color',
+				type: 'string',
+				description: 'Solid line color. Ignored when `gradient` is true.'
+			},
+			{
+				name: 'series[].gradient',
+				type: 'boolean',
+				description: 'When true, color each segment by mean value using the temperature gradient (black → blue → cyan → green → amber → red).',
+				defaultValue: 'false'
+			},
+			{
+				name: 'series[].data',
+				type: '{ t: number; v: number | null }[]',
+				description: 'Samples sorted ascending by `t` (epoch ms). Use `v: null` for missing readings.'
+			},
+			{
+				name: 'series[].decimals',
+				type: 'number',
+				description: 'Decimals used in tooltips and legend readouts.',
+				defaultValue: '1'
+			},
+			{
+				name: 'series[].gapMs',
+				type: 'number',
+				description: 'When set, gaps between consecutive samples greater than this many ms render as an explicit "no signal" band.'
+			},
+			{
+				name: 'series[].thresholds',
+				type: 'CwResponsiveLineThreshold[]',
+				description: 'Optional named horizontal reference lines drawn on the series\' axis. Each entry is `{ value, label, color? }`.'
+			},
+			{
+				name: 'series[].axisSide',
+				type: "'left' | 'right'",
+				description: 'Force this series\' Y axis to a specific side. When omitted, axes auto-distribute (index 0 → left, 1 → right, 2 → left, …).'
+			},
+			{
+				name: 'dataStart',
+				type: 'number',
+				description: 'Earliest selectable timestamp (epoch ms). Computed from `series` when omitted.'
+			},
+			{
+				name: 'dataEnd',
+				type: 'number',
+				description: 'Latest selectable timestamp (epoch ms). Computed from `series` when omitted.'
+			},
+			{
+				name: 'title',
+				type: 'string',
+				description: 'Heading shown above the chart.',
+				defaultValue: "''"
+			},
+			{
+				name: 'subtitle',
+				type: 'string',
+				description: 'Sub-heading shown beneath the title.',
+				defaultValue: "''"
+			},
+			{
+				name: 'theme',
+				type: "'light' | 'dark'",
+				description: 'Theme palette. Bindable.',
+				defaultValue: "'light'"
+			},
+			{
+				name: 'themeAuto',
+				type: 'boolean',
+				description: 'When true, follows `prefers-color-scheme` and hides the manual toggle.',
+				defaultValue: 'false'
+			},
+			{
+				name: 'showThemeToggle',
+				type: 'boolean',
+				description: 'Show the sun/moon theme toggle in the header.',
+				defaultValue: 'true'
+			},
+			{
+				name: 'ranges',
+				type: 'CwResponsiveLineRangePreset[]',
+				description: 'Range pill presets shown in the header. Each entry is `{ id, label, ms }`. Pass `[]` to hide the row.',
+				defaultValue: "[ '1H', '24H', '7D' ]"
+			},
+			{
+				name: 'initialRange',
+				type: 'string',
+				description: 'Range preset id used on mount when its `ms` is shorter than the full dataset span.',
+				defaultValue: "'24h'"
+			},
+			{
+				name: 'initialHidden',
+				type: 'string[]',
+				description: 'Series ids hidden at mount time. Mutable thereafter via legend chips.',
+				defaultValue: '[]'
+			},
+			{
+				name: 'showLegend',
+				type: 'boolean',
+				description: 'Show the legend panel at all (chips, axis picker, stats).',
+				defaultValue: 'true'
+			},
+			{
+				name: 'showLegendStats',
+				type: 'boolean',
+				description: 'Show min / avg / max under each legend chip.',
+				defaultValue: 'true'
+			},
+			{
+				name: 'showAnomalies',
+				type: 'boolean',
+				description: 'Render ringed dots for z-score > 2.5σ within the current viewport.',
+				defaultValue: 'true'
+			},
+			{
+				name: 'showThresholds',
+				type: 'boolean',
+				description: 'Render named threshold lines from each series\' `thresholds` array.',
+				defaultValue: 'true'
+			},
+			{
+				name: 'showDataGaps',
+				type: 'boolean',
+				description: 'Render explicit "no signal" bands when a series has `gapMs` set and a gap occurs.',
+				defaultValue: 'true'
+			},
+			{
+				name: 'showNightBands',
+				type: 'boolean',
+				description: 'Shade 18:00–06:00 local time when the view spans less than 14 days.',
+				defaultValue: 'true'
+			},
+			{
+				name: 'layout',
+				type: "'auto' | 'desktop' | 'tablet-land' | 'tablet' | 'phone-land' | 'phone'",
+				description: 'Forced layout variant. `auto` (default) picks one from the container width.',
+				defaultValue: "'auto'"
+			},
+			{
+				name: 'height',
+				type: 'number | string',
+				description: 'Component height. Number is treated as pixels; strings are passed through verbatim (e.g. "60vh").',
+				defaultValue: '480'
+			},
+			{
+				name: 'bare',
+				type: 'boolean',
+				description: 'Strip the card chrome (background, border, padding) for embedding inside other cards.',
+				defaultValue: 'false'
+			},
+			{
+				name: 'class',
+				type: 'string',
+				description: 'Optional class forwarded to the root element.',
+				defaultValue: "''"
+			},
+			{
+				name: 'onchange',
+				type: '(e: CwResponsiveLineChangeEvent) => void',
+				description: 'Called whenever the view or visibility changes. Receives `{ viewStart, viewEnd, hidden, legendStats }`.'
+			}
+		],
+		examples: [
+			{
+				title: 'Minimal example — one series',
+				description: 'The simplest possible usage. Pass an array with a single series and let the chart size to its container.',
+				code: `<script lang="ts">
+	import { CwResponsiveLineChart } from '@cropwatchdevelopment/cwui';
+	import type { CwResponsiveLineSeries } from '@cropwatchdevelopment/cwui';
+
+	const series: CwResponsiveLineSeries[] = [{
+		id: 'temp',
+		label: 'Temperature',
+		unit: '°C',
+		color: '#ef4444',
+		data: readings.map(r => ({ t: r.epochMs, v: r.celsius })),
+		decimals: 1
+	}];
+<\/script>
+
+<CwResponsiveLineChart {series} title="Greenhouse temperature" />`
+			},
+			{
+				title: 'Two color-matched axes + gradient temperature + frost threshold',
+				description: 'Two series → axes auto-distribute (temp on the left in red, humidity on the right in blue). Temperature uses the value-mapped gradient and a Frost line at 0 °C. Auto-follow the OS color scheme.',
+				code: `const series: CwResponsiveLineSeries[] = [
+	{
+		id: 'airTemp', label: 'Air temperature', unit: '°C',
+		color: '#ef4444', gradient: true,
+		data: tempPoints, decimals: 1,
+		gapMs: 8 * 60 * 1000,
+		thresholds: [{ value: 0, label: 'Frost', color: 'rgba(59,130,246,0.6)' }]
+	},
+	{
+		id: 'airHumidity', label: 'Air humidity', unit: '%RH',
+		color: '#3b82f6', data: humidityPoints, decimals: 0
+	}
+];
+
+<CwResponsiveLineChart
+	{series}
+	title="North Greenhouse · Bay 3"
+	subtitle="Live sensor telemetry"
+	initialRange="24h"
+	themeAuto
+/>`
+			},
+			{
+				title: 'Compact dashboard tile (no chrome)',
+				description: 'Inside a card, hide everything but the canvas. The tooltip still appears on hover/touch.',
+				code: `<CwResponsiveLineChart
+	{series}
+	bare
+	height={220}
+	showLegend={false}
+	showThemeToggle={false}
+	ranges={[]}
+/>`
+			},
+			{
+				title: 'React to view changes',
+				description: 'Persist the viewport and visible series whenever the user interacts. The handler fires on pan, zoom, range pill, axis change, and legend toggle.',
+				code: `function handleChange(e: CwResponsiveLineChangeEvent) {
+	url.searchParams.set('from', String(e.viewStart));
+	url.searchParams.set('to', String(e.viewEnd));
+	url.searchParams.set('hidden', e.hidden.join(','));
+	history.replaceState(null, '', url);
+}
+
+<CwResponsiveLineChart {series} onchange={handleChange} />`
+			}
+		]
+	},
 	'/demo/donutchart': {
 		summary:
 			'CwDonutChart renders proportional segment totals with hover feedback. Build the `segments` array first, then adjust chart size and thickness to fit the layout.',
@@ -878,6 +1180,151 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \tlabel="Deployment site"
 \terror={error}
 \tvalue={site}
+\tonchange={handleChange}
+/>`
+			}
+		]
+	},
+	'/demo/multi-select': {
+		summary:
+			'CwMultiSelect mirrors CwDropdown but allows multiple options to be selected at once. The bound `value` is an array of `{ id, label }` entries, ready to send to a backend or render as chips elsewhere in your UI.',
+		steps: [
+			{
+				title: 'Build the option list',
+				description:
+					'Each option needs a `label` and `value`. Add `disabled` to make an item visible but not selectable.'
+			},
+			{
+				title: 'Bind an array',
+				description:
+					'`value` is an array of `{ id, label }`. Use `bind:value` if the parent owns the selection state, or `onchange` if you only need a callback.'
+			},
+			{
+				title: 'Toggle to select / deselect',
+				description:
+					'Clicking an option (or pressing Enter/Space while focused in the listbox) toggles its membership in the array. The list stays open so users can pick more than one.'
+			},
+			{
+				title: 'Clear or remove individual chips',
+				description:
+					'A "Clear all" action appears in the listbox while items are selected (`clearable` defaults to true). Individual chips can be dismissed by clicking the small × on the trigger.'
+			}
+		],
+		apiRows: [
+			{
+				name: 'options',
+				type: 'Array<{ label: string; value: string; disabled?: boolean }>',
+				description: 'Items shown in the listbox.',
+				required: true
+			},
+			{
+				name: 'value',
+				type: 'Array<{ id: string; label: string }>',
+				description: 'Selected entries. Bind this when the parent owns state.',
+				defaultValue: '[]'
+			},
+			{ name: 'label', type: 'string', description: 'Visible field label.' },
+			{
+				name: 'placeholder',
+				type: 'string',
+				description: 'Text shown when nothing is selected.',
+				defaultValue: 'Select...'
+			},
+			{
+				name: 'maxVisibleChips',
+				type: 'number',
+				description: 'How many chips to render in the trigger before collapsing into "+N more". Ignored when `showAllSelectedItems` is true.',
+				defaultValue: '3'
+			},
+			{
+				name: 'showAllSelectedItems',
+				type: 'boolean',
+				description: 'Render every selected chip in the trigger and let it wrap. Overrides `maxVisibleChips`.',
+				defaultValue: 'false'
+			},
+			{
+				name: 'clearable',
+				type: 'boolean',
+				description: 'Show a "Clear all" action inside the listbox when at least one item is selected.',
+				defaultValue: 'true'
+			},
+			{
+				name: 'clearLabel',
+				type: 'string',
+				description: 'Label used for the "Clear all" action.',
+				defaultValue: "'Clear all'"
+			},
+			{
+				name: 'required',
+				type: 'boolean',
+				description: 'Marks the hidden native input as required for form validation when nothing is selected.',
+				defaultValue: 'false'
+			},
+			{
+				name: 'disabled',
+				type: 'boolean',
+				description: 'Prevents opening the list, removing chips, or changing the value.',
+				defaultValue: 'false'
+			},
+			{ name: 'error', type: 'string', description: 'Validation message rendered below the field.' },
+			{
+				name: 'onchange',
+				type: '(value: Array<{ id: string; label: string }>) => void',
+				description: 'Called whenever the selection array changes.'
+			},
+			{
+				name: 'name / autocomplete',
+				type: 'string',
+				description: 'Optional native form attributes forwarded to the hidden input. The hidden input value is the comma-joined list of ids.'
+			}
+		],
+		examples: [
+			{
+				title: 'Controlled multi-select',
+				description: 'The bound value is an array of `{ id, label }` entries — easy to render or persist.',
+				code: `<script lang="ts">
+\timport { CwMultiSelect } from '@cropwatchdevelopment/cwui';
+
+\tconst options = [
+\t\t{ label: 'Apple', value: 'apple' },
+\t\t{ label: 'Banana', value: 'banana' },
+\t\t{ label: 'Dragonfruit', value: 'dragonfruit' }
+\t];
+
+\tlet selected = $state<{ id: string; label: string }[]>([]);
+<\/script>
+
+<CwMultiSelect
+\toptions={options}
+\tlabel="Fruit"
+\tplaceholder="Choose one or more..."
+\tbind:value={selected}
+/>`
+			},
+			{
+				title: 'Pre-selected values + onchange callback',
+				description: 'Seed the array with existing selections and listen for changes.',
+				code: `<script lang="ts">
+\tconst siteOptions = [
+\t\t{ label: 'North greenhouse', value: 'north' },
+\t\t{ label: 'South greenhouse', value: 'south' },
+\t\t{ label: 'East greenhouse', value: 'east' }
+\t];
+
+\tlet sites = $state([
+\t\t{ id: 'north', label: 'North greenhouse' }
+\t]);
+
+\tfunction handleChange(value: { id: string; label: string }[]) {
+\t\tconsole.log('Selected sites:', value.map((v) => v.id));
+\t}
+<\/script>
+
+<CwMultiSelect
+\toptions={siteOptions}
+\tname="sites"
+\tlabel="Deployment sites"
+\tbind:value={sites}
 \tonchange={handleChange}
 />`
 			}
@@ -3259,6 +3706,177 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			}
 		]
 	},
+		'/demo/windcompass': {
+			summary:
+				'CwWindCompass is an aviation-style heading dial that shows wind direction and speed in a single instrument. The dial uses cardinal letters and ten-degree numerical markers around the bezel, an arrow with a shaft and fletching that rotates to flow direction, and a digital readout in the centre of the instrument for live speed.',
+			steps: [
+				{
+					title: 'Pick the direction convention up front',
+					description:
+						'Set `convention="from"` for meteorological readings (the wind is blowing FROM the bearing) or `convention="to"` for oceanographic data. The arrow always shows the direction of flow regardless of which convention is used.'
+				},
+				{
+					title: 'Match the unit to your sensor',
+					description:
+						'`unit` accepts `m/s`, `km/h`, `mph`, or `knots`. The Beaufort scale lookup is normalized internally, so the same speed produces the same Beaufort force regardless of the chosen unit.'
+				},
+				{
+					title: 'Show dual-unit readouts when needed',
+					description:
+						'Pass `secondaryUnit` to display the same speed in a second unit (e.g. `unit="mph"` + `secondaryUnit="km/h"` for an MPH/KPH readout). The conversion runs through internal m/s normalization.'
+				},
+				{
+					title: 'Bind the cardinal abbreviation back when you need it',
+					description:
+						'`bind:cardinal` makes the component push the current FROM-bearing abbreviation ("N", "NE", "ESE", …) to a parent variable. Useful for status banners, screen reader copy, or downstream rule logic.'
+				},
+				{
+					title: 'Hide chrome for compact placements',
+					description:
+						'Disable `showSummary` to drop the stats grid and `showLegend` to drop the Beaufort scale reference. The instrument itself stays the same.'
+				}
+			],
+			apiRows: [
+				{
+					name: 'direction',
+					type: 'number',
+					description: 'Direction in degrees, 0 = North, 90 = East. Interpreted by `convention`.',
+					required: true
+				},
+				{
+					name: 'speed',
+					type: 'number',
+					description: 'Wind speed expressed in `unit`.',
+					required: true
+				},
+				{
+					name: 'unit',
+					type: "'m/s' | 'km/h' | 'mph' | 'knots'",
+					description: 'Display unit shown beneath the digital speed readout.',
+					defaultValue: "'m/s'"
+				},
+				{
+					name: 'secondaryUnit',
+					type: "'m/s' | 'km/h' | 'mph' | 'knots'",
+					description: 'Optional secondary unit. When set, the readout shows the same speed converted into this unit on a second line (e.g. MPH primary + KPH secondary).'
+				},
+				{
+					name: 'cardinal',
+					type: 'string (bindable)',
+					description: 'Bindable output. Updated to the current cardinal abbreviation ("N", "NE", "ESE", …) of the FROM bearing. Use with `bind:cardinal`.'
+				},
+				{
+					name: 'convention',
+					type: "'from' | 'to'",
+					description: 'Whether `direction` is the bearing the wind is blowing FROM (meteorological) or TO (oceanographic).',
+					defaultValue: "'from'"
+				},
+				{
+					name: 'location',
+					type: 'string',
+					description: 'Optional label shown in the heading.',
+					defaultValue: "''"
+				},
+				{
+					name: 'timestamp',
+					type: 'string | Date | number',
+					description: 'Optional reading timestamp shown in the reading panel.'
+				},
+				{
+					name: 'size',
+					type: 'number',
+					description: 'Pixel size of the dial.',
+					defaultValue: '320'
+				},
+				{
+					name: 'showSummary',
+					type: 'boolean',
+					description: 'Show the stats grid below the dial.',
+					defaultValue: 'true'
+				},
+				{
+					name: 'showLegend',
+					type: 'boolean',
+					description: 'Show the Beaufort scale reference panel.',
+					defaultValue: 'true'
+				},
+				{
+					name: 'class',
+					type: 'string',
+					description: 'Optional class hook applied to the outer wrapper.'
+				}
+			],
+			examples: [
+				{
+					title: 'Standard meteorological reading',
+					description: 'A typical weather-station integration. Wind is reported FROM 220° at 6.4 m/s.',
+					code: `<CwWindCompass
+\tlocation="Field Station 12"
+\tdirection={220}
+\tspeed={6.4}
+\ttimestamp={Date.now()}
+/>`
+				},
+				{
+					title: 'Imperial units',
+					description: 'Set `unit="mph"` and pass speed in matching units. The Beaufort lookup still works because conversion happens internally.',
+					code: `<CwWindCompass
+\tlocation="Greenhouse Roof"
+\tdirection={45}
+\tspeed={28}
+\tunit="mph"
+/>`
+				},
+				{
+					title: 'Compact dial without summary or legend',
+					description: 'Drop the surrounding chrome for dashboards where the dial sits beside other widgets.',
+					code: `<CwWindCompass
+\tdirection={310}
+\tspeed={3.1}
+\tsize={220}
+\tshowSummary={false}
+\tshowLegend={false}
+/>`
+				},
+				{
+					title: 'Oceanographic ("to") convention',
+					description: 'Drift charts often report the direction the wind is blowing TOWARD. The arrow rotates accordingly.',
+					code: `<CwWindCompass
+\tlocation="Buoy 4-A"
+\tdirection={90}
+\tspeed={11}
+\tunit="knots"
+\tconvention="to"
+/>`
+				},
+				{
+					title: 'Dual-unit readout (MPH + KPH)',
+					description: 'Pass `secondaryUnit` to add a converted line under the primary speed. Any pair from the four supported units works.',
+					code: `<CwWindCompass
+\tlocation="Highway Sensor"
+\tdirection={140}
+\tspeed={28}
+\tunit="mph"
+\tsecondaryUnit="km/h"
+/>`
+				},
+				{
+					title: 'Bind the cardinal abbreviation',
+					description: 'Use `bind:cardinal` to receive the current FROM-bearing abbreviation in your parent component.',
+					code: `<script lang="ts">
+\tlet windCardinal = $state('');
+</` + `script>
+
+<CwWindCompass
+\tdirection={direction}
+\tspeed={speed}
+\tbind:cardinal={windCardinal}
+/>
+
+<p>Wind from: {windCardinal}</p>`
+				}
+			]
+		},
 		'/demo/alert-points': {
 			summary:
 				'CwAlertPointsEditor is a number-line editor for threshold rules. It keeps the center point anchored, lets users add exact points, open-ended thresholds, and ranges, and keeps the bound values normalized in Celsius while the selected unit stays visual-only.',
@@ -3278,10 +3896,15 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				description:
 					'`equals` draws a single point, `range` requires both `min` and `max`, and the less-than/greater-than variants render one-sided ranges.'
 			},
+			{
+				title: 'Add an optional reset for hysteresis-aware rules',
+				description:
+					'Every non-range condition exposes an optional `reset` input alongside the threshold value. The preview draws resets as the opposite side of the rule and warns when another alert rule fully covers the reset range.'
+			},
 				{
 					title: 'Normalize before you submit',
 					description:
-						'When you need a payload for storage or an API, convert the Celsius-backed `center`, `value`, `min`, and `max` fields into numbers or `null`.'
+						'When you need a payload for storage or an API, convert the Celsius-backed `center`, `value`, `min`, `max`, and `reset` fields into numbers or `null`.'
 				},
 			{
 				title: 'Let the scale breathe around the center',
@@ -3320,7 +3943,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'value.points',
 				type: 'CwAlertPointRule[]',
 				description:
-					'Editable list of alert rules. Each rule includes `id`, `name`, `color`, `condition`, `value`, `min`, and `max`.'
+					'Editable list of alert rules. Each rule includes `id`, `name`, `color`, `condition`, `value`, `min`, `max`, and an optional `reset`.'
 			},
 			{
 				name: 'point.condition',
@@ -3331,6 +3954,12 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'point.color',
 				type: 'string',
 				description: 'Hex colour used for the point or range and preserved in the bound output object.'
+			},
+			{
+				name: 'point.reset',
+				type: 'string (optional)',
+				description:
+					'Optional hysteresis threshold for downstream rule engines. Stored in Celsius like the other numeric fields and shown as the opposite reset range on the number line. Omit the field entirely on rules that do not need it — the editor will not add it.'
 			},
 			{
 				name: 'onchange',
@@ -3355,6 +3984,34 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \t\tunit: 'C',
 \t\tcenter: '0',
 \t\tpoints: []
+\t});
+</script>
+
+<CwAlertPointsEditor bind:value={alertPoints} />`
+			},
+			{
+				title: 'Capture a hysteresis reset on a rule',
+				description:
+					'`reset` is optional, so existing payloads keep working. Add it to any non-range rule to record the value at which a downstream alarm engine should clear the alert.',
+				code: `<script lang="ts">
+\timport { CwAlertPointsEditor } from '@cropwatchdevelopment/cwui';
+\timport type { CwAlertPointsValue } from '@cropwatchdevelopment/cwui';
+
+\tlet alertPoints = $state<CwAlertPointsValue>({
+\t\tunit: 'C',
+\t\tcenter: '0',
+\t\tpoints: [
+\t\t\t{
+\t\t\t\tid: 'high-temp',
+\t\t\t\tname: 'High temp alarm',
+\t\t\t\tcolor: '#e35c8d',
+\t\t\t\tcondition: 'greaterThanOrEqual',
+\t\t\t\tvalue: '100',
+\t\t\t\tmin: '',
+\t\t\t\tmax: '',
+\t\t\t\treset: '22'  // alert clears once the value is at or below 22 °C
+\t\t\t}
+\t\t]
 \t});
 </script>
 
@@ -3408,10 +4065,24 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \t\t\tt('alerts.preview.invalidCount', { count }),
 \t\toverlapPreviewNote: (count) =>
 \t\t\tt('alerts.preview.overlapCount', { count }),
+\t\tresetNeverHappensPreviewNote: (count) =>
+\t\t\tt('alerts.preview.resetNeverHappensCount', { count }),
+\t\tresetNeverHappensError: t('alerts.validation.resetNeverHappens'),
 \t\tpointDescriptionEquals: (value, unit) =>
 \t\t\tt('alerts.preview.equals', { value, unit }),
 \t\tpointDescriptionRange: (min, max, unit) =>
 \t\t\tt('alerts.preview.range', { min, max, unit }),
+\t\tresetDescriptionWaitingForValue: t('alerts.preview.resetWaiting'),
+\t\tresetDescriptionNotEquals: (value, unit) =>
+\t\t\tt('alerts.preview.resetNotEquals', { value, unit }),
+\t\tresetDescriptionLessThan: (value, unit) =>
+\t\t\tt('alerts.preview.resetLessThan', { value, unit }),
+\t\tresetDescriptionLessThanOrEqual: (value, unit) =>
+\t\t\tt('alerts.preview.resetLessThanOrEqual', { value, unit }),
+\t\tresetDescriptionGreaterThan: (value, unit) =>
+\t\t\tt('alerts.preview.resetGreaterThan', { value, unit }),
+\t\tresetDescriptionGreaterThanOrEqual: (value, unit) =>
+\t\t\tt('alerts.preview.resetGreaterThanOrEqual', { value, unit }),
 \t\toverlapError: (labels) =>
 \t\t\tt('alerts.validation.overlap', { labels: labels.join(', ') })
 \t};
@@ -3421,7 +4092,8 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			},
 				{
 					title: 'Normalize before API submit',
-					description: 'Convert the Celsius-backed string fields into numbers once the user is done building the rule set.',
+					description:
+						'Convert the Celsius-backed string fields into numbers once the user is done building the rule set. Forward `reset` only when the user supplied it.',
 					code: `<script lang="ts">
 \tlet alertPoints = $state({
 \t\tunit: 'C',
@@ -3434,7 +4106,8 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \t\t\t\tcondition: 'lessThanOrEqual',
 \t\t\t\tvalue: '-2',
 \t\t\t\tmin: '',
-\t\t\t\tmax: ''
+\t\t\t\tmax: '',
+\t\t\t\treset: '0'
 \t\t\t}
 \t\t]
 \t});
@@ -3448,11 +4121,15 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 
 \tconst normalized = $derived({
 \t\tcenter: toNumber(alertPoints.center) ?? 0,
-\t\tpoints: alertPoints.points.map((point) =>
-\t\t\tpoint.condition === 'range'
+\t\tpoints: alertPoints.points.map((point) => {
+\t\t\tconst base = point.condition === 'range'
 \t\t\t\t? { ...point, min: toNumber(point.min), max: toNumber(point.max) }
-\t\t\t\t: { ...point, value: toNumber(point.value) }
-\t\t)
+\t\t\t\t: { ...point, value: toNumber(point.value) };
+
+\t\t\treturn point.reset === undefined
+\t\t\t\t? base
+\t\t\t\t: { ...base, reset: toNumber(point.reset) };
+\t\t})
 \t});
 </script>`
 			}
