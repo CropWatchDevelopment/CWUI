@@ -13,6 +13,41 @@
 		{ label: 'Grape', value: 'grape' }
 	];
 
+	// Grouped by string key
+	const groupedByCategory = [
+		{ label: 'Apple', value: 'apple', group: 'pome' },
+		{ label: 'Pear', value: 'pear', group: 'pome' },
+		{ label: 'Banana', value: 'banana', group: 'tropical' },
+		{ label: 'Mango', value: 'mango', group: 'tropical' },
+		{ label: 'Dragonfruit', value: 'dragonfruit', group: 'tropical' },
+		{ label: 'Cherry', value: 'cherry', group: 'stone' },
+		{ label: 'Peach', value: 'peach', group: 'stone' },
+		{ label: 'Plum', value: 'plum', group: 'stone' },
+		{ label: 'Blueberry', value: 'blueberry', group: 'berry' },
+		{ label: 'Raspberry', value: 'raspberry', group: 'berry' }
+	];
+	const categoryGroups = [
+		{ value: 'pome', label: 'Pome Fruits' },
+		{ value: 'stone', label: 'Stone Fruits' },
+		{ value: 'tropical', label: 'Tropical' },
+		{ value: 'berry', label: 'Berries' }
+	];
+
+	// Grouped by number key
+	const sensors = [
+		{ label: 'Greenhouse A — Temp', value: 'gh-a-temp', group: 1 },
+		{ label: 'Greenhouse A — Humidity', value: 'gh-a-hum', group: 1 },
+		{ label: 'Greenhouse B — Temp', value: 'gh-b-temp', group: 2 },
+		{ label: 'Greenhouse B — Soil', value: 'gh-b-soil', group: 2 },
+		{ label: 'Greenhouse C — Temp', value: 'gh-c-temp', group: 3 },
+		{ label: 'Unassigned probe', value: 'probe-x' }
+	];
+	const sensorGroups = [
+		{ value: 1, label: 'Site #1' },
+		{ value: 2, label: 'Site #2' },
+		{ value: 3, label: 'Site #3' }
+	];
+
 	let val1 = $state<{ id: string; label: string }[]>([]);
 	let val2 = $state<{ id: string; label: string }[]>([
 		{ id: 'banana', label: 'Banana' },
@@ -26,6 +61,8 @@
 		{ id: 'dragonfruit', label: 'Dragonfruit' },
 		{ id: 'elderberry', label: 'Elderberry' }
 	]);
+	let groupedVal = $state<{ id: string; label: string }[]>([]);
+	let sensorVal = $state<{ id: string; label: string }[]>([]);
 
 	const multiSelectExample = `<script lang="ts">
 \timport { CwMultiSelect } from '@cropwatchdevelopment/cwui';
@@ -47,12 +84,46 @@
 />
 
 <!-- selected => [{ id: 'apple', label: 'Apple' }, ...] -->`;
+
+	const groupedExample = `<script lang="ts">
+\timport { CwMultiSelect } from '@cropwatchdevelopment/cwui';
+
+\t// Each option carries a \`group\` key (string or number).
+\tconst options = [
+\t\t{ label: 'Apple', value: 'apple', group: 'pome' },
+\t\t{ label: 'Pear', value: 'pear', group: 'pome' },
+\t\t{ label: 'Cherry', value: 'cherry', group: 'stone' },
+\t\t{ label: 'Peach', value: 'peach', group: 'stone' },
+\t\t{ label: 'Mango', value: 'mango', group: 'tropical' }
+\t];
+
+\t// Groups define render order and the visible heading label.
+\tconst groups = [
+\t\t{ value: 'pome', label: 'Pome Fruits' },
+\t\t{ value: 'stone', label: 'Stone Fruits' },
+\t\t{ value: 'tropical', label: 'Tropical' }
+\t];
+
+\tlet selected = $state<{ id: string; label: string }[]>([]);
+<\/script>
+
+<CwMultiSelect
+\t{options}
+\t{groups}
+\tlabel="Fruit by category"
+\tbind:value={selected}
+/>
+
+<!-- Group keys can also be numbers, e.g. site IDs.
+\t Options whose \`group\` key isn't in \`groups\` render ungrouped at the end. -->`;
 </script>
 
 <h2>CwMultiSelect</h2>
 <p class="demo-desc">
 	Same look and behavior as <code>CwDropdown</code>, but with multi-selection. The bound value is an array
 	of <code>&#123; id, label &#125;</code> entries — easy to send straight to a backend or render as chips.
+	Options can also be grouped by tagging each one with a <code>group</code> key (string or number) and
+	passing a <code>groups</code> array that supplies each group's heading label and render order.
 </p>
 
 <div class="demo-grid">
@@ -88,6 +159,20 @@
 		clearable={false}
 		bind:value={prefilled}
 	/>
+	<CwMultiSelect
+		options={groupedByCategory}
+		groups={categoryGroups}
+		label="Grouped by string key"
+		placeholder="Pick some fruits…"
+		bind:value={groupedVal}
+	/>
+	<CwMultiSelect
+		options={sensors}
+		groups={sensorGroups}
+		label="Grouped by number key"
+		placeholder="Pick sensors…"
+		bind:value={sensorVal}
+	/>
 </div>
 
 <div class="demo-output">
@@ -95,7 +180,14 @@
 	<pre>{JSON.stringify(val1, null, 2)}</pre>
 </div>
 
+<div class="demo-output">
+	<h3>Bound value (Grouped — by site #)</h3>
+	<pre>{JSON.stringify(sensorVal, null, 2)}</pre>
+</div>
+
 <DemoCodeExample code={multiSelectExample} title="CwMultiSelect example" />
+
+<DemoCodeExample code={groupedExample} title="Grouped options example" />
 
 <style>
 	h2 {

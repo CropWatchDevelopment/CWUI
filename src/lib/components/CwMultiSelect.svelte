@@ -1,10 +1,21 @@
 <script lang="ts">
 	import type { HTMLInputAttributes } from 'svelte/elements';
 
+	type GroupKey = string | number;
+
 	interface Option {
 		label: string;
 		value: string;
 		disabled?: boolean;
+		/** Key linking this option to a group defined in `groups`. Options whose group key isn't found render ungrouped at the end. */
+		group?: GroupKey;
+	}
+
+	interface Group {
+		/** Matches `Option.group`. */
+		value: GroupKey;
+		/** Heading text rendered above the options in this group. */
+		label: string;
 	}
 
 	interface SelectedItem {
@@ -14,6 +25,8 @@
 
 	interface Props {
 		options: Option[];
+		/** Optional group definitions. When provided, options are rendered under group headings in the order given. Options whose `group` key is missing from this list render ungrouped at the end. */
+		groups?: Group[];
 		value?: SelectedItem[];
 		name?: string;
 		required?: boolean;
@@ -35,6 +48,7 @@
 
 	let {
 		options,
+		groups,
 		value = $bindable<SelectedItem[]>([]),
 		name,
 		required = false,
@@ -65,11 +79,51 @@
 		showAllSelectedItems ? 0 : Math.max(0, value.length - maxVisibleChips)
 	);
 
+	type DisplayItem =
+		| { kind: 'header'; key: string; label: string }
+		| { kind: 'option'; opt: Option; optionIndex: number };
+
+	const displayBuild = $derived.by(() => {
+		const items: DisplayItem[] = [];
+		const flat: Option[] = [];
+
+		if (!groups || groups.length === 0) {
+			for (const opt of options) {
+				items.push({ kind: 'option', opt, optionIndex: flat.length });
+				flat.push(opt);
+			}
+			return { items, flat };
+		}
+
+		const seen = new Set<string>();
+		for (const group of groups) {
+			const groupOpts = options.filter((o) => o.group === group.value);
+			if (groupOpts.length === 0) continue;
+			items.push({ kind: 'header', key: `g-${String(group.value)}`, label: group.label });
+			for (const opt of groupOpts) {
+				items.push({ kind: 'option', opt, optionIndex: flat.length });
+				flat.push(opt);
+				seen.add(opt.value);
+			}
+		}
+
+		const ungrouped = options.filter((o) => !seen.has(o.value));
+		for (const opt of ungrouped) {
+			items.push({ kind: 'option', opt, optionIndex: flat.length });
+			flat.push(opt);
+		}
+
+		return { items, flat };
+	});
+
+	const displayOptions = $derived(displayBuild.flat);
+	const displayItems = $derived(displayBuild.items);
+
 	function toggle() {
 		if (disabled) return;
 		open = !open;
 		if (open) {
-			const firstSelected = options.findIndex((o) => selectedIds.has(o.value));
+			const firstSelected = displayOptions.findIndex((o) => selectedIds.has(o.value));
 			activeIndex = firstSelected >= 0 ? firstSelected : 0;
 		}
 	}
@@ -105,7 +159,7 @@
 				e.preventDefault();
 				if (!open) {
 					open = true;
-					const firstSelected = options.findIndex((o) => selectedIds.has(o.value));
+					const firstSelected = displayOptions.findIndex((o) => selectedIds.has(o.value));
 					activeIndex = firstSelected >= 0 ? firstSelected : 0;
 				}
 				break;
@@ -119,7 +173,7 @@
 		switch (e.key) {
 			case 'ArrowDown':
 				e.preventDefault();
-				activeIndex = Math.min(activeIndex + 1, options.length - 1);
+				activeIndex = Math.min(activeIndex + 1, displayOptions.length - 1);
 				break;
 			case 'ArrowUp':
 				e.preventDefault();
@@ -131,13 +185,13 @@
 				break;
 			case 'End':
 				e.preventDefault();
-				activeIndex = options.length - 1;
+				activeIndex = displayOptions.length - 1;
 				break;
 			case 'Enter':
 			case ' ':
 				e.preventDefault();
-				if (activeIndex >= 0 && !options[activeIndex].disabled) {
-					toggleOption(options[activeIndex]);
+				if (activeIndex >= 0 && !displayOptions[activeIndex]?.disabled) {
+					toggleOption(displayOptions[activeIndex]);
 				}
 				break;
 			case 'Escape':
@@ -300,28 +354,34 @@
 			aria-labelledby={label ? `${uid}-label` : undefined}
 			onkeydown={handleListKeydown}
 		>
-			{#each options as opt, i (opt.value)}
-				{@const isSelected = selectedIds.has(opt.value)}
-				<!-- svelte-ignore a11y_click_events_have_key_events -->
-				<li
-					role="option"
-					class="cw-multiselect__option"
-					class:cw-multiselect__option--active={i === activeIndex}
-					class:cw-multiselect__option--selected={isSelected}
-					class:cw-multiselect__option--disabled={opt.disabled}
-					aria-selected={isSelected}
-					aria-disabled={opt.disabled || undefined}
-					onclick={() => toggleOption(opt)}
-				>
-					<span class="cw-multiselect__checkbox" aria-hidden="true">
-						{#if isSelected}
-							<svg viewBox="0 0 16 16" fill="none">
-								<path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
-							</svg>
-						{/if}
-					</span>
-					<span class="cw-multiselect__option-label">{opt.label}</span>
-				</li>
+			{#each displayItems as item (item.kind === 'header' ? item.key : item.opt.value)}
+				{#if item.kind === 'header'}
+					<li class="cw-multiselect__group-header" role="presentation">{item.label}</li>
+				{:else}
+					{@const opt = item.opt}
+					{@const i = item.optionIndex}
+					{@const isSelected = selectedIds.has(opt.value)}
+					<!-- svelte-ignore a11y_click_events_have_key_events -->
+					<li
+						role="option"
+						class="cw-multiselect__option"
+						class:cw-multiselect__option--active={i === activeIndex}
+						class:cw-multiselect__option--selected={isSelected}
+						class:cw-multiselect__option--disabled={opt.disabled}
+						aria-selected={isSelected}
+						aria-disabled={opt.disabled || undefined}
+						onclick={() => toggleOption(opt)}
+					>
+						<span class="cw-multiselect__checkbox" aria-hidden="true">
+							{#if isSelected}
+								<svg viewBox="0 0 16 16" fill="none">
+									<path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+								</svg>
+							{/if}
+						</span>
+						<span class="cw-multiselect__option-label">{opt.label}</span>
+					</li>
+				{/if}
 			{/each}
 
 			{#if clearable && value.length > 0}
@@ -564,6 +624,23 @@
 		margin: var(--cw-space-1) 0;
 		background-color: var(--cw-border-muted);
 		list-style: none;
+	}
+
+	.cw-multiselect__group-header {
+		padding: var(--cw-space-2) var(--cw-space-3) var(--cw-space-1);
+		font-size: var(--cw-text-xs);
+		font-weight: var(--cw-font-semibold);
+		color: var(--cw-text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		list-style: none;
+		cursor: default;
+		user-select: none;
+	}
+
+	.cw-multiselect__group-header + .cw-multiselect__group-header,
+	.cw-multiselect__option + .cw-multiselect__group-header {
+		margin-top: var(--cw-space-1);
 	}
 
 	.cw-multiselect__clear {
