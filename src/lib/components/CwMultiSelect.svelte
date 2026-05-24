@@ -93,8 +93,8 @@
 	);
 
 	type DisplayItem =
-		| { kind: 'header'; key: string; label: string; groupValue: GroupKey }
-		| { kind: 'option'; opt: Option; optionIndex: number };
+		| { kind: 'header'; key: string; label: string; groupValue: GroupKey; groupIndex: number }
+		| { kind: 'option'; opt: Option; optionIndex: number; groupIndex: number };
 
 	const displayBuild = $derived.by(() => {
 		const items: DisplayItem[] = [];
@@ -105,13 +105,14 @@
 		if (!groups || groups.length === 0) {
 			for (const opt of options) {
 				if (!matches(opt.label)) continue;
-				items.push({ kind: 'option', opt, optionIndex: flat.length });
+				items.push({ kind: 'option', opt, optionIndex: flat.length, groupIndex: -1 });
 				flat.push(opt);
 			}
 			return { items, flat };
 		}
 
 		const seen = new Set<string>();
+		let visibleGroupIndex = 0;
 		for (const group of groups) {
 			const groupOpts = options.filter((o) => o.group === group.value);
 			if (groupOpts.length === 0) continue;
@@ -128,18 +129,30 @@
 				kind: 'header',
 				key: `g-${String(group.value)}`,
 				label: group.label,
-				groupValue: group.value
+				groupValue: group.value,
+				groupIndex: visibleGroupIndex
 			});
 			for (const opt of optsToShow) {
-				items.push({ kind: 'option', opt, optionIndex: flat.length });
+				items.push({
+					kind: 'option',
+					opt,
+					optionIndex: flat.length,
+					groupIndex: visibleGroupIndex
+				});
 				flat.push(opt);
 			}
+			visibleGroupIndex++;
 		}
 
 		for (const opt of options) {
 			if (seen.has(opt.value)) continue;
 			if (!matches(opt.label)) continue;
-			items.push({ kind: 'option', opt, optionIndex: flat.length });
+			items.push({
+				kind: 'option',
+				opt,
+				optionIndex: flat.length,
+				groupIndex: visibleGroupIndex
+			});
 			flat.push(opt);
 		}
 
@@ -485,7 +498,11 @@
 			{#each displayItems as item (item.kind === 'header' ? item.key : item.opt.value)}
 				{#if item.kind === 'header'}
 					{@const state = groupSelectionState(item.groupValue)}
-					<li class="cw-multiselect__group-header" role="presentation">
+					<li
+						class="cw-multiselect__group-header"
+						class:cw-multiselect__group-header--alt={item.groupIndex % 2 === 1}
+						role="presentation"
+					>
 						<span class="cw-multiselect__group-header-label">{item.label}</span>
 						<span class="cw-multiselect__group-actions">
 							<button
@@ -533,6 +550,7 @@
 						class:cw-multiselect__option--active={i === activeIndex}
 						class:cw-multiselect__option--selected={isSelected}
 						class:cw-multiselect__option--disabled={opt.disabled}
+						class:cw-multiselect__option--alt={item.groupIndex % 2 === 1}
 						aria-selected={isSelected}
 						aria-disabled={opt.disabled || undefined}
 						onclick={() => toggleOption(opt)}
@@ -783,6 +801,15 @@
 		transition: background-color var(--cw-duration-fast) var(--cw-ease-default);
 	}
 
+	.cw-multiselect__option--alt {
+		background-color: color-mix(in srgb, var(--cw-text-primary) 5%, transparent);
+		border-radius: 0;
+		margin-left: calc(var(--cw-space-1) * -1);
+		margin-right: calc(var(--cw-space-1) * -1);
+		padding-left: calc(var(--cw-space-3) + var(--cw-space-1));
+		padding-right: calc(var(--cw-space-3) + var(--cw-space-1));
+	}
+
 	.cw-multiselect__option:hover,
 	.cw-multiselect__option--active {
 		background-color: var(--cw-bg-muted);
@@ -848,6 +875,14 @@
 		list-style: none;
 		cursor: default;
 		user-select: none;
+	}
+
+	.cw-multiselect__group-header--alt {
+		background-color: color-mix(in srgb, var(--cw-text-primary) 5%, transparent);
+		margin-left: calc(var(--cw-space-1) * -1);
+		margin-right: calc(var(--cw-space-1) * -1);
+		padding-left: calc(var(--cw-space-3) + var(--cw-space-1));
+		padding-right: calc(var(--cw-space-3) + var(--cw-space-1));
 	}
 
 	.cw-multiselect__group-header-label {
