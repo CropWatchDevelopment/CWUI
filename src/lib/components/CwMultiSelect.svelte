@@ -42,6 +42,13 @@
 		/** Show a "Clear all" action inside the listbox when at least one item is selected. */
 		clearable?: boolean;
 		clearLabel?: string;
+		/** Max height of the open dropdown listbox. Accepts any CSS length (e.g. `"22rem"`, `"400px"`). Defaults to `15rem`. */
+		dropdownHeight?: string;
+		/** Render a search field at the top of the dropdown that filters options by their label and group label. */
+		searchable?: boolean;
+		searchPlaceholder?: string;
+		/** Text shown inside the dropdown when the search query yields no matches. */
+		noResultsLabel?: string;
 		onchange?: (value: SelectedItem[]) => void;
 		class?: string;
 	}
@@ -61,6 +68,10 @@
 		showAllSelectedItems = false,
 		clearable = true,
 		clearLabel = 'Clear all',
+		dropdownHeight = '15rem',
+		searchable = true,
+		searchPlaceholder = 'Search…',
+		noResultsLabel = 'No matches',
 		onchange,
 		class: className = ''
 	}: Props = $props();
@@ -70,8 +81,10 @@
 	let open = $state(false);
 	let listboxRef = $state<HTMLUListElement | null>(null);
 	let triggerRef = $state<HTMLDivElement | null>(null);
+	let searchInputRef = $state<HTMLInputElement | null>(null);
 	let activeIndex = $state(-1);
 	let listboxStyle = $state('');
+	let query = $state('');
 
 	const selectedIds = $derived(new Set(value.map((v) => v.id)));
 	const visibleChips = $derived(showAllSelectedItems ? value : value.slice(0, maxVisibleChips));
@@ -86,9 +99,12 @@
 	const displayBuild = $derived.by(() => {
 		const items: DisplayItem[] = [];
 		const flat: Option[] = [];
+		const q = query.trim().toLowerCase();
+		const matches = (text: string) => !q || text.toLowerCase().includes(q);
 
 		if (!groups || groups.length === 0) {
 			for (const opt of options) {
+				if (!matches(opt.label)) continue;
 				items.push({ kind: 'option', opt, optionIndex: flat.length });
 				flat.push(opt);
 			}
@@ -99,16 +115,25 @@
 		for (const group of groups) {
 			const groupOpts = options.filter((o) => o.group === group.value);
 			if (groupOpts.length === 0) continue;
+			// Reserve every option whose group is known so we don't leak it into the ungrouped tail when filtered out.
+			for (const o of groupOpts) seen.add(o.value);
+
+			const groupHeaderMatches = q.length > 0 && group.label.toLowerCase().includes(q);
+			const optsToShow = groupHeaderMatches
+				? groupOpts
+				: groupOpts.filter((o) => matches(o.label));
+			if (optsToShow.length === 0) continue;
+
 			items.push({ kind: 'header', key: `g-${String(group.value)}`, label: group.label });
-			for (const opt of groupOpts) {
+			for (const opt of optsToShow) {
 				items.push({ kind: 'option', opt, optionIndex: flat.length });
 				flat.push(opt);
-				seen.add(opt.value);
 			}
 		}
 
-		const ungrouped = options.filter((o) => !seen.has(o.value));
-		for (const opt of ungrouped) {
+		for (const opt of options) {
+			if (seen.has(opt.value)) continue;
+			if (!matches(opt.label)) continue;
 			items.push({ kind: 'option', opt, optionIndex: flat.length });
 			flat.push(opt);
 		}
@@ -119,13 +144,22 @@
 	const displayOptions = $derived(displayBuild.flat);
 	const displayItems = $derived(displayBuild.items);
 
+	function openListbox() {
+		if (disabled) return;
+		open = true;
+		const firstSelected = displayOptions.findIndex((o) => selectedIds.has(o.value));
+		activeIndex = firstSelected >= 0 ? firstSelected : 0;
+	}
+
+	function closeListbox() {
+		open = false;
+		query = '';
+	}
+
 	function toggle() {
 		if (disabled) return;
-		open = !open;
-		if (open) {
-			const firstSelected = displayOptions.findIndex((o) => selectedIds.has(o.value));
-			activeIndex = firstSelected >= 0 ? firstSelected : 0;
-		}
+		if (open) closeListbox();
+		else openListbox();
 	}
 
 	function toggleOption(opt: Option) {
@@ -157,56 +191,77 @@
 			case ' ':
 			case 'ArrowDown':
 				e.preventDefault();
-				if (!open) {
-					open = true;
-					const firstSelected = displayOptions.findIndex((o) => selectedIds.has(o.value));
-					activeIndex = firstSelected >= 0 ? firstSelected : 0;
-				}
+				if (!open) openListbox();
 				break;
 			case 'Escape':
-				open = false;
+				if (open) closeListbox();
 				break;
 		}
 	}
 
-	function handleListKeydown(e: KeyboardEvent) {
+	function activateOption(delta: number) {
+		if (displayOptions.length === 0) {
+			activeIndex = -1;
+			return;
+		}
+		const next = activeIndex < 0 ? 0 : activeIndex + delta;
+		activeIndex = Math.max(0, Math.min(displayOptions.length - 1, next));
+	}
+
+	function handleNavKey(e: KeyboardEvent): boolean {
 		switch (e.key) {
 			case 'ArrowDown':
 				e.preventDefault();
-				activeIndex = Math.min(activeIndex + 1, displayOptions.length - 1);
-				break;
+				activateOption(1);
+				return true;
 			case 'ArrowUp':
 				e.preventDefault();
-				activeIndex = Math.max(activeIndex - 1, 0);
-				break;
+				activateOption(-1);
+				return true;
 			case 'Home':
 				e.preventDefault();
 				activeIndex = 0;
-				break;
+				return true;
 			case 'End':
 				e.preventDefault();
 				activeIndex = displayOptions.length - 1;
-				break;
+				return true;
 			case 'Enter':
-			case ' ':
 				e.preventDefault();
 				if (activeIndex >= 0 && !displayOptions[activeIndex]?.disabled) {
 					toggleOption(displayOptions[activeIndex]);
 				}
-				break;
+				return true;
 			case 'Escape':
 				e.preventDefault();
-				open = false;
+				closeListbox();
 				triggerRef?.focus();
-				break;
+				return true;
 			case 'Tab':
-				open = false;
-				break;
+				closeListbox();
+				return true;
 		}
+		return false;
+	}
+
+	function handleListKeydown(e: KeyboardEvent) {
+		if (e.key === ' ') {
+			e.preventDefault();
+			if (activeIndex >= 0 && !displayOptions[activeIndex]?.disabled) {
+				toggleOption(displayOptions[activeIndex]);
+			}
+			return;
+		}
+		handleNavKey(e);
+	}
+
+	function handleSearchKeydown(e: KeyboardEvent) {
+		// Space must remain a literal character in the search field, so we only handle the navigation keys.
+		handleNavKey(e);
 	}
 
 	function handleBackdropClick() {
-		open = false;
+		closeListbox();
 	}
 
 	function updateListboxPosition() {
@@ -236,7 +291,7 @@
 			}
 		}
 
-		listboxStyle = `left:${Math.round(left)}px;top:${Math.round(top)}px;width:${listWidth}px;`;
+		listboxStyle = `left:${Math.round(left)}px;top:${Math.round(top)}px;width:${listWidth}px;--cw-multiselect-dropdown-height:${dropdownHeight};`;
 	}
 
 	$effect(() => {
@@ -244,7 +299,11 @@
 
 		const raf = requestAnimationFrame(() => {
 			updateListboxPosition();
-			listboxRef?.focus();
+			if (searchable && searchInputRef) {
+				searchInputRef.focus();
+			} else {
+				listboxRef?.focus();
+			}
 		});
 
 		const handleViewportChange = () => updateListboxPosition();
@@ -256,6 +315,18 @@
 			window.removeEventListener('resize', handleViewportChange);
 			window.removeEventListener('scroll', handleViewportChange, true);
 		};
+	});
+
+	// Reposition + clamp activeIndex when filtering changes the list length.
+	$effect(() => {
+		query;
+		if (!open) return;
+		if (displayOptions.length === 0) {
+			activeIndex = -1;
+		} else if (activeIndex < 0 || activeIndex >= displayOptions.length) {
+			activeIndex = 0;
+		}
+		requestAnimationFrame(() => updateListboxPosition());
 	});
 
 	$effect(() => {
@@ -354,6 +425,24 @@
 			aria-labelledby={label ? `${uid}-label` : undefined}
 			onkeydown={handleListKeydown}
 		>
+			{#if searchable}
+				<li class="cw-multiselect__search-wrap" role="presentation">
+					<input
+						bind:this={searchInputRef}
+						bind:value={query}
+						type="text"
+						class="cw-multiselect__search"
+						placeholder={searchPlaceholder}
+						aria-label={searchPlaceholder}
+						autocomplete="off"
+						spellcheck="false"
+						onkeydown={handleSearchKeydown}
+					/>
+				</li>
+			{/if}
+			{#if displayItems.length === 0}
+				<li class="cw-multiselect__empty" role="presentation">{noResultsLabel}</li>
+			{/if}
 			{#each displayItems as item (item.kind === 'header' ? item.key : item.opt.value)}
 				{#if item.kind === 'header'}
 					<li class="cw-multiselect__group-header" role="presentation">{item.label}</li>
@@ -558,9 +647,52 @@
 		border: 1px solid var(--cw-border-default);
 		border-radius: var(--cw-radius-md);
 		box-shadow: var(--cw-shadow-lg);
-		max-height: 15rem;
+		max-height: var(--cw-multiselect-dropdown-height, 15rem);
 		overflow-y: auto;
 		outline: none;
+	}
+
+	.cw-multiselect__search-wrap {
+		position: sticky;
+		top: calc(var(--cw-space-1) * -1);
+		z-index: 1;
+		margin: calc(var(--cw-space-1) * -1) calc(var(--cw-space-1) * -1) var(--cw-space-1);
+		padding: var(--cw-space-1) var(--cw-space-1) var(--cw-space-1);
+		background-color: var(--cw-bg-elevated);
+		border-bottom: 1px solid var(--cw-border-muted);
+		list-style: none;
+	}
+
+	.cw-multiselect__search {
+		width: 100%;
+		box-sizing: border-box;
+		padding: var(--cw-space-2) var(--cw-space-3);
+		font-family: var(--cw-font-family);
+		font-size: var(--cw-text-sm);
+		color: var(--cw-text-primary);
+		background-color: var(--cw-bg-surface);
+		border: 1px solid var(--cw-border-default);
+		border-radius: var(--cw-radius-sm);
+		outline: none;
+		caret-color: var(--cw-focus-ring-color, currentColor);
+	}
+
+	.cw-multiselect__search::placeholder {
+		color: var(--cw-text-muted);
+	}
+
+	.cw-multiselect__search:focus-visible {
+		border-color: var(--cw-focus-ring-color);
+		box-shadow: 0 0 0 var(--cw-focus-ring-width)
+			color-mix(in srgb, var(--cw-focus-ring-color) 25%, transparent);
+	}
+
+	.cw-multiselect__empty {
+		padding: var(--cw-space-3);
+		font-size: var(--cw-text-sm);
+		color: var(--cw-text-muted);
+		text-align: center;
+		list-style: none;
 	}
 
 	.cw-multiselect__option {

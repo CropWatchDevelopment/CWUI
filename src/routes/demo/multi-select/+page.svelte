@@ -63,6 +63,8 @@
 	]);
 	let groupedVal = $state<{ id: string; label: string }[]>([]);
 	let sensorVal = $state<{ id: string; label: string }[]>([]);
+	let tallSensorVal = $state<{ id: string; label: string }[]>([]);
+	let noSearchVal = $state<{ id: string; label: string }[]>([]);
 
 	const multiSelectExample = `<script lang="ts">
 \timport { CwMultiSelect } from '@cropwatchdevelopment/cwui';
@@ -116,6 +118,27 @@
 
 <!-- Group keys can also be numbers, e.g. site IDs.
 \t Options whose \`group\` key isn't in \`groups\` render ungrouped at the end. -->`;
+
+	const searchAndHeightExample = `<script lang="ts">
+\timport { CwMultiSelect } from '@cropwatchdevelopment/cwui';
+
+\tlet selected = $state<{ id: string; label: string }[]>([]);
+<\/script>
+
+<!-- \`dropdownHeight\` overrides the listbox max-height (default 15rem).
+\t The search field is on by default — typing filters by option label
+\t OR group label, so typing a group name reveals every option in it. -->
+<CwMultiSelect
+\t{options}
+\t{groups}
+\tlabel="Sensors"
+\tplaceholder="Pick sensors…"
+\tdropdownHeight="24rem"
+\tsearchPlaceholder="Filter by sensor or site…"
+\tbind:value={selected}
+/>
+
+<!-- Opt out of the search field with \`searchable={false}\`. -->`;
 </script>
 
 <h2>CwMultiSelect</h2>
@@ -124,6 +147,10 @@
 	of <code>&#123; id, label &#125;</code> entries — easy to send straight to a backend or render as chips.
 	Options can also be grouped by tagging each one with a <code>group</code> key (string or number) and
 	passing a <code>groups</code> array that supplies each group's heading label and render order.
+	A search field appears at the top of the open dropdown by default — typing filters by option label
+	<em>or</em> group label (so typing a group name reveals every option in it). Set
+	<code>dropdownHeight</code> to change the listbox max-height, or pass <code>searchable=&#123;false&#125;</code>
+	to hide the filter.
 </p>
 
 <div class="demo-grid">
@@ -173,6 +200,21 @@
 		placeholder="Pick sensors…"
 		bind:value={sensorVal}
 	/>
+	<CwMultiSelect
+		options={sensors}
+		groups={sensorGroups}
+		label="Taller dropdown + search (type a sensor or site)"
+		placeholder="Pick sensors…"
+		dropdownHeight="24rem"
+		searchPlaceholder="Filter by sensor or site…"
+		bind:value={tallSensorVal}
+	/>
+	<CwMultiSelect
+		{options}
+		label="Search disabled"
+		searchable={false}
+		bind:value={noSearchVal}
+	/>
 </div>
 
 <div class="demo-output">
@@ -188,6 +230,11 @@
 <DemoCodeExample code={multiSelectExample} title="CwMultiSelect example" />
 
 <DemoCodeExample code={groupedExample} title="Grouped options example" />
+
+<DemoCodeExample
+	code={searchAndHeightExample}
+	title="Search + dropdownHeight example"
+/>
 
 <style>
 	h2 {
