@@ -93,7 +93,7 @@
 	);
 
 	type DisplayItem =
-		| { kind: 'header'; key: string; label: string }
+		| { kind: 'header'; key: string; label: string; groupValue: GroupKey }
 		| { kind: 'option'; opt: Option; optionIndex: number };
 
 	const displayBuild = $derived.by(() => {
@@ -124,7 +124,12 @@
 				: groupOpts.filter((o) => matches(o.label));
 			if (optsToShow.length === 0) continue;
 
-			items.push({ kind: 'header', key: `g-${String(group.value)}`, label: group.label });
+			items.push({
+				kind: 'header',
+				key: `g-${String(group.value)}`,
+				label: group.label,
+				groupValue: group.value
+			});
 			for (const opt of optsToShow) {
 				items.push({ kind: 'option', opt, optionIndex: flat.length });
 				flat.push(opt);
@@ -177,6 +182,40 @@
 		value = [];
 		onchange?.(value);
 		triggerRef?.focus();
+	}
+
+	function groupOptionsFor(groupValue: GroupKey) {
+		return options.filter((o) => o.group === groupValue);
+	}
+
+	function selectAllInGroup(e: Event, groupValue: GroupKey) {
+		e.stopPropagation();
+		const selectable = groupOptionsFor(groupValue).filter(
+			(o) => !o.disabled && !selectedIds.has(o.value)
+		);
+		if (selectable.length === 0) return;
+		const next = [...value, ...selectable.map((o) => ({ id: o.value, label: o.label }))];
+		value = next;
+		onchange?.(next);
+	}
+
+	function clearAllInGroup(e: Event, groupValue: GroupKey) {
+		e.stopPropagation();
+		const groupValueIds = new Set(groupOptionsFor(groupValue).map((o) => o.value));
+		const next = value.filter((v) => !groupValueIds.has(v.id));
+		if (next.length === value.length) return;
+		value = next;
+		onchange?.(next);
+	}
+
+	function groupSelectionState(groupValue: GroupKey): 'none' | 'some' | 'all' {
+		const groupOpts = groupOptionsFor(groupValue).filter((o) => !o.disabled);
+		if (groupOpts.length === 0) return 'none';
+		let selected = 0;
+		for (const o of groupOpts) if (selectedIds.has(o.value)) selected++;
+		if (selected === 0) return 'none';
+		if (selected === groupOpts.length) return 'all';
+		return 'some';
 	}
 
 	function removeChip(e: Event, id: string) {
@@ -445,7 +484,44 @@
 			{/if}
 			{#each displayItems as item (item.kind === 'header' ? item.key : item.opt.value)}
 				{#if item.kind === 'header'}
-					<li class="cw-multiselect__group-header" role="presentation">{item.label}</li>
+					{@const state = groupSelectionState(item.groupValue)}
+					<li class="cw-multiselect__group-header" role="presentation">
+						<span class="cw-multiselect__group-header-label">{item.label}</span>
+						<span class="cw-multiselect__group-actions">
+							<button
+								type="button"
+								class="cw-multiselect__group-action"
+								tabindex="-1"
+								disabled={state === 'all'}
+								aria-label="Select all in {item.label}"
+								title="Select all"
+								onclick={(e) => selectAllInGroup(e, item.groupValue)}
+							>
+								<svg viewBox="0 -960 960 960" aria-hidden="true">
+									<path
+										d="m424-312 282-282-56-56-226 226-114-114-56 56 170 170ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm0-560v560-560Z"
+										fill="currentColor"
+									/>
+								</svg>
+							</button>
+							<button
+								type="button"
+								class="cw-multiselect__group-action"
+								tabindex="-1"
+								disabled={state === 'none'}
+								aria-label="Clear all in {item.label}"
+								title="Clear all"
+								onclick={(e) => clearAllInGroup(e, item.groupValue)}
+							>
+								<svg viewBox="0 -960 960 960" aria-hidden="true">
+									<path
+										d="M280-440h400v-80H280v80Zm-80 320q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm0-560v560-560Z"
+										fill="currentColor"
+									/>
+								</svg>
+							</button>
+						</span>
+					</li>
 				{:else}
 					{@const opt = item.opt}
 					{@const i = item.optionIndex}
@@ -759,6 +835,10 @@
 	}
 
 	.cw-multiselect__group-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--cw-space-2);
 		padding: var(--cw-space-2) var(--cw-space-3) var(--cw-space-1);
 		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-semibold);
@@ -768,6 +848,60 @@
 		list-style: none;
 		cursor: default;
 		user-select: none;
+	}
+
+	.cw-multiselect__group-header-label {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.cw-multiselect__group-actions {
+		display: inline-flex;
+		align-items: center;
+		gap: 2px;
+		flex-shrink: 0;
+	}
+
+	.cw-multiselect__group-action {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.25rem;
+		height: 1.25rem;
+		padding: 0;
+		color: var(--cw-text-muted);
+		background: transparent;
+		border: 0;
+		border-radius: var(--cw-radius-sm);
+		cursor: pointer;
+		transition:
+			color var(--cw-duration-fast) var(--cw-ease-default),
+			background-color var(--cw-duration-fast) var(--cw-ease-default);
+	}
+
+	.cw-multiselect__group-action:hover:not(:disabled) {
+		color: var(--cw-accent);
+		background-color: var(--cw-bg-muted);
+	}
+
+	.cw-multiselect__group-action:focus-visible {
+		outline: none;
+		color: var(--cw-accent);
+		box-shadow: 0 0 0 var(--cw-focus-ring-width)
+			color-mix(in srgb, var(--cw-focus-ring-color) 35%, transparent);
+	}
+
+	.cw-multiselect__group-action:disabled {
+		opacity: 0.35;
+		cursor: default;
+	}
+
+	.cw-multiselect__group-action svg {
+		width: 1rem;
+		height: 1rem;
 	}
 
 	.cw-multiselect__group-header + .cw-multiselect__group-header,
