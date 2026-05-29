@@ -157,12 +157,14 @@
 	@media (min-width: 768px) {
 		.cw-dialog__panel {
 			width: min(var(--cw-dialog-width, 80vw), calc(100vw - 2rem));
+			max-width: 100%;
 		}
 	}
 
 	@media (min-width: 1024px) {
 		.cw-dialog__panel {
 			width: min(var(--cw-dialog-width, 50vw), calc(100vw - 2rem));
+			max-width: 100%;
 		}
 	}
 
