@@ -1,3 +1,48 @@
+<script lang="ts" module>
+	/** Override display labels for i18n. All fields optional; English defaults preserved when omitted. */
+	export interface CwDeviceLineChartSectionLabels {
+		/** Small uppercase eyebrow above the title. Default: "Line chart" */
+		eyebrow?: string;
+		/** Section title shown for soil devices. Default: "Soil telemetry" */
+		soilTitle?: string;
+		/** Section title shown for air devices. Default: "Temperature & Humidity" */
+		airTitle?: string;
+		/** Placeholder shown while chart data is loading. Default: "Loading chart data…" */
+		loading?: string;
+		/** Placeholder shown when there is no chart data. Default: "No data available for chart" */
+		noData?: string;
+		/** Cell label above the soil temperature chart. Default: "Soil Temperature" */
+		soilTemperatureLabel?: string;
+		/** Cell label above the soil moisture chart. Default: "Soil Moisture" */
+		soilMoistureLabel?: string;
+		/** Cell label above the electrical conductivity chart. Default: "Electrical Conductivity" */
+		electricalConductivityLabel?: string;
+		/** Series label for temperature lines. Default: "Temperature" */
+		temperatureSeriesLabel?: string;
+		/** Series label for moisture lines. Default: "Moisture" */
+		moistureSeriesLabel?: string;
+		/** Series label for electrical conductivity lines. Default: "EC" */
+		ecSeriesLabel?: string;
+		/** Series label for humidity lines. Default: "Humidity" */
+		humiditySeriesLabel?: string;
+	}
+
+	const DEFAULT_LABELS: Required<CwDeviceLineChartSectionLabels> = {
+		eyebrow: 'Line chart',
+		soilTitle: 'Soil telemetry',
+		airTitle: 'Temperature & Humidity',
+		loading: 'Loading chart data…',
+		noData: 'No data available for chart',
+		soilTemperatureLabel: 'Soil Temperature',
+		soilMoistureLabel: 'Soil Moisture',
+		electricalConductivityLabel: 'Electrical Conductivity',
+		temperatureSeriesLabel: 'Temperature',
+		moistureSeriesLabel: 'Moisture',
+		ecSeriesLabel: 'EC',
+		humiditySeriesLabel: 'Humidity'
+	};
+</script>
+
 <script lang="ts">
 	import type {
 		CwLineChartDataPoint,
@@ -25,6 +70,8 @@
 		airHumidityChartData?: CwLineChartSecondaryDataPoint[] | null;
 		airTemperatureThreshold?: number;
 		noData?: CwNoDataMessage;
+		/** Override display labels for i18n */
+		labels?: CwDeviceLineChartSectionLabels;
 		class?: string;
 	}
 
@@ -41,8 +88,11 @@
 		airHumidityChartData: airHumidityChartDataInput = [],
 		airTemperatureThreshold,
 		noData,
+		labels = {},
 		class: className = ''
 	}: Props = $props();
+
+	const l = $derived({ ...DEFAULT_LABELS, ...labels });
 
 	const soilTemperatureChartData = $derived(soilTemperatureChartDataInput ?? []);
 	const soilMoistureChartData = $derived(soilMoistureChartDataInput ?? []);
@@ -58,7 +108,7 @@
 			: airTemperatureChartData.length > 0
 	);
 
-	const title = $derived(isSoilDevice ? 'Soil telemetry' : 'Temperature & Humidity');
+	const title = $derived(isSoilDevice ? l.soilTitle : l.airTitle);
 </script>
 
 <section
@@ -67,43 +117,43 @@
 >
 	<div class="cw-chart-section__header">
 		<div class="cw-chart-section__header-text">
-			<p class="cw-chart-section__eyebrow">Line chart</p>
+			<p class="cw-chart-section__eyebrow">{l.eyebrow}</p>
 			<h2 class="cw-chart-section__title">{title}</h2>
 		</div>
 	</div>
 
 	{#if historyLoading}
-		<div class="cw-chart-section__placeholder">Loading chart data…</div>
+		<div class="cw-chart-section__placeholder">{l.loading}</div>
 	{:else if !hasData}
-		<div class="cw-chart-section__placeholder">No data available for chart</div>
+		<div class="cw-chart-section__placeholder">{l.noData}</div>
 	{:else if isSoilDevice}
 		<div class="cw-chart-section__grid">
 			<div class="cw-chart-section__cell">
-				<p class="cw-chart-section__cell-label">Soil Temperature</p>
+				<p class="cw-chart-section__cell-label">{l.soilTemperatureLabel}</p>
 				<CwLineChart
 					data={soilTemperatureChartData}
 					threshold={soilTemperatureThreshold}
-					primaryLabel="Temperature"
+					primaryLabel={l.temperatureSeriesLabel}
 					primaryUnit="°C"
 					height={260}
 				/>
 			</div>
 			<div class="cw-chart-section__cell">
-				<p class="cw-chart-section__cell-label">Soil Moisture</p>
+				<p class="cw-chart-section__cell-label">{l.soilMoistureLabel}</p>
 				<CwLineChart
 					data={soilMoistureChartData}
 					threshold={soilMoistureThreshold}
-					primaryLabel="Moisture"
+					primaryLabel={l.moistureSeriesLabel}
 					primaryUnit="%"
 					height={260}
 				/>
 			</div>
 			<div class="cw-chart-section__cell">
-				<p class="cw-chart-section__cell-label">Electrical Conductivity</p>
+				<p class="cw-chart-section__cell-label">{l.electricalConductivityLabel}</p>
 				<CwLineChart
 					data={soilEcChartData}
 					threshold={soilEcThreshold}
-					primaryLabel="EC"
+					primaryLabel={l.ecSeriesLabel}
 					primaryUnit=" mS/cm"
 					height={260}
 				/>
@@ -114,8 +164,8 @@
 			data={airTemperatureChartData}
 			secondaryData={airHumidityChartData}
 			threshold={airTemperatureThreshold}
-			primaryLabel="Temperature"
-			secondaryLabel="Humidity"
+			primaryLabel={l.temperatureSeriesLabel}
+			secondaryLabel={l.humiditySeriesLabel}
 			primaryUnit="°C"
 			secondaryUnit="%"
 			height={350}

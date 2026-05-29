@@ -1,3 +1,42 @@
+<script lang="ts" module>
+	/** Override display labels for i18n. All fields optional; English defaults are used when omitted. */
+	export interface CwCalendarScrollLabels {
+		/** Accessible label for the scrollable list region. Default: "Calendar scroll". */
+		ariaLabel?: string;
+		/** Suffix appended to a date's meta line when the row is today. Default: "Today". */
+		today?: string;
+		/** Status text/pill shown when a row has data. Default: "Data available". */
+		dataAvailable?: string;
+		/** Status text/pill shown when a row has no data. Default: "No data". */
+		noData?: string;
+		/** Builds the accessible label for a date row. Receives the date key and its status text. */
+		rowAriaLabel?: (key: string, status: string) => string;
+		/** Builds the accessible label for a row's actions region. Receives the date key. */
+		actionsAriaLabel?: (key: string) => string;
+		/** Placeholder shown when an item exists but no `content` snippet was provided. */
+		contentPlaceholder?: string;
+		/** Placeholder shown when a row has no data. Default: "No data for this date.". */
+		noDataForDate?: string;
+		/** Title shown in the empty state when there are no rows. Default: "No dated rows to show.". */
+		emptyTitle?: string;
+		/** Copy shown in the empty state when there are no rows. */
+		emptyCopy?: string;
+	}
+
+	const DEFAULT_LABELS: Required<CwCalendarScrollLabels> = {
+		ariaLabel: 'Calendar scroll',
+		today: 'Today',
+		dataAvailable: 'Data available',
+		noData: 'No data',
+		rowAriaLabel: (key, status) => `${key}, ${status}`,
+		actionsAriaLabel: (key) => `Actions for ${key}`,
+		contentPlaceholder: 'An item exists for this date. Provide a `content` snippet to render it.',
+		noDataForDate: 'No data for this date.',
+		emptyTitle: 'No dated rows to show.',
+		emptyCopy: 'Add dated items or enable `showAllDates` with a range.'
+	};
+</script>
+
 <script lang="ts" generics="T extends CwCalendarScrollItem = CwCalendarScrollItem">
 	import type { Snippet } from 'svelte';
 	import type {
@@ -26,8 +65,10 @@
 		actions?: Snippet<[T | null, CwCalendarScrollMeta]>;
 		/** Optional empty-state content rendered when no rows are visible. */
 		emptyState?: Snippet;
-		/** Accessible label for the scrollable list. */
+		/** Accessible label for the scrollable list. Takes precedence over `labels.ariaLabel` when set. */
 		ariaLabel?: string;
+		/** Override display labels for i18n. */
+		labels?: CwCalendarScrollLabels;
 		class?: string;
 	}
 
@@ -41,9 +82,12 @@
 		content,
 		actions,
 		emptyState,
-		ariaLabel = 'Calendar scroll',
+		ariaLabel,
+		labels = {},
 		class: className = ''
 	}: Props = $props();
+
+	const l = $derived({ ...DEFAULT_LABELS, ...labels });
 
 	const rows = $derived.by(() =>
 		buildCalendarScrollEntries({
@@ -66,17 +110,17 @@
 
 	function formatDateMeta(meta: CwCalendarScrollMeta): string {
 		const parts = [weekdayFormatter.format(meta.date), fullDateFormatter.format(meta.date)];
-		if (meta.isToday) parts.push('Today');
+		if (meta.isToday) parts.push(l.today);
 		return parts.join(' • ');
 	}
 
 	function getRowStatus(meta: CwCalendarScrollMeta): string {
-		return meta.hasData ? 'Data available' : 'No data';
+		return meta.hasData ? l.dataAvailable : l.noData;
 	}
 </script>
 
 <div class="cw-calendar-scroll {className}" style={viewportStyle}>
-	<div class="cw-calendar-scroll__viewport" role="list" aria-label={ariaLabel}>
+	<div class="cw-calendar-scroll__viewport" role="list" aria-label={ariaLabel ?? l.ariaLabel}>
 		{#if rows.length > 0}
 			{#each rows as row (row.key)}
 				<article
@@ -84,7 +128,7 @@
 					class:cw-calendar-scroll__item--today={row.isToday}
 					class:cw-calendar-scroll__item--has-data={row.hasData}
 					role="listitem"
-					aria-label={`${row.key}, ${getRowStatus(row)}`}
+					aria-label={l.rowAriaLabel(row.key, getRowStatus(row))}
 				>
 					<header class="cw-calendar-scroll__header">
 						<div class="cw-calendar-scroll__date-block">
@@ -111,15 +155,15 @@
 								{@render content(row.item, row)}
 							{:else if row.hasData}
 								<p class="cw-calendar-scroll__placeholder">
-									An item exists for this date. Provide a `content` snippet to render it.
+									{l.contentPlaceholder}
 								</p>
 							{:else}
-								<p class="cw-calendar-scroll__placeholder">No data for this date.</p>
+								<p class="cw-calendar-scroll__placeholder">{l.noDataForDate}</p>
 							{/if}
 						</div>
 
 						{#if actions}
-							<aside class="cw-calendar-scroll__actions" aria-label={`Actions for ${row.key}`}>
+							<aside class="cw-calendar-scroll__actions" aria-label={l.actionsAriaLabel(row.key)}>
 								{@render actions(row.item, row)}
 							</aside>
 						{/if}
@@ -132,9 +176,9 @@
 			</div>
 		{:else}
 			<div class="cw-calendar-scroll__empty">
-				<p class="cw-calendar-scroll__empty-title">No dated rows to show.</p>
+				<p class="cw-calendar-scroll__empty-title">{l.emptyTitle}</p>
 				<p class="cw-calendar-scroll__empty-copy">
-					Add dated items or enable `showAllDates` with a range.
+					{l.emptyCopy}
 				</p>
 			</div>
 		{/if}

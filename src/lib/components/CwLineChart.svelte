@@ -1,3 +1,30 @@
+<script lang="ts" module>
+	/** Overridable user-facing labels for {@link CwLineChart} (i18n). All optional; English defaults are used when omitted. */
+	export interface CwLineChartLabels {
+		/** Fallback name for the primary series (left axis & legend). Default: "Value". */
+		primary?: string;
+		/** Fallback name for the secondary series (right axis & legend). Default: "Secondary". */
+		secondary?: string;
+		/** Name used for the legacy single-threshold line (`threshold` prop). Default: "Threshold". */
+		threshold?: string;
+		/** Legend label for multiple thresholds; `{count}` is replaced with the number of thresholds. Default: "Thresholds ({count})". */
+		thresholdsCount?: string;
+		/** Tooltip heading for a critical-severity alert. Default: "Critical alert". */
+		criticalAlert?: string;
+		/** Tooltip heading for a non-critical alert. Default: "Alert". */
+		alert?: string;
+	}
+
+	const DEFAULT_LABELS: Required<CwLineChartLabels> = {
+		primary: 'Value',
+		secondary: 'Secondary',
+		threshold: 'Threshold',
+		thresholdsCount: 'Thresholds ({count})',
+		criticalAlert: 'Critical alert',
+		alert: 'Alert'
+	};
+</script>
+
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type {
@@ -35,6 +62,8 @@
 		/** Show grid lines */
 		showGrid?: boolean;
 		noData?: CwNoDataMessage;
+		/** Override display labels for i18n */
+		labels?: CwLineChartLabels;
 		class?: string;
 	}
 
@@ -44,15 +73,22 @@
 		alertPoints: alertPointsInput = [],
 		threshold,
 		thresholds: thresholdsInput = [],
-		primaryLabel = 'Value',
-		secondaryLabel = 'Secondary',
+		primaryLabel: primaryLabelProp,
+		secondaryLabel: secondaryLabelProp,
 		primaryUnit = '',
 		secondaryUnit = '',
 		height = 300,
 		showGrid = true,
 		noData,
+		labels = {},
 		class: className = ''
 	}: Props = $props();
+
+	const l = $derived({ ...DEFAULT_LABELS, ...labels });
+
+	/* Existing explicit label props win over the `labels` object / defaults. */
+	const primaryLabel = $derived(primaryLabelProp ?? l.primary);
+	const secondaryLabel = $derived(secondaryLabelProp ?? l.secondary);
 
 	const data = $derived(dataInput ?? []);
 	const secondaryData = $derived(secondaryDataInput ?? []);
@@ -103,7 +139,7 @@
 		return [
 			{
 				id: `${uid}-legacy-threshold`,
-				name: 'Threshold',
+				name: l.threshold,
 				value: threshold
 			}
 		];
@@ -344,7 +380,7 @@
 	const singleThresholdLabel = $derived.by(() => {
 		if (resolvedThresholds.length !== 1) return null;
 		const thresholdLine = resolvedThresholds[0];
-		if (thresholdLine.name === 'Threshold') {
+		if (thresholdLine.name === l.threshold) {
 			return `${formatValue(thresholdLine.value)}${primaryUnit}`;
 		}
 		return thresholdLine.name;
@@ -355,7 +391,7 @@
 			const thresholdLine = resolvedThresholds[0];
 			return `${thresholdLine.name} (${formatValue(thresholdLine.value)}${primaryUnit})`;
 		}
-		return `Thresholds (${resolvedThresholds.length})`;
+		return l.thresholdsCount.replace('{count}', String(resolvedThresholds.length));
 	});
 
 	/* ── ResizeObserver ───────────────────────────────── */
@@ -602,7 +638,7 @@
 							</svg>
 							<div class="cw-lchart__tt-alert-copy">
 								<div class="cw-lchart__tt-alert-head">
-									<span>{alertPoint.severity === 'critical' ? 'Critical alert' : 'Alert'}</span>
+									<span>{alertPoint.severity === 'critical' ? l.criticalAlert : l.alert}</span>
 									<span>{formatValue(alertPoint.value)}{primaryUnit}</span>
 								</div>
 								<div>{alertPoint.message}</div>

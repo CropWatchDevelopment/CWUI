@@ -1,3 +1,39 @@
+<script lang="ts" module>
+	/** Override display labels for i18n. All fields are optional; English defaults are used when omitted. */
+	export interface CwDateTimeRangePickerLabels {
+		/** Placeholder shown in the trigger when no date is selected. Default: "Select date…" */
+		placeholder?: string;
+		/** Accessible label for the dropdown dialog. Default: "Date picker" */
+		dialog?: string;
+		/** Accessible label for the previous (month/year) navigation button. Default: "Previous" */
+		previous?: string;
+		/** Accessible label for the next (month/year) navigation button. Default: "Next" */
+		next?: string;
+		/** Label for the single time field (single mode). Default: "Time" */
+		time?: string;
+		/** Label for the start time field (range mode). Default: "Start time" */
+		startTime?: string;
+		/** Label for the end time field (range mode). Default: "End time" */
+		endTime?: string;
+		/** Label for the cancel button. Default: "Cancel" */
+		cancel?: string;
+		/** Label for the confirm/set button. Default: "Set" */
+		set?: string;
+	}
+
+	const DEFAULT_LABELS: Required<CwDateTimeRangePickerLabels> = {
+		placeholder: 'Select date…',
+		dialog: 'Date picker',
+		previous: 'Previous',
+		next: 'Next',
+		time: 'Time',
+		startTime: 'Start time',
+		endTime: 'End time',
+		cancel: 'Cancel',
+		set: 'Set'
+	};
+</script>
+
 <script lang="ts">
 	import type { CwDatePickerMode, CwDateGranularity, CwDateValue, CwSingleDateValue, CwRangeDateValue } from '../types/index.js';
 	import type { HTMLInputAttributes } from 'svelte/elements';
@@ -14,6 +50,8 @@
 		autocomplete?: HTMLInputAttributes['autocomplete'];
 		maxDate?: Date;
 		onchange?: (value: CwDateValue) => void;
+		/** Override display labels for i18n */
+		labels?: CwDateTimeRangePickerLabels;
 		class?: string;
 	}
 
@@ -24,12 +62,17 @@
 		value = $bindable<CwDateValue | undefined>(undefined),
 		name,
 		required = false,
-		placeholder = 'Select date…',
+		placeholder,
 		autocomplete,
 		maxDate = new Date(),
 		onchange,
+		labels = {},
 		class: className = ''
 	}: Props = $props();
+
+	const l = $derived({ ...DEFAULT_LABELS, ...labels });
+	// Existing `placeholder` prop wins over the labels default when provided.
+	const effectivePlaceholder = $derived(placeholder ?? l.placeholder);
 
 	const uid = $props.id();
 	const defaultStartTime = { hours: 0, minutes: 0 };
@@ -395,7 +438,7 @@
 	function nextYear() { viewYear++; }
 
 	const displayValue = $derived.by(() => {
-		if (!value) return placeholder;
+		if (!value) return effectivePlaceholder;
 		if ('start' in value) {
 			const rv = value as CwRangeDateValue;
 			return `${formatDate(rv.start)} – ${formatDate(rv.end)}`;
@@ -573,12 +616,12 @@
 			style={dropdownStyle}
 			role="dialog"
 			tabindex="-1"
-			aria-label="Date picker"
+			aria-label={l.dialog}
 			onkeydown={handleDropdownKeydown}
 		>
 			<!-- Navigation -->
 			<div class="cw-date-picker__nav">
-				<button type="button" class="cw-date-picker__nav-btn" onclick={granularity === 'day' ? prevMonth : prevYear} aria-label="Previous">
+				<button type="button" class="cw-date-picker__nav-btn" onclick={granularity === 'day' ? prevMonth : prevYear} aria-label={l.previous}>
 					<svg viewBox="0 0 16 16" fill="none"><path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
 				</button>
 				<span class="cw-date-picker__nav-title">
@@ -590,7 +633,7 @@
 						{Math.floor(viewYear / 12) * 12}–{Math.floor(viewYear / 12) * 12 + 11}
 					{/if}
 				</span>
-				<button type="button" class="cw-date-picker__nav-btn" onclick={granularity === 'day' ? nextMonth : nextYear} aria-label="Next">
+				<button type="button" class="cw-date-picker__nav-btn" onclick={granularity === 'day' ? nextMonth : nextYear} aria-label={l.next}>
 					<svg viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
 				</button>
 			</div>
@@ -664,7 +707,7 @@
 				<div class="cw-date-picker__time">
 					<div class="cw-date-picker__time-group">
 						<label class="cw-date-picker__time-label" for="{uid}-sh">
-							{mode === 'range' ? 'Start time' : 'Time'}
+							{mode === 'range' ? l.startTime : l.time}
 						</label>
 						<div class="cw-date-picker__time-fields">
 							<input
@@ -687,7 +730,7 @@
 					</div>
 					{#if mode === 'range'}
 						<div class="cw-date-picker__time-group">
-							<label class="cw-date-picker__time-label" for="{uid}-eh">End time</label>
+							<label class="cw-date-picker__time-label" for="{uid}-eh">{l.endTime}</label>
 							<div class="cw-date-picker__time-fields">
 								<input
 									id="{uid}-eh"
@@ -710,10 +753,10 @@
 					{/if}
 					<div class="cw-date-picker__time-actions">
 						<CwButton type="button" variant="ghost" size="sm" onclick={handleCancel}>
-							Cancel
+							{l.cancel}
 						</CwButton>
 						<CwButton type="button" size="sm" onclick={handleSet} disabled={!hasCompleteSelection}>
-							Set
+							{l.set}
 						</CwButton>
 					</div>
 				</div>

@@ -1,3 +1,18 @@
+<script lang="ts" module>
+	/** Overridable user-facing labels for {@link CwHeatmap}. All fields are optional; English defaults are used when omitted. */
+	export interface CwHeatmapLabels {
+		/** Default chart title, used when the `title` prop is not provided. Defaults to "Temperature Heatmap". */
+		title?: string;
+		/** Text shown in the tooltip when a cell has no value. Defaults to "No data". */
+		noData?: string;
+	}
+
+	const DEFAULT_LABELS: Required<CwHeatmapLabels> = {
+		title: 'Temperature Heatmap',
+		noData: 'No data'
+	};
+</script>
+
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { CwHeatmapDataPoint, CwNoDataMessage } from '../types/index.js';
@@ -15,7 +30,7 @@
 		max?: number;
 		/** Unit label (e.g. "°C", "°F"). */
 		unit?: string;
-		/** Chart title. */
+		/** Chart title. Defaults to `labels.title` ("Temperature Heatmap"). */
 		title?: string;
 		/** Height of each hour row in px. */
 		rowHeight?: number;
@@ -24,6 +39,8 @@
 		/** Called when a cell is clicked. */
 		onCellClick?: (point: { date: string; hour: number; value: number | null }) => void;
 		noData?: CwNoDataMessage;
+		/** Override display labels for i18n. */
+		labels?: CwHeatmapLabels;
 		class?: string;
 	}
 
@@ -33,13 +50,16 @@
 		min: propMin,
 		max: propMax,
 		unit = '°C',
-		title = 'Temperature Heatmap',
+		title,
 		rowHeight = 24,
 		colors = ['#3b82f6', '#facc15', '#ef4444'],
 		onCellClick,
 		noData,
+		labels = {},
 		class: className = ''
 	}: Props = $props();
+
+	const l = $derived({ ...DEFAULT_LABELS, ...labels });
 
 	const data = $derived(dataInput ?? []);
 	const hasNoData = $derived(hasCwNoData(noData));
@@ -161,8 +181,8 @@
 	class:cw-no-data-host--active={hasNoData}
 	bind:this={containerEl}
 >
-	{#if title}
-		<h3 class="cw-heatmap__title">{title}</h3>
+	{#if title ?? l.title}
+		<h3 class="cw-heatmap__title">{title ?? l.title}</h3>
 	{/if}
 
 	<div class="cw-heatmap__scroll">
@@ -208,7 +228,7 @@
 	{#if tooltip}
 		<div class="cw-heatmap__tooltip" style="left:{tooltip.x}px; top:{tooltip.y}px;">
 			<strong>{tooltip.date}</strong> {tooltip.hour}<br/>
-			{tooltip.value !== null ? `${tooltip.value.toFixed(1)}${unit}` : 'No data'}
+			{tooltip.value !== null ? `${tooltip.value.toFixed(1)}${unit}` : l.noData}
 		</div>
 	{/if}
 

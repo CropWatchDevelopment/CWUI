@@ -146,3 +146,19 @@ export type {
 	CwAlertPointsValue,
 	CwAlertPointsEditorText
 } from './types/index.js';
+
+// ── Component label types (i18n) ────────────────────────────
+export type { CwVPDChartLabels, VpdZoneKey } from './components/CwVPDChart.svelte';
+export type { CwWindCompassLabels } from './components/CwWindCompass.svelte';
+export type { CwResponsiveLineChartLabels } from './components/CwResponsiveLineChart.svelte';
+export type { CwOfflineOverlayLabels } from './components/CwOfflineOverlay.svelte';
+export type { CwDeviceLineChartSectionLabels } from './components/CwDeviceLineChartSection.svelte';
+export type { CwPPFDChartLabels } from './components/CwPPFDChart.svelte';
+export type { CwDataTableLabels } from './components/CwDataTable.svelte';
+export type { DliCardLabels } from './components/DliCard.svelte';
+export type { CwLineChartLabels } from './components/CwLineChart.svelte';
+export type { CwHeatmapLabels } from './components/CwHeatmap.svelte';
+export type { CwCalendarScrollLabels } from './components/CwCalendarScroll.svelte';
+export type { CwDateTimeRangePickerLabels } from './components/CwDateTimeRangePicker.svelte';
+export type { CwCopyLabels } from './components/CwCopy.svelte';
+export type { CwDonutChartLabels } from './components/CwDonutChart.svelte';

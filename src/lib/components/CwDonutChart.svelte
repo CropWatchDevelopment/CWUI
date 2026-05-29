@@ -1,3 +1,23 @@
+<script lang="ts" module>
+	export interface CwDonutChartLabels {
+		/** Accessible label for the chart container (`role="img"`). Default: "Donut chart" */
+		ariaLabel?: string;
+		/** Fallback label shown in the center when no segment is hovered. Default: "Total" */
+		total?: string;
+		/** Suffix shown under the hovered segment's value, e.g. "of 120". Default: `of {total}` */
+		ofTotal?: (total: string | number) => string;
+		/** Accessible label / tooltip for a single arc, combining its label and value. Default: `{label}: {value}` */
+		segmentLabel?: (label: string, value: string | number) => string;
+	}
+
+	const DEFAULT_LABELS: Required<CwDonutChartLabels> = {
+		ariaLabel: 'Donut chart',
+		total: 'Total',
+		ofTotal: (total) => `of ${total}`,
+		segmentLabel: (label, value) => `${label}: ${value}`
+	};
+</script>
+
 <script lang="ts">
 	import type { CwDonutSegment, CwNoDataMessage } from '../types/index.js';
 	import CwNoDataOverlay from './CwNoDataOverlay.svelte';
@@ -9,6 +29,8 @@
 		thickness?: number;
 		showLegend?: boolean;
 		noData?: CwNoDataMessage;
+		/** Override display labels for i18n */
+		labels?: CwDonutChartLabels;
 		class?: string;
 	}
 
@@ -18,8 +40,11 @@
 		thickness = 40,
 		showLegend = true,
 		noData,
+		labels = {},
 		class: className = ''
 	}: Props = $props();
+
+	const l = $derived({ ...DEFAULT_LABELS, ...labels });
 
 	const uid = $props.id();
 	const segments = $derived(segmentsInput ?? []);
@@ -83,7 +108,7 @@
 	class="cw-donut-chart cw-no-data-host {className}"
 	class:cw-no-data-host--active={hasNoData}
 	role="img"
-	aria-label="Donut chart"
+	aria-label={l.ariaLabel}
 >
 	<div class="cw-donut-chart__chart">
 		<svg viewBox="0 0 {size} {size}" width={size} height={size}>
@@ -99,9 +124,9 @@
 					onmouseenter={() => (hoveredIndex = i)}
 					onmouseleave={() => (hoveredIndex = null)}
 					role="graphics-symbol"
-					aria-label="{arc.label}: {arc.value}"
+					aria-label={l.segmentLabel(arc.label, arc.value)}
 				>
-					<title>{arc.label}: {arc.value}</title>
+					<title>{l.segmentLabel(arc.label, arc.value)}</title>
 				</path>
 			{/each}
 		</svg>
@@ -111,10 +136,10 @@
 			{#if hoveredSegment}
 				<span class="cw-donut-chart__center-value">{hoveredSegment.value}</span>
 				<span class="cw-donut-chart__center-label">{hoveredSegment.label}</span>
-				<span class="cw-donut-chart__center-total">of {total}</span>
+				<span class="cw-donut-chart__center-total">{l.ofTotal(total)}</span>
 			{:else}
 				<span class="cw-donut-chart__center-value">{total}</span>
-				<span class="cw-donut-chart__center-label">Total</span>
+				<span class="cw-donut-chart__center-label">{l.total}</span>
 			{/if}
 		</div>
 	</div>

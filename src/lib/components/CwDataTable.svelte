@@ -1,3 +1,123 @@
+<script lang="ts" module>
+	/**
+	 * Overridable display labels for `CwDataTable` (i18n).
+	 * Every field is optional; omitted fields fall back to the English defaults.
+	 * Function fields build interpolated strings from runtime values.
+	 */
+	export interface CwDataTableLabels {
+		/** Search input placeholder. Default: "Search..." */
+		searchPlaceholder?: string;
+		/** Loading text shown in the centered loading badge and body spinner. Default: "Loading..." */
+		loading?: string;
+		/** Text shown while appending more rows in virtual-scroll mode. Default: "Loading more rows..." */
+		loadingMore?: string;
+		/** First option in the mobile sort dropdown (clears sorting). Default: "No sort" */
+		noSort?: string;
+		/** Builds the ascending mobile-sort option label for a column. Default: `${header} (A-Z)` */
+		sortAscOption?: (header: string) => string;
+		/** Builds the descending mobile-sort option label for a column. Default: `${header} (Z-A)` */
+		sortDescOption?: (header: string) => string;
+		/** Builds the page-size option label in paged mode. Default: `${n} rows` */
+		pageSizeOption?: (n: number) => string;
+		/** Builds the page-size option label in virtual-scroll mode. Default: `${n} rows/batch` */
+		pageSizeBatchOption?: (n: number) => string;
+		/** Aria-label for the toolbar overflow menu button. Default: "Open table options" */
+		toolbarMenu?: string;
+		/** Toolbar menu item and column-settings dialog title. Default: "Columns Settings" */
+		columnsSettings?: string;
+		/** Toolbar menu item that refreshes the table. Default: "Refresh" */
+		refresh?: string;
+		/** Fallback header for the row actions column. Default: "Actions" */
+		actions?: string;
+		/** Builds the inline error message shown in the table body. Default: `Error: ${message}` */
+		errorPrefix?: (message: string) => string;
+		/** Retry button label for error and append-error states. Default: "Retry" */
+		retry?: string;
+		/** Empty-state text when there are no rows. Default: "No data available" */
+		empty?: string;
+		/** Fallback message when an initial data load fails. Default: "An error occurred" */
+		genericError?: string;
+		/** Fallback message when loading additional virtual-scroll rows fails. Default: "Unable to load more rows" */
+		loadMoreError?: string;
+		/** Builds the group-row count label. Default: count === 1 ? "1 item" : `${count} items` */
+		groupCount?: (count: number) => string;
+		/** Builds the paged pagination range label. Default: `${from}–${to} of ${total}` */
+		paginationRange?: (from: number, to: number, total: number) => string;
+		/** Builds the virtual-scroll range label when the total is known. Default: `${from}–${to} of ${total}` */
+		virtualRange?: (from: number, to: number, total: number) => string;
+		/** Builds the virtual-scroll range label when the total is unknown. Default: `${from}–${to} loaded` */
+		virtualRangeLoaded?: (from: number, to: number) => string;
+		/** Virtual-scroll meta text when a load was interrupted by an error. Default: "Load interrupted" */
+		loadInterrupted?: string;
+		/** Virtual-scroll meta text when more rows can be loaded. Default: "Scroll to load more" */
+		scrollToLoadMore?: string;
+		/** Builds the virtual-scroll meta text when all rows are loaded and total is known. Default: `All ${total} rows loaded` */
+		allRowsLoaded?: (total: number) => string;
+		/** Virtual-scroll meta text when all loaded rows are visible and total is unknown. Default: "All loaded rows visible" */
+		allLoadedVisible?: string;
+		/** Aria-label for the previous-page button. Default: "Previous page" */
+		previousPage?: string;
+		/** Aria-label for the next-page button. Default: "Next page" */
+		nextPage?: string;
+		/** Builds the "Page X of Y" indicator. Default: `Page ${page} of ${totalPages}` */
+		pageOf?: (page: number, totalPages: number) => string;
+		/** Explanatory copy at the top of the column-settings dialog. Default: "Choose which columns are visible for this grid." */
+		columnSettingsCopy?: string;
+		/** Aria-label for the column-settings checkbox group. Default: "Visible columns" */
+		visibleColumns?: string;
+		/** Warning shown when no columns are selected in the dialog. Default: "Select at least one column before saving." */
+		selectAtLeastOne?: string;
+		/** Column-settings dialog close button. Default: "Close" */
+		close?: string;
+		/** Column-settings dialog reset button. Default: "Reset to Default" */
+		resetToDefault?: string;
+		/** Column-settings dialog save button. Default: "Save" */
+		save?: string;
+	}
+
+	const DEFAULT_LABELS: Required<CwDataTableLabels> = {
+		searchPlaceholder: "Search...",
+		loading: "Loading...",
+		loadingMore: "Loading more rows...",
+		noSort: "No sort",
+		sortAscOption: (header: string) => `${header} (A-Z)`,
+		sortDescOption: (header: string) => `${header} (Z-A)`,
+		pageSizeOption: (n: number) => `${n} rows`,
+		pageSizeBatchOption: (n: number) => `${n} rows/batch`,
+		toolbarMenu: "Open table options",
+		columnsSettings: "Columns Settings",
+		refresh: "Refresh",
+		actions: "Actions",
+		errorPrefix: (message: string) => `Error: ${message}`,
+		retry: "Retry",
+		empty: "No data available",
+		genericError: "An error occurred",
+		loadMoreError: "Unable to load more rows",
+		groupCount: (count: number) =>
+			count === 1 ? "1 item" : `${count} items`,
+		paginationRange: (from: number, to: number, total: number) =>
+			`${from}–${to} of ${total}`,
+		virtualRange: (from: number, to: number, total: number) =>
+			`${from}–${to} of ${total}`,
+		virtualRangeLoaded: (from: number, to: number) =>
+			`${from}–${to} loaded`,
+		loadInterrupted: "Load interrupted",
+		scrollToLoadMore: "Scroll to load more",
+		allRowsLoaded: (total: number) => `All ${total} rows loaded`,
+		allLoadedVisible: "All loaded rows visible",
+		previousPage: "Previous page",
+		nextPage: "Next page",
+		pageOf: (page: number, totalPages: number) =>
+			`Page ${page} of ${totalPages}`,
+		columnSettingsCopy: "Choose which columns are visible for this grid.",
+		visibleColumns: "Visible columns",
+		selectAtLeastOne: "Select at least one column before saving.",
+		close: "Close",
+		resetToDefault: "Reset to Default",
+		save: "Save",
+	};
+</script>
+
 <script lang="ts" generics="T">
 	import { onDestroy, tick } from "svelte";
 	import type { Snippet } from "svelte";
@@ -86,6 +206,8 @@
 		virtualRowHeight?: number;
 		/** Number of extra rows rendered above and below the viewport for smoother touch scrolling. */
 		virtualOverscan?: number;
+		/** Override display labels for i18n. Individual text props (e.g. `ungroupedLabel`, `rowActionsHeader`) take precedence. */
+		labels?: CwDataTableLabels;
 		class?: string;
 	}
 
@@ -122,8 +244,11 @@
 		virtualScrollHeight = "28rem",
 		virtualRowHeight = 52,
 		virtualOverscan = 12,
+		labels = {},
 		class: className = "",
 	}: Props = $props();
+
+	const l = $derived({ ...DEFAULT_LABELS, ...labels });
 
 	const uid = $props.id();
 
@@ -177,10 +302,10 @@
 		visibleColumns.filter((col) => col.sortable),
 	);
 	const mobileSortOptions = $derived([
-		{ label: "No sort", value: "" },
+		{ label: l.noSort, value: "" },
 		...sortableColumns.flatMap((col) => [
-			{ label: `${col.header} (A-Z)`, value: `${col.key}:asc` },
-			{ label: `${col.header} (Z-A)`, value: `${col.key}:desc` },
+			{ label: l.sortAscOption(col.header), value: `${col.key}:asc` },
+			{ label: l.sortDescOption(col.header), value: `${col.key}:desc` },
 		]),
 	]);
 	const mobileSortValue = $derived(
@@ -726,7 +851,7 @@
 			if (err instanceof DOMException && err.name === "AbortError")
 				return;
 			if (version !== requestVersion) return;
-			error = err instanceof Error ? err.message : "An error occurred";
+			error = err instanceof Error ? err.message : l.genericError;
 			rows = [];
 			total =
 				typeof totalItems === "number" && Number.isFinite(totalItems)

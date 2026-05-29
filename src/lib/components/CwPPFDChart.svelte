@@ -1,3 +1,60 @@
+<script lang="ts" module>
+	/** Override display labels for i18n. All fields optional; English defaults are used when omitted. */
+	export interface CwPPFDChartLabels {
+		/** Eyebrow text above the heading. Default: "Photosynthetic Photon Flux Density". */
+		eyebrow?: string;
+		/** Heading shown when no plant name is provided. Default: "PPFD range gauge". */
+		heading?: string;
+		/** Heading builder when a plant name is provided. Default: `${plant} PPFD`. */
+		headingWithPlant?: (plant: string) => string;
+		/** Label for the current PPFD reading. Default: "Current PPFD". */
+		currentPpfd?: string;
+		/** Label for the current marker on the gauge. Default: "Current". */
+		current?: string;
+		/** Label for the DLI reading box. Default: "DLI Today". */
+		dliReading?: string;
+		/** Label for the DLI stat. Default: "DLI today". */
+		dliStat?: string;
+		/** Label for the target range stat. Default: "Target range". */
+		targetRange?: string;
+		/** Label for the status stat. Default: "Status". */
+		status?: string;
+		/** Status text when the current value is below target. Default: "Too low". */
+		tooLow?: string;
+		/** Status text when the current value is above target. Default: "Too high". */
+		tooHigh?: string;
+		/** Status text when the current value is within target. Default: "Optimal". */
+		optimal?: string;
+		/** Delta text when the current value is within target. Default: "Inside target band". */
+		insideBand?: string;
+		/** Delta builder when below target. Default: `${amount} ${unit} below target`. */
+		deltaBelow?: (amount: string, unit: string) => string;
+		/** Delta builder when above target. Default: `${amount} ${unit} above target`. */
+		deltaAbove?: (amount: string, unit: string) => string;
+		/** Builder for the "Updated …" timestamp line. Default: `Updated ${when}`. */
+		updated?: (when: string) => string;
+	}
+
+	const DEFAULT_LABELS: Required<CwPPFDChartLabels> = {
+		eyebrow: 'Photosynthetic Photon Flux Density',
+		heading: 'PPFD range gauge',
+		headingWithPlant: (plant: string) => `${plant} PPFD`,
+		currentPpfd: 'Current PPFD',
+		current: 'Current',
+		dliReading: 'DLI Today',
+		dliStat: 'DLI today',
+		targetRange: 'Target range',
+		status: 'Status',
+		tooLow: 'Too low',
+		tooHigh: 'Too high',
+		optimal: 'Optimal',
+		insideBand: 'Inside target band',
+		deltaBelow: (amount: string, unit: string) => `${amount} ${unit} below target`,
+		deltaAbove: (amount: string, unit: string) => `${amount} ${unit} above target`,
+		updated: (when: string) => `Updated ${when}`
+	};
+</script>
+
 <script lang="ts">
 	import type { CwNoDataMessage, CwPPFDStatus, CwPPFDTick } from '../types/index.js';
 	import CwNoDataOverlay from './CwNoDataOverlay.svelte';
@@ -19,6 +76,7 @@
 		lowLabel?: string;
 		optimalLabel?: string;
 		highLabel?: string;
+		labels?: CwPPFDChartLabels;
 		noData?: CwNoDataMessage;
 		class?: string;
 	}
@@ -39,9 +97,12 @@
 		lowLabel = 'Low',
 		optimalLabel = 'Optimal',
 		highLabel = 'High',
+		labels = {},
 		noData,
 		class: className = ''
 	}: Props = $props();
+
+	const l = $derived({ ...DEFAULT_LABELS, ...labels });
 
 	const uid = $props.id();
 	const ppfdFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
@@ -145,9 +206,9 @@
 	});
 
 	const statusLabel = $derived(
-		status === 'low' ? 'Too low' : status === 'high' ? 'Too high' : 'Optimal'
+		status === 'low' ? l.tooLow : status === 'high' ? l.tooHigh : l.optimal
 	);
-	const heading = $derived(plant.trim() ? `${plant} PPFD` : 'PPFD range gauge');
+	const heading = $derived(plant.trim() ? l.headingWithPlant(plant) : l.heading);
 	const formattedCurrent = $derived(`${ppfdFormatter.format(currentValue)} ${unit}`);
 	const formattedTargetRange = $derived(
 		`${ppfdFormatter.format(normalizedRange.min)}-${ppfdFormatter.format(normalizedRange.max)} ${unit}`
@@ -159,12 +220,12 @@
 	const deltaMessage = $derived.by(() => {
 		if (!showDelta) return '';
 		if (status === 'low') {
-			return `${ppfdFormatter.format(normalizedRange.min - currentValue)} ${unit} below target`;
+			return l.deltaBelow(ppfdFormatter.format(normalizedRange.min - currentValue), unit);
 		}
 		if (status === 'high') {
-			return `${ppfdFormatter.format(currentValue - normalizedRange.max)} ${unit} above target`;
+			return l.deltaAbove(ppfdFormatter.format(currentValue - normalizedRange.max), unit);
 		}
-		return 'Inside target band';
+		return l.insideBand;
 	});
 
 	const gaugeTicks = $derived.by(() => {
@@ -185,13 +246,13 @@
 	const srSummary = $derived.by(() => {
 		const parts = [
 			heading,
-			`Current ${formattedCurrent}`,
-			`Target ${formattedTargetRange}`,
-			`Status ${statusLabel}`
+			`${l.current} ${formattedCurrent}`,
+			`${l.targetRange} ${formattedTargetRange}`,
+			`${l.status} ${statusLabel}`
 		];
 
 		if (deltaMessage) parts.push(deltaMessage);
-		if (formattedDli) parts.push(`DLI today ${formattedDli}`);
+		if (formattedDli) parts.push(`${l.dliStat} ${formattedDli}`);
 		return `${parts.join('. ')}.`;
 	});
 </script>
@@ -202,23 +263,23 @@
 >
 	<div class="cw-ppfd-chart__header">
 		<div class="cw-ppfd-chart__header-copy">
-			<p class="cw-ppfd-chart__eyebrow">Photosynthetic Photon Flux Density</p>
+			<p class="cw-ppfd-chart__eyebrow">{l.eyebrow}</p>
 			<h3 id="{uid}-title" class="cw-ppfd-chart__title">{heading}</h3>
 			{#if updatedLabel}
-				<p class="cw-ppfd-chart__updated">Updated {updatedLabel}</p>
+				<p class="cw-ppfd-chart__updated">{l.updated(updatedLabel)}</p>
 			{/if}
 		</div>
 
 		<div class="cw-ppfd-chart__readings">
 			{#if formattedDli}
 				<div class="cw-ppfd-chart__reading cw-ppfd-chart__reading--dli">
-					<span class="cw-ppfd-chart__reading-label">DLI Today</span>
+					<span class="cw-ppfd-chart__reading-label">{l.dliReading}</span>
 					<strong class="cw-ppfd-chart__reading-value">{formattedDli}</strong>
 				</div>
 			{/if}
 
 			<div class="cw-ppfd-chart__reading">
-				<span class="cw-ppfd-chart__reading-label">Current PPFD</span>
+				<span class="cw-ppfd-chart__reading-label">{l.currentPpfd}</span>
 				<strong class="cw-ppfd-chart__reading-value">{formattedCurrent}</strong>
 			</div>
 		</div>
@@ -227,18 +288,18 @@
 	{#if showSummary}
 		<dl class="cw-ppfd-chart__stats">
 			<div class="cw-ppfd-chart__stat">
-				<dt>Target range</dt>
+				<dt>{l.targetRange}</dt>
 				<dd>{formattedTargetRange}</dd>
 			</div>
 
 			<div class="cw-ppfd-chart__stat cw-ppfd-chart__stat--status cw-ppfd-chart__stat--{status}">
-				<dt>Status</dt>
+				<dt>{l.status}</dt>
 				<dd>{statusLabel}</dd>
 			</div>
 
 			{#if formattedDli}
 				<div class="cw-ppfd-chart__stat">
-					<dt>DLI today</dt>
+					<dt>{l.dliStat}</dt>
 					<dd>{formattedDli}</dd>
 				</div>
 			{/if}
@@ -265,7 +326,7 @@
 				class="cw-ppfd-chart__marker-label cw-ppfd-chart__marker-label--{markerAlign}"
 				style:left="{markerPercent}%"
 			>
-				<span>Current</span>
+				<span>{l.current}</span>
 				<strong>{formattedCurrent}</strong>
 			</div>
 

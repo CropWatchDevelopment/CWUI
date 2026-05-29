@@ -1,3 +1,171 @@
+<script lang="ts" module>
+	/**
+	 * Overridable display strings for {@link CwWindCompass}. All fields are
+	 * optional; any omitted field falls back to the built-in English default.
+	 * Decorative / help-text fields have no default and are hidden unless set.
+	 */
+	export interface CwWindCompassLabels {
+		/** Small uppercase eyebrow above the title. Default `"Wind"`. */
+		eyebrow?: string;
+		/** Heading shown when no `location` is supplied. Default `"Wind compass"`. */
+		headingFallback?: string;
+		/**
+		 * Heading built from a location label, e.g. `"Field 3 wind"`.
+		 * Default `` `${location} wind` ``.
+		 */
+		heading?: (location: string) => string;
+		/**
+		 * Decorative subtitle paragraph under the title. No default — the
+		 * paragraph is hidden entirely unless this string is supplied.
+		 */
+		subtitle?: string;
+		/** Beaufort pill formatter. Default `` `Bft ${force} · ${label}` ``. */
+		beaufortPill?: (force: number, label: string) => string;
+		/**
+		 * Reading block label. Receives the already-localised convention word
+		 * (the `conventionFrom`/`conventionTo` value). Default `` `Wind ${word}` ``.
+		 */
+		readingLabel?: (conventionWord: string) => string;
+		/** Prefix for the "updated at" line, e.g. `"Updated …"`. Default `"Updated"`. */
+		updatedLabel?: (formatted: string) => string;
+		/** Convention word for "from". Default `"from"`. */
+		conventionFrom?: string;
+		/** Convention word for "to". Default `"to"`. */
+		conventionTo?: string;
+		/** Stat label: direction. Default `"Direction"`. */
+		statDirection?: string;
+		/**
+		 * Stat label: heading (the opposite of the reading direction). Receives
+		 * the already-localised convention word. Default `` `Heading ${word}` ``.
+		 */
+		statHeading?: (conventionWord: string) => string;
+		/** Stat label: speed. Default `"Speed"`. */
+		statSpeed?: string;
+		/** Stat label: Beaufort. Default `"Beaufort"`. */
+		statBeaufort?: string;
+		/** Stat value: Beaufort force + name, e.g. `"F4 · Moderate"`. */
+		statBeaufortValue?: (force: number, label: string) => string;
+		/** Stat label: conditions / guidance. Default `"Conditions"`. */
+		statConditions?: string;
+		/** Beaufort legend section title. Default `"Beaufort scale reference"`. */
+		legendTitle?: string;
+		/**
+		 * Cardinal direction abbreviations, 16 entries clockwise from North:
+		 * `["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"]`.
+		 * Used for compass-letter readouts and SR text.
+		 */
+		cardinals?: string[];
+		/** The four major cardinal letters drawn on the dial: `["N","E","S","W"]`. */
+		cardinalLetters?: { n: string; e: string; s: string; w: string };
+		/**
+		 * Beaufort force names, indexed by force 0–12. Default English names
+		 * (`"Calm"`, `"Light air"`, … `"Hurricane"`).
+		 */
+		beaufortNames?: string[];
+		/**
+		 * Per-force descriptive guidance sentences, indexed by force 0–12.
+		 * No default — guidance text is hidden unless supplied.
+		 */
+		beaufortGuidance?: string[];
+		/**
+		 * Beaufort legend group labels keyed by tone
+		 * (`"Calm air"`, `"Light"`, `"Moderate"`, `"Strong"`, `"Gale"`, `"Storm"`).
+		 */
+		beaufortGroupLabels?: {
+			calm?: string;
+			light?: string;
+			moderate?: string;
+			strong?: string;
+			gale?: string;
+			storm?: string;
+		};
+		/**
+		 * SR-summary line: `"Wind from 270° W"`. Receives the already-localised
+		 * convention word, the formatted direction, and the cardinal abbreviation.
+		 */
+		srWind?: (
+			conventionWord: string,
+			direction: string,
+			cardinal: string,
+		) => string;
+		/** SR-summary line: `"Speed 5 m/s"`. */
+		srSpeed?: (speed: string) => string;
+		/** SR-summary line: `"Beaufort 4, Moderate"`. */
+		srBeaufort?: (force: number, label: string) => string;
+	}
+
+	const DEFAULT_BEAUFORT_NAMES = [
+		"Calm",
+		"Light air",
+		"Light breeze",
+		"Gentle breeze",
+		"Moderate",
+		"Fresh",
+		"Strong",
+		"Near gale",
+		"Gale",
+		"Strong gale",
+		"Storm",
+		"Violent storm",
+		"Hurricane",
+	];
+
+	const DEFAULT_CARDINALS = [
+		"N",
+		"NNE",
+		"NE",
+		"ENE",
+		"E",
+		"ESE",
+		"SE",
+		"SSE",
+		"S",
+		"SSW",
+		"SW",
+		"WSW",
+		"W",
+		"WNW",
+		"NW",
+		"NNW",
+	];
+
+	const DEFAULT_LABELS = {
+		eyebrow: "Wind",
+		headingFallback: "Wind compass",
+		heading: (location: string) => `${location} wind`,
+		beaufortPill: (force: number, label: string) =>
+			`Bft ${force} · ${label}`,
+		readingLabel: (conventionWord: string) => `Wind ${conventionWord}`,
+		updatedLabel: (formatted: string) => `Updated ${formatted}`,
+		conventionFrom: "from",
+		conventionTo: "to",
+		statDirection: "Direction",
+		statHeading: (conventionWord: string) => `Heading ${conventionWord}`,
+		statSpeed: "Speed",
+		statBeaufort: "Beaufort",
+		statBeaufortValue: (force: number, label: string) =>
+			`F${force} · ${label}`,
+		statConditions: "Conditions",
+		legendTitle: "Beaufort scale reference",
+		cardinals: DEFAULT_CARDINALS,
+		cardinalLetters: { n: "N", e: "E", s: "S", w: "W" },
+		beaufortNames: DEFAULT_BEAUFORT_NAMES,
+		beaufortGroupLabels: {
+			calm: "Calm air",
+			light: "Light",
+			moderate: "Moderate",
+			strong: "Strong",
+			gale: "Gale",
+			storm: "Storm",
+		},
+		srWind: (conventionWord: string, direction: string, cardinal: string) =>
+			`Wind ${conventionWord} ${direction} ${cardinal}`,
+		srSpeed: (speed: string) => `Speed ${speed}`,
+		srBeaufort: (force: number, label: string) =>
+			`Beaufort ${force}, ${label}`,
+	};
+</script>
+
 <script lang="ts">
 	import type {
 		CwNoDataMessage,
@@ -41,6 +209,8 @@
 		 */
 		cardinal?: string;
 		noData?: CwNoDataMessage;
+		/** Override display strings for i18n. English defaults are used for any omitted field. */
+		labels?: CwWindCompassLabels;
 		class?: string;
 	}
 
@@ -57,112 +227,54 @@
 		showLegend = true,
 		cardinal = $bindable(""),
 		noData,
+		labels = {},
 		class: className = "",
 	}: Props = $props();
+
+	const l = $derived({
+		...DEFAULT_LABELS,
+		...labels,
+		cardinalLetters: {
+			...DEFAULT_LABELS.cardinalLetters,
+			...labels.cardinalLetters,
+		},
+		beaufortGroupLabels: {
+			...DEFAULT_LABELS.beaufortGroupLabels,
+			...labels.beaufortGroupLabels,
+		},
+	});
 
 	const uid = $props.id();
 
 	/* ── Beaufort table (m/s thresholds) ──────────────────── */
+	type BeaufortTone =
+		| "calm"
+		| "light"
+		| "moderate"
+		| "strong"
+		| "gale"
+		| "storm";
+
 	interface BeaufortStep {
 		force: number;
-		label: string;
 		maxMs: number;
-		tone: "calm" | "light" | "moderate" | "strong" | "gale" | "storm";
-		guidance: string;
+		tone: BeaufortTone;
 	}
 
 	const BEAUFORT_TABLE: BeaufortStep[] = [
-		{
-			force: 0,
-			label: "Calm",
-			maxMs: 0.3,
-			tone: "calm",
-			guidance: "Smoke rises vertically; canopy still.",
-		},
-		{
-			force: 1,
-			label: "Light air",
-			maxMs: 1.5,
-			tone: "calm",
-			guidance: "Drift visible in smoke; leaves barely moving.",
-		},
-		{
-			force: 2,
-			label: "Light breeze",
-			maxMs: 3.3,
-			tone: "light",
-			guidance: "Felt on face; leaves rustle.",
-		},
-		{
-			force: 3,
-			label: "Gentle breeze",
-			maxMs: 5.4,
-			tone: "light",
-			guidance: "Light flags lift; leaves in constant motion.",
-		},
-		{
-			force: 4,
-			label: "Moderate",
-			maxMs: 7.9,
-			tone: "moderate",
-			guidance: "Dust raised; small branches move.",
-		},
-		{
-			force: 5,
-			label: "Fresh",
-			maxMs: 10.7,
-			tone: "moderate",
-			guidance: "Small trees sway; whitecaps inland.",
-		},
-		{
-			force: 6,
-			label: "Strong",
-			maxMs: 13.8,
-			tone: "strong",
-			guidance: "Large branches move; spraying possible.",
-		},
-		{
-			force: 7,
-			label: "Near gale",
-			maxMs: 17.1,
-			tone: "strong",
-			guidance: "Whole trees in motion; walking effort.",
-		},
-		{
-			force: 8,
-			label: "Gale",
-			maxMs: 20.7,
-			tone: "gale",
-			guidance: "Twigs break; progress impeded.",
-		},
-		{
-			force: 9,
-			label: "Strong gale",
-			maxMs: 24.4,
-			tone: "gale",
-			guidance: "Slight structural damage; tiles loosened.",
-		},
-		{
-			force: 10,
-			label: "Storm",
-			maxMs: 28.4,
-			tone: "storm",
-			guidance: "Trees uprooted; considerable damage.",
-		},
-		{
-			force: 11,
-			label: "Violent storm",
-			maxMs: 32.6,
-			tone: "storm",
-			guidance: "Widespread damage; rare inland.",
-		},
-		{
-			force: 12,
-			label: "Hurricane",
-			maxMs: Number.POSITIVE_INFINITY,
-			tone: "storm",
-			guidance: "Devastating effects.",
-		},
+		{ force: 0, maxMs: 0.3, tone: "calm" },
+		{ force: 1, maxMs: 1.5, tone: "calm" },
+		{ force: 2, maxMs: 3.3, tone: "light" },
+		{ force: 3, maxMs: 5.4, tone: "light" },
+		{ force: 4, maxMs: 7.9, tone: "moderate" },
+		{ force: 5, maxMs: 10.7, tone: "moderate" },
+		{ force: 6, maxMs: 13.8, tone: "strong" },
+		{ force: 7, maxMs: 17.1, tone: "strong" },
+		{ force: 8, maxMs: 20.7, tone: "gale" },
+		{ force: 9, maxMs: 24.4, tone: "gale" },
+		{ force: 10, maxMs: 28.4, tone: "storm" },
+		{ force: 11, maxMs: 32.6, tone: "storm" },
+		{ force: 12, maxMs: Number.POSITIVE_INFINITY, tone: "storm" },
 	];
 
 	/* ── Unit conversions ─────────────────────────────────── */
@@ -191,28 +303,9 @@
 		return wrapped;
 	}
 
-	const CARDINAL_LABELS = [
-		"N",
-		"NNE",
-		"NE",
-		"ENE",
-		"E",
-		"ESE",
-		"SE",
-		"SSE",
-		"S",
-		"SSW",
-		"SW",
-		"WSW",
-		"W",
-		"WNW",
-		"NW",
-		"NNW",
-	];
-
 	function cardinalLabel(deg: number): string {
 		const idx = Math.round(normalizeDeg(deg) / 22.5) % 16;
-		return CARDINAL_LABELS[idx];
+		return l.cardinals[idx] ?? DEFAULT_CARDINALS[idx];
 	}
 
 	const hasNoData = $derived(hasCwNoData(noData));
@@ -243,6 +336,15 @@
 			BEAUFORT_TABLE[BEAUFORT_TABLE.length - 1]
 		);
 	});
+
+	/** Localised Beaufort force name for the current step. */
+	const beaufortName = $derived(
+		l.beaufortNames[beaufort.force] ??
+			DEFAULT_BEAUFORT_NAMES[beaufort.force] ??
+			"",
+	);
+	/** Optional per-force guidance sentence (hidden unless supplied via labels). */
+	const beaufortGuidance = $derived(l.beaufortGuidance?.[beaufort.force]);
 
 
 	/* ── Geometry ──────────────────────────────────────────── */
@@ -317,15 +419,22 @@
 		return items;
 	});
 
-	const cardinalPositions = [
-		{ deg: 0, label: "N" },
-		{ deg: 90, label: "E" },
-		{ deg: 180, label: "S" },
-		{ deg: 270, label: "W" },
+	const CARDINAL_POSITIONS = [
+		{ deg: 0, key: "n" as const },
+		{ deg: 90, key: "e" as const },
+		{ deg: 180, key: "s" as const },
+		{ deg: 270, key: "w" as const },
 	].map((c) => ({
 		...c,
 		...polar(c.deg, CARDINAL_R),
 	}));
+
+	const cardinalPositions = $derived(
+		CARDINAL_POSITIONS.map((c) => ({
+			...c,
+			label: l.cardinalLetters[c.key],
+		})),
+	);
 
 	/* ── Formatting ───────────────────────────────────────── */
 	const speedFormatter = new Intl.NumberFormat(undefined, {
@@ -363,7 +472,7 @@
 		}
 	}
 
-	const updatedLabel = $derived(
+	const updatedAt = $derived(
 		timestamp === undefined ? "" : formatUpdatedAt(timestamp),
 	);
 
@@ -385,70 +494,63 @@
 	/* ── Beaufort legend grouping ──────────────────────────── */
 	interface BeaufortGroup {
 		tone: BeaufortStep["tone"];
-		label: string;
 		minForce: number;
 		maxForce: number;
 		minMs: number;
 		maxMs: number;
-		guidance: string;
 	}
 
-	const beaufortGroups: BeaufortGroup[] = [
+	const BEAUFORT_GROUPS: BeaufortGroup[] = [
 		{
 			tone: "calm",
-			label: "Calm air",
 			minForce: 0,
 			maxForce: 1,
 			minMs: 0,
 			maxMs: BEAUFORT_TABLE[1].maxMs,
-			guidance: "Negligible movement; canopy and smoke nearly still.",
 		},
 		{
 			tone: "light",
-			label: "Light",
 			minForce: 2,
 			maxForce: 3,
 			minMs: BEAUFORT_TABLE[1].maxMs,
 			maxMs: BEAUFORT_TABLE[3].maxMs,
-			guidance: "Pleasant breeze; leaves and small flags move.",
 		},
 		{
 			tone: "moderate",
-			label: "Moderate",
 			minForce: 4,
 			maxForce: 5,
 			minMs: BEAUFORT_TABLE[3].maxMs,
 			maxMs: BEAUFORT_TABLE[5].maxMs,
-			guidance: "Branches sway; dust and loose paper raised.",
 		},
 		{
 			tone: "strong",
-			label: "Strong",
 			minForce: 6,
 			maxForce: 7,
 			minMs: BEAUFORT_TABLE[5].maxMs,
 			maxMs: BEAUFORT_TABLE[7].maxMs,
-			guidance: "Whole trees move; walking and spraying impeded.",
 		},
 		{
 			tone: "gale",
-			label: "Gale",
 			minForce: 8,
 			maxForce: 9,
 			minMs: BEAUFORT_TABLE[7].maxMs,
 			maxMs: BEAUFORT_TABLE[9].maxMs,
-			guidance: "Twigs break; structural damage possible.",
 		},
 		{
 			tone: "storm",
-			label: "Storm",
 			minForce: 10,
 			maxForce: 12,
 			minMs: BEAUFORT_TABLE[9].maxMs,
 			maxMs: Number.POSITIVE_INFINITY,
-			guidance: "Trees uprooted; widespread damage.",
 		},
 	];
+
+	const beaufortGroups = $derived(
+		BEAUFORT_GROUPS.map((group) => ({
+			...group,
+			label: l.beaufortGroupLabels[group.tone],
+		})),
+	);
 
 	function formatRangeMs(min: number, max: number): string {
 		const minDisplay = speedFormatter.format(min / TO_MS[unit]);
@@ -459,17 +561,32 @@
 	}
 
 	const heading = $derived(
-		location.trim() ? `${location} wind` : "Wind compass",
+		location.trim() ? l.heading(location) : l.headingFallback,
 	);
 
-	const fromOrTo = $derived(convention === "from" ? "from" : "to");
+	/** Logical convention of the displayed direction. */
+	const fromOrTo = $derived<"from" | "to">(
+		convention === "from" ? "from" : "to",
+	);
+	/** Logical convention of the flow (heading) direction — the opposite. */
+	const headingFromOrTo = $derived<"from" | "to">(
+		fromOrTo === "from" ? "to" : "from",
+	);
+	/** Localised convention word for the displayed direction. */
+	const conventionWord = $derived(
+		fromOrTo === "from" ? l.conventionFrom : l.conventionTo,
+	);
+	/** Localised convention word for the flow (heading) direction. */
+	const headingConventionWord = $derived(
+		headingFromOrTo === "from" ? l.conventionFrom : l.conventionTo,
+	);
 
 	const srSummary = $derived(
 		[
 			heading,
-			`Wind ${fromOrTo} ${formattedDirection} ${directionCardinal}`,
-			`Speed ${formattedSpeed}`,
-			`Beaufort ${beaufort.force}, ${beaufort.label}`,
+			l.srWind(conventionWord, formattedDirection, directionCardinal),
+			l.srSpeed(formattedSpeed),
+			l.srBeaufort(beaufort.force, beaufortName),
 		].join(". "),
 	);
 </script>
@@ -486,7 +603,7 @@
 >
 	<header class="cw-wind-compass__header">
 		<div class="cw-wind-compass__header-copy">
-			<p class="cw-wind-compass__eyebrow">Wind</p>
+			<p class="cw-wind-compass__eyebrow">{l.eyebrow}</p>
 			<div class="cw-wind-compass__title-row">
 				<h3 id="{uid}-title" class="cw-wind-compass__title">{heading}</h3>
 				<span
@@ -495,19 +612,17 @@
 						`cw-wind-compass__beaufort-pill--${beaufort.tone}`,
 					]}
 				>
-					Bft {beaufort.force} · {beaufort.label}
+					{l.beaufortPill(beaufort.force, beaufortName)}
 				</span>
 			</div>
-			<p class="cw-wind-compass__subtitle">
-				Aviation-style heading dial. Cardinal letters mark the dial,
-				numerical labels read in tens of degrees, and the live speed
-				appears as a digital readout in the centre of the instrument.
-			</p>
+			{#if l.subtitle}
+				<p class="cw-wind-compass__subtitle">{l.subtitle}</p>
+			{/if}
 		</div>
 
 		<div class="cw-wind-compass__reading">
 			<span class="cw-wind-compass__reading-label"
-				>Wind {fromOrTo}</span
+				>{l.readingLabel(conventionWord)}</span
 			>
 			<strong class="cw-wind-compass__reading-direction"
 				>{formattedDirection}</strong
@@ -516,8 +631,8 @@
 				>{directionCardinal}</small
 			>
 			<small>{formattedSpeed}</small>
-			{#if updatedLabel}
-				<small>Updated {updatedLabel}</small>
+			{#if updatedAt}
+				<small>{l.updatedLabel(updatedAt)}</small>
 			{/if}
 		</div>
 	</header>
@@ -612,7 +727,7 @@
 			{/each}
 
 			<!-- Cardinal letters -->
-			{#each cardinalPositions as c (c.label)}
+			{#each cardinalPositions as c (c.key)}
 				<text
 					x={c.x}
 					y={c.y}
@@ -620,7 +735,7 @@
 					dominant-baseline="central"
 					class={[
 						"cw-wind-compass__cardinal",
-						c.label === "N" && "cw-wind-compass__cardinal--north",
+						c.key === "n" && "cw-wind-compass__cardinal--north",
 					]}
 				>
 					{c.label}
@@ -725,7 +840,7 @@
 	{#if showSummary}
 		<dl class="cw-wind-compass__stats">
 			<div class="cw-wind-compass__stat">
-				<dt>Direction</dt>
+				<dt>{l.statDirection}</dt>
 				<dd>
 					{formattedDirection}
 					<span class="cw-wind-compass__stat-secondary"
@@ -734,11 +849,11 @@
 				</dd>
 			</div>
 			<div class="cw-wind-compass__stat">
-				<dt>Heading {fromOrTo === "from" ? "to" : "from"}</dt>
+				<dt>{l.statHeading(headingConventionWord)}</dt>
 				<dd>{flowCardinal}</dd>
 			</div>
 			<div class="cw-wind-compass__stat">
-				<dt>Speed</dt>
+				<dt>{l.statSpeed}</dt>
 				<dd>{formattedSpeed}</dd>
 			</div>
 			<div
@@ -747,19 +862,23 @@
 					`cw-wind-compass__stat--${beaufort.tone}`,
 				]}
 			>
-				<dt>Beaufort</dt>
-				<dd>F{beaufort.force} · {beaufort.label}</dd>
+				<dt>{l.statBeaufort}</dt>
+				<dd>{l.statBeaufortValue(beaufort.force, beaufortName)}</dd>
 			</div>
-			<div class="cw-wind-compass__stat cw-wind-compass__stat--guidance">
-				<dt>Conditions</dt>
-				<dd>{beaufort.guidance}</dd>
-			</div>
+			{#if beaufortGuidance}
+				<div
+					class="cw-wind-compass__stat cw-wind-compass__stat--guidance"
+				>
+					<dt>{l.statConditions}</dt>
+					<dd>{beaufortGuidance}</dd>
+				</div>
+			{/if}
 		</dl>
 	{/if}
 
 	{#if showLegend}
 		<div class="cw-wind-compass__legend">
-			<p class="cw-wind-compass__legend-title">Beaufort scale reference</p>
+			<p class="cw-wind-compass__legend-title">{l.legendTitle}</p>
 			<div class="cw-wind-compass__legend-grid">
 				{#each beaufortGroups as group (group.tone)}
 					<div

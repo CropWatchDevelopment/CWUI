@@ -302,11 +302,57 @@
 		return v.toFixed(2);
 	}
 
-	const DEFAULT_RANGES: CwResponsiveLineRangePreset[] = [
-		{ id: '1h', label: '1H', ms: 60 * 60 * 1000 },
-		{ id: '24h', label: '24H', ms: 24 * 60 * 60 * 1000 },
-		{ id: '7d', label: '7D', ms: 7 * 24 * 60 * 60 * 1000 }
-	];
+	/** User-facing strings for {@link CwResponsiveLineChart}. All optional; English defaults are used when omitted. */
+	export interface CwResponsiveLineChartLabels {
+		/** Label for the built-in 1-hour range preset (default "1H"). Overridden by a custom `ranges` prop. */
+		range1h?: string;
+		/** Label for the built-in 24-hour range preset (default "24H"). Overridden by a custom `ranges` prop. */
+		range24h?: string;
+		/** Label for the built-in 7-day range preset (default "7D"). Overridden by a custom `ranges` prop. */
+		range7d?: string;
+		/** Accessible label for the range-preset tab group (default "Time range"). */
+		rangeGroupAria?: string;
+		/** Accessible label for the theme toggle button (default "Toggle theme"). */
+		toggleThemeAria?: string;
+		/** Legend heading; receives how many sensors are on and the total (default "Sensors · {on} of {total} on"). */
+		sensorsOnOf?: (on: number, total: number) => string;
+		/** Hint label for anomaly markers (default "anomaly"). */
+		anomaly?: string;
+		/** Hint label for data-gap bands (default "data gap"). */
+		dataGap?: string;
+		/** In-plot caption drawn over a data-gap band (default "no signal"). */
+		noSignal?: string;
+		/** Hint shown when scrolling without Ctrl held (default "Hold {Ctrl} + scroll to zoom", with {Ctrl} a styled key). */
+		zoomHint?: string;
+		/** Title for a legend chip that cannot be hidden because it is the last visible series; receives the series label. */
+		lastSensorTitle?: (label: string) => string;
+		/** Title for a legend chip that will hide a visible series; receives the series label (default "Hide {label}"). */
+		hideSeries?: (label: string) => string;
+		/** Title for a legend chip that will show a hidden series; receives the series label (default "Show {label}"). */
+		showSeries?: (label: string) => string;
+	}
+
+	const DEFAULT_LABELS: Required<CwResponsiveLineChartLabels> = {
+		range1h: '1H',
+		range24h: '24H',
+		range7d: '7D',
+		rangeGroupAria: 'Time range',
+		toggleThemeAria: 'Toggle theme',
+		sensorsOnOf: (on, total) => `Sensors · ${on} of ${total} on`,
+		anomaly: 'anomaly',
+		dataGap: 'data gap',
+		noSignal: 'no signal',
+		zoomHint: 'Hold Ctrl + scroll to zoom',
+		lastSensorTitle: (label) => `${label} — at least one sensor must stay visible`,
+		hideSeries: (label) => `Hide ${label}`,
+		showSeries: (label) => `Show ${label}`
+	};
+
+	const DEFAULT_RANGE_MS = {
+		'1h': 60 * 60 * 1000,
+		'24h': 24 * 60 * 60 * 1000,
+		'7d': 7 * 24 * 60 * 60 * 1000
+	} as const;
 </script>
 
 <script lang="ts">
@@ -331,8 +377,10 @@
 		themeAuto?: boolean;
 		/** Show / hide the built-in theme toggle button. */
 		showThemeToggle?: boolean;
-		/** Range preset shortcuts. Set to `[]` to hide. */
+		/** Range preset shortcuts. Set to `[]` to hide. Defaults to 1H / 24H / 7D (labels come from `labels`). */
 		ranges?: CwResponsiveLineRangePreset[];
+		/** Override display labels for i18n. English defaults are used for any omitted field. */
+		labels?: CwResponsiveLineChartLabels;
 		/** Initial range preset id. Falls back to "show everything" when unmatched. */
 		initialRange?: string;
 		/** Series ids hidden at mount time. */
@@ -371,7 +419,8 @@
 		theme = $bindable<CwResponsiveLineTheme>('light'),
 		themeAuto = false,
 		showThemeToggle = true,
-		ranges = DEFAULT_RANGES,
+		ranges: rangesInput,
+		labels = {},
 		initialRange = '24h',
 		initialHidden = [],
 		showLegendStats = true,
@@ -387,6 +436,16 @@
 		class: className = '',
 		onchange
 	}: Props = $props();
+
+	const l = $derived({ ...DEFAULT_LABELS, ...labels });
+
+	const ranges = $derived(
+		rangesInput ?? [
+			{ id: '1h', label: l.range1h, ms: DEFAULT_RANGE_MS['1h'] },
+			{ id: '24h', label: l.range24h, ms: DEFAULT_RANGE_MS['24h'] },
+			{ id: '7d', label: l.range7d, ms: DEFAULT_RANGE_MS['7d'] }
+		]
+	);
 
 	const series = $derived(seriesInput ?? []);
 	const hasNoData = $derived(hasCwNoData(noData));
@@ -964,7 +1023,7 @@
 						ctx.font = `500 ${thresholdFontPx}px Geist, system-ui, sans-serif`;
 						ctx.textAlign = 'center';
 						ctx.textBaseline = 'top';
-						if (x1 - x0 > 36) ctx.fillText('no signal', (x0 + x1) / 2, plot.y + 4);
+						if (x1 - x0 > 36) ctx.fillText(l.noSignal, (x0 + x1) / 2, plot.y + 4);
 					}
 					last = dp;
 				}
@@ -1359,7 +1418,7 @@
 		</div>
 		<div class="cw-rlc__controls">
 			{#if ranges.length > 0}
-				<div class="cw-rlc__pills" role="tablist" aria-label="Time range">
+				<div class="cw-rlc__pills" role="tablist" aria-label={l.rangeGroupAria}>
 					{#each ranges as r (r.id)}
 						<button
 							type="button"
@@ -1375,7 +1434,7 @@
 				<button
 					type="button"
 					class="cw-rlc__theme-btn"
-					aria-label="Toggle theme"
+					aria-label={l.toggleThemeAria}
 					onclick={() => (theme = theme === 'dark' ? 'light' : 'dark')}
 				>
 					{#if theme === 'dark'}
@@ -1411,7 +1470,7 @@
 					<path d="M12 9 L12 14" />
 					<circle cx="12" cy="17.5" r="0.8" fill="currentColor" />
 				</svg>
-				anomaly
+				{l.anomaly}
 			</span>
 			<span class="cw-rlc__hint">
 				<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -1419,12 +1478,12 @@
 					<path d="M16 12 L21 12" />
 					<path d="M11 8 L11 16 M13 8 L13 16" />
 				</svg>
-				data gap
+				{l.dataGap}
 			</span>
 		</div>
 		{#if zoomHintVisible}
 			<div class="cw-rlc__zoom-hint" aria-hidden="true">
-				Hold <kbd>Ctrl</kbd> + scroll to zoom
+				{l.zoomHint}
 			</div>
 		{/if}
 	</div>
@@ -1432,7 +1491,7 @@
 	{#if showLegend}
 		<div class="cw-rlc__legend">
 			<div class="cw-rlc__legend-heading">
-				Sensors · {series.length - hidden.length} of {series.length} on
+				{l.sensorsOnOf(series.length - hidden.length, series.length)}
 			</div>
 			<div class="cw-rlc__chips">
 				{#each series as s (s.id)}
@@ -1447,10 +1506,10 @@
 						aria-pressed={on}
 						disabled={isLastOn}
 						title={isLastOn
-							? `${s.label} — at least one sensor must stay visible`
+							? l.lastSensorTitle(s.label)
 							: on
-								? `Hide ${s.label}`
-								: `Show ${s.label}`}
+								? l.hideSeries(s.label)
+								: l.showSeries(s.label)}
 						style={on && !s.gradient ? `--cw-rlc-chip-accent:${s.color}` : ''}
 					>
 						<span class="cw-rlc__chip-swatch" style={swatchStyle(s)}></span>
@@ -1662,13 +1721,6 @@
 		background: rgba(0, 0, 0, 0.45);
 		pointer-events: none;
 		animation: cw-rlc-hint-fade 1.2s ease forwards;
-	}
-	.cw-rlc__zoom-hint kbd {
-		font: inherit;
-		padding: 1px 6px;
-		border-radius: 4px;
-		background: rgba(255, 255, 255, 0.22);
-		border: 1px solid rgba(255, 255, 255, 0.35);
 	}
 	@keyframes cw-rlc-hint-fade {
 		0% { opacity: 0; }

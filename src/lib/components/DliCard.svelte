@@ -1,3 +1,68 @@
+<script lang="ts" module>
+	/**
+	 * Override display labels for the DLI card (i18n).
+	 * All fields are optional; omitted fields fall back to English defaults.
+	 */
+	export interface DliCardLabels {
+		/** Fallback card title shown when no `title` prop is provided. */
+		title?: string;
+		/** Status label when the value is far below target ("Very low"). */
+		statusVeryLow?: string;
+		/** Status label when the value is just under target ("Slightly low"). */
+		statusSlightlyLow?: string;
+		/** Status label when the value is below target ("Low"). */
+		statusLow?: string;
+		/** Status label when the value is within target ("Good"). */
+		statusGood?: string;
+		/** Status label when the value is above target ("High"). */
+		statusHigh?: string;
+		/** Status label when the value is far above target ("Very high"). */
+		statusVeryHigh?: string;
+		/** Prefix shown before the status value ("Status:"). */
+		statusPrefix?: string;
+		/** Section heading for the daily history chart ("Daily history"). */
+		historyTitle?: string;
+		/** Accessible label for the daily history bar list. */
+		historyListLabel?: string;
+		/** Formats the number of history days shown (e.g. `(7) => "7 days"`). */
+		historyCount?: (days: number) => string;
+		/** Builds the target text when a crop name is present (e.g. `(crop, range) => "Target for Basil: …"`). */
+		targetForCrop?: (cropName: string, range: string) => string;
+		/** Builds the target text when no crop name is present (e.g. `(range) => "Target: …"`). */
+		target?: (range: string) => string;
+		/** Builds the accessible label for the value readout. */
+		valueAriaLabel?: (value: string, unit: string, targetText: string, status: string) => string;
+		/** Builds the accessible label for the DLI range bar. */
+		barAriaLabel?: (
+			scaleMax: string,
+			value: string,
+			unit: string,
+			range: string,
+			status: string,
+		) => string;
+	}
+
+	const DEFAULT_LABELS: Required<DliCardLabels> = {
+		title: "DLI Today",
+		statusVeryLow: "Very low",
+		statusSlightlyLow: "Slightly low",
+		statusLow: "Low",
+		statusGood: "Good",
+		statusHigh: "High",
+		statusVeryHigh: "Very high",
+		statusPrefix: "Status:",
+		historyTitle: "Daily history",
+		historyListLabel: "Daily DLI history",
+		historyCount: (days) => `${days} days`,
+		targetForCrop: (cropName, range) => `Target for ${cropName}: ${range}`,
+		target: (range) => `Target: ${range}`,
+		valueAriaLabel: (value, unit, targetText, status) =>
+			`DLI today ${value} ${unit}. ${targetText}. Status: ${status}.`,
+		barAriaLabel: (scaleMax, value, unit, range, status) =>
+			`DLI range bar from 0 to ${scaleMax} ${unit}. Current value ${value} ${unit}. Target range ${range}. Status: ${status}.`,
+	};
+</script>
+
 <script lang="ts">
 	import type { CwNoDataMessage, DliHistoryPoint, DliStatusLabel } from "../types/index.js";
 	import CwNoDataOverlay from "./CwNoDataOverlay.svelte";
@@ -15,6 +80,7 @@
 		history?: DliHistoryPoint[];
 		compact?: boolean;
 		noData?: CwNoDataMessage;
+		labels?: DliCardLabels;
 		class?: string;
 	}
 
@@ -33,14 +99,17 @@
 		targetMax,
 		max = 40,
 		cropName = "",
-		title = "DLI Today",
+		title,
 		unit = "mol/m²/day",
 		showStatus = true,
 		history,
 		compact = false,
 		noData,
+		labels = {},
 		class: className = "",
 	}: Props = $props();
+
+	const l = $derived({ ...DEFAULT_LABELS, ...labels });
 
 	const uid = $props.id();
 	const valueFormatter = new Intl.NumberFormat(undefined, {
@@ -147,6 +216,23 @@
 	});
 
 	const statusKey = $derived(status.toLowerCase().replaceAll(" ", "-"));
+	const statusText = $derived.by(() => {
+		switch (status) {
+			case "Very low":
+				return l.statusVeryLow;
+			case "Slightly low":
+				return l.statusSlightlyLow;
+			case "Low":
+				return l.statusLow;
+			case "Good":
+				return l.statusGood;
+			case "High":
+				return l.statusHigh;
+			case "Very high":
+				return l.statusVeryHigh;
+		}
+	});
+	const resolvedTitle = $derived(title ?? l.title);
 	const formattedValue = $derived(formatDli(currentValue));
 	const formattedScaleMax = $derived(formatScale(scaleMax));
 	const formattedTargetRange = $derived(
@@ -155,14 +241,14 @@
 	const trimmedCropName = $derived(cropName.trim());
 	const targetText = $derived(
 		trimmedCropName
-			? `Target for ${trimmedCropName}: ${formattedTargetRange}`
-			: `Target: ${formattedTargetRange}`,
+			? l.targetForCrop(trimmedCropName, formattedTargetRange)
+			: l.target(formattedTargetRange),
 	);
 	const valueAriaLabel = $derived(
-		`DLI today ${formattedValue} ${unit}. ${targetText}. Status: ${status}.`,
+		l.valueAriaLabel(formattedValue, unit, targetText, statusText),
 	);
 	const barAriaLabel = $derived(
-		`DLI range bar from 0 to ${formattedScaleMax} ${unit}. Current value ${formattedValue} ${unit}. Target range ${formattedTargetRange}. Status: ${status}.`,
+		l.barAriaLabel(formattedScaleMax, formattedValue, unit, formattedTargetRange, statusText),
 	);
 
 	const historyItems = $derived.by<DisplayHistoryPoint[]>(() => {
@@ -195,7 +281,7 @@
 >
 	<header class="cw-dli-card__header">
 		<div class="cw-dli-card__heading">
-			<h3 id="{uid}-title" class="cw-dli-card__title">{title}</h3>
+			<h3 id="{uid}-title" class="cw-dli-card__title">{resolvedTitle}</h3>
 			<p id="{uid}-target" class="cw-dli-card__target">{targetText}</p>
 		</div>
 
@@ -203,10 +289,10 @@
 			<p
 				id="{uid}-status"
 				class="cw-dli-card__status"
-				aria-label="Status: {status}"
+				aria-label="{l.statusPrefix} {statusText}"
 			>
-				<span>Status:</span>
-				<strong>{status}</strong>
+				<span>{l.statusPrefix}</span>
+				<strong>{statusText}</strong>
 			</p>
 		{/if}
 	</header>
@@ -245,11 +331,11 @@
 	{#if historyItems.length > 0}
 		<section class="cw-dli-card__history" aria-labelledby="{uid}-history-title">
 			<div class="cw-dli-card__history-head">
-				<h4 id="{uid}-history-title">Daily history</h4>
-				<span>{historyItems.length} days</span>
+				<h4 id="{uid}-history-title">{l.historyTitle}</h4>
+				<span>{l.historyCount(historyItems.length)}</span>
 			</div>
 
-			<ol class="cw-dli-card__history-bars" aria-label="Daily DLI history">
+			<ol class="cw-dli-card__history-bars" aria-label={l.historyListLabel}>
 				{#each historyItems as point (point.key)}
 					<li
 						class="cw-dli-card__history-item"

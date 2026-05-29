@@ -1,3 +1,21 @@
+<script lang="ts" module>
+	/** Overridable user-facing labels for {@link CwCopy} (i18n). All fields optional; English defaults are used when omitted. */
+	export interface CwCopyLabels {
+		/** aria-label for the copy button in its default (not-yet-copied) state. Default "Copy to clipboard". */
+		copy?: string;
+		/** aria-label for the copy button while in the copied state. Default "Copied". */
+		copied?: string;
+		/** Transient feedback tooltip text shown after a successful copy. Default "Copied!". */
+		copiedFeedback?: string;
+	}
+
+	const DEFAULT_LABELS: Required<CwCopyLabels> = {
+		copy: 'Copy to clipboard',
+		copied: 'Copied',
+		copiedFeedback: 'Copied!'
+	};
+</script>
+
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { CwSize } from '../types/index.js';
@@ -13,6 +31,8 @@
 		children?: Snippet;
 		/** Callback fired after a successful copy. */
 		onCopy?: (value: string) => void;
+		/** Override display labels for i18n. */
+		labels?: CwCopyLabels;
 		class?: string;
 	}
 
@@ -22,8 +42,11 @@
 		feedbackDuration = 1500,
 		children,
 		onCopy,
+		labels = {},
 		class: className = ''
 	}: Props = $props();
+
+	const l = $derived({ ...DEFAULT_LABELS, ...labels });
 
 	let copied = $state(false);
 	let timer: ReturnType<typeof setTimeout> | undefined;
@@ -61,7 +84,7 @@
 	<button
 		type="button"
 		class="cw-copy__button"
-		aria-label={copied ? 'Copied' : 'Copy to clipboard'}
+		aria-label={copied ? l.copied : l.copy}
 		onclick={handleCopy}
 	>
 		{#if copied}
@@ -79,7 +102,7 @@
 	</button>
 
 	{#if copied}
-		<span class="cw-copy__feedback" role="status">Copied!</span>
+		<span class="cw-copy__feedback" role="status">{l.copiedFeedback}</span>
 	{/if}
 </span>
 

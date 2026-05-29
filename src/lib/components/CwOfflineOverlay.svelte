@@ -1,3 +1,39 @@
+<script lang="ts" module>
+	/** Override display labels for i18n. All fields optional; English defaults are used when omitted. */
+	export interface CwOfflineOverlayLabels {
+		/** Main heading shown while offline. Default: "You're Offline". */
+		title?: string;
+		/** Body message explaining the offline state. Default describes the lost connection. */
+		message?: string;
+		/** Retry button label. Default: "Try Again". (The `retryLabel` prop wins over this if both are set.) */
+		retryLabel?: string;
+		/** Footnote reassuring the user about automatic reconnection. */
+		footnote?: string;
+		/** Title of the "while you wait" help section. Decorative — no default; the help block is hidden unless this is provided. */
+		helpTitle?: string;
+		/** First help suggestion. Decorative — no default; hidden unless provided. */
+		helpItemWifi?: string;
+		/** Second help suggestion. Decorative — no default; hidden unless provided. */
+		helpItemRouter?: string;
+		/** Third help suggestion. Decorative — no default; hidden unless provided. */
+		helpItemMobileData?: string;
+		/** Title of the "reconnected" toast. Default: "You're back online!". */
+		reconnectedTitle?: string;
+		/** Subtitle of the "reconnected" toast. Default: "Connection restored successfully.". */
+		reconnectedSubtitle?: string;
+	}
+
+	const DEFAULT_LABELS = {
+		title: "You're Offline",
+		message:
+			"It looks like you've lost your internet connection. CropWatch needs an active connection to sync your device data.",
+		retryLabel: 'Try Again',
+		footnote: "Don't worry — we'll automatically reconnect when your connection is restored.",
+		reconnectedTitle: "You're back online!",
+		reconnectedSubtitle: 'Connection restored successfully.'
+	} satisfies CwOfflineOverlayLabels;
+</script>
+
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { fade, scale } from 'svelte/transition';
@@ -13,8 +49,10 @@
 		onRetry?: () => void;
 		/** Show/hide retry button */
 		showRetryButton?: boolean;
-		/** Retry button label */
+		/** Retry button label (takes precedence over `labels.retryLabel`). */
 		retryLabel?: string;
+		/** Override display labels for i18n */
+		labels?: CwOfflineOverlayLabels;
 		class?: string;
 	}
 
@@ -23,9 +61,13 @@
 		reconnectedDurationMs = 3000,
 		onRetry,
 		showRetryButton = true,
-		retryLabel = 'Try Again',
+		retryLabel,
+		labels = {},
 		class: className = ''
 	}: Props = $props();
+
+	const l = $derived({ ...DEFAULT_LABELS, ...labels });
+	const resolvedRetryLabel = $derived(retryLabel ?? l.retryLabel);
 
 	let isOffline = $state(false);
 	let wasOffline = $state(false);
@@ -151,36 +193,46 @@
 				</div>
 			</div>
 
-			<h1 class="cw-offline-title">You're Offline</h1>
+			<h1 class="cw-offline-title">{l.title}</h1>
 			<p class="cw-offline-message">
-				It looks like you've lost your internet connection. CropWatch needs an active connection to sync your device data.
+				{l.message}
 			</p>
 
 			<div class="cw-offline-separator"></div>
 
-			<div class="cw-offline-help">
-				<p class="cw-offline-help__title">While you wait, you can try:</p>
-				<ul class="cw-offline-help__list">
-					<li>
-						<svg class="cw-offline-help__check" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-						</svg>
-						<span>Checking if your WiFi is connected</span>
-					</li>
-					<li>
-						<svg class="cw-offline-help__check" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-						</svg>
-						<span>Moving closer to your router</span>
-					</li>
-					<li>
-						<svg class="cw-offline-help__check" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-						</svg>
-						<span>Switching to mobile data if available</span>
-					</li>
-				</ul>
-			</div>
+			{#if l.helpTitle || l.helpItemWifi || l.helpItemRouter || l.helpItemMobileData}
+				<div class="cw-offline-help">
+					{#if l.helpTitle}
+						<p class="cw-offline-help__title">{l.helpTitle}</p>
+					{/if}
+					<ul class="cw-offline-help__list">
+						{#if l.helpItemWifi}
+							<li>
+								<svg class="cw-offline-help__check" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+								</svg>
+								<span>{l.helpItemWifi}</span>
+							</li>
+						{/if}
+						{#if l.helpItemRouter}
+							<li>
+								<svg class="cw-offline-help__check" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+								</svg>
+								<span>{l.helpItemRouter}</span>
+							</li>
+						{/if}
+						{#if l.helpItemMobileData}
+							<li>
+								<svg class="cw-offline-help__check" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+								</svg>
+								<span>{l.helpItemMobileData}</span>
+							</li>
+						{/if}
+					</ul>
+				</div>
+			{/if}
 
 			{#if showRetryButton}
 				<div class="cw-offline-actions">
@@ -188,13 +240,13 @@
 						<svg class="cw-offline-retry-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
 						</svg>
-						{retryLabel}
+						{resolvedRetryLabel}
 					</CwButton>
 				</div>
 			{/if}
 
 			<p class="cw-offline-footnote">
-				Don't worry — we'll automatically reconnect when your connection is restored.
+				{l.footnote}
 			</p>
 		</div>
 	</div>
@@ -215,8 +267,8 @@
 				</svg>
 			</div>
 			<div class="cw-reconnected-toast__text">
-				<p>You're back online!</p>
-				<p>Connection restored successfully.</p>
+				<p>{l.reconnectedTitle}</p>
+				<p>{l.reconnectedSubtitle}</p>
 			</div>
 		</div>
 	</div>
