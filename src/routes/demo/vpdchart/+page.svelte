@@ -184,16 +184,12 @@
 	</div>
 
 	<CwVPDChart
-		plant={activeScenario.plant}
-		growthStage={activeScenario.growthStage}
 		targetMin={activeScenario.targetMin}
 		targetMax={activeScenario.targetMax}
 		airTemperatureC={roomTemperatureC}
-		leafTemperatureC={activeScenario.leafTemperatureC}
 		relativeHumidity={humidity}
 		temperatureValuesC={temperatureValuesC}
 		humidityValues={humidityValues}
-		updatedAt={updatedAt}
 	/>
 </section>
 
@@ -207,16 +203,12 @@
 	</div>
 
 	<CwVPDChart
-		plant="Cannabis"
-		growthStage="Generative push"
 		targetMin={1.15}
 		targetMax={1.45}
 		airTemperatureC={29}
 		relativeHumidity={56}
-		stageBands={customBands}
 		temperatureValuesC={Array.from({ length: 17 }, (_, index) => index + 19)}
 		humidityValues={Array.from({ length: 11 }, (_, index) => 40 + index * 5)}
-		updatedAt={1_710_000_000}
 	/>
 
 	<DemoCodeExample code={vpdExample} title="CwVPDChart example" />
