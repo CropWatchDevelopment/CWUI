@@ -47,8 +47,6 @@
 		statBeaufortValue?: (force: number, label: string) => string;
 		/** Stat label: conditions / guidance. Default `"Conditions"`. */
 		statConditions?: string;
-		/** Beaufort legend section title. Default `"Beaufort scale reference"`. */
-		legendTitle?: string;
 		/**
 		 * Cardinal direction abbreviations, 16 entries clockwise from North:
 		 * `["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"]`.
@@ -67,18 +65,6 @@
 		 * No default — guidance text is hidden unless supplied.
 		 */
 		beaufortGuidance?: string[];
-		/**
-		 * Beaufort legend group labels keyed by tone
-		 * (`"Calm air"`, `"Light"`, `"Moderate"`, `"Strong"`, `"Gale"`, `"Storm"`).
-		 */
-		beaufortGroupLabels?: {
-			calm?: string;
-			light?: string;
-			moderate?: string;
-			strong?: string;
-			gale?: string;
-			storm?: string;
-		};
 		/**
 		 * SR-summary line: `"Wind from 270° W"`. Receives the already-localised
 		 * convention word, the formatted direction, and the cardinal abbreviation.
@@ -146,18 +132,9 @@
 		statBeaufortValue: (force: number, label: string) =>
 			`F${force} · ${label}`,
 		statConditions: "Conditions",
-		legendTitle: "Beaufort scale reference",
 		cardinals: DEFAULT_CARDINALS,
 		cardinalLetters: { n: "N", e: "E", s: "S", w: "W" },
 		beaufortNames: DEFAULT_BEAUFORT_NAMES,
-		beaufortGroupLabels: {
-			calm: "Calm air",
-			light: "Light",
-			moderate: "Moderate",
-			strong: "Strong",
-			gale: "Gale",
-			storm: "Storm",
-		},
 		srWind: (conventionWord: string, direction: string, cardinal: string) =>
 			`Wind ${conventionWord} ${direction} ${cardinal}`,
 		srSpeed: (speed: string) => `Speed ${speed}`,
@@ -201,8 +178,6 @@
 		size?: number;
 		/** Show the textual summary below the dial. */
 		showSummary?: boolean;
-		/** Show the Beaufort scale legend. */
-		showLegend?: boolean;
 		/**
 		 * Bindable output. Updated to the current cardinal abbreviation
 		 * ("N", "NE", "ESE", …) of the FROM direction. Use with `bind:cardinal`.
@@ -224,7 +199,6 @@
 		convention = "from",
 		size = 320,
 		showSummary = true,
-		showLegend = true,
 		cardinal = $bindable(""),
 		noData,
 		labels = {},
@@ -237,10 +211,6 @@
 		cardinalLetters: {
 			...DEFAULT_LABELS.cardinalLetters,
 			...labels.cardinalLetters,
-		},
-		beaufortGroupLabels: {
-			...DEFAULT_LABELS.beaufortGroupLabels,
-			...labels.beaufortGroupLabels,
 		},
 	});
 
@@ -345,7 +315,6 @@
 	);
 	/** Optional per-force guidance sentence (hidden unless supplied via labels). */
 	const beaufortGuidance = $derived(l.beaufortGuidance?.[beaufort.force]);
-
 
 	/* ── Geometry ──────────────────────────────────────────── */
 	const VIEWBOX = 320;
@@ -490,75 +459,6 @@
 	$effect(() => {
 		cardinal = directionCardinal;
 	});
-
-	/* ── Beaufort legend grouping ──────────────────────────── */
-	interface BeaufortGroup {
-		tone: BeaufortStep["tone"];
-		minForce: number;
-		maxForce: number;
-		minMs: number;
-		maxMs: number;
-	}
-
-	const BEAUFORT_GROUPS: BeaufortGroup[] = [
-		{
-			tone: "calm",
-			minForce: 0,
-			maxForce: 1,
-			minMs: 0,
-			maxMs: BEAUFORT_TABLE[1].maxMs,
-		},
-		{
-			tone: "light",
-			minForce: 2,
-			maxForce: 3,
-			minMs: BEAUFORT_TABLE[1].maxMs,
-			maxMs: BEAUFORT_TABLE[3].maxMs,
-		},
-		{
-			tone: "moderate",
-			minForce: 4,
-			maxForce: 5,
-			minMs: BEAUFORT_TABLE[3].maxMs,
-			maxMs: BEAUFORT_TABLE[5].maxMs,
-		},
-		{
-			tone: "strong",
-			minForce: 6,
-			maxForce: 7,
-			minMs: BEAUFORT_TABLE[5].maxMs,
-			maxMs: BEAUFORT_TABLE[7].maxMs,
-		},
-		{
-			tone: "gale",
-			minForce: 8,
-			maxForce: 9,
-			minMs: BEAUFORT_TABLE[7].maxMs,
-			maxMs: BEAUFORT_TABLE[9].maxMs,
-		},
-		{
-			tone: "storm",
-			minForce: 10,
-			maxForce: 12,
-			minMs: BEAUFORT_TABLE[9].maxMs,
-			maxMs: Number.POSITIVE_INFINITY,
-		},
-	];
-
-	const beaufortGroups = $derived(
-		BEAUFORT_GROUPS.map((group) => ({
-			...group,
-			label: l.beaufortGroupLabels[group.tone],
-		})),
-	);
-
-	function formatRangeMs(min: number, max: number): string {
-		const minDisplay = speedFormatter.format(min / TO_MS[unit]);
-		if (!Number.isFinite(max)) {
-			return `${minDisplay}+ ${unit}`;
-		}
-		return `${minDisplay}-${speedFormatter.format(max / TO_MS[unit])} ${unit}`;
-	}
 
 	const heading = $derived(
 		location.trim() ? l.heading(location) : l.headingFallback,
@@ -874,37 +774,6 @@
 				</div>
 			{/if}
 		</dl>
-	{/if}
-
-	{#if showLegend}
-		<div class="cw-wind-compass__legend">
-			<p class="cw-wind-compass__legend-title">{l.legendTitle}</p>
-			<div class="cw-wind-compass__legend-grid">
-				{#each beaufortGroups as group (group.tone)}
-					<div
-						class={[
-							"cw-wind-compass__legend-item",
-							`cw-wind-compass__legend-item--${group.tone}`,
-							beaufort.force >= group.minForce &&
-								beaufort.force <= group.maxForce &&
-								"cw-wind-compass__legend-item--active",
-						]}
-					>
-						<span
-							class="cw-wind-compass__legend-swatch"
-							aria-hidden="true"
-						></span>
-						<div>
-							<strong>{group.label}</strong>
-							<span>F{group.minForce}–F{group.maxForce}</span>
-							<small
-								>{formatRangeMs(group.minMs, group.maxMs)}</small
-							>
-						</div>
-					</div>
-				{/each}
-			</div>
-		</div>
 	{/if}
 
 	{#if hasNoData}
@@ -1330,132 +1199,6 @@
 	.cw-wind-compass__stat--storm {
 		border-color: color-mix(in srgb, var(--cw-danger-700) 80%, transparent);
 		background: color-mix(in srgb, var(--cw-danger-700) 14%, var(--cw-bg-muted));
-	}
-
-	/* ── Legend ───────────────────────────────────────────── */
-	.cw-wind-compass__legend {
-		display: grid;
-		gap: var(--cw-space-3);
-		padding: var(--cw-space-3) var(--cw-space-3) var(--cw-space-4);
-		background: color-mix(
-			in srgb,
-			var(--cw-bg-muted) 35%,
-			var(--cw-bg-surface)
-		);
-		border-radius: var(--cw-radius-lg, 0.75rem);
-		border: 1px dashed
-			color-mix(in srgb, var(--cw-border-default) 65%, transparent);
-	}
-
-	.cw-wind-compass__legend-title {
-		font-size: 0.7rem;
-		letter-spacing: 0.16em;
-		text-transform: uppercase;
-		color: var(--cw-text-muted);
-		font-weight: 700;
-		margin: 0 0 0.25rem;
-	}
-
-	.cw-wind-compass__legend-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-		gap: var(--cw-space-2);
-	}
-
-	.cw-wind-compass__legend-item {
-		display: grid;
-		grid-template-columns: 0.6rem 1fr;
-		gap: 0.7rem;
-		align-items: start;
-		padding: 0.55rem 0.75rem;
-		border-radius: 0.6rem;
-		border: 1px solid transparent;
-		background: color-mix(in srgb, var(--cw-bg-surface) 75%, transparent);
-		transition:
-			border-color 180ms ease,
-			background-color 180ms ease,
-			transform 180ms ease;
-	}
-
-	.cw-wind-compass__legend-item--active {
-		transform: translateY(-1px);
-		background: color-mix(
-			in srgb,
-			var(--cw-bg-surface-elevated) 78%,
-			transparent
-		);
-		box-shadow: 0 8px 18px -14px color-mix(in srgb, #000 60%, transparent);
-	}
-
-	.cw-wind-compass__legend-swatch {
-		display: block;
-		width: 0.6rem;
-		min-height: 100%;
-		border-radius: 0.25rem;
-	}
-
-	.cw-wind-compass__legend-item strong {
-		display: block;
-		font-size: var(--cw-text-sm);
-		color: var(--cw-text-primary);
-		margin-bottom: 0.1rem;
-	}
-
-	.cw-wind-compass__legend-item span {
-		display: block;
-		font-size: 0.72rem;
-		color: var(--cw-text-secondary);
-		font-weight: 600;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-	}
-
-	.cw-wind-compass__legend-item small {
-		display: block;
-		font-size: 0.72rem;
-		color: var(--cw-text-muted);
-		margin-top: 0.15rem;
-	}
-
-	.cw-wind-compass__legend-item--calm .cw-wind-compass__legend-swatch {
-		background: var(--cw-info-500);
-	}
-	.cw-wind-compass__legend-item--calm.cw-wind-compass__legend-item--active {
-		border-color: color-mix(in srgb, var(--cw-info-500) 65%, transparent);
-	}
-	.cw-wind-compass__legend-item--light .cw-wind-compass__legend-swatch {
-		background: var(--cw-success-500);
-	}
-	.cw-wind-compass__legend-item--light.cw-wind-compass__legend-item--active {
-		border-color: color-mix(in srgb, var(--cw-success-500) 65%, transparent);
-	}
-	.cw-wind-compass__legend-item--moderate .cw-wind-compass__legend-swatch {
-		background: var(--cw-primary-500);
-	}
-	.cw-wind-compass__legend-item--moderate.cw-wind-compass__legend-item--active {
-		border-color: color-mix(
-			in srgb,
-			var(--cw-primary-500) 65%,
-			transparent
-		);
-	}
-	.cw-wind-compass__legend-item--strong .cw-wind-compass__legend-swatch {
-		background: var(--cw-warning-500);
-	}
-	.cw-wind-compass__legend-item--strong.cw-wind-compass__legend-item--active {
-		border-color: color-mix(in srgb, var(--cw-warning-500) 75%, transparent);
-	}
-	.cw-wind-compass__legend-item--gale .cw-wind-compass__legend-swatch {
-		background: var(--cw-danger-500);
-	}
-	.cw-wind-compass__legend-item--gale.cw-wind-compass__legend-item--active {
-		border-color: color-mix(in srgb, var(--cw-danger-500) 75%, transparent);
-	}
-	.cw-wind-compass__legend-item--storm .cw-wind-compass__legend-swatch {
-		background: var(--cw-danger-700);
-	}
-	.cw-wind-compass__legend-item--storm.cw-wind-compass__legend-item--active {
-		border-color: color-mix(in srgb, var(--cw-danger-700) 80%, transparent);
 	}
 
 	@media (prefers-reduced-motion: reduce) {

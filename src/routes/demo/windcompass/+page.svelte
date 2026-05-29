@@ -77,7 +77,6 @@
 \tspeed={3.1}
 \tsize={220}
 \tshowSummary={false}
-\tshowLegend={false}
 />`;
 
 	const oceanographicExample = `<CwWindCompass
@@ -221,7 +220,6 @@
 			speed={28}
 			unit="mph"
 			secondaryUnit="km/h"
-			showLegend={false}
 		/>
 		<CwWindCompass
 			location="Marina Mast"
@@ -229,7 +227,6 @@
 			speed={18}
 			unit="knots"
 			secondaryUnit="m/s"
-			showLegend={false}
 		/>
 	</div>
 
@@ -266,7 +263,6 @@
 			speed={3.1}
 			size={220}
 			showSummary={false}
-			showLegend={false}
 		/>
 		<CwWindCompass
 			direction={120}
@@ -274,7 +270,6 @@
 			unit="mph"
 			size={220}
 			showSummary={false}
-			showLegend={false}
 		/>
 		<CwWindCompass
 			direction={355}
@@ -282,7 +277,6 @@
 			unit="km/h"
 			size={220}
 			showSummary={false}
-			showLegend={false}
 		/>
 	</div>
 
