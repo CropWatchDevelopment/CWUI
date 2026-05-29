@@ -1,23 +1,30 @@
 <script lang="ts">
-	import type { CwDonutSegment } from '../types/index.js';
+	import type { CwDonutSegment, CwNoDataMessage } from '../types/index.js';
+	import CwNoDataOverlay from './CwNoDataOverlay.svelte';
+	import { getCwNoDataMessage, hasCwNoData } from './cwNoData.js';
 
 	interface Props {
-		segments: CwDonutSegment[];
+		segments?: CwDonutSegment[] | null;
 		size?: number;
 		thickness?: number;
 		showLegend?: boolean;
+		noData?: CwNoDataMessage;
 		class?: string;
 	}
 
 	let {
-		segments,
+		segments: segmentsInput = [],
 		size = 200,
 		thickness = 40,
 		showLegend = true,
+		noData,
 		class: className = ''
 	}: Props = $props();
 
 	const uid = $props.id();
+	const segments = $derived(segmentsInput ?? []);
+	const hasNoData = $derived(hasCwNoData(noData));
+	const noDataMessage = $derived(getCwNoDataMessage(noData));
 
 	let hoveredIndex = $state<number | null>(null);
 
@@ -72,10 +79,15 @@
 	const hoveredSegment = $derived(hoveredIndex !== null ? segments[hoveredIndex] : null);
 </script>
 
-<div class="cw-donut-chart {className}" role="img" aria-label="Donut chart">
+<div
+	class="cw-donut-chart cw-no-data-host {className}"
+	class:cw-no-data-host--active={hasNoData}
+	role="img"
+	aria-label="Donut chart"
+>
 	<div class="cw-donut-chart__chart">
 		<svg viewBox="0 0 {size} {size}" width={size} height={size}>
-			{#each arcs as arc, i}
+			{#each arcs as arc, i (`${arc.label}-${i}`)}
 				<path
 					d={arc.path}
 					fill="none"
@@ -109,7 +121,7 @@
 
 	{#if showLegend}
 		<div class="cw-donut-chart__legend">
-			{#each segments as seg, i}
+			{#each segments as seg, i (`${seg.label}-${i}`)}
 				<div
 					class="cw-donut-chart__legend-item"
 					onmouseenter={() => (hoveredIndex = i)}
@@ -125,6 +137,10 @@
 				</div>
 			{/each}
 		</div>
+	{/if}
+
+	{#if hasNoData}
+		<CwNoDataOverlay message={noDataMessage} />
 	{/if}
 </div>
 

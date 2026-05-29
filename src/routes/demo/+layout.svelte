@@ -50,6 +50,7 @@
 		table: "M2 3h12v10H2V3zm0 3h12m0 3H2m4-6v6m4-6v6",
 		linechart: "M2 12l3-4 3 2 4-6 2 3",
 		donut: "M8 2a6 6 0 110 12A6 6 0 018 2zm0 3a3 3 0 100 6 3 3 0 000-6z",
+		dli: "M2 8h12M4 6v4m6-4v4M9 5.5h3v5H9v-5zM6.5 3v10",
 		ppfd: "M2 11a6 6 0 1112 0H2zm6-3 2.75-2.25M8 6.5v.01",
 		vpd: "M2.5 11a5.5 5.5 0 1111 0h-11zm5.5-4.2v2.7m0 0L6.4 8.1M8 9.5l1.6-1.4",
 		wind: "M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM8 8L11 4M8 8L4 11M8 8a1 1 0 100-2 1 1 0 000 2z",
@@ -152,6 +153,14 @@
 			href: "/demo/donutchart",
 			group: "Charts",
 			trailing: 1,
+		},
+		{
+			id: "dli-card",
+			label: "DLI Card",
+			icon: icons.dli,
+			href: "/demo/dli-card",
+			group: "Charts",
+			trailing: "new",
 		},
 		{
 			id: "ppfdchart",
@@ -421,14 +430,6 @@
 			icon: icons.language,
 			href: "/demo/language-switcher",
 			group: "Helpers",
-		},
-		{
-			id: "login",
-			label: "Login Screen",
-			icon: icons.lock,
-			href: "/demo/login-screen",
-			group: "Full Page Demos",
-			separator: true,
 		},
 		{
 			id: "data-display",

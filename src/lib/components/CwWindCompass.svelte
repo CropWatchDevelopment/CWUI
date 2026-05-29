@@ -1,14 +1,17 @@
 <script lang="ts">
 	import type {
+		CwNoDataMessage,
 		CwWindDirectionConvention,
 		CwWindSpeedUnit,
 	} from "../types/index.js";
+	import CwNoDataOverlay from "./CwNoDataOverlay.svelte";
+	import { getCwNoDataMessage, hasCwNoData } from "./cwNoData.js";
 
 	interface Props {
 		/** Direction in degrees, 0 = North, 90 = East. */
-		direction: number;
+		direction?: number | null;
 		/** Wind speed in the chosen unit. */
-		speed: number;
+		speed?: number | null;
 		/** Optional location label. */
 		location?: string;
 		/** Optional timestamp shown in the summary. */
@@ -37,6 +40,7 @@
 		 * ("N", "NE", "ESE", …) of the FROM direction. Use with `bind:cardinal`.
 		 */
 		cardinal?: string;
+		noData?: CwNoDataMessage;
 		class?: string;
 	}
 
@@ -52,6 +56,7 @@
 		showSummary = true,
 		showLegend = true,
 		cardinal = $bindable(""),
+		noData,
 		class: className = "",
 	}: Props = $props();
 
@@ -176,6 +181,10 @@
 		return ms / TO_MS[target];
 	}
 
+	function toFiniteNumber(input: number | null | undefined, fallback: number): number {
+		return typeof input === "number" && Number.isFinite(input) ? input : fallback;
+	}
+
 	/* ── Direction helpers ────────────────────────────────── */
 	function normalizeDeg(deg: number): number {
 		const wrapped = ((deg % 360) + 360) % 360;
@@ -206,7 +215,11 @@
 		return CARDINAL_LABELS[idx];
 	}
 
-	const normalizedDirection = $derived(normalizeDeg(direction));
+	const hasNoData = $derived(hasCwNoData(noData));
+	const noDataMessage = $derived(getCwNoDataMessage(noData));
+	const directionValue = $derived(toFiniteNumber(direction, 0));
+	const speedValue = $derived(toFiniteNumber(speed, 0));
+	const normalizedDirection = $derived(normalizeDeg(directionValue));
 	/** The direction the wind is moving TO (used to draw the arrow). */
 	const flowDirection = $derived(
 		convention === "from"
@@ -221,7 +234,7 @@
 	);
 
 	/* ── Speed / Beaufort derivations ─────────────────────── */
-	const speedMs = $derived(toMs(speed));
+	const speedMs = $derived(toMs(speedValue));
 
 	const beaufort = $derived.by<BeaufortStep>(() => {
 		const ms = Math.max(0, speedMs);
@@ -324,7 +337,7 @@
 		maximumFractionDigits: 0,
 	});
 
-	const formattedSpeed = $derived(`${speedFormatter.format(speed)} ${unit}`);
+	const formattedSpeed = $derived(`${speedFormatter.format(speedValue)} ${unit}`);
 	const formattedDirection = $derived(
 		`${directionFormatter.format(normalizedDirection)}°`,
 	);
@@ -354,7 +367,7 @@
 		timestamp === undefined ? "" : formatUpdatedAt(timestamp),
 	);
 
-	const formattedSpeedValue = $derived(speedFormatter.format(speed));
+	const formattedSpeedValue = $derived(speedFormatter.format(speedValue));
 	const secondaryShown = $derived(
 		secondaryUnit !== undefined && secondaryUnit !== unit,
 	);
@@ -462,7 +475,12 @@
 </script>
 
 <section
-	class={["cw-wind-compass", className]}
+	class={[
+		"cw-wind-compass",
+		"cw-no-data-host",
+		hasNoData && "cw-no-data-host--active",
+		className,
+	]}
 	style:--cw-wind-size="{size}px"
 	aria-labelledby="{uid}-title"
 >
@@ -768,6 +786,10 @@
 				{/each}
 			</div>
 		</div>
+	{/if}
+
+	{#if hasNoData}
+		<CwNoDataOverlay message={noDataMessage} />
 	{/if}
 </section>
 

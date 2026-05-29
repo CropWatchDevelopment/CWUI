@@ -1,27 +1,31 @@
 <script lang="ts">
 	import type {
+		CwNoDataMessage,
 		CwVPDStageBand,
 		CwVPDStageBandTone,
 		CwVPDStatus,
 	} from "../types/index.js";
+	import CwNoDataOverlay from "./CwNoDataOverlay.svelte";
+	import { getCwNoDataMessage, hasCwNoData } from "./cwNoData.js";
 
 	interface Props {
-		current?: number;
-		targetMin: number;
-		targetMax: number;
+		current?: number | null;
+		targetMin?: number | null;
+		targetMax?: number | null;
 		plant?: string;
 		growthStage?: string;
 		unit?: string;
 		useF?: boolean;
-		airTemperatureC?: number;
-		leafTemperatureC?: number;
-		relativeHumidity?: number;
+		airTemperatureC?: number | null;
+		leafTemperatureC?: number | null;
+		relativeHumidity?: number | null;
 		updatedAt?: string | Date | number;
 		showSummary?: boolean;
 		showLegend?: boolean;
 		temperatureValuesC?: number[];
 		humidityValues?: number[];
 		stageBands?: CwVPDStageBand[];
+		noData?: CwNoDataMessage;
 		class?: string;
 	}
 
@@ -152,6 +156,7 @@
 		useF = false,
 		humidityValues,
 		stageBands,
+		noData,
 		class: className = "",
 	}: Props = $props();
 
@@ -189,6 +194,10 @@
 
 	function toFahrenheit(tempC: number): number {
 		return Math.round(tempC * (9 / 5) + 32);
+	}
+
+	function toFiniteNumber(input: number | null | undefined, fallback: number): number {
+		return typeof input === "number" && Number.isFinite(input) ? input : fallback;
 	}
 
 	function normalizeNumberList(
@@ -252,10 +261,35 @@
 		return VPD_ZONES.at(-1) ?? VPD_ZONES[0];
 	}
 
-	const normalizedTarget = $derived.by(() => ({
-		min: Math.min(targetMin, targetMax),
-		max: Math.max(targetMin, targetMax),
-	}));
+	const hasNoData = $derived(hasCwNoData(noData));
+	const noDataMessage = $derived(getCwNoDataMessage(noData));
+	const currentValue = $derived(
+		current === undefined || current === null ? null : toFiniteNumber(current, 0),
+	);
+	const airTemperatureValue = $derived(
+		airTemperatureC === undefined || airTemperatureC === null
+			? null
+			: toFiniteNumber(airTemperatureC, 0),
+	);
+	const leafTemperatureValue = $derived(
+		leafTemperatureC === undefined || leafTemperatureC === null
+			? null
+			: toFiniteNumber(leafTemperatureC, 0),
+	);
+	const relativeHumidityValue = $derived(
+		relativeHumidity === undefined || relativeHumidity === null
+			? null
+			: toFiniteNumber(relativeHumidity, 0),
+	);
+	const normalizedTarget = $derived.by(() => {
+		const lower = toFiniteNumber(targetMin, 0);
+		const upper = toFiniteNumber(targetMax, lower);
+
+		return {
+			min: Math.min(lower, upper),
+			max: Math.max(lower, upper),
+		};
+	});
 
 	const resolvedTemperatures = $derived.by(() =>
 		normalizeNumberList(temperatureValuesC, DEFAULT_TEMPERATURES_C),
@@ -281,14 +315,14 @@
 	});
 
 	const derivedCurrent = $derived.by(() => {
-		if (airTemperatureC === undefined || relativeHumidity === undefined) {
+		if (airTemperatureValue === null || relativeHumidityValue === null) {
 			return null;
 		}
 
-		return calculateRoomVpd(airTemperatureC, relativeHumidity);
+		return calculateRoomVpd(airTemperatureValue, relativeHumidityValue);
 	});
 
-	const effectiveCurrent = $derived(current ?? derivedCurrent);
+	const effectiveCurrent = $derived(currentValue ?? derivedCurrent);
 	const currentZone = $derived.by(() => {
 		if (effectiveCurrent === null) return null;
 		return resolveZone(effectiveCurrent);
@@ -342,26 +376,26 @@
 		plant.trim() ? `${plant} room VPD` : "Room VPD heatmap",
 	);
 	const climateLabel = $derived.by(() => {
-		if (airTemperatureC === undefined || relativeHumidity === undefined) {
+		if (airTemperatureValue === null || relativeHumidityValue === null) {
 			return "";
 		}
 
-		return `${climateFormatter.format(airTemperatureC)}°C at ${climateFormatter.format(relativeHumidity)}% RH`;
+		return `${climateFormatter.format(airTemperatureValue)}°C at ${climateFormatter.format(relativeHumidityValue)}% RH`;
 	});
 	const leafTemperatureLabel = $derived(
-		leafTemperatureC === undefined
+		leafTemperatureValue === null
 			? ""
-			: `${climateFormatter.format(leafTemperatureC)}°C`,
+			: `${climateFormatter.format(leafTemperatureValue)}°C`,
 	);
 	const leafDeltaLabel = $derived.by(() => {
-		if (leafTemperatureC === undefined || airTemperatureC === undefined) {
+		if (leafTemperatureValue === null || airTemperatureValue === null) {
 			return "";
 		}
 
-		return `${deltaFormatter.format(leafTemperatureC - airTemperatureC)}°C vs air`;
+		return `${deltaFormatter.format(leafTemperatureValue - airTemperatureValue)}°C vs air`;
 	});
 	const readingSourceLabel = $derived(
-		current !== undefined
+		currentValue !== null
 			? "Using provided VPD reading"
 			: derivedCurrent !== null
 				? "Derived from room temperature and RH"
@@ -369,14 +403,14 @@
 	);
 
 	const nearestTemperature = $derived.by(() =>
-		airTemperatureC === undefined
+		airTemperatureValue === null
 			? null
-			: nearestValue(resolvedTemperatures, airTemperatureC),
+			: nearestValue(resolvedTemperatures, airTemperatureValue),
 	);
 	const nearestHumidity = $derived.by(() =>
-		relativeHumidity === undefined
+		relativeHumidityValue === null
 			? null
-			: nearestValue(resolvedHumidities, relativeHumidity),
+			: nearestValue(resolvedHumidities, relativeHumidityValue),
 	);
 	const mappedCellLabel = $derived.by(() => {
 		if (nearestTemperature === null || nearestHumidity === null) {
@@ -432,7 +466,10 @@
 	});
 </script>
 
-<section class={["cw-vpd-chart", className]} aria-labelledby={`${uid}-title`}>
+<section
+	class={["cw-vpd-chart", "cw-no-data-host", hasNoData && "cw-no-data-host--active", className]}
+	aria-labelledby={`${uid}-title`}
+>
 	<div class="cw-vpd-chart__header">
 		<div class="cw-vpd-chart__header-copy">
 			<p class="cw-vpd-chart__eyebrow">Vapor Pressure Deficit</p>
@@ -674,6 +711,10 @@
 	</div>
 
 	<p class="cw-vpd-chart__delta">{deltaMessage}</p>
+
+	{#if hasNoData}
+		<CwNoDataOverlay message={noDataMessage} />
+	{/if}
 </section>
 
 <style>

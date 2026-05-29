@@ -1,6 +1,12 @@
 <script lang="ts">
-	import type { CwLineChartDataPoint, CwLineChartSecondaryDataPoint } from '../types/index.js';
+	import type {
+		CwLineChartDataPoint,
+		CwLineChartSecondaryDataPoint,
+		CwNoDataMessage
+	} from '../types/index.js';
 	import CwLineChart from './CwLineChart.svelte';
+	import CwNoDataOverlay from './CwNoDataOverlay.svelte';
+	import { getCwNoDataMessage, hasCwNoData } from './cwNoData.js';
 
 	interface Props {
 		/** If true, renders 3-column soil grid; otherwise a single air chart */
@@ -8,33 +14,43 @@
 		/** Whether data is currently loading */
 		historyLoading?: boolean;
 		/* ── Soil-specific data ─── */
-		soilTemperatureChartData?: CwLineChartDataPoint[];
-		soilMoistureChartData?: CwLineChartDataPoint[];
-		soilEcChartData?: CwLineChartDataPoint[];
+		soilTemperatureChartData?: CwLineChartDataPoint[] | null;
+		soilMoistureChartData?: CwLineChartDataPoint[] | null;
+		soilEcChartData?: CwLineChartDataPoint[] | null;
 		soilTemperatureThreshold?: number;
 		soilMoistureThreshold?: number;
 		soilEcThreshold?: number;
 		/* ── Air-specific data ──── */
-		airTemperatureChartData?: CwLineChartDataPoint[];
-		airHumidityChartData?: CwLineChartSecondaryDataPoint[];
+		airTemperatureChartData?: CwLineChartDataPoint[] | null;
+		airHumidityChartData?: CwLineChartSecondaryDataPoint[] | null;
 		airTemperatureThreshold?: number;
+		noData?: CwNoDataMessage;
 		class?: string;
 	}
 
 	let {
 		isSoilDevice = false,
 		historyLoading = false,
-		soilTemperatureChartData = [],
-		soilMoistureChartData = [],
-		soilEcChartData = [],
+		soilTemperatureChartData: soilTemperatureChartDataInput = [],
+		soilMoistureChartData: soilMoistureChartDataInput = [],
+		soilEcChartData: soilEcChartDataInput = [],
 		soilTemperatureThreshold,
 		soilMoistureThreshold,
 		soilEcThreshold,
-		airTemperatureChartData = [],
-		airHumidityChartData = [],
+		airTemperatureChartData: airTemperatureChartDataInput = [],
+		airHumidityChartData: airHumidityChartDataInput = [],
 		airTemperatureThreshold,
+		noData,
 		class: className = ''
 	}: Props = $props();
+
+	const soilTemperatureChartData = $derived(soilTemperatureChartDataInput ?? []);
+	const soilMoistureChartData = $derived(soilMoistureChartDataInput ?? []);
+	const soilEcChartData = $derived(soilEcChartDataInput ?? []);
+	const airTemperatureChartData = $derived(airTemperatureChartDataInput ?? []);
+	const airHumidityChartData = $derived(airHumidityChartDataInput ?? []);
+	const hasNoData = $derived(hasCwNoData(noData));
+	const noDataMessage = $derived(getCwNoDataMessage(noData));
 
 	const hasData = $derived(
 		isSoilDevice
@@ -45,7 +61,10 @@
 	const title = $derived(isSoilDevice ? 'Soil telemetry' : 'Temperature & Humidity');
 </script>
 
-<section class="cw-chart-section {className}">
+<section
+	class="cw-chart-section cw-no-data-host {className}"
+	class:cw-no-data-host--active={hasNoData}
+>
 	<div class="cw-chart-section__header">
 		<div class="cw-chart-section__header-text">
 			<p class="cw-chart-section__eyebrow">Line chart</p>
@@ -101,6 +120,10 @@
 			secondaryUnit="%"
 			height={350}
 		/>
+	{/if}
+
+	{#if hasNoData}
+		<CwNoDataOverlay message={noDataMessage} />
 	{/if}
 </section>
 

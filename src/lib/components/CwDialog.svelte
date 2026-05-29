@@ -128,7 +128,9 @@
 		padding: 0;
 		background: transparent;
 		width: 100%;
+		max-width: 100vw;
 		max-height: 85dvh;
+		box-sizing: border-box;
 		z-index: var(--cw-z-modal);
 	}
 
@@ -138,7 +140,8 @@
 	}
 
 	.cw-dialog__panel {
-		width: min(var(--cw-dialog-width, 50vw), calc(100vw - 2rem));
+		width: 100%;
+		max-width: 100%;
 		margin: 0 auto;
 		display: flex;
 		flex-direction: column;
@@ -148,6 +151,19 @@
 		box-shadow: var(--cw-shadow-xl);
 		overflow: hidden;
 		max-height: 85dvh;
+		box-sizing: border-box;
+	}
+
+	@media (min-width: 768px) {
+		.cw-dialog__panel {
+			width: min(var(--cw-dialog-width, 80vw), calc(100vw - 2rem));
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.cw-dialog__panel {
+			width: min(var(--cw-dialog-width, 50vw), calc(100vw - 2rem));
+		}
 	}
 
 	.cw-dialog__header {

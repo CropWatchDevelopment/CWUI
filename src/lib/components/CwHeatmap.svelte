@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { CwHeatmapDataPoint } from '../types/index.js';
+	import type { CwHeatmapDataPoint, CwNoDataMessage } from '../types/index.js';
+	import CwNoDataOverlay from './CwNoDataOverlay.svelte';
+	import { getCwNoDataMessage, hasCwNoData } from './cwNoData.js';
 
 	interface Props {
 		/** Array of { timestamp, value } data points. */
-		data: CwHeatmapDataPoint[];
+		data?: CwHeatmapDataPoint[] | null;
 		/** Number of days to display. Default 7. */
 		days?: number;
 		/** Minimum value for color scale. Auto-detected from data if omitted. */
@@ -21,11 +23,12 @@
 		colors?: [string, string, string];
 		/** Called when a cell is clicked. */
 		onCellClick?: (point: { date: string; hour: number; value: number | null }) => void;
+		noData?: CwNoDataMessage;
 		class?: string;
 	}
 
 	let {
-		data,
+		data: dataInput = [],
 		days = 7,
 		min: propMin,
 		max: propMax,
@@ -34,8 +37,13 @@
 		rowHeight = 24,
 		colors = ['#3b82f6', '#facc15', '#ef4444'],
 		onCellClick,
+		noData,
 		class: className = ''
 	}: Props = $props();
+
+	const data = $derived(dataInput ?? []);
+	const hasNoData = $derived(hasCwNoData(noData));
+	const noDataMessage = $derived(getCwNoDataMessage(noData));
 
 	/* ── Build grid: columns = days, rows = 24 hours ────────── */
 
@@ -67,8 +75,9 @@
 		return map;
 	});
 
-	const computedMin = $derived(propMin ?? Math.min(...data.map((d) => d.value)));
-	const computedMax = $derived(propMax ?? Math.max(...data.map((d) => d.value)));
+	const dataValues = $derived(data.map((d) => d.value).filter((value) => Number.isFinite(value)));
+	const computedMin = $derived(propMin ?? (dataValues.length ? Math.min(...dataValues) : 0));
+	const computedMax = $derived(propMax ?? (dataValues.length ? Math.max(...dataValues) : 1));
 
 	/* Helper: value → CSS color via 3-stop gradient */
 	function cellColor(val: number | null): string {
@@ -147,7 +156,11 @@
 	const hours = Array.from({ length: 24 }, (_, i) => i);
 </script>
 
-<div class="cw-heatmap {className}" bind:this={containerEl}>
+<div
+	class="cw-heatmap cw-no-data-host {className}"
+	class:cw-no-data-host--active={hasNoData}
+	bind:this={containerEl}
+>
 	{#if title}
 		<h3 class="cw-heatmap__title">{title}</h3>
 	{/if}
@@ -156,14 +169,14 @@
 		<div class="cw-heatmap__grid" style="grid-template-columns: 3.5rem repeat({dateColumns.length}, 1fr);">
 			<!-- Column headers -->
 			<div class="cw-heatmap__corner"></div>
-			{#each dateColumns as col}
+			{#each dateColumns as col (fmtDate(col))}
 				<div class="cw-heatmap__col-header">{fmtDay(col)}</div>
 			{/each}
 
 			<!-- Rows: one per hour -->
-			{#each hours as hour}
+			{#each hours as hour (hour)}
 				<div class="cw-heatmap__row-header">{fmtHour(hour)}</div>
-				{#each dateColumns as col}
+				{#each dateColumns as col (`${fmtDate(col)}-${hour}`)}
 					{@const val = getValue(col, hour)}
 					<div
 						class="cw-heatmap__cell"
@@ -197,6 +210,10 @@
 			<strong>{tooltip.date}</strong> {tooltip.hour}<br/>
 			{tooltip.value !== null ? `${tooltip.value.toFixed(1)}${unit}` : 'No data'}
 		</div>
+	{/if}
+
+	{#if hasNoData}
+		<CwNoDataOverlay message={noDataMessage} />
 	{/if}
 </div>
 

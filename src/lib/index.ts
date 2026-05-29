@@ -26,6 +26,7 @@ export { default as CwLineChart } from './components/CwLineChart.svelte';
 export { default as CwResponsiveLineChart } from './components/CwResponsiveLineChart.svelte';
 export { default as CwDeviceLineChartSection } from './components/CwDeviceLineChartSection.svelte';
 export { default as CwDonutChart } from './components/CwDonutChart.svelte';
+export { default as DliCard } from './components/DliCard.svelte';
 export { default as CwPPFDChart } from './components/CwPPFDChart.svelte';
 export { default as CwVPDChart } from './components/CwVPDChart.svelte';
 export { default as CwWindCompass } from './components/CwWindCompass.svelte';
@@ -79,6 +80,7 @@ export type {
 	CwTableResult,
 	CwColumnDef,
 	CwLineSeries,
+	CwNoDataMessage,
 	CwLineChartAlertSeverity,
 	CwLineChartAlert,
 	CwLineChartDataPoint,
@@ -97,6 +99,8 @@ export type {
 	CwPPFDStatus,
 	CwPPFDTick,
 	CwPPFDReading,
+	DliStatusLabel,
+	DliHistoryPoint,
 	CwVPDStatus,
 	CwVPDStageBandTone,
 	CwVPDTick,

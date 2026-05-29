@@ -1,22 +1,25 @@
 <script lang="ts">
-	import type { CwPPFDStatus, CwPPFDTick } from '../types/index.js';
+	import type { CwNoDataMessage, CwPPFDStatus, CwPPFDTick } from '../types/index.js';
+	import CwNoDataOverlay from './CwNoDataOverlay.svelte';
+	import { getCwNoDataMessage, hasCwNoData } from './cwNoData.js';
 
 	interface Props {
-		current: number;
-		targetMin: number;
-		targetMax: number;
+		current?: number | null;
+		targetMin?: number | null;
+		targetMax?: number | null;
 		plant?: string;
 		unit?: string;
-		domainMin?: number;
-		domainMax?: number;
+		domainMin?: number | null;
+		domainMax?: number | null;
 		ticks?: Array<number | CwPPFDTick>;
-		dliToday?: number;
+		dliToday?: number | null;
 		updatedAt?: string | Date | number;
 		showSummary?: boolean;
 		showDelta?: boolean;
 		lowLabel?: string;
 		optimalLabel?: string;
 		highLabel?: string;
+		noData?: CwNoDataMessage;
 		class?: string;
 	}
 
@@ -36,6 +39,7 @@
 		lowLabel = 'Low',
 		optimalLabel = 'Optimal',
 		highLabel = 'High',
+		noData,
 		class: className = ''
 	}: Props = $props();
 
@@ -52,6 +56,10 @@
 
 	function clampPercent(value: number): number {
 		return Math.max(0, Math.min(100, value));
+	}
+
+	function toFiniteNumber(input: number | null | undefined, fallback: number): number {
+		return typeof input === 'number' && Number.isFinite(input) ? input : fallback;
 	}
 
 	function toDate(input: string | Date | number): Date {
@@ -78,37 +86,49 @@
 		};
 	}
 
-	const normalizedRange = $derived.by(() => ({
-		min: Math.min(targetMin, targetMax),
-		max: Math.max(targetMin, targetMax)
-	}));
+	const hasNoData = $derived(hasCwNoData(noData));
+	const noDataMessage = $derived(getCwNoDataMessage(noData));
+	const currentValue = $derived(toFiniteNumber(current, 0));
+	const domainMinValue = $derived(toFiniteNumber(domainMin, 0));
+	const requestedDomainMax = $derived(
+		domainMax === undefined || domainMax === null ? undefined : toFiniteNumber(domainMax, domainMinValue + 200)
+	);
+	const normalizedRange = $derived.by(() => {
+		const lower = toFiniteNumber(targetMin, 0);
+		const upper = toFiniteNumber(targetMax, lower);
+
+		return {
+			min: Math.min(lower, upper),
+			max: Math.max(lower, upper)
+		};
+	});
 
 	const computedDomainMax = $derived.by(() => {
 		const baseline = Math.max(
 			1200,
 			normalizedRange.max * 1.3,
-			current * 1.1,
-			domainMin + 200
+			currentValue * 1.1,
+			domainMinValue + 200
 		);
-		const requested = domainMax ?? baseline;
+		const requested = requestedDomainMax ?? baseline;
 		const guaranteedMax = Math.max(
 			requested,
 			normalizedRange.max,
-			current,
-			domainMin + 200
+			currentValue,
+			domainMinValue + 200
 		);
 
 		return roundUpToStep(guaranteedMax, 200);
 	});
 
 	function scale(value: number): number {
-		const span = computedDomainMax - domainMin || 1;
-		return ((value - domainMin) / span) * 100;
+		const span = computedDomainMax - domainMinValue || 1;
+		return ((value - domainMinValue) / span) * 100;
 	}
 
 	const lowBoundaryPercent = $derived(clampPercent(scale(normalizedRange.min)));
 	const highBoundaryPercent = $derived(clampPercent(scale(normalizedRange.max)));
-	const markerPercent = $derived(clampPercent(scale(current)));
+	const markerPercent = $derived(clampPercent(scale(currentValue)));
 	const optimalWidth = $derived(Math.max(0, highBoundaryPercent - lowBoundaryPercent));
 	const markerAlign = $derived(
 		markerPercent <= 10 ? 'start' : markerPercent >= 90 ? 'end' : 'center'
@@ -119,8 +139,8 @@
 	);
 
 	const status = $derived.by<CwPPFDStatus>(() => {
-		if (current < normalizedRange.min) return 'low';
-		if (current > normalizedRange.max) return 'high';
+		if (currentValue < normalizedRange.min) return 'low';
+		if (currentValue > normalizedRange.max) return 'high';
 		return 'optimal';
 	});
 
@@ -128,21 +148,21 @@
 		status === 'low' ? 'Too low' : status === 'high' ? 'Too high' : 'Optimal'
 	);
 	const heading = $derived(plant.trim() ? `${plant} PPFD` : 'PPFD range gauge');
-	const formattedCurrent = $derived(`${ppfdFormatter.format(current)} ${unit}`);
+	const formattedCurrent = $derived(`${ppfdFormatter.format(currentValue)} ${unit}`);
 	const formattedTargetRange = $derived(
 		`${ppfdFormatter.format(normalizedRange.min)}-${ppfdFormatter.format(normalizedRange.max)} ${unit}`
 	);
 	const formattedDli = $derived(
-		dliToday === undefined ? '' : `${dliFormatter.format(dliToday)} mol/m²/day`
+		dliToday === undefined || dliToday === null ? '' : `${dliFormatter.format(dliToday)} mol/m²/day`
 	);
 	const updatedLabel = $derived(updatedAt === undefined ? '' : formatUpdatedAt(updatedAt));
 	const deltaMessage = $derived.by(() => {
 		if (!showDelta) return '';
 		if (status === 'low') {
-			return `${ppfdFormatter.format(normalizedRange.min - current)} ${unit} below target`;
+			return `${ppfdFormatter.format(normalizedRange.min - currentValue)} ${unit} below target`;
 		}
 		if (status === 'high') {
-			return `${ppfdFormatter.format(current - normalizedRange.max)} ${unit} above target`;
+			return `${ppfdFormatter.format(currentValue - normalizedRange.max)} ${unit} above target`;
 		}
 		return 'Inside target band';
 	});
@@ -151,13 +171,13 @@
 		if (ticks?.length) {
 			return ticks
 				.map(normalizeTick)
-				.filter((tick) => tick.value >= domainMin && tick.value <= computedDomainMax)
+				.filter((tick) => tick.value >= domainMinValue && tick.value <= computedDomainMax)
 				.sort((a, b) => a.value - b.value);
 		}
 
-		const count = Math.floor((computedDomainMax - domainMin) / 200) + 1;
+		const count = Math.floor((computedDomainMax - domainMinValue) / 200) + 1;
 		return Array.from({ length: count }, (_, index) => {
-			const value = domainMin + index * 200;
+			const value = domainMinValue + index * 200;
 			return { value, label: ppfdFormatter.format(value) };
 		});
 	});
@@ -176,7 +196,10 @@
 	});
 </script>
 
-<section class="cw-ppfd-chart {className}">
+<section
+	class="cw-ppfd-chart cw-no-data-host {className}"
+	class:cw-no-data-host--active={hasNoData}
+>
 	<div class="cw-ppfd-chart__header">
 		<div class="cw-ppfd-chart__header-copy">
 			<p class="cw-ppfd-chart__eyebrow">Photosynthetic Photon Flux Density</p>
@@ -186,9 +209,18 @@
 			{/if}
 		</div>
 
-		<div class="cw-ppfd-chart__reading">
-			<span class="cw-ppfd-chart__reading-label">Current PPFD</span>
-			<strong class="cw-ppfd-chart__reading-value">{formattedCurrent}</strong>
+		<div class="cw-ppfd-chart__readings">
+			{#if formattedDli}
+				<div class="cw-ppfd-chart__reading cw-ppfd-chart__reading--dli">
+					<span class="cw-ppfd-chart__reading-label">DLI Today</span>
+					<strong class="cw-ppfd-chart__reading-value">{formattedDli}</strong>
+				</div>
+			{/if}
+
+			<div class="cw-ppfd-chart__reading">
+				<span class="cw-ppfd-chart__reading-label">Current PPFD</span>
+				<strong class="cw-ppfd-chart__reading-value">{formattedCurrent}</strong>
+			</div>
 		</div>
 	</div>
 
@@ -269,6 +301,10 @@
 	{#if showDelta}
 		<p class="cw-ppfd-chart__delta cw-ppfd-chart__delta--{status}">{deltaMessage}</p>
 	{/if}
+
+	{#if hasNoData}
+		<CwNoDataOverlay message={noDataMessage} />
+	{/if}
 </section>
 
 <style>
@@ -325,6 +361,12 @@
 		color: var(--cw-text-muted);
 		font-size: var(--cw-text-sm);
 		margin: 0;
+	}
+
+	.cw-ppfd-chart__readings {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--cw-space-3);
 	}
 
 	.cw-ppfd-chart__reading {
@@ -611,7 +653,12 @@
 			padding: var(--cw-space-5);
 		}
 
+		.cw-ppfd-chart__readings {
+			width: 100%;
+		}
+
 		.cw-ppfd-chart__reading {
+			flex: 1 1 100%;
 			width: 100%;
 		}
 

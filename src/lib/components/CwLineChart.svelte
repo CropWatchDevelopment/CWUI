@@ -1,24 +1,27 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type {
+		CwNoDataMessage,
 		CwLineChartAlert,
 		CwLineChartAlertPoint,
 		CwLineChartDataPoint,
 		CwLineChartSecondaryDataPoint,
 		CwLineChartThreshold
 	} from '../types/index.js';
+	import CwNoDataOverlay from './CwNoDataOverlay.svelte';
+	import { getCwNoDataMessage, hasCwNoData } from './cwNoData.js';
 
 	interface Props {
 		/** Primary data series (required) */
-		data: CwLineChartDataPoint[];
+		data?: CwLineChartDataPoint[] | null;
 		/** Optional secondary data series (right Y-axis) */
-		secondaryData?: CwLineChartSecondaryDataPoint[];
+		secondaryData?: CwLineChartSecondaryDataPoint[] | null;
 		/** Optional standalone alert markers */
-		alertPoints?: CwLineChartAlertPoint[];
+		alertPoints?: CwLineChartAlertPoint[] | null;
 		/** Legacy shorthand for a single horizontal threshold line */
 		threshold?: number;
 		/** Named threshold lines shown on the primary axis */
-		thresholds?: CwLineChartThreshold[];
+		thresholds?: CwLineChartThreshold[] | null;
 		/** Left Y-axis label */
 		primaryLabel?: string;
 		/** Right Y-axis label */
@@ -31,23 +34,32 @@
 		height?: number;
 		/** Show grid lines */
 		showGrid?: boolean;
+		noData?: CwNoDataMessage;
 		class?: string;
 	}
 
 	let {
-		data,
-		secondaryData = [],
-		alertPoints = [],
+		data: dataInput = [],
+		secondaryData: secondaryDataInput = [],
+		alertPoints: alertPointsInput = [],
 		threshold,
-		thresholds = [],
+		thresholds: thresholdsInput = [],
 		primaryLabel = 'Value',
 		secondaryLabel = 'Secondary',
 		primaryUnit = '',
 		secondaryUnit = '',
 		height = 300,
 		showGrid = true,
+		noData,
 		class: className = ''
 	}: Props = $props();
+
+	const data = $derived(dataInput ?? []);
+	const secondaryData = $derived(secondaryDataInput ?? []);
+	const alertPoints = $derived(alertPointsInput ?? []);
+	const thresholds = $derived(thresholdsInput ?? []);
+	const hasNoData = $derived(hasCwNoData(noData));
+	const noDataMessage = $derived(getCwNoDataMessage(noData));
 
 	/* ── Refs & state ─────────────────────────────────── */
 	let chartContainer: HTMLDivElement | undefined = $state(undefined);
@@ -263,6 +275,7 @@
 
 	/* ── Mouse interaction ────────────────────────────── */
 	function handleMouseMove(event: MouseEvent) {
+		if (hasNoData) return;
 		if (!chartContainer) return;
 		const rect = chartContainer.getBoundingClientRect();
 		const relX = event.clientX - rect.left - margin.left;
@@ -358,7 +371,8 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class="cw-lchart {className}"
+	class="cw-lchart cw-no-data-host {className}"
+	class:cw-no-data-host--active={hasNoData}
 	bind:this={chartContainer}
 	onmousemove={handleMouseMove}
 	onmouseleave={handleMouseLeave}
@@ -381,13 +395,13 @@
 		<g transform="translate({margin.left},{margin.top})">
 			<!-- Grid lines -->
 			{#if showGrid}
-				{#each primaryTicks as tick}
+				{#each primaryTicks as tick (tick)}
 					<line
 						x1="0" y1={scalePrimaryY(tick)} x2={chartWidth} y2={scalePrimaryY(tick)}
 						class="cw-lchart__grid"
 					/>
 				{/each}
-				{#each timeLabels as lbl}
+				{#each timeLabels as lbl (lbl.time)}
 					{@const x = ((lbl.time - timeRange.min) / (timeRange.max - timeRange.min || 1)) * chartWidth}
 					<line
 						x1={x} y1="0" x2={x} y2={chartHeight}
@@ -443,7 +457,7 @@
 
 			<!-- Primary data points -->
 			{#if showPrimary}
-				{#each data as point}
+				{#each data as point, index (`${new Date(point.timestamp).getTime()}-${index}`)}
 					{@const cx = scaleX(point.timestamp)}
 					{@const cy = scalePrimaryY(point.value)}
 					<circle
@@ -477,7 +491,7 @@
 
 			<!-- ─── LEFT Y-AXIS ─── -->
 			<line x1="0" y1="0" x2="0" y2={chartHeight} class="cw-lchart__axis" />
-			{#each primaryTicks as tick}
+			{#each primaryTicks as tick (tick)}
 				{@const y = scalePrimaryY(tick)}
 				<line x1="-5" y1={y} x2="0" y2={y} class="cw-lchart__axis" />
 				<text x="-10" y={y} class="cw-lchart__tick cw-lchart__tick--left">{tick}</text>
@@ -494,7 +508,7 @@
 			<!-- ─── RIGHT Y-AXIS ─── -->
 			{#if secondaryData.length > 0}
 				<line x1={chartWidth} y1="0" x2={chartWidth} y2={chartHeight} class="cw-lchart__axis" />
-				{#each secondaryTicks as tick}
+				{#each secondaryTicks as tick (tick)}
 					{@const y = scaleSecondaryY(tick)}
 					<line x1={chartWidth} y1={y} x2={chartWidth + 5} y2={y} class="cw-lchart__axis" />
 					<text x={chartWidth + 10} y={y} class="cw-lchart__tick cw-lchart__tick--right">{tick}</text>
@@ -511,7 +525,7 @@
 
 			<!-- ─── X-AXIS ─── -->
 			<line x1="0" y1={chartHeight} x2={chartWidth} y2={chartHeight} class="cw-lchart__axis" />
-			{#each timeLabels as lbl}
+			{#each timeLabels as lbl (lbl.time)}
 				{@const x = ((lbl.time - timeRange.min) / (timeRange.max - timeRange.min || 1)) * chartWidth}
 				<line x1={x} y1={chartHeight} x2={x} y2={chartHeight + 5} class="cw-lchart__axis" />
 				<text
@@ -636,6 +650,10 @@
 			</button>
 		{/if}
 	</div>
+
+	{#if hasNoData}
+		<CwNoDataOverlay message={noDataMessage} />
+	{/if}
 </div>
 
 <style>

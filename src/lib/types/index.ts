@@ -68,6 +68,8 @@ export interface CwColumnDef<T> {
 
 /* ── Chart types ───────────────────────────────────────── */
 
+export type CwNoDataMessage = string | boolean;
+
 /** @deprecated Use CwLineChartDataPoint instead */
 export interface CwLineSeries {
 	label: string;
@@ -134,6 +136,21 @@ export interface CwPPFDReading {
 	timestamp?: string | Date | number;
 	/** Optional DLI value for the current day. */
 	dliToday?: number;
+}
+
+export type DliStatusLabel =
+	| 'Very low'
+	| 'Low'
+	| 'Slightly low'
+	| 'Good'
+	| 'High'
+	| 'Very high';
+
+export interface DliHistoryPoint {
+	/** Date label for a daily DLI total. Prefer YYYY-MM-DD for stable formatting. */
+	date: string;
+	/** Daily Light Integral in mol/m²/day. */
+	value: number;
 }
 
 export type CwVPDStatus = 'low' | 'optimal' | 'high';

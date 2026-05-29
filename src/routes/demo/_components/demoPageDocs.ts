@@ -572,6 +572,12 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				defaultValue: 'true'
 			},
 			{
+				name: 'noData',
+				type: 'string | boolean',
+				description:
+					'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No Data Available".'
+			},
+			{
 				name: 'class',
 				type: 'string',
 				description: 'Optional class forwarded to the chart wrapper element.',
@@ -919,6 +925,12 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				defaultValue: 'false'
 			},
 			{
+				name: 'noData',
+				type: 'string | boolean',
+				description:
+					'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No Data Available".'
+			},
+			{
 				name: 'class',
 				type: 'string',
 				description: 'Optional class forwarded to the root element.',
@@ -1040,6 +1052,12 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				type: 'boolean',
 				description: 'Shows or hides the legend beneath the chart.',
 				defaultValue: 'true'
+			},
+			{
+				name: 'noData',
+				type: 'string | boolean',
+				description:
+					'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No Data Available".'
 			},
 			{
 				name: 'segment.color',
@@ -3231,6 +3249,12 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'onCellClick',
 				type: '(point: { date: string; hour: number; value: number | null }) => void',
 				description: 'Runs when a heatmap cell is clicked.'
+			},
+			{
+				name: 'noData',
+				type: 'string | boolean',
+				description:
+					'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No Data Available".'
 			}
 		],
 		examples: [
@@ -3256,6 +3280,111 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 \tmax={90}
 \trowHeight={20}
 \tcolors={['#06b6d4', '#a3e635', '#f97316']}
+/>`
+			}
+		]
+	},
+	'/demo/dli-card': {
+		summary:
+			'DliCard displays Daily Light Integral as a daily accumulated crop-light metric. It uses a horizontal target-range bar for today and optional daily bars for historical DLI totals.',
+		steps: [
+			{
+				title: 'Use crop target values',
+				description:
+					'Pass `targetMin` and `targetMax` for the crop program so operators can see whether today is inside the expected DLI band.'
+			},
+			{
+				title: 'Keep the scale explicit',
+				description:
+					'Use the default `max={40}` for common greenhouse views, or set `max` when crops or rooms need a different comparison scale.'
+			},
+			{
+				title: 'Use bars for history',
+				description:
+					'DLI is a daily total, so the optional `history` prop renders one bar per day instead of a line chart or instant gauge.'
+			}
+		],
+		apiRows: [
+			{ name: 'value', type: 'number', description: "Today's DLI in mol/m²/day.", required: true },
+			{ name: 'targetMin', type: 'number', description: 'Lower edge of the crop target range.', required: true },
+			{ name: 'targetMax', type: 'number', description: 'Upper edge of the crop target range.', required: true },
+			{ name: 'max', type: 'number', description: 'Maximum value for the horizontal scale.', defaultValue: '40' },
+			{ name: 'cropName', type: 'string', description: 'Optional crop label used in the target text.' },
+			{ name: 'title', type: 'string', description: 'Card title.', defaultValue: "'DLI Today'" },
+			{ name: 'unit', type: 'string', description: 'Unit label displayed with the value and target.', defaultValue: "'mol/m²/day'" },
+			{ name: 'showStatus', type: 'boolean', description: 'Shows the visible status label.', defaultValue: 'true' },
+			{ name: 'history', type: 'DliHistoryPoint[]', description: 'Optional daily DLI history rendered as bars.' },
+			{ name: 'compact', type: 'boolean', description: 'Reduces card spacing for dense dashboard grids.', defaultValue: 'false' },
+			{
+				name: 'noData',
+				type: 'string | boolean',
+				description:
+					'When present, blurs the card and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No Data Available".'
+			}
+		],
+		apiNote:
+			'The visual marker is clamped between 0 and `max`, but the card still displays the true numeric `value` when it exceeds the scale.',
+		examples: [
+			{
+				title: 'Tomato DLI card with history',
+				description: 'Use this for a dashboard tile that shows today and the past week.',
+				code: `<script lang="ts">
+\timport { DliCard } from '@cropwatchdevelopment/cwui';
+
+\tconst history = [
+\t\t{ date: "2026-05-23", value: 18.2 },
+\t\t{ date: "2026-05-24", value: 21.5 },
+\t\t{ date: "2026-05-25", value: 26.1 },
+\t\t{ date: "2026-05-26", value: 24.7 },
+\t\t{ date: "2026-05-27", value: 15.9 },
+\t\t{ date: "2026-05-28", value: 28.4 },
+\t\t{ date: "2026-05-29", value: 30.2 }
+\t];
+<\/script>
+
+<DliCard
+\tvalue={24.3}
+\ttargetMin={20}
+\ttargetMax={30}
+\tmax={40}
+\tcropName="Tomato"
+\thistory={history}
+/>`
+			},
+			{
+				title: 'Compact card',
+				description: 'Use compact mode in dashboard grids where multiple crops or zones sit side by side.',
+				code: `<DliCard
+\ttitle="North bay DLI"
+\tvalue={18.4}
+\ttargetMin={18}
+\ttargetMax={26}
+\tcropName="Pepper"
+\tcompact
+/>`
+			},
+			{
+				title: 'Custom scale and unit label',
+				description: 'Override `max` and `unit` when upstream data uses a different display convention.',
+				code: `<DliCard
+\tvalue={42.6}
+\ttargetMin={20}
+\ttargetMax={30}
+\tmax={50}
+\tcropName="Tomato"
+\tunit="mol m-2 day-1"
+/>`
+			},
+			{
+				title: 'Unavailable sensor state',
+				description: 'Pass localized copy to `noData` when the current reading is not available.',
+				code: `<DliCard
+\tvalue={0}
+\tnoData="The current sensor is not available on your device"
+\ttargetMin={20}
+\ttargetMax={30}
+\tmax={40}
+\tcropName="Tomato"
 />`
 			}
 		]
@@ -3293,7 +3422,13 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			{ name: 'updatedAt', type: 'string | Date | number', description: 'Optional timestamp displayed in the summary.' },
 			{ name: 'showSummary', type: 'boolean', description: 'Shows the summary block above the gauge.', defaultValue: 'true' },
 			{ name: 'showDelta', type: 'boolean', description: 'Shows the delta from the target band.', defaultValue: 'true' },
-			{ name: 'lowLabel / optimalLabel / highLabel', type: 'string', description: 'Custom text for the three status ranges.' }
+			{ name: 'lowLabel / optimalLabel / highLabel', type: 'string', description: 'Custom text for the three status ranges.' },
+			{
+				name: 'noData',
+				type: 'string | boolean',
+				description:
+					'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No Data Available".'
+			}
 		],
 		examples: [
 			{
@@ -3650,7 +3785,13 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			{ name: 'showLegend', type: 'boolean', description: 'Shows the stage-band legend.', defaultValue: 'true' },
 			{ name: 'temperatureValuesC', type: 'number[]', description: 'Custom temperature axis values in Celsius.' },
 			{ name: 'humidityValues', type: 'number[]', description: 'Custom relative humidity axis values.' },
-			{ name: 'stageBands', type: 'CwVPDStageBand[]', description: 'Optional custom climate-stage band definitions.' }
+			{ name: 'stageBands', type: 'CwVPDStageBand[]', description: 'Optional custom climate-stage band definitions.' },
+			{
+				name: 'noData',
+				type: 'string | boolean',
+				description:
+					'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No Data Available".'
+			}
 		],
 		examples: [
 			{
@@ -3799,6 +3940,12 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 					type: 'boolean',
 					description: 'Show the Beaufort scale reference panel.',
 					defaultValue: 'true'
+				},
+				{
+					name: 'noData',
+					type: 'string | boolean',
+					description:
+						'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No Data Available".'
 				},
 				{
 					name: 'class',

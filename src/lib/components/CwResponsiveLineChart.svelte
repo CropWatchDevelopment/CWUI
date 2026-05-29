@@ -16,7 +16,8 @@
 		CwResponsiveLineLayout,
 		CwResponsiveLineRangePreset,
 		CwResponsiveLineSeriesStats,
-		CwResponsiveLineChangeEvent
+		CwResponsiveLineChangeEvent,
+		CwNoDataMessage
 	} from '../types/index.js';
 
 	export type {
@@ -27,7 +28,8 @@
 		CwResponsiveLineLayout,
 		CwResponsiveLineRangePreset,
 		CwResponsiveLineSeriesStats,
-		CwResponsiveLineChangeEvent
+		CwResponsiveLineChangeEvent,
+		CwNoDataMessage
 	};
 
 	const TAU = Math.PI * 2;
@@ -309,10 +311,12 @@
 
 <script lang="ts">
 	import { onMount, onDestroy, untrack } from 'svelte';
+	import CwNoDataOverlay from './CwNoDataOverlay.svelte';
+	import { getCwNoDataMessage, hasCwNoData } from './cwNoData.js';
 
 	interface Props {
 		/** Series to render. The first one becomes the default left axis if not specified. */
-		series: CwResponsiveLineSeries[];
+		series?: CwResponsiveLineSeries[] | null;
 		/** Earliest sample timestamp (ms epoch). Computed from `series` when omitted. */
 		dataStart?: number;
 		/** Latest sample timestamp (ms epoch). Computed from `series` when omitted. */
@@ -351,6 +355,7 @@
 		height?: number | string;
 		/** Render the chart inside the host's themed card or as a bare canvas. */
 		bare?: boolean;
+		noData?: CwNoDataMessage;
 		/** Optional className applied to the root element. */
 		class?: string;
 		/** Called whenever the chart's interactive state changes. */
@@ -358,7 +363,7 @@
 	}
 
 	let {
-		series,
+		series: seriesInput = [],
 		dataStart,
 		dataEnd,
 		title = '',
@@ -378,9 +383,14 @@
 		layout = 'auto',
 		height = 480,
 		bare = false,
+		noData,
 		class: className = '',
 		onchange
 	}: Props = $props();
+
+	const series = $derived(seriesInput ?? []);
+	const hasNoData = $derived(hasCwNoData(noData));
+	const noDataMessage = $derived(getCwNoDataMessage(noData));
 
 	let rootEl: HTMLDivElement;
 	let canvasEl: HTMLCanvasElement;
@@ -444,9 +454,6 @@
 			hi: dataEnd ?? (hi === -Infinity ? 0 : hi)
 		};
 	});
-
-	/** True once at least one series carries a real data point. */
-	let hasData = $derived(series.some((s) => (s.data?.length ?? 0) > 0));
 
 	let resolvedLayout: CwResponsiveLineLayout = $derived.by(() => {
 		if (layout !== 'auto') return layout;
@@ -1328,7 +1335,8 @@
 
 <div
 	bind:this={rootEl}
-	class="cw-rlc cw-rlc--{resolvedLayout} cw-rlc--{theme} {containerWidth > 0 && containerWidth < 380 ? 'cw-rlc--xs' : ''} {bare ? 'cw-rlc--bare' : ''} {className}"
+	class="cw-rlc cw-no-data-host cw-rlc--{resolvedLayout} cw-rlc--{theme} {containerWidth > 0 && containerWidth < 380 ? 'cw-rlc--xs' : ''} {bare ? 'cw-rlc--bare' : ''} {className}"
+	class:cw-no-data-host--active={hasNoData}
 	style="--cw-rlc-bg:{themePalette.bg};
 		--cw-rlc-panel:{themePalette.panel};
 		--cw-rlc-panel-inset:{themePalette.panelInset};
@@ -1419,9 +1427,6 @@
 				Hold <kbd>Ctrl</kbd> + scroll to zoom
 			</div>
 		{/if}
-		{#if !hasData}
-			<div class="cw-rlc__no-data" role="status">No Data Available</div>
-		{/if}
 	</div>
 
 	{#if showLegend}
@@ -1470,6 +1475,10 @@
 				{/each}
 			</div>
 		</div>
+	{/if}
+
+	{#if hasNoData}
+		<CwNoDataOverlay message={noDataMessage} />
 	{/if}
 </div>
 
@@ -1667,20 +1676,6 @@
 		70% { opacity: 1; }
 		100% { opacity: 0; }
 	}
-	.cw-rlc__no-data {
-		position: absolute;
-		inset: 0;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 14px;
-		font-weight: 600;
-		letter-spacing: 0.01em;
-		color: var(--cw-rlc-faint);
-		background: var(--cw-rlc-panel-inset);
-		pointer-events: none;
-	}
-
 	.cw-rlc__legend {
 		display: flex;
 		flex-direction: column;
