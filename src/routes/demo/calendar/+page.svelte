@@ -235,12 +235,7 @@
 		padding: var(--cw-space-4);
 		border: 1px solid color-mix(in srgb, var(--cw-border-default) 78%, transparent);
 		border-radius: var(--cw-radius-lg);
-		background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-bg-elevated) 90%, white),
-				color-mix(in srgb, var(--cw-bg-muted) 52%, white)
-			);
+		background: var(--cw-bg-elevated);
 		box-shadow: var(--cw-shadow-sm);
 	}
 

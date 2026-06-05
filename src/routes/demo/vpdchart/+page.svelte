@@ -267,12 +267,7 @@
 
 	.demo-scenario-button {
 		align-items: flex-start;
-		background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-bg-elevated) 94%, white),
-				color-mix(in srgb, var(--cw-bg-muted) 56%, white)
-			);
+		background: var(--cw-bg-elevated);
 		border: 1px solid color-mix(in srgb, var(--cw-border-default) 74%, transparent);
 		border-radius: var(--cw-radius-xl);
 		color: var(--cw-text-primary);
@@ -292,12 +287,7 @@
 	}
 
 	.demo-scenario-button--active {
-		background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, #1a5662 18%, var(--cw-bg-surface)),
-				color-mix(in srgb, #1a5662 9%, var(--cw-bg-muted))
-			);
+		background: color-mix(in srgb, #1a5662 14%, var(--cw-bg-surface));
 		border-color: color-mix(in srgb, #1a5662 72%, transparent);
 		box-shadow:
 			inset 0 0 0 1px color-mix(in srgb, white 18%, transparent),

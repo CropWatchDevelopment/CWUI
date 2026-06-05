@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CwResponsiveLineChart } from '$lib/index.js';
+	import { CwResponsiveLineChart, metricColor } from '$lib/index.js';
 	import type {
 		CwResponsiveLineSeries,
 		CwResponsiveLineDataPoint
@@ -32,10 +32,12 @@
 		const noise = (amp: number) => (rand() - 0.5) * 2 * amp;
 
 		const airTemp: CwResponsiveLineDataPoint[] = [];
+		const soilTemp: CwResponsiveLineDataPoint[] = [];
 		const airHumidity: CwResponsiveLineDataPoint[] = [];
 		const soilMoisture: CwResponsiveLineDataPoint[] = [];
 		const soilEC: CwResponsiveLineDataPoint[] = [];
 		const co2: CwResponsiveLineDataPoint[] = [];
+		const light: CwResponsiveLineDataPoint[] = [];
 
 		let sm = 36 + rand() * 4;
 		let ec = 1.45;
@@ -62,11 +64,16 @@
 			const isGap = i >= outageStart && i <= outageEnd;
 			airTemp.push({ t, v: isGap ? null : temp });
 
+			// Soil temperature: lagged, heavily damped vs. air — warmer and far less swing.
+			const soilT = baseT + 2.4 + dayPhase * 2.1 + noise(0.2);
+			soilTemp.push({ t, v: soilT });
+
 			let h = 72 - (temp - 14) * 1.9 + noise(2.4);
 			h = clamp(h, 22, 98);
 			airHumidity.push({ t, v: h });
 
 			const photo = Math.max(0, Math.sin(((hour - 6) / 14) * Math.PI));
+			light.push({ t, v: Math.max(0, Math.round(photo * 82000 + noise(900) * photo)) });
 			let c = 680 - photo * 230 + noise(15);
 			if (i === Math.floor(n * 0.55)) c += 380;
 			c = clamp(c, 380, 1400);
@@ -85,23 +92,34 @@
 		}
 
 		const gapMs = 8 * 60 * 1000;
+		// Colors come from the canonical metric→color conventions (metricColor):
+		// temperature = value gradient, soil temp = brown, water = blues, CO₂ = purple,
+		// light = gold — all tuned to read on both light and dark chart backgrounds.
 		const series: CwResponsiveLineSeries[] = [
 			{
 				id: 'airTemp',
 				label: 'Air temperature',
 				unit: '°C',
-				color: '#ef4444',
-				gradient: true,
+				...metricColor('air_temperature'),
 				data: airTemp,
 				decimals: 1,
 				gapMs,
 				thresholds: [{ value: 0, label: 'Frost', color: 'rgba(59,130,246,0.6)' }]
 			},
 			{
+				id: 'soilTemp',
+				label: 'Soil temperature',
+				unit: '°C',
+				...metricColor('soil_temperature'),
+				data: soilTemp,
+				decimals: 1,
+				gapMs
+			},
+			{
 				id: 'airHumidity',
 				label: 'Air humidity',
 				unit: '%RH',
-				color: '#3b82f6',
+				...metricColor('humidity'),
 				data: airHumidity,
 				decimals: 0,
 				gapMs
@@ -110,7 +128,7 @@
 				id: 'soilMoisture',
 				label: 'Soil moisture',
 				unit: '%VWC',
-				color: '#06b6d4',
+				...metricColor('soil_moisture'),
 				data: soilMoisture,
 				decimals: 1,
 				gapMs
@@ -119,7 +137,7 @@
 				id: 'soilEC',
 				label: 'Soil EC',
 				unit: 'mS/cm',
-				color: '#a855f7',
+				...metricColor('soil_ec'),
 				data: soilEC,
 				decimals: 2,
 				gapMs
@@ -128,8 +146,17 @@
 				id: 'co2',
 				label: 'CO₂',
 				unit: 'ppm',
-				color: '#f59e0b',
+				...metricColor('co2'),
 				data: co2,
+				decimals: 0,
+				gapMs
+			},
+			{
+				id: 'light',
+				label: 'Light',
+				unit: 'lux',
+				...metricColor('light'),
+				data: light,
 				decimals: 0,
 				gapMs
 			}

@@ -40,14 +40,18 @@
 	const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 	const clamp = (x: number, lo: number, hi: number) => (x < lo ? lo : x > hi ? hi : x);
 
+	// Cold→hot ramp for the temperature gradient. Every stop is a mid-luminance,
+	// saturated hue so the line stays legible on both the light (#fafaf7) and dark
+	// (#0e0e0c) chart backgrounds — the old cold stop was near-black and vanished
+	// against the dark theme. Cold reads as icy indigo/blue, hot as deep red.
 	const TEMP_STOPS: { v: number; c: [number, number, number] }[] = [
-		{ v: -10, c: [12, 12, 16] },
-		{ v: -2, c: [37, 99, 235] },
-		{ v: 8, c: [14, 165, 233] },
-		{ v: 18, c: [16, 185, 129] },
-		{ v: 26, c: [245, 158, 11] },
-		{ v: 34, c: [239, 68, 68] },
-		{ v: 42, c: [160, 25, 30] }
+		{ v: -10, c: [99, 102, 241] }, // very cold — icy indigo
+		{ v: -2, c: [59, 130, 246] }, // cold — blue
+		{ v: 8, c: [14, 165, 233] }, // cool — sky
+		{ v: 18, c: [16, 185, 129] }, // mild — emerald
+		{ v: 26, c: [245, 158, 11] }, // warm — amber
+		{ v: 34, c: [239, 68, 68] }, // hot — red
+		{ v: 42, c: [190, 30, 32] } // very hot — deep red
 	];
 
 	function tempColor(v: number | null): string {
@@ -602,6 +606,16 @@
 		});
 	}
 
+	/**
+	 * A percentage metric (humidity, soil moisture, …) can't physically exceed
+	 * 100%, so its axis should never scale past it. Honors an explicit
+	 * `percentage` flag, otherwise infers it from a unit carrying a "%" sign.
+	 */
+	function isPercentageSeries(s: CwResponsiveLineSeries) {
+		if (s.percentage !== undefined) return s.percentage;
+		return (s.unit ?? '').includes('%');
+	}
+
 	function seriesRange(s: CwResponsiveLineSeries, targetTicks?: number) {
 		let lo = Infinity;
 		let hi = -Infinity;
@@ -619,7 +633,17 @@
 		}
 		if (lo === Infinity) return null;
 		const pad = (hi - lo) * 0.08 || 1;
-		return niceY(lo - pad, hi + pad, targetTicks ?? (compact ? 4 : 5));
+		// Cap percentage axes at 100% so the padded/"nice" top never implies an
+		// impossible reading. We only ever cap downward — a metric sitting well
+		// below 100% keeps its tighter, data-fitted scale.
+		const cap = isPercentageSeries(s) ? 100 : Infinity;
+		const r = niceY(lo - pad, Math.min(hi + pad, cap), targetTicks ?? (compact ? 4 : 5));
+		if (r.hi > cap) {
+			r.hi = cap;
+			r.ticks = r.ticks.filter((t) => t <= cap);
+			if (r.ticks[r.ticks.length - 1] !== cap) r.ticks.push(cap);
+		}
+		return r;
 	}
 
 	/** Color for a series' axis ticks/unit (gradient series fall back to series.color). */
@@ -1381,7 +1405,7 @@
 
 	function swatchStyle(s: CwResponsiveLineSeries) {
 		if (s.gradient) {
-			return 'background: linear-gradient(90deg, #0c0c10 0%, #2563eb 20%, #10b981 48%, #f59e0b 76%, #ef4444 100%)';
+			return 'background: linear-gradient(90deg, #6366f1 0%, #3b82f6 15%, #0ea5e9 35%, #10b981 54%, #f59e0b 69%, #ef4444 85%, #be1e20 100%)';
 		}
 		return `background: ${s.color}`;
 	}
@@ -1510,7 +1534,7 @@
 							: on
 								? l.hideSeries(s.label)
 								: l.showSeries(s.label)}
-						style={on && !s.gradient ? `--cw-rlc-chip-accent:${s.color}` : ''}
+						style={on ? `--cw-rlc-chip-accent:${s.color}` : ''}
 					>
 						<span class="cw-rlc__chip-swatch" style={swatchStyle(s)}></span>
 						<span class="cw-rlc__chip-text">

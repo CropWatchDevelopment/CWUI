@@ -65,6 +65,10 @@ export {
 	isCwTabletView
 } from './utils/cwViewSize.js';
 
+// ── Chart color conventions ────────────────────────────────
+export { metricColor, normalizeMetric, METRIC_COLORS } from './utils/metricColors.js';
+export type { MetricColor } from './utils/metricColors.js';
+
 // ── Types ───────────────────────────────────────────────────
 export type {
 	CwTone,

@@ -184,12 +184,7 @@ pnpm up @cropwatchdevelopment/cwui --latest
 	}
 
 	.release-section {
-		background: linear-gradient(
-			180deg,
-			color-mix(in srgb, var(--cw-primary-500) 10%, var(--cw-bg-elevated))
-				0%,
-			var(--cw-bg-elevated) 100%
-		);
+		background: color-mix(in srgb, var(--cw-primary-500) 6%, var(--cw-bg-elevated));
 	}
 
 	.demo-kicker {

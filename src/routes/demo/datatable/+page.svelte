@@ -617,13 +617,7 @@ async function updateRow(row: Device) {
 		padding: 0.85rem;
 		border-radius: 2rem;
 		border: 1px solid color-mix(in srgb, var(--cw-border-default) 70%, transparent);
-		background:
-			radial-gradient(circle at top, color-mix(in srgb, var(--cw-info-200) 30%, transparent), transparent 58%),
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-gray-900) 94%, var(--cw-bg-surface)),
-				color-mix(in srgb, var(--cw-gray-800) 92%, var(--cw-bg-elevated))
-			);
+		background: color-mix(in srgb, var(--cw-gray-900) 93%, var(--cw-bg-surface));
 		box-shadow:
 			0 1.25rem 2.5rem color-mix(in srgb, var(--cw-gray-900) 22%, transparent),
 			inset 0 1px 0 color-mix(in srgb, white 12%, transparent);
@@ -667,12 +661,7 @@ async function updateRow(row: Device) {
 		padding: var(--cw-space-4);
 		border: 1px solid color-mix(in srgb, var(--cw-border-default) 80%, transparent);
 		border-radius: var(--cw-radius-lg);
-		background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-bg-elevated) 92%, white),
-				color-mix(in srgb, var(--cw-bg-muted) 60%, white)
-			);
+		background: var(--cw-bg-elevated);
 		box-shadow: var(--cw-shadow-sm);
 	}
 	.demo-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cw-space-2); margin-bottom: var(--cw-space-3); }

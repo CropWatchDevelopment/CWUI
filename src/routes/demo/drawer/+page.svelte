@@ -187,7 +187,7 @@
 	.groups-card__bar-fill {
 		height: 100%;
 		border-radius: var(--cw-radius-full);
-		background: linear-gradient(90deg, var(--cw-primary-600), var(--cw-primary-400));
+		background: var(--cw-primary-500);
 		transition: width var(--cw-duration-slow) var(--cw-ease-default);
 	}
 

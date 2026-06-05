@@ -568,7 +568,7 @@
 					alt="CropWatch Logo"
 					style="width:1.5rem;height:1.5rem"
 				/>
-				<span class="demo-shell__logo-text">𝘾𝙧𝙤𝙥𝙒𝙖𝙩𝙘𝙝® UI</span>
+				<span class="demo-shell__logo-text">𝘾𝙧𝙤𝙥𝙒𝙖𝙩𝙘𝙝<small><sup>®</sup></small> UI</span>
 			</div>
 		{/snippet}
 			{#snippet aboveContent()}

@@ -309,23 +309,12 @@
 
 	.demo-panel,
 	.demo-toolbar {
-		background:
-			linear-gradient(
-				145deg,
-				color-mix(in srgb, var(--cw-bg-elevated) 92%, white),
-				color-mix(in srgb, var(--cw-bg-muted) 78%, white)
-			);
+		background: var(--cw-bg-elevated);
 	}
 
 	.demo-preview {
 		align-content: start;
-		background:
-			radial-gradient(circle at top right, color-mix(in srgb, var(--cw-accent) 18%, transparent), transparent 48%),
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-bg-elevated) 94%, white),
-				color-mix(in srgb, var(--cw-bg-base) 96%, white)
-			);
+		background: var(--cw-bg-elevated);
 	}
 
 	.demo-panel__copy,

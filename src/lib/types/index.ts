@@ -702,6 +702,12 @@ export interface CwResponsiveLineSeries {
 	label: string;
 	/** Unit shown in legend tail and axis crown (e.g. "°C", "%RH", "ppm"). */
 	unit?: string;
+	/**
+	 * Mark this as a percentage metric (humidity, soil moisture, …) so its Y axis
+	 * is never scaled above 100% — an impossible reading. When omitted, it is
+	 * inferred from a `unit` containing a "%" sign. Set to `false` to opt out.
+	 */
+	percentage?: boolean;
 	/** Solid-line color (ignored when `gradient` is true). */
 	color: string;
 	/** When true, the line is colored per-segment by a value-mapped temperature gradient. */

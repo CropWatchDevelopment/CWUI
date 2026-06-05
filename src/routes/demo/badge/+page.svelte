@@ -68,7 +68,7 @@
 		padding: var(--cw-space-2) var(--cw-space-4);
 		border-radius: var(--cw-radius-xl);
 		border: 1px solid #40567a;
-		background: linear-gradient(180deg, #2b3f5f 0%, #1f293e 100%);
+		background: #26354f;
 		color: #f2f6ff;
 		font-size: var(--cw-text-sm);
 		font-weight: var(--cw-font-medium);

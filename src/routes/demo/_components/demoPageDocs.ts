@@ -783,7 +783,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			{
 				name: 'series[].gradient',
 				type: 'boolean',
-				description: 'When true, color each segment by mean value using the temperature gradient (black → blue → cyan → green → amber → red).',
+				description: 'When true, color each segment by mean value using the temperature gradient (indigo → blue → cyan → green → amber → red), legible on light and dark backgrounds.',
 				defaultValue: 'false'
 			},
 			{

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { CwCard } from '$lib/index.js';
 	import DemoCodeExample from './DemoCodeExample.svelte';
 	import type { DemoRouteDocs } from './demoPageDocs';
 
@@ -20,56 +21,64 @@
 	</div>
 
 	<div class="demo-page-docs__grid">
-		<section class="demo-page-docs__card" aria-labelledby="demo-page-docs-steps">
-			<h4 id="demo-page-docs-steps">How to think about it</h4>
-			<ol class="demo-page-docs__steps">
-				{#each docs.steps as step (step.title)}
-					<li>
-						<strong>{step.title}</strong>
-						<span>{step.description}</span>
-					</li>
-				{/each}
-			</ol>
+		<section aria-labelledby="demo-page-docs-steps">
+			<CwCard class="demo-page-docs__card">
+				<div class="demo-page-docs__card-body">
+					<h4 id="demo-page-docs-steps">How to think about it</h4>
+					<ol class="demo-page-docs__steps">
+						{#each docs.steps as step (step.title)}
+							<li>
+								<strong>{step.title}</strong>
+								<span>{step.description}</span>
+							</li>
+						{/each}
+					</ol>
+				</div>
+			</CwCard>
 		</section>
 
-		<section class="demo-page-docs__card" aria-labelledby="demo-page-docs-api">
-			<div class="demo-page-docs__card-head">
-				<h4 id="demo-page-docs-api">{docs.apiTitle ?? 'Props and callbacks'}</h4>
-				{#if docs.apiNote}
-					<p>{docs.apiNote}</p>
-				{/if}
-			</div>
+		<section aria-labelledby="demo-page-docs-api">
+			<CwCard class="demo-page-docs__card">
+				<div class="demo-page-docs__card-body">
+					<div class="demo-page-docs__card-head">
+						<h4 id="demo-page-docs-api">{docs.apiTitle ?? 'Props and callbacks'}</h4>
+						{#if docs.apiNote}
+							<p>{docs.apiNote}</p>
+						{/if}
+					</div>
 
-			<div class="demo-page-docs__table-wrap">
-				<table class="demo-page-docs__table">
-					<thead>
-						<tr>
-							<th scope="col">API</th>
-							<th scope="col">Type</th>
-							<th scope="col">Details</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each docs.apiRows as row (row.name)}
-							<tr>
-								<td>
-									<div class="demo-page-docs__api-name">
-										<code>{row.name}</code>
-										{#if row.required}
-											<span>Required</span>
-										{/if}
-									</div>
-									{#if row.defaultValue}
-										<p>Default: <code>{row.defaultValue}</code></p>
-									{/if}
-								</td>
-								<td><code>{row.type}</code></td>
-								<td>{row.description}</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
+					<div class="demo-page-docs__table-wrap">
+						<table class="demo-page-docs__table">
+							<thead>
+								<tr>
+									<th scope="col">API</th>
+									<th scope="col">Type</th>
+									<th scope="col">Details</th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each docs.apiRows as row (row.name)}
+									<tr>
+										<td>
+											<div class="demo-page-docs__api-name">
+												<code>{row.name}</code>
+												{#if row.required}
+													<span>Required</span>
+												{/if}
+											</div>
+											{#if row.defaultValue}
+												<p>Default: <code>{row.defaultValue}</code></p>
+											{/if}
+										</td>
+										<td><code>{row.type}</code></td>
+										<td>{row.description}</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</CwCard>
 		</section>
 	</div>
 
@@ -82,15 +91,17 @@
 
 			<div class="demo-page-docs__example-list">
 				{#each docs.examples as example (example.title)}
-					<article class="demo-page-docs__example">
-						<div class="demo-page-docs__example-copy">
-							<h5>{example.title}</h5>
-							{#if example.description}
-								<p>{example.description}</p>
-							{/if}
-						</div>
-						<DemoCodeExample code={example.code} title={example.title} />
-					</article>
+					<CwCard class="demo-page-docs__example">
+						<article class="demo-page-docs__card-body">
+							<div class="demo-page-docs__example-copy">
+								<h5>{example.title}</h5>
+								{#if example.description}
+									<p>{example.description}</p>
+								{/if}
+							</div>
+							<DemoCodeExample code={example.code} title={example.title} />
+						</article>
+					</CwCard>
 				{/each}
 			</div>
 		</section>
@@ -127,7 +138,7 @@
 	}
 
 	.demo-page-docs__intro h3,
-	.demo-page-docs__card h4,
+	.demo-page-docs__card-body h4,
 	.demo-page-docs__examples-head h4,
 	.demo-page-docs__example-copy h5 {
 		margin: 0;
@@ -156,20 +167,15 @@
 		align-items: start;
 	}
 
-	.demo-page-docs__card,
-	.demo-page-docs__example {
+	/* CwCard supplies the bordered surface; keep a subtle lift to match the page. */
+	:global(.demo-page-docs__card),
+	:global(.demo-page-docs__example) {
+		box-shadow: var(--cw-shadow-sm);
+	}
+
+	.demo-page-docs__card-body {
 		display: grid;
 		gap: var(--cw-space-3);
-		padding: var(--cw-space-4);
-		border: 1px solid color-mix(in srgb, var(--cw-border-default) 78%, transparent);
-		border-radius: var(--cw-radius-lg);
-		background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-bg-elevated) 92%, white),
-				color-mix(in srgb, var(--cw-bg-muted) 54%, white)
-			);
-		box-shadow: var(--cw-shadow-sm);
 	}
 
 	.demo-page-docs__steps {
