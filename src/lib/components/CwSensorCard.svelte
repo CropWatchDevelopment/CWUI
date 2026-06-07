@@ -23,6 +23,12 @@
 		label?: string;
 		/** Current sensor status before freshness overrides are applied. */
 		status?: CwStatusDotStatus;
+		/**
+		 * When non-null (and not `false`), the card switches into an attention-grabbing
+		 * error state: a warning-tinted background plus a red "SENSOR ERROR" badge. Pass a
+		 * string to additionally surface the message as a tooltip on the badge.
+		 */
+		hasError?: string | boolean | null;
 		/** Bindable expanded state. */
 		open?: boolean;
 		/** Initial expanded state when no `open` prop has been set yet. */
@@ -93,6 +99,7 @@
 	let {
 		label = 'Sensor',
 		status = 'loading' as CwStatusDotStatus,
+		hasError = null,
 		open = $bindable<boolean | undefined>(undefined),
 		defaultExpanded = false,
 		storageKey,
@@ -174,8 +181,17 @@
 			secondary_icon
 		})
 	);
+	const hasErrorState = $derived(hasError != null && hasError !== false);
+	const errorMessage = $derived(typeof hasError === 'string' ? hasError : undefined);
 	const expandClassName = $derived(
-		['cw-sensor-card', className, slotStatusClass(effectiveStatus)].filter(Boolean).join(' ')
+		[
+			'cw-sensor-card',
+			className,
+			slotStatusClass(effectiveStatus),
+			hasErrorState ? 'cw-sensor-card--error' : ''
+		]
+			.filter(Boolean)
+			.join(' ')
 	);
 
 	function updateWithinTimeoutState(nextState: boolean | null) {
@@ -372,6 +388,13 @@
 					{/if}
 				</div>
 			</div>
+
+			{#if hasErrorState}
+				<div class="cw-sensor-card__error" role="alert" title={errorMessage}>
+					<span class="cw-sensor-card__error-icon" aria-hidden="true">!</span>
+					<span class="cw-sensor-card__error-text">SENSOR ERROR</span>
+				</div>
+			{/if}
 		</div>
 	{/snippet}
 
@@ -410,6 +433,13 @@
 		--_sensor-color: var(--cw-warning-400);
 	}
 
+	/* Error state: warning-tinted background + danger accent to grab attention. */
+	:global(.cw-sensor-card.cw-expand.cw-sensor-card--error) {
+		--_sensor-color: var(--cw-danger-500);
+		background: color-mix(in srgb, var(--cw-warning-400) 16%, var(--cw-bg-elevated));
+		border-color: color-mix(in srgb, var(--cw-warning-400) 45%, var(--cw-border-default));
+	}
+
 	:global(.cw-sensor-card .cw-expand__header) {
 		padding: 0;
 		gap: var(--cw-space-2);
@@ -435,8 +465,7 @@
 	}
 
 	.cw-sensor-card__content {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
+		display: flex;
 		align-items: center;
 		gap: var(--cw-space-3);
 		padding: var(--cw-space-3) var(--cw-space-4);
@@ -445,6 +474,7 @@
 
 	.cw-sensor-card__device {
 		display: grid;
+		flex: 1 1 auto;
 		gap: 0.3rem;
 		min-width: 0;
 	}
@@ -473,6 +503,57 @@
 		color: var(--cw-text-muted);
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
+	}
+
+	.cw-sensor-card__error {
+		display: inline-flex;
+		align-items: center;
+		flex: 0 0 auto;
+		gap: var(--cw-space-2);
+		padding-right: var(--cw-space-1);
+	}
+
+	.cw-sensor-card__error-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.5rem;
+		height: 1.5rem;
+		border-radius: var(--cw-radius-full);
+		border: 2px solid var(--cw-danger-500);
+		color: var(--cw-danger-500);
+		font-size: var(--cw-text-sm);
+		font-weight: var(--cw-font-bold);
+		line-height: 1;
+		flex-shrink: 0;
+		animation: cw-sensor-card-error-pulse 1.4s ease-in-out infinite;
+	}
+
+	.cw-sensor-card__error-text {
+		font-size: var(--cw-text-xs);
+		font-weight: var(--cw-font-bold);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--cw-danger-500);
+		white-space: nowrap;
+	}
+
+	@keyframes cw-sensor-card-error-pulse {
+		0% {
+			box-shadow: 0 0 0 0 color-mix(in srgb, var(--cw-danger-500) 55%, transparent);
+		}
+		70% {
+			box-shadow: 0 0 0 7px color-mix(in srgb, var(--cw-danger-500) 0%, transparent);
+		}
+		100% {
+			box-shadow: 0 0 0 0 color-mix(in srgb, var(--cw-danger-500) 0%, transparent);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.cw-sensor-card__error-icon {
+			animation: none;
+		}
 	}
 
 	.cw-sensor-card__stats {

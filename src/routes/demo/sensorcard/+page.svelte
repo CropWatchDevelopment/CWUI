@@ -31,6 +31,7 @@
 	let expireEvent = $state('');
 	let sensorWithinTimeout = $state<boolean | null>(null);
 	let rowWithinTimeoutMap = $state<Record<string, boolean | null>>({});
+	let demoHasError = $state<string | null>('I2C read failed (no ACK from 0x44)');
 
 	const statusSequence: CwStatusDotStatus[] = ['online', 'offline', 'loading', 'warning'];
 	const interactiveUpdatedAt = new Date(Date.now() - 120_000);
@@ -184,6 +185,53 @@
 	<div class="demo-actions">
 		<CwButton size="sm" variant="secondary" onclick={cycleStatus}>
 			Cycle sensor status ({demoStatus})
+		</CwButton>
+	</div>
+</section>
+
+<section class="demo-section">
+	<div class="demo-section__copy">
+		<span class="demo-label">Error state</span>
+		<h3>Surface a hardware fault with the <code>hasError</code> attribute</h3>
+		<p class="demo-hint">
+			Setting <code>hasError</code> to any non-null value (a message string is ideal) tints
+			the card background and shows a pulsing red <strong>SENSOR ERROR</strong> badge so the
+			fault is impossible to miss. Pass a string to expose the detail as a tooltip on the
+			badge.
+		</p>
+	</div>
+
+	<div class="demo-center">
+		<CwLocationCard title="Greenhouse C">
+			<CwSensorCard
+				label="CW-Sensor-042"
+				status="warning"
+				hasError={demoHasError}
+				primaryValue={-5.1}
+				primaryUnit="°C"
+				primary_icon="thermo"
+				secondaryValue={88.0}
+				secondaryUnit="%"
+				secondary_icon="drop"
+			>
+				<CwDataList
+					rows={[
+						{ id: 'err-temp', label: 'Temperature', value: '-5.10', unit: '°C', icon: 'thermo' },
+						{ id: 'err-humidity', label: 'Humidity', value: '88.00', unit: '%', icon: 'drop' }
+					]}
+				/>
+			</CwSensorCard>
+		</CwLocationCard>
+	</div>
+
+	<div class="demo-actions">
+		<CwButton
+			size="sm"
+			variant="secondary"
+			onclick={() =>
+				(demoHasError = demoHasError ? null : 'I2C read failed (no ACK from 0x44)')}
+		>
+			{demoHasError ? 'Clear error' : 'Trigger error'}
 		</CwButton>
 	</div>
 </section>
