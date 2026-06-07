@@ -25,8 +25,9 @@
 		status?: CwStatusDotStatus;
 		/**
 		 * When non-null (and not `false`), the card switches into an attention-grabbing
-		 * error state: a warning-tinted background plus a red "SENSOR ERROR" badge. Pass a
-		 * string to additionally surface the message as a tooltip on the badge.
+		 * error state: the primary/secondary readings are hidden and a warning-tinted
+		 * card shows a red error badge in their place. Pass a string (e.g. a localized
+		 * message) to use as the badge text; `true` falls back to a generic "SENSOR ERROR".
 		 */
 		hasError?: string | boolean | null;
 		/** Bindable expanded state. */
@@ -182,7 +183,9 @@
 		})
 	);
 	const hasErrorState = $derived(hasError != null && hasError !== false);
-	const errorMessage = $derived(typeof hasError === 'string' ? hasError : undefined);
+	const errorText = $derived(
+		typeof hasError === 'string' && hasError.trim() ? hasError : 'SENSOR ERROR'
+	);
 	const expandClassName = $derived(
 		[
 			'cw-sensor-card',
@@ -346,55 +349,55 @@
 					<span class="cw-sensor-card__label">{label}</span>
 				</div>
 
-				<div class="cw-sensor-card__stats">
-					<div class="cw-sensor-card__stat">
-						<span
-							class={[
-								'cw-sensor-card__stat-icon',
-								sensorStatIconClass(primaryIcon)
-							]}
-							aria-hidden="true"
-						>
-							<CwDataIcon icon={primaryIcon} />
-						</span>
-						<span class="cw-sensor-card__stat-reading">
-							<span class="cw-sensor-card__stat-value">
-								{primaryLabel ?? formatReading(primaryValue)}
-							</span>
-							{#if primaryValue != null || primaryLabel != null}
-								<span class="cw-sensor-card__stat-unit">{primaryUnit}</span>
-							{/if}
-						</span>
+				{#if hasErrorState}
+					<div class="cw-sensor-card__error" role="alert">
+						<span class="cw-sensor-card__error-icon" aria-hidden="true">!</span>
+						<span class="cw-sensor-card__error-text">{errorText}</span>
 					</div>
-
-					{#if secondaryValue != null || secondaryLabel != null}
+				{:else}
+					<div class="cw-sensor-card__stats">
 						<div class="cw-sensor-card__stat">
 							<span
 								class={[
 									'cw-sensor-card__stat-icon',
-									sensorStatIconClass(secondaryIcon)
+									sensorStatIconClass(primaryIcon)
 								]}
 								aria-hidden="true"
 							>
-								<CwDataIcon icon={secondaryIcon} />
+								<CwDataIcon icon={primaryIcon} />
 							</span>
 							<span class="cw-sensor-card__stat-reading">
 								<span class="cw-sensor-card__stat-value">
-									{secondaryLabel ?? formatReading(secondaryValue)}
+									{primaryLabel ?? formatReading(primaryValue)}
 								</span>
-								<span class="cw-sensor-card__stat-unit">{secondaryUnit}</span>
+								{#if primaryValue != null || primaryLabel != null}
+									<span class="cw-sensor-card__stat-unit">{primaryUnit}</span>
+								{/if}
 							</span>
 						</div>
-					{/if}
-				</div>
-			</div>
 
-			{#if hasErrorState}
-				<div class="cw-sensor-card__error" role="alert" title={errorMessage}>
-					<span class="cw-sensor-card__error-icon" aria-hidden="true">!</span>
-					<span class="cw-sensor-card__error-text">SENSOR ERROR</span>
-				</div>
-			{/if}
+						{#if secondaryValue != null || secondaryLabel != null}
+							<div class="cw-sensor-card__stat">
+								<span
+									class={[
+										'cw-sensor-card__stat-icon',
+										sensorStatIconClass(secondaryIcon)
+									]}
+									aria-hidden="true"
+								>
+									<CwDataIcon icon={secondaryIcon} />
+								</span>
+								<span class="cw-sensor-card__stat-reading">
+									<span class="cw-sensor-card__stat-value">
+										{secondaryLabel ?? formatReading(secondaryValue)}
+									</span>
+									<span class="cw-sensor-card__stat-unit">{secondaryUnit}</span>
+								</span>
+							</div>
+						{/if}
+					</div>
+				{/if}
+			</div>
 		</div>
 	{/snippet}
 
@@ -506,11 +509,10 @@
 	}
 
 	.cw-sensor-card__error {
-		display: inline-flex;
+		display: flex;
 		align-items: center;
-		flex: 0 0 auto;
 		gap: var(--cw-space-2);
-		padding-right: var(--cw-space-1);
+		min-width: 0;
 	}
 
 	.cw-sensor-card__error-icon {
@@ -530,12 +532,11 @@
 	}
 
 	.cw-sensor-card__error-text {
-		font-size: var(--cw-text-xs);
+		min-width: 0;
+		font-size: var(--cw-text-sm);
 		font-weight: var(--cw-font-bold);
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
+		line-height: 1.25;
 		color: var(--cw-danger-500);
-		white-space: nowrap;
 	}
 
 	@keyframes cw-sensor-card-error-pulse {

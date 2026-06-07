@@ -194,10 +194,10 @@
 		<span class="demo-label">Error state</span>
 		<h3>Surface a hardware fault with the <code>hasError</code> attribute</h3>
 		<p class="demo-hint">
-			Setting <code>hasError</code> to any non-null value (a message string is ideal) tints
-			the card background and shows a pulsing red <strong>SENSOR ERROR</strong> badge so the
-			fault is impossible to miss. Pass a string to expose the detail as a tooltip on the
-			badge.
+			Setting <code>hasError</code> hides the normal primary/secondary readings and shows a
+			pulsing red error badge in their place, so a fault is impossible to miss. The string you
+			pass becomes the badge text — pass a localized message (<code>true</code> falls back to a
+			generic <strong>SENSOR ERROR</strong>).
 		</p>
 	</div>
 
