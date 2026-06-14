@@ -56,6 +56,20 @@ export { createCwToastContext, useCwToast } from './components/cwToastContext.sv
 // ── Alarm system (non-visual) ──────────────────────────────
 export { createCwAlarmScheduler, createCwAlarmContext, useCwAlarm } from './components/cwAlarmContext.svelte.js';
 
+// ── Device refresh scheduler (non-visual) ──────────────────
+export {
+	attachCwDeviceRefreshVisibility,
+	createCwDeviceRefreshScheduler,
+	normalizeCwUploadIntervalMinutes
+} from './utils/cwDeviceRefresh.js';
+export type {
+	CwDeviceFreshness,
+	CwDeviceRefreshEntry,
+	CwDeviceRefreshOptions,
+	CwDeviceRefreshResult,
+	CwDeviceRefreshScheduler
+} from './utils/cwDeviceRefresh.js';
+
 // ── Responsive helpers ─────────────────────────────────────
 export {
 	CW_VIEW_SIZE_BREAKPOINTS,
