@@ -102,6 +102,11 @@
 	}
 
 	.cw-switch__label {
+		/* Contain the visually-hidden position:absolute input. Without a positioned
+		   ancestor its containing block is <html>, so it renders at its in-flow
+		   position but escapes scroll-container clipping and stretches the document
+		   (extra scrollable empty space below the app). */
+		position: relative;
 		display: inline-flex;
 		align-items: center;
 		gap: var(--cw-space-3);

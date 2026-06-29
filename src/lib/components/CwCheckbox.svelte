@@ -92,6 +92,10 @@
 	}
 
 	.cw-checkbox__label {
+		/* Contain the visually-hidden position:absolute input so its containing block
+		   is this label, not <html>. Otherwise it escapes scroll-container clipping
+		   and stretches the document (empty scrollable space below the app). */
+		position: relative;
 		display: inline-flex;
 		align-items: flex-start;
 		gap: var(--cw-space-3);
