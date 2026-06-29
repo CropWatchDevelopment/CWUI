@@ -194,11 +194,6 @@
 	const markerAlign = $derived(
 		markerPercent <= 10 ? 'start' : markerPercent >= 90 ? 'end' : 'center'
 	);
-	const showTargetTag = $derived(optimalWidth >= 16);
-	const trackGradient = $derived(
-		`linear-gradient(90deg, var(--cw-ppfd-low) 0%, var(--cw-ppfd-low) ${lowBoundaryPercent}%, var(--cw-ppfd-optimal) ${lowBoundaryPercent}%, var(--cw-ppfd-optimal) ${highBoundaryPercent}%, var(--cw-ppfd-high) ${highBoundaryPercent}%, var(--cw-ppfd-high) 100%)`
-	);
-
 	const status = $derived.by<CwPPFDStatus>(() => {
 		if (currentValue < normalizedRange.min) return 'low';
 		if (currentValue > normalizedRange.max) return 'high';
@@ -262,49 +257,56 @@
 	class:cw-no-data-host--active={hasNoData}
 >
 	<div class="cw-ppfd-chart__header">
-		<div class="cw-ppfd-chart__header-copy">
-			<p class="cw-ppfd-chart__eyebrow">{l.eyebrow}</p>
-			<h3 id="{uid}-title" class="cw-ppfd-chart__title">{heading}</h3>
-			{#if updatedLabel}
-				<p class="cw-ppfd-chart__updated">{l.updated(updatedLabel)}</p>
-			{/if}
-		</div>
-
-		<div class="cw-ppfd-chart__readings">
-			{#if formattedDli}
-				<div class="cw-ppfd-chart__reading cw-ppfd-chart__reading--dli">
-					<span class="cw-ppfd-chart__reading-label">{l.dliReading}</span>
-					<strong class="cw-ppfd-chart__reading-value">{formattedDli}</strong>
-				</div>
-			{/if}
-
-			<div class="cw-ppfd-chart__reading">
-				<span class="cw-ppfd-chart__reading-label">{l.currentPpfd}</span>
-				<strong class="cw-ppfd-chart__reading-value">{formattedCurrent}</strong>
-			</div>
-		</div>
+		<p class="cw-ppfd-chart__eyebrow">{l.eyebrow}</p>
+		<h3 id="{uid}-title" class="cw-ppfd-chart__title">{heading}</h3>
+		{#if updatedLabel}
+			<p class="cw-ppfd-chart__updated">{l.updated(updatedLabel)}</p>
+		{/if}
 	</div>
 
 	{#if showSummary}
-		<dl class="cw-ppfd-chart__stats">
+		<dl class="cw-ppfd-chart__summary">
 			<div class="cw-ppfd-chart__stat">
-				<dt>{l.targetRange}</dt>
-				<dd>{formattedTargetRange}</dd>
+				<dt>{l.currentPpfd}</dt>
+				<dd>{ppfdFormatter.format(currentValue)} <small>{unit}</small></dd>
 			</div>
 
-			<div class="cw-ppfd-chart__stat cw-ppfd-chart__stat--status cw-ppfd-chart__stat--{status}">
-				<dt>{l.status}</dt>
-				<dd>{statusLabel}</dd>
+			<div class="cw-ppfd-chart__stat">
+				<dt>{l.targetRange}</dt>
+				<dd>{ppfdFormatter.format(normalizedRange.min)}–{ppfdFormatter.format(normalizedRange.max)}</dd>
 			</div>
 
 			{#if formattedDli}
 				<div class="cw-ppfd-chart__stat">
 					<dt>{l.dliStat}</dt>
-					<dd>{formattedDli}</dd>
+					<dd>{dliFormatter.format(dliToday ?? 0)} <small>mol/m²/day</small></dd>
 				</div>
 			{/if}
 		</dl>
 	{/if}
+
+	<p class="cw-ppfd-chart__status cw-ppfd-chart__status--{status}">
+		{#if status === 'optimal'}
+			<svg class="cw-ppfd-chart__status-icon" viewBox="0 0 24 24" aria-hidden="true"
+				><path
+					fill="currentColor"
+					d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.1 14.2-4-4 1.4-1.4 2.6 2.6 5.4-5.4 1.4 1.4-6.8 6.8Z"
+				/></svg
+			>
+		{:else if status === 'low'}
+			<svg class="cw-ppfd-chart__status-icon" viewBox="0 0 24 24" aria-hidden="true"
+				><path fill="currentColor" d="M11 4h2v12l5-5 1.4 1.4L12 19.8 4.6 12.4 6 11l5 5V4Z" /></svg
+			>
+		{:else}
+			<svg class="cw-ppfd-chart__status-icon" viewBox="0 0 24 24" aria-hidden="true"
+				><path fill="currentColor" d="M13 20h-2V8L6 13 4.6 11.6 12 4.2l7.4 7.4L18 13l-5-5v12Z" /></svg
+			>
+		{/if}
+		<span
+			>{statusLabel}{#if showDelta && deltaMessage}
+				· {deltaMessage}{/if}</span
+		>
+	</p>
 
 	<div
 		class="cw-ppfd-chart__gauge-shell"
@@ -313,55 +315,48 @@
 	>
 		<p id="{uid}-summary" class="cw-ppfd-chart__sr-only">{srSummary}</p>
 
-		<div class="cw-ppfd-chart__zone-legend" aria-hidden="true">
-			<span class="cw-ppfd-chart__zone-pill cw-ppfd-chart__zone-pill--low">{lowLabel}</span>
-			<span class="cw-ppfd-chart__zone-pill cw-ppfd-chart__zone-pill--optimal">
-				{optimalLabel}
-			</span>
-			<span class="cw-ppfd-chart__zone-pill cw-ppfd-chart__zone-pill--high">{highLabel}</span>
-		</div>
-
 		<div class="cw-ppfd-chart__stage">
+			<div class="cw-ppfd-chart__track">
+				<div
+					class="cw-ppfd-chart__zone cw-ppfd-chart__zone--low"
+					style:width="{lowBoundaryPercent}%"
+				></div>
+				<div
+					class="cw-ppfd-chart__zone cw-ppfd-chart__zone--optimal"
+					style:width="{optimalWidth}%"
+				>
+					{#if optimalWidth >= 14}
+						<span class="cw-ppfd-chart__zone-label">{optimalLabel}</span>
+					{/if}
+				</div>
+				<div
+					class="cw-ppfd-chart__zone cw-ppfd-chart__zone--high"
+					style:width="{Math.max(0, 100 - lowBoundaryPercent - optimalWidth)}%"
+				></div>
+			</div>
+
 			<div
-				class="cw-ppfd-chart__marker-label cw-ppfd-chart__marker-label--{markerAlign}"
+				class="cw-ppfd-chart__marker cw-ppfd-chart__marker--{markerAlign}"
 				style:left="{markerPercent}%"
 			>
-				<span>{l.current}</span>
-				<strong>{formattedCurrent}</strong>
-			</div>
-
-			<div class="cw-ppfd-chart__track" style:background={trackGradient}>
-				{#if showTargetTag}
-					<div
-						class="cw-ppfd-chart__target-pill"
-						style:left="{lowBoundaryPercent + optimalWidth / 2}%"
-					>
-						{formattedTargetRange}
-					</div>
-				{/if}
-
-				<span class="cw-ppfd-chart__marker-line" style:left="{markerPercent}%"></span>
-			</div>
-
-			<div class="cw-ppfd-chart__ticks" aria-hidden="true">
-				{#each gaugeTicks as tick, index (tick.value)}
-					<div
-						class="cw-ppfd-chart__tick
-							{index === 0 ? ' cw-ppfd-chart__tick--start' : ''}
-							{index === gaugeTicks.length - 1 ? ' cw-ppfd-chart__tick--end' : ''}"
-						style:left="{clampPercent(scale(tick.value))}%"
-					>
-						<span class="cw-ppfd-chart__tick-mark"></span>
-						<span class="cw-ppfd-chart__tick-label">{tick.label}</span>
-					</div>
-				{/each}
+				<span class="cw-ppfd-chart__marker-value">{formattedCurrent}</span>
 			</div>
 		</div>
-	</div>
 
-	{#if showDelta}
-		<p class="cw-ppfd-chart__delta cw-ppfd-chart__delta--{status}">{deltaMessage}</p>
-	{/if}
+		<div class="cw-ppfd-chart__ticks" aria-hidden="true">
+			{#each gaugeTicks as tick (tick.value)}
+				<span class="cw-ppfd-chart__tick" style:left="{clampPercent(scale(tick.value))}%"
+					>{tick.label}</span
+				>
+			{/each}
+		</div>
+
+		<div class="cw-ppfd-chart__scale-labels" aria-hidden="true">
+			<span>{lowLabel}</span>
+			<span>{optimalLabel}</span>
+			<span>{highLabel}</span>
+		</div>
+	</div>
 
 	{#if hasNoData}
 		<CwNoDataOverlay message={noDataMessage} />
@@ -370,43 +365,31 @@
 
 <style>
 	.cw-ppfd-chart {
-		--cw-ppfd-low: color-mix(in srgb, var(--cw-warning-500) 76%, var(--cw-bg-surface));
-		--cw-ppfd-optimal: color-mix(in srgb, var(--cw-success-500) 76%, var(--cw-bg-surface));
-		--cw-ppfd-high: color-mix(in srgb, var(--cw-danger-500) 72%, var(--cw-bg-surface));
 		border: 1px solid var(--cw-chart-card-border, var(--cw-border-default));
-		border-radius: 1.5rem;
-		background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-bg-elevated) 94%, transparent),
-				var(--cw-chart-card-bg, var(--cw-bg-surface))
-			);
+		border-radius: var(--cw-radius-2xl);
+		background: var(--cw-chart-card-bg, var(--cw-bg-surface));
 		box-shadow: var(--cw-chart-card-shadow, var(--cw-shadow-md));
 		color: var(--cw-text-primary);
 		display: flex;
 		flex-direction: column;
+		font-family: var(--cw-font-family);
 		gap: var(--cw-space-5);
 		padding: var(--cw-space-6);
+		position: relative;
 	}
 
 	.cw-ppfd-chart__header {
-		align-items: flex-start;
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--cw-space-4);
-		justify-content: space-between;
-	}
-
-	.cw-ppfd-chart__header-copy {
 		display: flex;
 		flex-direction: column;
 		gap: var(--cw-space-1);
 	}
 
 	.cw-ppfd-chart__eyebrow {
-		color: var(--cw-chart-card-muted, var(--cw-text-muted));
+		color: var(--cw-accent);
+		font-family: var(--cw-font-mono);
 		font-size: var(--cw-text-xs);
-		letter-spacing: 0.18em;
+		font-weight: var(--cw-font-bold);
+		letter-spacing: 0.2em;
 		margin: 0;
 		text-transform: uppercase;
 	}
@@ -424,277 +407,222 @@
 		margin: 0;
 	}
 
-	.cw-ppfd-chart__readings {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--cw-space-3);
-	}
-
-	.cw-ppfd-chart__reading {
-		background: color-mix(in srgb, var(--cw-bg-muted) 62%, var(--cw-bg-elevated));
-		border: 1px solid color-mix(in srgb, var(--cw-border-default) 80%, transparent);
-		border-radius: var(--cw-radius-xl);
-		display: flex;
-		flex-direction: column;
-		gap: 0.35rem;
-		min-width: min(100%, 14rem);
-		padding: var(--cw-space-4);
-	}
-
-	.cw-ppfd-chart__reading-label {
-		color: var(--cw-text-secondary);
-		font-size: var(--cw-text-xs);
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-
-	.cw-ppfd-chart__reading-value {
-		font-size: clamp(1.5rem, 2vw, 2rem);
-		font-variant-numeric: tabular-nums;
-		line-height: 1.1;
-	}
-
-	.cw-ppfd-chart__stats {
+	.cw-ppfd-chart__summary {
 		display: grid;
 		gap: var(--cw-space-3);
-		grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
 		margin: 0;
 	}
 
 	.cw-ppfd-chart__stat {
-		background: color-mix(in srgb, var(--cw-bg-muted) 48%, var(--cw-bg-elevated));
-		border: 1px solid color-mix(in srgb, var(--cw-border-default) 76%, transparent);
+		background: color-mix(in srgb, var(--cw-bg-muted) 70%, var(--cw-chart-card-bg, var(--cw-bg-surface)));
+		border: 1px solid color-mix(in srgb, var(--cw-border-default) 70%, transparent);
 		border-radius: var(--cw-radius-xl);
-		display: flex;
-		flex-direction: column;
-		gap: var(--cw-space-1);
-		min-width: 0;
-		padding: var(--cw-space-4);
+		padding: 0.8rem 0.95rem;
 	}
 
 	.cw-ppfd-chart__stat dt {
 		color: var(--cw-text-muted);
 		font-size: var(--cw-text-xs);
-		letter-spacing: 0.12em;
+		font-weight: var(--cw-font-bold);
+		letter-spacing: 0.05em;
 		margin: 0;
 		text-transform: uppercase;
 	}
 
 	.cw-ppfd-chart__stat dd {
-		font-size: var(--cw-text-lg);
+		color: var(--cw-text-primary);
+		font-family: var(--cw-font-mono);
+		font-size: 1.2rem;
 		font-variant-numeric: tabular-nums;
+		font-weight: var(--cw-font-bold);
+		margin: 0.4rem 0 0;
+	}
+
+	.cw-ppfd-chart__stat dd small {
+		color: var(--cw-text-muted);
+		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-semibold);
+	}
+
+	.cw-ppfd-chart__status {
+		align-items: center;
+		align-self: flex-start;
+		display: inline-flex;
+		font-size: var(--cw-text-sm);
+		font-weight: var(--cw-font-bold);
+		gap: 0.4rem;
 		margin: 0;
 	}
 
-	.cw-ppfd-chart__stat--status {
-		border-color: transparent;
+	.cw-ppfd-chart__status-icon {
+		flex: none;
+		height: 1.15rem;
+		width: 1.15rem;
 	}
 
-	.cw-ppfd-chart__stat--low {
-		background: color-mix(in srgb, var(--cw-warning-100) 60%, transparent);
-		color: var(--cw-tone-warning-text);
-	}
-
-	.cw-ppfd-chart__stat--optimal {
-		background: color-mix(in srgb, var(--cw-success-100) 40%, transparent);
+	.cw-ppfd-chart__status--optimal {
 		color: var(--cw-tone-success-text);
 	}
 
-	.cw-ppfd-chart__stat--high {
-		background: color-mix(in srgb, var(--cw-danger-100) 34%, transparent);
+	.cw-ppfd-chart__status--low {
+		color: var(--cw-tone-info-text);
+	}
+
+	.cw-ppfd-chart__status--high {
 		color: var(--cw-tone-danger-text);
 	}
 
 	.cw-ppfd-chart__gauge-shell {
 		display: flex;
 		flex-direction: column;
-		gap: var(--cw-space-3);
-	}
-
-	.cw-ppfd-chart__zone-legend {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--cw-space-2);
-	}
-
-	.cw-ppfd-chart__zone-pill {
-		border: 1px solid transparent;
-		border-radius: var(--cw-radius-full);
-		font-size: var(--cw-text-xs);
-		font-weight: var(--cw-font-medium);
-		padding: 0.3rem 0.65rem;
-	}
-
-	.cw-ppfd-chart__zone-pill--low {
-		background: color-mix(in srgb, var(--cw-warning-100) 70%, transparent);
-		border-color: color-mix(in srgb, var(--cw-warning-400) 48%, transparent);
-		color: var(--cw-tone-warning-text);
-	}
-
-	.cw-ppfd-chart__zone-pill--optimal {
-		background: color-mix(in srgb, var(--cw-success-100) 40%, transparent);
-		border-color: color-mix(in srgb, var(--cw-success-400) 48%, transparent);
-		color: var(--cw-tone-success-text);
-	}
-
-	.cw-ppfd-chart__zone-pill--high {
-		background: color-mix(in srgb, var(--cw-danger-100) 32%, transparent);
-		border-color: color-mix(in srgb, var(--cw-danger-400) 42%, transparent);
-		color: var(--cw-tone-danger-text);
 	}
 
 	.cw-ppfd-chart__stage {
-		padding-top: 3.25rem;
+		padding-top: 2.4rem;
 		position: relative;
-	}
-
-	.cw-ppfd-chart__marker-label {
-		background: color-mix(in srgb, var(--cw-bg-elevated) 94%, transparent);
-		border: 1px solid color-mix(in srgb, var(--cw-border-default) 78%, transparent);
-		border-radius: var(--cw-radius-lg);
-		box-shadow: 0 8px 18px color-mix(in srgb, var(--cw-bg-base) 26%, transparent);
-		display: flex;
-		flex-direction: column;
-		gap: 0.15rem;
-		max-width: min(15rem, 78vw);
-		padding: 0.55rem 0.75rem;
-		position: absolute;
-		top: 0;
-		transform: translateX(-50%);
-		z-index: 2;
-	}
-
-	.cw-ppfd-chart__marker-label--start {
-		transform: translateX(0);
-	}
-
-	.cw-ppfd-chart__marker-label--end {
-		transform: translateX(-100%);
-	}
-
-	.cw-ppfd-chart__marker-label span {
-		color: var(--cw-text-muted);
-		font-size: 0.68rem;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-	}
-
-	.cw-ppfd-chart__marker-label strong {
-		font-size: var(--cw-text-sm);
-		font-variant-numeric: tabular-nums;
 	}
 
 	.cw-ppfd-chart__track {
+		background: var(--cw-bg-elevated);
 		border: 1px solid color-mix(in srgb, var(--cw-border-default) 70%, transparent);
-		border-radius: var(--cw-radius-full);
-		box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 10%, transparent);
-		height: 1rem;
+		border-radius: var(--cw-radius-lg);
+		display: flex;
+		height: 2.875rem;
+		overflow: hidden;
 		position: relative;
 	}
 
-	.cw-ppfd-chart__target-pill {
-		background: color-mix(in srgb, var(--cw-bg-base) 48%, transparent);
-		border: 1px solid color-mix(in srgb, #ffffff 14%, transparent);
-		border-radius: var(--cw-radius-full);
-		color: var(--cw-text-primary);
-		font-size: 0.68rem;
-		font-variant-numeric: tabular-nums;
-		padding: 0.15rem 0.55rem;
+	.cw-ppfd-chart__zone {
+		height: 100%;
+	}
+
+	.cw-ppfd-chart__zone--low {
+		background: repeating-linear-gradient(
+			45deg,
+			color-mix(in srgb, var(--cw-bg-subtle) 55%, var(--cw-chart-card-bg, var(--cw-bg-surface))) 0 8px,
+			color-mix(in srgb, var(--cw-bg-subtle) 80%, var(--cw-chart-card-bg, var(--cw-bg-surface))) 8px 16px
+		);
+	}
+
+	.cw-ppfd-chart__zone--optimal {
+		background: linear-gradient(
+			180deg,
+			color-mix(in srgb, var(--cw-success-500) 28%, var(--cw-chart-card-bg, var(--cw-bg-surface))),
+			color-mix(in srgb, var(--cw-success-500) 16%, var(--cw-chart-card-bg, var(--cw-bg-surface)))
+		);
+		border-left: 2px dashed var(--cw-success-500);
+		border-right: 2px dashed var(--cw-success-500);
+		position: relative;
+	}
+
+	.cw-ppfd-chart__zone-label {
+		color: var(--cw-tone-success-text);
+		font-size: var(--cw-text-xs);
+		font-weight: var(--cw-font-bold);
+		left: 50%;
+		letter-spacing: 0.04em;
+		pointer-events: none;
 		position: absolute;
+		text-transform: uppercase;
 		top: 50%;
 		transform: translate(-50%, -50%);
 		white-space: nowrap;
 	}
 
-	.cw-ppfd-chart__marker-line {
-		background: #ffffff;
-		border-radius: var(--cw-radius-full);
-		box-shadow:
-			0 0 0 1px color-mix(in srgb, var(--cw-gray-950) 28%, transparent),
-			0 10px 18px color-mix(in srgb, var(--cw-bg-base) 34%, transparent);
-		height: 3.8rem;
-		left: 0;
-		position: absolute;
-		top: -2.4rem;
-		transform: translateX(-50%);
-		width: 0.2rem;
-		z-index: 1;
+	.cw-ppfd-chart__zone--high {
+		background: repeating-linear-gradient(
+			45deg,
+			color-mix(in srgb, var(--cw-danger-500) 13%, var(--cw-chart-card-bg, var(--cw-bg-surface))) 0 8px,
+			color-mix(in srgb, var(--cw-danger-500) 7%, var(--cw-chart-card-bg, var(--cw-bg-surface))) 8px 16px
+		);
 	}
 
-	.cw-ppfd-chart__marker-line::after {
-		background: #ffffff;
-		border: 2px solid color-mix(in srgb, var(--cw-gray-950) 18%, transparent);
-		border-radius: var(--cw-radius-full);
+	.cw-ppfd-chart__marker {
+		background: var(--cw-text-primary);
+		border-radius: 3px;
+		height: calc(2.875rem + 12px);
+		position: absolute;
+		top: calc(2.4rem - 6px);
+		transform: translateX(-50%);
+		transition: left var(--cw-duration-slow) var(--cw-ease-default);
+		width: 3px;
+		z-index: 3;
+	}
+
+	.cw-ppfd-chart__marker::before {
+		background: var(--cw-text-primary);
+		border-radius: 2px;
 		content: '';
-		height: 0.7rem;
+		height: 11px;
 		left: 50%;
 		position: absolute;
-		top: 2.05rem;
-		transform: translate(-50%, -50%);
-		width: 0.7rem;
+		top: -3px;
+		transform: translateX(-50%) rotate(45deg);
+		width: 11px;
+	}
+
+	.cw-ppfd-chart__marker-value {
+		background: var(--cw-text-primary);
+		border-radius: var(--cw-radius-md);
+		bottom: calc(100% + 7px);
+		color: var(--cw-text-inverse);
+		font-family: var(--cw-font-mono);
+		font-size: var(--cw-text-xs);
+		font-weight: var(--cw-font-bold);
+		left: 50%;
+		padding: 0.2rem 0.5rem;
+		position: absolute;
+		transform: translateX(-50%);
+		white-space: nowrap;
+	}
+
+	.cw-ppfd-chart__marker--start .cw-ppfd-chart__marker-value {
+		left: 0;
+		transform: translateX(0);
+	}
+
+	.cw-ppfd-chart__marker--end .cw-ppfd-chart__marker-value {
+		left: auto;
+		right: 0;
+		transform: translateX(0);
 	}
 
 	.cw-ppfd-chart__ticks {
-		height: 2.5rem;
-		margin-top: 0.7rem;
+		height: 1.4rem;
+		margin-top: 0.4rem;
 		position: relative;
 	}
 
 	.cw-ppfd-chart__tick {
-		align-items: center;
-		display: flex;
-		flex-direction: column;
-		gap: 0.35rem;
-		left: 0;
-		position: absolute;
-		top: 0;
-		transform: translateX(-50%);
-	}
-
-	.cw-ppfd-chart__tick--start {
-		transform: translateX(0);
-	}
-
-	.cw-ppfd-chart__tick--end {
-		transform: translateX(-100%);
-	}
-
-	.cw-ppfd-chart__tick-mark {
-		background: color-mix(in srgb, var(--cw-border-strong) 80%, transparent);
-		border-radius: var(--cw-radius-full);
-		height: 0.55rem;
-		width: 1px;
-	}
-
-	.cw-ppfd-chart__tick-label {
 		color: var(--cw-text-muted);
-		font-size: 0.68rem;
-		font-variant-numeric: tabular-nums;
+		font-family: var(--cw-font-mono);
+		font-size: var(--cw-text-xs);
+		position: absolute;
+		top: 0.5rem;
+		transform: translateX(-50%);
 		white-space: nowrap;
 	}
 
-	.cw-ppfd-chart__delta {
-		border-radius: var(--cw-radius-lg);
-		font-size: var(--cw-text-sm);
-		font-weight: var(--cw-font-medium);
-		margin: 0;
-		padding: 0.8rem 0.95rem;
+	.cw-ppfd-chart__tick::before {
+		background: var(--cw-border-strong);
+		content: '';
+		height: 4px;
+		left: 50%;
+		position: absolute;
+		top: -0.4rem;
+		width: 1px;
 	}
 
-	.cw-ppfd-chart__delta--low {
-		background: color-mix(in srgb, var(--cw-warning-100) 68%, transparent);
-		color: var(--cw-tone-warning-text);
-	}
-
-	.cw-ppfd-chart__delta--optimal {
-		background: color-mix(in srgb, var(--cw-success-100) 44%, transparent);
-		color: var(--cw-tone-success-text);
-	}
-
-	.cw-ppfd-chart__delta--high {
-		background: color-mix(in srgb, var(--cw-danger-100) 34%, transparent);
-		color: var(--cw-tone-danger-text);
+	.cw-ppfd-chart__scale-labels {
+		color: var(--cw-text-muted);
+		display: flex;
+		font-size: var(--cw-text-xs);
+		font-weight: var(--cw-font-bold);
+		justify-content: space-between;
+		letter-spacing: 0.06em;
+		margin-top: 0.6rem;
+		text-transform: uppercase;
 	}
 
 	.cw-ppfd-chart__sr-only {
@@ -714,24 +642,8 @@
 			padding: var(--cw-space-5);
 		}
 
-		.cw-ppfd-chart__readings {
-			width: 100%;
-		}
-
-		.cw-ppfd-chart__reading {
-			flex: 1 1 100%;
-			width: 100%;
-		}
-
-		.cw-ppfd-chart__stats {
-			grid-template-columns: 1fr;
-		}
-
-		.cw-ppfd-chart__tick:nth-child(even):not(.cw-ppfd-chart__tick--start):not(
-				.cw-ppfd-chart__tick--end
-			)
-			.cw-ppfd-chart__tick-label {
-			display: none;
+		.cw-ppfd-chart__summary {
+			grid-template-columns: 1fr 1fr;
 		}
 	}
 </style>

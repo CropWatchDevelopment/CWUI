@@ -34,7 +34,7 @@
 		title?: string;
 		/** Height of each hour row in px. */
 		rowHeight?: number;
-		/** Color stops: [cold, mid, hot]. Defaults to blue → yellow → red. */
+		/** Color stops: [cold, mid, hot]. Defaults to cyan → lime → orange. */
 		colors?: [string, string, string];
 		/** Called when a cell is clicked. */
 		onCellClick?: (point: { date: string; hour: number; value: number | null }) => void;
@@ -52,7 +52,7 @@
 		unit = '°C',
 		title,
 		rowHeight = 24,
-		colors = ['#3b82f6', '#facc15', '#ef4444'],
+		colors = ['#06b6d4', '#a3e635', '#f97316'],
 		onCellClick,
 		noData,
 		labels = {},
@@ -186,7 +186,7 @@
 	{/if}
 
 	<div class="cw-heatmap__scroll">
-		<div class="cw-heatmap__grid" style="grid-template-columns: 3.5rem repeat({dateColumns.length}, 1fr);">
+		<div class="cw-heatmap__grid" style="grid-template-columns: 3.25rem repeat({dateColumns.length}, 1fr);">
 			<!-- Column headers -->
 			<div class="cw-heatmap__corner"></div>
 			{#each dateColumns as col (fmtDate(col))}
@@ -203,15 +203,12 @@
 						style="background-color:{cellColor(val)}; height:{rowHeight}px"
 						role="button"
 						tabindex="0"
+						aria-label="{fmtDay(col)} {fmtHour(hour)}: {val !== null ? val.toFixed(1) + unit : l.noData}"
 						onmouseenter={(e) => showTooltip(e, col, hour)}
 						onmouseleave={hideTooltip}
 						onclick={() => handleClick(col, hour)}
 						onkeydown={(event) => handleCellKeydown(event, col, hour)}
-					>
-						{#if val !== null}
-							<span class="cw-heatmap__cell-text">{val.toFixed(1)}</span>
-						{/if}
-					</div>
+					></div>
 				{/each}
 			{/each}
 		</div>
@@ -257,13 +254,13 @@
 
 	.cw-heatmap__grid {
 		display: grid;
-		gap: 1px;
+		gap: 3px;
 		min-width: max-content;
 	}
 
 	.cw-heatmap__col-header {
-		font-size: var(--cw-text-xs);
-		font-weight: var(--cw-font-medium);
+		font-size: 0.65rem;
+		font-weight: var(--cw-font-semibold);
 		color: var(--cw-text-muted);
 		text-align: center;
 		padding: var(--cw-space-1) 0;
@@ -271,7 +268,8 @@
 	}
 
 	.cw-heatmap__row-header {
-		font-size: 0.625rem;
+		font-family: var(--cw-font-mono);
+		font-size: 0.65rem;
 		color: var(--cw-text-muted);
 		display: flex;
 		align-items: center;
@@ -283,42 +281,31 @@
 	/* ── Cells ────────────────────────── */
 	.cw-heatmap__cell {
 		position: relative;
-		border-radius: 2px;
+		border-radius: 3px;
 		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
 		transition: outline var(--cw-duration-fast) var(--cw-ease-default);
-		min-width: 2.5rem;
+		min-width: 1.75rem;
 	}
 
 	.cw-heatmap__cell:hover {
 		outline: 2px solid var(--cw-text-primary);
-		outline-offset: -1px;
+		outline-offset: 1px;
 		z-index: 1;
-	}
-
-	.cw-heatmap__cell-text {
-		font-size: 0.5625rem;
-		font-weight: var(--cw-font-medium);
-		color: #fff;
-		text-shadow: 0 0 3px rgba(0,0,0,0.6);
-		pointer-events: none;
 	}
 
 	/* ── Legend ────────────────────────── */
 	.cw-heatmap__legend {
 		display: flex;
 		align-items: center;
-		gap: var(--cw-space-2);
+		gap: var(--cw-space-3);
 		margin-top: var(--cw-space-3);
-		justify-content: center;
+		font-family: var(--cw-font-mono);
 	}
 
 	.cw-heatmap__legend-bar {
 		width: 10rem;
-		height: 0.625rem;
-		border-radius: var(--cw-radius-sm);
+		height: 0.75rem;
+		border-radius: 6px;
 	}
 
 	.cw-heatmap__legend-label {
@@ -331,12 +318,12 @@
 	.cw-heatmap__tooltip {
 		position: absolute;
 		z-index: 10;
-		padding: var(--cw-space-2) var(--cw-space-3);
+		padding: var(--cw-space-1) var(--cw-space-2);
 		border-radius: var(--cw-radius-md);
-		background-color: var(--cw-bg-overlay);
-		border: 1px solid var(--cw-border-default);
+		background-color: var(--cw-text-primary);
+		color: var(--cw-text-inverse);
+		font-family: var(--cw-font-mono);
 		font-size: var(--cw-text-xs);
-		color: var(--cw-text-primary);
 		pointer-events: none;
 		white-space: nowrap;
 		box-shadow: var(--cw-shadow-md);

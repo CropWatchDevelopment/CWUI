@@ -158,8 +158,11 @@
 		border-radius: var(--cw-radius-full);
 		background-color: var(--cw-bg-elevated);
 		box-shadow: var(--cw-shadow-sm);
-		transform: translate3d(0, 0, 0);
-		will-change: transform;
+		/* 2D translate (no translate3d/will-change) to avoid pinning the thumb to a
+		   permanent GPU compositing layer. On pages with several switches that layer
+		   triggers a Chromium repaint bug where toggling one leaves sibling regions
+		   unpainted until a scroll/resize. The slide still animates via the transition. */
+		transform: translateX(0);
 		transition:
 			transform 210ms cubic-bezier(0.22, 1, 0.36, 1),
 			background-color 180ms var(--cw-ease-default),
@@ -172,7 +175,7 @@
 	}
 
 	.cw-switch__input:checked + .cw-switch__control .cw-switch__thumb {
-		transform: translate3d(1rem, 0, 0);
+		transform: translateX(1rem);
 		background-color: #fff;
 	}
 

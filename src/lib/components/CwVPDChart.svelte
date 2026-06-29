@@ -194,6 +194,15 @@
 		return saturationVaporPressure * (1 - humidity / 100);
 	}
 
+	// Continuous blue → green → red hue ramp for cell fills (matches the agriculture VPD palette).
+	function vpdColor(value: number): string {
+		const hue =
+			value <= 1
+				? 220 - (Math.max(0, value) / 1) * 90
+				: Math.max(0, 130 - ((value - 1) / 1.2) * 130);
+		return `hsl(${hue.toFixed(0)} 68% 50%)`;
+	}
+
 	function resolveZone(value: number): VpdZone {
 		for (const zone of VPD_ZONES) {
 			const insideUpperBound = Number.isFinite(zone.max)
@@ -272,11 +281,46 @@
 			}),
 		})),
 	);
+	const hasTargetBand = $derived(
+		(targetMin !== undefined && targetMin !== null) ||
+			(targetMax !== undefined && targetMax !== null),
+	);
+	const currentRoomVpd = $derived(
+		airTemperatureValue === null || relativeHumidityValue === null
+			? null
+			: calculateRoomVpd(airTemperatureValue, relativeHumidityValue),
+	);
+	const currentInTarget = $derived(
+		currentRoomVpd !== null &&
+			hasTargetBand &&
+			currentRoomVpd >= normalizedTarget.min &&
+			currentRoomVpd <= normalizedTarget.max,
+	);
 </script>
 
 <section
 	class={["cw-vpd-chart", "cw-no-data-host", hasNoData && "cw-no-data-host--active", className]}
 >
+	{#if currentRoomVpd !== null}
+		<div class="cw-vpd-chart__readout">
+			<div class="cw-vpd-chart__readout-main">
+				<b>{vpdFormatter.format(currentRoomVpd)} {unit}</b>
+				<span>room VPD · {airTemperatureValue}°C / {relativeHumidityValue}% RH</span>
+			</div>
+			{#if hasTargetBand}
+				<p class="cw-vpd-chart__readout-target">
+					Target {vpdFormatter.format(normalizedTarget.min)}–{vpdFormatter.format(
+						normalizedTarget.max,
+					)}
+					{unit} ·
+					<strong class={currentInTarget ? "is-on" : "is-off"}
+						>{currentInTarget ? "on target" : "steer back to band"}</strong
+					>
+				</p>
+			{/if}
+		</div>
+	{/if}
+
 	<div class="cw-vpd-chart__matrix-scroll">
 		<table class="cw-vpd-chart__matrix">
 			<caption class="cw-vpd-chart__sr-only">{caption}</caption>
@@ -322,10 +366,10 @@
 							<td
 								class={[
 									"cw-vpd-chart__cell",
-									`cw-vpd-chart__cell--${cell.zone}`,
 									cell.inTarget && "cw-vpd-chart__cell--target",
 									cell.isCurrent && "cw-vpd-chart__cell--current",
 								]}
+								style:background={vpdColor(cell.vpd)}
 								aria-label={cellAriaLabel({
 									temperatureC: row.temperatureC,
 									humidity: cell.humidity,
@@ -337,12 +381,26 @@
 								})}
 							>
 								<span class="cw-vpd-chart__cell-value">{vpdFormatter.format(cell.vpd)}</span>
+									{#if cell.isCurrent}
+										<b class="cw-vpd-chart__cell-marker" aria-hidden="true">Now</b>
+									{/if}
 							</td>
 						{/each}
 					</tr>
 				{/each}
 			</tbody>
 		</table>
+	</div>
+
+	<div class="cw-vpd-chart__legend" aria-hidden="true">
+		<span>Humid / low</span>
+		<span class="cw-vpd-chart__legend-ramp"></span>
+		<span>Dry / high</span>
+		{#if hasTargetBand}
+			<span class="cw-vpd-chart__legend-target">
+				<span class="cw-vpd-chart__legend-swatch"></span> in target band
+			</span>
+		{/if}
 	</div>
 
 	{#if hasNoData}
@@ -352,98 +410,83 @@
 
 <style>
 	.cw-vpd-chart {
-		--cw-vpd-sticky-c: 4.5rem;
-		--cw-vpd-sticky-f: 4.5rem;
-		--cw-vpd-grid: color-mix(
-			in srgb,
-			var(--cw-border-default, #94a3b8) 78%,
-			transparent
-		);
-		--cw-vpd-axis: color-mix(
-			in srgb,
-			var(--cw-bg-muted, #e2e8f0) 58%,
-			var(--cw-chart-card-bg, var(--cw-bg-surface))
-		);
-		--cw-vpd-axis-strong: color-mix(
-			in srgb,
-			var(--cw-border-default, #94a3b8) 78%,
-			transparent
-		);
-		--cw-vpd-header: color-mix(
-			in srgb,
-			var(--cw-text-primary, #0f172a) 8%,
-			var(--cw-chart-card-bg, var(--cw-bg-surface))
-		);
-		--cw-vpd-wet: #3d75b8;
-		--cw-vpd-humid: #53b9d3;
-		--cw-vpd-balanced: #7fc65a;
-		--cw-vpd-optimal: #b5d448;
-		--cw-vpd-firm: #efd04a;
-		--cw-vpd-dry: #eea24d;
-		--cw-vpd-stress: #d75a4b;
-		--cw-vpd-selection: color-mix(
-			in srgb,
-			var(--cw-accent, #2563eb) 78%,
-			var(--cw-text-primary, #0f172a)
-		);
-		--cw-vpd-selection-ring: color-mix(
-			in srgb,
-			white 88%,
-			var(--cw-selection, #0f172a)
-		);
-		--cw-vpd-current-text-scale: 2;
-		--cw-vpd-axis-text-scale: 1.35;
 		background: var(--cw-chart-card-bg, var(--cw-bg-surface));
 		border: 1px solid var(--cw-chart-card-border, var(--cw-border-default));
-		border-radius: 1.25rem;
+		border-radius: var(--cw-radius-2xl);
 		box-shadow: var(--cw-chart-card-shadow, var(--cw-shadow-md));
-		overflow: hidden;
-		padding: 0.5rem;
+		color: var(--cw-text-primary);
+		display: flex;
+		flex-direction: column;
+		font-family: var(--cw-font-family);
+		gap: var(--cw-space-4);
+		padding: var(--cw-space-5);
 		position: relative;
 	}
 
+	.cw-vpd-chart__readout {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+	}
+
+	.cw-vpd-chart__readout-main {
+		align-items: baseline;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.65rem;
+	}
+
+	.cw-vpd-chart__readout-main b {
+		color: var(--cw-text-primary);
+		font-family: var(--cw-font-mono);
+		font-size: 1.4rem;
+		font-variant-numeric: tabular-nums;
+		font-weight: var(--cw-font-bold);
+		white-space: nowrap;
+	}
+
+	.cw-vpd-chart__readout-main span {
+		color: var(--cw-text-muted);
+		font-size: var(--cw-text-sm);
+	}
+
+	.cw-vpd-chart__readout-target {
+		color: var(--cw-text-muted);
+		font-size: var(--cw-text-sm);
+		margin: 0;
+	}
+
+	.cw-vpd-chart__readout-target .is-on {
+		color: var(--cw-tone-success-text);
+	}
+
+	.cw-vpd-chart__readout-target .is-off {
+		color: var(--cw-tone-danger-text);
+	}
+
 	.cw-vpd-chart__matrix-scroll {
-		overflow: auto;
+		overflow-x: auto;
 	}
 
 	.cw-vpd-chart__matrix {
 		border-collapse: separate;
-		border-spacing: 0;
+		border-spacing: 3px;
 		min-width: max-content;
 		width: 100%;
 	}
 
-	.cw-vpd-chart__matrix th,
-	.cw-vpd-chart__matrix td {
-		border-right: 1px solid var(--cw-vpd-grid);
-		border-top: 1px solid var(--cw-vpd-grid);
-		padding: 0;
+	.cw-vpd-chart__matrix thead th {
+		color: var(--cw-text-muted);
+		font-family: var(--cw-font-mono);
+		font-size: var(--cw-text-xs);
+		font-weight: var(--cw-font-bold);
+		padding: 0.15rem 0.2rem;
 		text-align: center;
 	}
 
-	.cw-vpd-chart__matrix thead th {
-		background: var(--cw-vpd-header);
-		color: var(--cw-chart-card-title, var(--cw-text-primary));
-		font-size: 0.78rem;
-		font-weight: 700;
-		padding: 0.8rem 0.7rem;
-		position: sticky;
-		top: 0;
-		z-index: 3;
-	}
-
 	.cw-vpd-chart__matrix thead th:first-child {
-		left: 0;
-		min-width: var(--cw-vpd-sticky-c);
-		position: sticky;
-		z-index: 6;
-	}
-
-	.cw-vpd-chart__matrix thead th:nth-child(2) {
-		left: var(--cw-vpd-sticky-c);
-		min-width: var(--cw-vpd-sticky-f);
-		position: sticky;
-		z-index: 6;
+		color: var(--cw-text-primary);
+		text-align: left;
 	}
 
 	.cw-vpd-chart__header-text,
@@ -452,150 +495,203 @@
 	.cw-vpd-chart__cell-value {
 		display: inline-block;
 		line-height: 1;
-		transform-origin: center;
 	}
 
 	.cw-vpd-chart__header--current {
-		background: color-mix(
-			in srgb,
-			var(--cw-vpd-selection) 34%,
-			var(--cw-vpd-header)
-		);
-		box-shadow:
-			inset 0 -4px 0 color-mix(in srgb, var(--cw-vpd-selection) 80%, transparent),
-			inset 0 0 0 1px color-mix(in srgb, white 18%, transparent);
-		color: #ffffff;
-		z-index: 7;
+		color: var(--cw-accent);
 	}
 
 	.cw-vpd-chart__header--current .cw-vpd-chart__header-text {
-		font-size: 0.9rem;
 		font-weight: 900;
-		transform: scale(var(--cw-vpd-axis-text-scale));
 	}
 
 	.cw-vpd-chart__row-header,
 	.cw-vpd-chart__fahrenheit {
-		background: var(--cw-vpd-axis);
-		color: var(--cw-chart-card-title, var(--cw-text-primary));
-		font-size: 0.8rem;
+		color: var(--cw-text-primary);
+		font-family: var(--cw-font-mono);
+		font-size: var(--cw-text-xs);
 		font-variant-numeric: tabular-nums;
-		min-width: var(--cw-vpd-sticky-c);
-		padding: 0.74rem 0.6rem;
-		position: sticky;
-		z-index: 2;
-	}
-
-	.cw-vpd-chart__row-header {
-		left: 0;
-		z-index: 4;
+		font-weight: var(--cw-font-bold);
+		padding-right: 0.5rem;
+		text-align: right;
+		white-space: nowrap;
 	}
 
 	.cw-vpd-chart__fahrenheit {
-		border-right-color: var(--cw-vpd-axis-strong);
-		color: var(--cw-text-secondary, #475569);
-		left: var(--cw-vpd-sticky-c);
-		min-width: var(--cw-vpd-sticky-f);
-		z-index: 4;
+		color: var(--cw-text-muted);
 	}
 
 	.cw-vpd-chart__row-header--current,
 	.cw-vpd-chart__fahrenheit--current {
-		background: color-mix(
-			in srgb,
-			var(--cw-vpd-selection) 26%,
-			var(--cw-vpd-axis)
-		);
-		box-shadow: inset -3px 0 0 color-mix(in srgb, var(--cw-vpd-selection)
-					82%, transparent);
-		color: var(--cw-chart-card-title, var(--cw-text-primary));
-		z-index: 5;
+		color: var(--cw-accent);
 	}
 
 	.cw-vpd-chart__row-header--current .cw-vpd-chart__row-label,
 	.cw-vpd-chart__fahrenheit--current .cw-vpd-chart__fahrenheit-label {
-		font-size: 0.95rem;
 		font-weight: 900;
-		transform: scale(var(--cw-vpd-axis-text-scale));
 	}
 
 	.cw-vpd-chart__cell {
-		color: #102131;
-		font-size: 0.8rem;
+		border-radius: 5px;
+		color: rgba(255, 255, 255, 0.95);
+		font-family: var(--cw-font-mono);
+		font-size: var(--cw-text-xs);
 		font-variant-numeric: tabular-nums;
-		font-weight: 700;
-		min-width: 4.55rem;
+		font-weight: var(--cw-font-semibold);
+		min-width: 2.6rem;
 		position: relative;
+		text-align: center;
+		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 	}
 
 	.cw-vpd-chart__cell span {
 		display: block;
-		padding: 0.8rem 0.55rem;
-	}
-
-	.cw-vpd-chart__cell--wet {
-		background: var(--cw-vpd-wet);
-		color: #eff6ff;
-	}
-	.cw-vpd-chart__cell--humid {
-		background: var(--cw-vpd-humid);
-	}
-	.cw-vpd-chart__cell--balanced {
-		background: var(--cw-vpd-balanced);
-	}
-	.cw-vpd-chart__cell--optimal {
-		background: var(--cw-vpd-optimal);
-	}
-	.cw-vpd-chart__cell--firm {
-		background: var(--cw-vpd-firm);
-	}
-	.cw-vpd-chart__cell--dry {
-		background: var(--cw-vpd-dry);
-	}
-	.cw-vpd-chart__cell--stress {
-		background: var(--cw-vpd-stress);
-		color: #fff7ed;
+		padding: 0.45rem 0.3rem;
 	}
 
 	.cw-vpd-chart__cell--target {
 		box-shadow:
-			inset 0 0 0 2px var(--cw-vpd-selection-ring),
-			inset 0 0 0 4px
-				color-mix(in srgb, var(--cw-vpd-selection) 32%, transparent);
+			inset 0 0 0 2px #fff,
+			0 0 0 1px rgba(0, 0, 0, 0.18);
 	}
 
 	.cw-vpd-chart__cell--current {
-		z-index: 2;
+		overflow: visible;
+		z-index: 3;
+	}
+
+	/* Radar-ping halo pulsing outward to draw the eye to the live cell. */
+	.cw-vpd-chart__cell--current::before {
+		content: "";
+		position: absolute;
+		inset: -3px;
+		border-radius: 7px;
+		pointer-events: none;
+		z-index: 0;
+		animation: cw-vpd-current-ping 1.6s ease-out infinite;
+	}
+
+	/* Lifted high-contrast frame (white + ink rings + shadow) so the cell pops off the grid. */
+	.cw-vpd-chart__cell--current::after {
+		content: "";
+		position: absolute;
+		inset: -3px;
+		border-radius: 7px;
+		box-shadow:
+			inset 0 0 0 2px #ffffff,
+			inset 0 0 0 4px var(--cw-gray-950),
+			0 0 0 2px #ffffff,
+			0 8px 18px color-mix(in srgb, var(--cw-gray-950) 60%, transparent);
+		pointer-events: none;
+		z-index: 1;
 	}
 
 	.cw-vpd-chart__cell--current .cw-vpd-chart__cell-value {
-		font-size: 0.72rem;
+		color: #ffffff;
+		font-size: 0.9rem;
 		font-weight: 900;
-		letter-spacing: -0.03em;
-		transform: scale(var(--cw-vpd-current-text-scale));
+		letter-spacing: -0.01em;
+		position: relative;
+		text-shadow:
+			0 1px 2px rgba(0, 0, 0, 0.9),
+			0 0 4px rgba(0, 0, 0, 0.6);
+		z-index: 2;
 	}
 
-	.cw-vpd-chart__cell--current::after {
-		border: 3px solid var(--cw-vpd-selection-ring);
-		border-radius: 0.7rem;
-		box-shadow:
-			0 0 0 2px
-				color-mix(in srgb, var(--cw-vpd-selection) 42%, transparent),
-			0 0 0 7px color-mix(in srgb, white 18%, transparent);
-		content: "";
-		inset: 0.32rem;
-		pointer-events: none;
+	/* "Now" pin floating above the live cell with a pointer aimed at it. */
+	.cw-vpd-chart__cell-marker {
 		position: absolute;
+		bottom: calc(100% + 6px);
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 4;
+		display: block;
+		padding: 2px 8px;
+		background: var(--cw-gray-950);
+		border-radius: 999px;
+		box-shadow:
+			0 0 0 1.5px #ffffff,
+			0 5px 12px color-mix(in srgb, var(--cw-gray-950) 60%, transparent);
+		color: #ffffff;
+		font-family: var(--cw-font-family);
+		font-size: 0.6rem;
+		font-weight: 800;
+		letter-spacing: 0.1em;
+		line-height: 1.4;
+		text-shadow: none;
+		text-transform: uppercase;
+		white-space: nowrap;
+		pointer-events: none;
 	}
 
-	.cw-vpd-chart__matrix tr:last-child th,
-	.cw-vpd-chart__matrix tr:last-child td {
-		border-bottom: 1px solid var(--cw-vpd-grid);
+	.cw-vpd-chart__cell-marker::after {
+		content: "";
+		position: absolute;
+		top: 100%;
+		left: 50%;
+		transform: translateX(-50%);
+		border: 5px solid transparent;
+		border-top-color: var(--cw-gray-950);
 	}
 
-	.cw-vpd-chart__matrix tr th:first-child,
-	.cw-vpd-chart__matrix tr td:first-child {
-		border-left: 1px solid var(--cw-vpd-grid);
+	@keyframes cw-vpd-current-ping {
+		0% {
+			box-shadow: 0 0 0 0 color-mix(in srgb, var(--cw-accent) 80%, transparent);
+		}
+		70% {
+			box-shadow: 0 0 0 11px color-mix(in srgb, var(--cw-accent) 0%, transparent);
+		}
+		100% {
+			box-shadow: 0 0 0 0 color-mix(in srgb, var(--cw-accent) 0%, transparent);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.cw-vpd-chart__cell--current::before {
+			animation: none;
+			box-shadow: 0 0 0 3px color-mix(in srgb, var(--cw-accent) 65%, transparent);
+		}
+	}
+
+	.cw-vpd-chart__legend {
+		align-items: center;
+		color: var(--cw-text-muted);
+		display: flex;
+		flex-wrap: wrap;
+		font-size: var(--cw-text-xs);
+		gap: 0.75rem;
+	}
+
+	.cw-vpd-chart__legend-ramp {
+		background: linear-gradient(
+			90deg,
+			hsl(220 72% 56%),
+			hsl(170 65% 48%),
+			hsl(130 60% 46%),
+			hsl(70 70% 50%),
+			hsl(30 85% 54%),
+			hsl(2 78% 55%)
+		);
+		border-radius: 6px;
+		height: 0.7rem;
+		width: 11rem;
+	}
+
+	.cw-vpd-chart__legend-target {
+		align-items: center;
+		display: inline-flex;
+		gap: 0.35rem;
+		margin-left: auto;
+	}
+
+	.cw-vpd-chart__legend-swatch {
+		border-radius: 3px;
+		box-shadow:
+			inset 0 0 0 2px #fff,
+			0 0 0 1px rgba(0, 0, 0, 0.2);
+		display: inline-block;
+		height: 0.7rem;
+		width: 0.7rem;
 	}
 
 	.cw-vpd-chart__sr-only {
@@ -611,16 +707,12 @@
 	}
 
 	@media (max-width: 48rem) {
-		.cw-vpd-chart__matrix thead th,
-		.cw-vpd-chart__row-header,
-		.cw-vpd-chart__fahrenheit,
-		.cw-vpd-chart__cell span {
-			padding-inline: 0.5rem;
+		.cw-vpd-chart__cell {
+			min-width: 2.2rem;
 		}
 
-		.cw-vpd-chart__cell,
-		.cw-vpd-chart__matrix thead th:not(:first-child):not(:nth-child(2)) {
-			min-width: 4rem;
+		.cw-vpd-chart__cell span {
+			padding-inline: 0.25rem;
 		}
 	}
 </style>
