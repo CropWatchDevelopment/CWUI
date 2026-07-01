@@ -7,6 +7,8 @@
 	interface Props {
 		value?: string;
 		name?: string;
+		/** Native id forwarded to the underlying `<input>`. */
+		id?: string;
 		required?: boolean;
 		minChars?: number;
 		debounceMs?: number;
@@ -26,6 +28,7 @@
 	let {
 		value = $bindable(''),
 		name,
+		id,
 		required = false,
 		minChars = 3,
 		debounceMs = 250,
@@ -161,6 +164,7 @@
 		type="text"
 		bind:value={query}
 		{name}
+		{id}
 		{required}
 		{label}
 		{disabled}

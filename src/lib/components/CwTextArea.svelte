@@ -35,6 +35,7 @@
 
 	let {
 		value = $bindable(''),
+		id,
 		label,
 		hint,
 		error,
@@ -58,6 +59,7 @@
 	}: Props = $props();
 
 	const uid = $props.id();
+	const textareaId = $derived(id ?? `${uid}-textarea`);
 	let textareaRef = $state<HTMLTextAreaElement | null>(null);
 
 	const hasValidationIcon = $derived(!!error || (valid && !error));
@@ -135,13 +137,13 @@
 	class:cw-textarea--readonly={readOnly}
 >
 	{#if label}
-		<label class="cw-textarea__label" for="{uid}-textarea">{label}</label>
+		<label class="cw-textarea__label" for={textareaId}>{label}</label>
 	{/if}
 
 	<div class="cw-textarea__wrapper">
 		<textarea
 			bind:this={textareaRef}
-			id="{uid}-textarea"
+			id={textareaId}
 			class="cw-textarea__field"
 			class:cw-textarea__field--has-validation={hasValidationIcon}
 			{rows}

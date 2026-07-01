@@ -29,6 +29,8 @@
 		groups?: Group[];
 		value?: SelectedItem[];
 		name?: string;
+		/** Native id placed on the trigger (and the label's `for`). Falls back to an auto-generated id. */
+		id?: string;
 		required?: boolean;
 		placeholder?: string;
 		autocomplete?: HTMLInputAttributes['autocomplete'];
@@ -58,6 +60,7 @@
 		groups,
 		value = $bindable<SelectedItem[]>([]),
 		name,
+		id,
 		required = false,
 		placeholder = 'Select…',
 		autocomplete,
@@ -77,6 +80,7 @@
 	}: Props = $props();
 
 	const uid = $props.id();
+	const triggerId = $derived(id ?? `${uid}-trigger`);
 
 	let open = $state(false);
 	let listboxRef = $state<HTMLUListElement | null>(null);
@@ -400,7 +404,7 @@
 	class:cw-multiselect--disabled={disabled}
 >
 	{#if label}
-		<label class="cw-multiselect__label" id="{uid}-label" for="{uid}-trigger">{label}</label>
+		<label class="cw-multiselect__label" id="{uid}-label" for={triggerId}>{label}</label>
 	{/if}
 
 	{#if name || required}
@@ -419,7 +423,7 @@
 
 	<div
 		bind:this={triggerRef}
-		id="{uid}-trigger"
+		id={triggerId}
 		class="cw-multiselect__trigger"
 		class:cw-multiselect__trigger--open={open}
 		class:cw-multiselect__trigger--placeholder={value.length === 0}

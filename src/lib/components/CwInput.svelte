@@ -12,6 +12,8 @@
 		type?: InputType;
 		value?: string;
 		name?: string;
+		/** Native id placed on the `<input>` (and the label's `for`). Falls back to an auto-generated id. */
+		id?: string;
 		required?: boolean;
 		label?: string;
 		error?: string;
@@ -38,6 +40,7 @@
 		type = 'text',
 		value = $bindable(''),
 		name,
+		id,
 		required = false,
 		label,
 		error,
@@ -61,6 +64,7 @@
 	}: Props = $props();
 
 	const uid = $props.id();
+	const inputId = $derived(id ?? `${uid}-input`);
 	let inputRef = $state<HTMLInputElement | null>(null);
 	let showPassword = $state(false);
 
@@ -327,7 +331,7 @@
 	class:cw-input--disabled={disabled}
 >
 	{#if label}
-		<label class="cw-input__label" for="{uid}-input">{label}</label>
+		<label class="cw-input__label" for={inputId}>{label}</label>
 	{/if}
 
 	<div class="cw-input__wrapper">
@@ -339,7 +343,7 @@
 
 		<input
 			bind:this={inputRef}
-			id="{uid}-input"
+			id={inputId}
 			class="cw-input__field"
 			class:cw-input__field--has-left={!!leftSlot}
 			class:cw-input__field--has-right={hasAuxiliaryRight}

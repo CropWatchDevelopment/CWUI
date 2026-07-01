@@ -151,6 +151,8 @@
 		columns: CwColumnDef<T>[];
 		loadData: (query: CwTableQuery) => Promise<CwTableResult<T>>;
 		rowKey: keyof T & string;
+		/** Native id placed on the table's root container element. */
+		id?: string;
 		/** When true, hides table content and shows a centered loading badge. */
 		loading?: boolean;
 		onRowClick?: (row: T) => void;
@@ -215,6 +217,7 @@
 		columns,
 		loadData,
 		rowKey,
+		id,
 		loading = false,
 		onRowClick,
 		onPageNext,
@@ -1067,6 +1070,7 @@
 <svelte:document onkeydown={handleTableKeydown} />
 
 <div
+	{id}
 	class="cw-data-table {className}"
 	class:cw-data-table--fill-parent={fillParent}
 	class:cw-data-table--virtual={virtualScroll}

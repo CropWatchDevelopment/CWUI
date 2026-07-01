@@ -11,6 +11,8 @@
 		options: Option[];
 		value?: string;
 		name?: string;
+		/** Native id placed on the trigger (and the label's `for`). Falls back to an auto-generated id. */
+		id?: string;
 		required?: boolean;
 		placeholder?: string;
 		autocomplete?: HTMLInputAttributes['autocomplete'];
@@ -25,6 +27,7 @@
 		options,
 		value = $bindable(''),
 		name,
+		id,
 		required = false,
 		placeholder = 'Select…',
 		autocomplete,
@@ -36,6 +39,7 @@
 	}: Props = $props();
 
 	const uid = $props.id();
+	const triggerId = $derived(id ?? `${uid}-trigger`);
 
 	let open = $state(false);
 	let listboxRef = $state<HTMLUListElement | null>(null);
@@ -177,7 +181,7 @@
 
 <div class="cw-dropdown {className}" class:cw-dropdown--error={!!error} class:cw-dropdown--disabled={disabled}>
 	{#if label}
-		<label class="cw-dropdown__label" id="{uid}-label" for="{uid}-trigger">{label}</label>
+		<label class="cw-dropdown__label" id="{uid}-label" for={triggerId}>{label}</label>
 	{/if}
 
 	{#if name || required}
@@ -196,7 +200,7 @@
 
 	<button
 		bind:this={triggerRef}
-		id="{uid}-trigger"
+		id={triggerId}
 		type="button"
 		class="cw-dropdown__trigger"
 		class:cw-dropdown__trigger--open={open}
