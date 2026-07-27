@@ -2,6 +2,7 @@
 	import { onDestroy } from 'svelte';
 	import CwCardDataRowItem from './CwCardDataRowItem.svelte';
 	import { createCwAlarmScheduler } from './cwAlarmContext.svelte.js';
+	import { resolveCwLastSeenAt } from '../utils/cwTimeout.js';
 	import type { CwAlarmApi, CwCardDataRowItemData } from '../types/index.js';
 
 	interface Props {
@@ -87,7 +88,8 @@
 {#if rows.length > 0}
 	<ul class={['cw-data-list', className]}>
 		{#each rows as row (row.id)}
-			{@const rowHasFreshness = row.lastSeenAt != null || row.lastUpdated != null}
+			{@const rowHasFreshness =
+				resolveCwLastSeenAt(row.lastSeenAt, row.lastSeen, row.LastSeen, row.lastUpdated) != null}
 			<CwCardDataRowItem
 				{...row}
 				alarmScheduler={resolvedAlarmScheduler}

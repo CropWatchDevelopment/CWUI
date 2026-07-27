@@ -88,12 +88,6 @@
 			: null,
 	);
 
-	const medianPercent = $derived(
-		stats.min != null && stats.max != null && stats.median != null
-			? percent(stats.min, stats.max, stats.median)
-			: null,
-	);
-
 	const deltaFromAverage = $derived.by(() => {
 		if (stats.lastReading == null || stats.avg == null) return null;
 		return roundForDisplay(stats.lastReading - stats.avg);
@@ -256,13 +250,6 @@
 				style:left="{avgPercent}%"
 			></div>
 		{/if}
-
-		<!-- {#if medianPercent != null}
-			<div
-				class="cw-stat-card__dot cw-stat-card__dot--median"
-				style:left="{medianPercent}%"
-			></div>
-		{/if} -->
 	</div>
 	<div class="cw-stat-card__labels">
 		<span>{l.min}</span>

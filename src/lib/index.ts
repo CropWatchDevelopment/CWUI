@@ -26,6 +26,7 @@ export { default as CwLineChart } from './components/CwLineChart.svelte';
 export { default as CwResponsiveLineChart } from './components/CwResponsiveLineChart.svelte';
 export { default as CwDeviceLineChartSection } from './components/CwDeviceLineChartSection.svelte';
 export { default as CwDonutChart } from './components/CwDonutChart.svelte';
+export { default as CwStackedBarChart } from './components/CwStackedBarChart.svelte';
 export { default as DliCard } from './components/DliCard.svelte';
 export { default as CwPPFDChart } from './components/CwPPFDChart.svelte';
 export { default as CwVPDChart } from './components/CwVPDChart.svelte';
@@ -114,6 +115,8 @@ export type {
 	CwResponsiveLineSeriesStats,
 	CwResponsiveLineChangeEvent,
 	CwDonutSegment,
+	CwStackedBarCategory,
+	CwStackedBarBucket,
 	CwPPFDStatus,
 	CwPPFDTick,
 	CwPPFDReading,
@@ -180,3 +183,4 @@ export type { CwCalendarScrollLabels } from './components/CwCalendarScroll.svelt
 export type { CwDateTimeRangePickerLabels } from './components/CwDateTimeRangePicker.svelte';
 export type { CwCopyLabels } from './components/CwCopy.svelte';
 export type { CwDonutChartLabels } from './components/CwDonutChart.svelte';
+export type { CwStackedBarChartLabels } from './components/CwStackedBarChart.svelte';

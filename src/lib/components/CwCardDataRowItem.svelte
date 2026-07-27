@@ -86,13 +86,13 @@
 	const resolvedLastSeenAtMs = $derived(resolveCwDateTimeMs(resolvedLastSeenAt));
 	const resolvedExpireAfterMs = $derived(resolveCwExpireAfterMs(resolvedExpireAfterMinutes));
 	const resolvedAlarmScheduler = $derived(alarmScheduler ?? internalAlarmScheduler);
-	const freshnessState = $derived(isCwWithinTimeout(resolvedLastSeenAt, resolvedExpireAfterMinutes));
 	const mutedValue = $derived(!unit && resolvedLastSeenAt == null);
 	const withinTimeoutAttr = $derived(
 		withinTimeout == null ? undefined : withinTimeout ? 'true' : 'false'
 	);
 
 	let lastReportedTimeoutState: boolean | null = null;
+	let freshnessState = $state<boolean | null>(null);
 
 	function updateWithinTimeoutState(nextState: boolean | null) {
 		if (withinTimeout !== nextState) {
@@ -122,6 +122,7 @@
 	}
 
 	$effect(() => {
+		freshnessState = isCwWithinTimeout(resolvedLastSeenAt, resolvedExpireAfterMinutes);
 		updateWithinTimeoutState(freshnessState);
 	});
 
@@ -135,6 +136,7 @@
 			from: resolvedLastSeenAtMs,
 			alarmAfterMs: resolvedExpireAfterMs,
 			callback: () => {
+				freshnessState = false;
 				updateWithinTimeoutState(false);
 			}
 		});

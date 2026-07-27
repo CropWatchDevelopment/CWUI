@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
-	type CalendarDay = { date: Date; inMonth: boolean; disabled: boolean };
+	type CalendarDay = { date: Date; inMonth: boolean; disabled: boolean; isToday: boolean };
 	type CalendarMonthView = { year: number; month: number; date: Date };
 
 	interface Props {
@@ -168,8 +168,20 @@
 
 		const days: CalendarDay[] = [];
 
+		// Single "today" reference for the whole grid — avoids 42 Date
+		// allocations per render and staleness skew within one render.
+		const today = new Date();
+
 		const pushDay = (date: Date, inMonth: boolean) => {
-			days.push({ date, inMonth, disabled: isDateDisabled(date) });
+			days.push({
+				date,
+				inMonth,
+				disabled: isDateDisabled(date),
+				isToday:
+					date.getDate() === today.getDate() &&
+					date.getMonth() === today.getMonth() &&
+					date.getFullYear() === today.getFullYear()
+			});
 		};
 
 		// Previous month padding
@@ -191,13 +203,6 @@
 
 		return days;
 	});
-
-	const isToday = (date: Date): boolean => {
-		const t = new Date();
-		return date.getDate() === t.getDate() &&
-			date.getMonth() === t.getMonth() &&
-			date.getFullYear() === t.getFullYear();
-	};
 
 	function emitMonthChange(view: CalendarMonthView) {
 		onMonthChange?.(view.year, view.month, new Date(view.date));
@@ -272,7 +277,7 @@
 
 	<!-- Day grid -->
 	<div class="cw-calendar__grid">
-		{#each calendarDays as { date, inMonth, disabled } (date.toISOString())}
+		{#each calendarDays as { date, inMonth, disabled, isToday } (date.toISOString())}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<!-- svelte-ignore a11y_click_events_have_key_events -->
 			<div
@@ -287,7 +292,7 @@
 					<div class="cw-calendar__day-left">
 						<span
 							class="cw-calendar__day-number"
-							class:cw-calendar__day-number--today={isToday(date)}
+							class:cw-calendar__day-number--today={isToday}
 						>
 							{date.getDate()}
 						</span>

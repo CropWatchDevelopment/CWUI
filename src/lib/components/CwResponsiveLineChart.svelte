@@ -597,12 +597,28 @@
 
 	let stats = $derived(legendStats());
 
+	// Anomaly detection makes three full passes over each series' points, so it
+	// is hoisted out of draw(): a crosshair/tooltip repaint reads this cache
+	// instead of recomputing the statistics per frame. Recomputes only when the
+	// data, view window, visibility, or the toggle change.
+	let anomaliesBySeries = $derived.by(() => {
+		const map = new Map<string, CwResponsiveLineDataPoint[]>();
+		if (!showAnomalies) return map;
+		for (const s of visibleSeries) {
+			map.set(s.id, anomalyPoints(s.data, viewStart, viewEnd));
+		}
+		return map;
+	});
+
 	function fireChange() {
 		onchange?.({
 			viewStart,
 			viewEnd,
 			hidden: [...hidden],
-			legendStats: legendStats()
+			// Reuse the derived — legendStats() here would rescan every series a
+			// second time per interaction for an identical result. Shallow-copied
+			// so a consumer mutating the event payload can't corrupt the derived.
+			legendStats: { ...stats }
 		});
 	}
 
@@ -732,10 +748,10 @@
 		const W = cnv.clientWidth;
 		const H = cnv.clientHeight;
 		if (!W || !H) {
-			raf = requestAnimationFrame(() => {
-				raf = null;
-				draw();
-			});
+			// Zero-sized (e.g. inside a display:none tab): bail without
+			// rescheduling — retrying here spins an endless rAF loop for as long
+			// as the chart stays hidden. The ResizeObserver schedules a fresh
+			// draw the moment the element gains size.
 			return;
 		}
 		const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -1062,7 +1078,7 @@
 				if (!range) continue;
 				const yS = (v: number) =>
 					plot.y + plot.h - ((v - range.lo) / (range.hi - range.lo || 1)) * plot.h;
-				const anoms = anomalyPoints(s.data, viewStart, viewEnd);
+				const anoms = anomaliesBySeries.get(s.id) ?? [];
 				for (const p of anoms) {
 					const x = xS(p.t);
 					const y = yS(p.v as number);

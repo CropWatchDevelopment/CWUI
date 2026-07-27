@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { Snippet } from 'svelte';
 	import type {
 		CwSideNavIcon,
@@ -65,17 +66,11 @@
 
 	/** Track phone-sized viewport for close button vs toggle */
 	let isPhone = $state(false);
-	/** Temporary expansion state when hovering mini mode */
-	let hoverExpanded = $state(false);
 	/** Internal active fallback when items are not externally controlled */
 	let selectedItemId = $state<string | undefined>(undefined);
 
 	const hasExplicitActiveItem = $derived.by(() =>
 		items.some((item) => item.active === true)
-	);
-
-	const displayMode = $derived.by<CwSideNavMode>(() =>
-		mode === 'mini' && hoverExpanded ? 'open' : mode
 	);
 
 	/** Detect viewport width for phone detection (always) */
@@ -103,8 +98,10 @@
 			}
 		}
 
-		// Set initial mode
-		applyResponsive();
+		// Set initial mode. untrack() so the effect depends only on `responsive`,
+		// not on `userOverride` — otherwise every toggle/resize that flips
+		// `userOverride` would tear down and re-add the resize listener.
+		untrack(() => applyResponsive());
 
 		function handleResize() {
 			// Reset user override on resize so it re-adapts
@@ -191,22 +188,6 @@
 		onselect?.(item);
 	}
 
-	function handleNavMouseEnter() {
-		if (mode === 'mini') {
-			hoverExpanded = true;
-		}
-	}
-
-	function handleNavMouseLeave() {
-		hoverExpanded = false;
-	}
-
-	$effect(() => {
-		if (mode !== 'mini' && hoverExpanded) {
-			hoverExpanded = false;
-		}
-	});
-
 	$effect(() => {
 		const explicitActiveItem = items.find((item) => item.active);
 		if (explicitActiveItem) {
@@ -226,14 +207,14 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <nav
 	class="cw-sidenav {className}"
-	class:cw-sidenav--open={displayMode === 'open'}
-	class:cw-sidenav--mini={displayMode === 'mini'}
-	class:cw-sidenav--hidden={displayMode === 'hidden'}
+	class:cw-sidenav--open={mode === 'open'}
+	class:cw-sidenav--mini={mode === 'mini'}
+	class:cw-sidenav--hidden={mode === 'hidden'}
 	class:cw-sidenav--right={side === 'right'}
 	aria-label="Side navigation"
 >
 	<!-- Header / Logo -->
-	{#if displayMode === 'open' && header}
+	{#if mode === 'open' && header}
 		<div class="cw-sidenav__header">
 			<div class="cw-sidenav__header-row">
 				<div class="cw-sidenav__header-content">
@@ -256,7 +237,7 @@
 				</button>
 			</div>
 		</div>
-	{:else if displayMode === 'mini'}
+	{:else if mode === 'mini'}
 		<div class="cw-sidenav__header cw-sidenav__header--mini">
 			<button
 				class="cw-sidenav__toggle cw-sidenav__toggle--mini"
@@ -271,7 +252,7 @@
 		</div>
 	{/if}
 
-	{#if aboveContent && displayMode !== 'mini'}
+	{#if aboveContent && mode !== 'mini'}
 		<div class="cw-sidenav__above-content">
 			{@render aboveContent()}
 		</div>
@@ -290,7 +271,7 @@
 				<CwSeparator spacing="var(--cw-space-3)" />
 			{/if}
 
-			{#if showGroup && displayMode === 'open'}
+			{#if showGroup && mode === 'open'}
 				<span class="cw-sidenav__group-label">{item.group}</span>
 			{/if}
 
@@ -308,7 +289,7 @@
 						aria-current={isItemActive(item) ? 'page' : undefined}
 						aria-disabled={item.disabled ? 'true' : undefined}
 						tabindex={item.disabled ? -1 : undefined}
-						title={displayMode === 'mini' ? itemLabel : undefined}
+						title={mode === 'mini' ? itemLabel : undefined}
 						onclick={(event) => handleAnchorClick(event, item)}
 					>
 						{#if itemIcon.kind === 'path'}
@@ -318,7 +299,7 @@
 						{:else}
 							<img class="cw-sidenav__icon cw-sidenav__icon--asset" src={itemIcon.value} alt="" aria-hidden="true" />
 						{/if}
-						{#if displayMode === 'open'}
+						{#if mode === 'open'}
 							<span class="cw-sidenav__label">{itemLabel}</span>
 						{/if}
 					</a>
@@ -326,7 +307,7 @@
 					<button
 						type="button"
 						class="cw-sidenav__item"
-						title={displayMode === 'mini' ? itemLabel : undefined}
+						title={mode === 'mini' ? itemLabel : undefined}
 						disabled={item.disabled}
 						onclick={() => handleItemClick(item)}
 					>
@@ -337,13 +318,13 @@
 						{:else}
 							<img class="cw-sidenav__icon cw-sidenav__icon--asset" src={itemIcon.value} alt="" aria-hidden="true" />
 						{/if}
-						{#if displayMode === 'open'}
+						{#if mode === 'open'}
 							<span class="cw-sidenav__label">{itemLabel}</span>
 						{/if}
 					</button>
 				{/if}
 
-				{#if displayMode === 'open' && hasTrailing}
+				{#if mode === 'open' && hasTrailing}
 					<div class="cw-sidenav__trailing">
 						{#if itemTrailing}
 							{@render itemTrailing(item)}
@@ -359,11 +340,11 @@
 	</div>
 
 	<!-- Footer -->
-	{#if displayMode === 'open' && footer}
+	{#if mode === 'open' && footer}
 		<div class="cw-sidenav__footer">
 			{@render footer()}
 		</div>
-	{:else if displayMode === 'mini'}
+	{:else if mode === 'mini'}
 		<div class="cw-sidenav__footer cw-sidenav__footer--mini">
 			{#if footerMini}
 				{@render footerMini()}

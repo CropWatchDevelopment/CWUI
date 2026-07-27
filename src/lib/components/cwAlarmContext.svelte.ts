@@ -3,10 +3,21 @@
    ============================================================ */
 
 import type { CwAlarmApi, CwAlarmRegistration, CwDateTimeInput } from '../types/index.js';
-import { getContext, setContext } from 'svelte';
+import { getContext, hasContext, onDestroy, setContext } from 'svelte';
 
 const ALARM_KEY = Symbol('cw-alarm');
 const MAX_TIMEOUT_MS = 2_147_483_647;
+
+const NOOP_ALARM_API: CwAlarmApi = {
+	schedule() {
+		return '';
+	},
+	cancel() {},
+	clear() {},
+	get size() {
+		return 0;
+	}
+};
 
 interface AlarmTask {
 	id: string;
@@ -263,12 +274,18 @@ export function createCwAlarmScheduler(): CwAlarmApi {
 export function createCwAlarmContext(): CwAlarmApi {
 	const api = createCwAlarmScheduler();
 	setContext(ALARM_KEY, api);
+	onDestroy(() => api.clear());
 	return api;
 }
 
 /**
  * Retrieve alarm scheduler from Svelte context.
+ * Returns a no-op scheduler when no ancestor created the context.
  */
 export function useCwAlarm(): CwAlarmApi {
+	if (!hasContext(ALARM_KEY)) {
+		return NOOP_ALARM_API;
+	}
+
 	return getContext<CwAlarmApi>(ALARM_KEY);
 }

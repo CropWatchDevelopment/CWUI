@@ -75,7 +75,10 @@
 	const arcs = $derived.by(() => {
 		let startAngle = -90; // Start from top
 		return segments.map((seg, i) => {
-			const angle = total > 0 ? (seg.value / total) * 360 : 0;
+			// Cap a full-circle sweep just under 360°: an arc whose start and end
+			// points coincide renders as zero-length, making a 100% segment (or a
+			// single-segment donut) invisible.
+			const angle = total > 0 ? Math.min((seg.value / total) * 360, 359.99) : 0;
 			const endAngle = startAngle + angle;
 			const arc = describeArc(centerX, centerY, radius, startAngle, endAngle);
 			const result = { ...seg, startAngle, endAngle, path: arc, index: i };

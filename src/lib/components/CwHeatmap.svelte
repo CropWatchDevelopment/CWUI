@@ -14,7 +14,6 @@
 </script>
 
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import type { CwHeatmapDataPoint, CwNoDataMessage } from '../types/index.js';
 	import CwNoDataOverlay from './CwNoDataOverlay.svelte';
 	import { getCwNoDataMessage, hasCwNoData } from './cwNoData.js';
@@ -95,9 +94,20 @@
 		return map;
 	});
 
-	const dataValues = $derived(data.map((d) => d.value).filter((value) => Number.isFinite(value)));
-	const computedMin = $derived(propMin ?? (dataValues.length ? Math.min(...dataValues) : 0));
-	const computedMax = $derived(propMax ?? (dataValues.length ? Math.max(...dataValues) : 1));
+	// Loop instead of Math.min(...spread): spreading tens of thousands of points
+	// into one call overflows the JS argument limit and throws.
+	const dataRange = $derived.by(() => {
+		let lo = Infinity;
+		let hi = -Infinity;
+		for (const pt of data) {
+			if (!Number.isFinite(pt.value)) continue;
+			if (pt.value < lo) lo = pt.value;
+			if (pt.value > hi) hi = pt.value;
+		}
+		return lo <= hi ? { min: lo, max: hi } : null;
+	});
+	const computedMin = $derived(propMin ?? dataRange?.min ?? 0);
+	const computedMax = $derived(propMax ?? dataRange?.max ?? 1);
 
 	/* Helper: value → CSS color via 3-stop gradient */
 	function cellColor(val: number | null): string {

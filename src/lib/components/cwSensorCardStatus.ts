@@ -27,12 +27,6 @@ export function aggregateCwSensorStatuses(
 		return 'loading';
 	}
 
-	const hasOnline = resolvedStatuses.some((status) => status === 'online');
-	const hasOffline = resolvedStatuses.some((status) => status === 'offline');
-	if (hasOnline && hasOffline) {
-		return 'warning';
-	}
-
 	return 'warning';
 }
 

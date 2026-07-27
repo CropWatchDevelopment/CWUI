@@ -97,7 +97,7 @@
 			case 'Enter':
 			case ' ':
 				e.preventDefault();
-				if (activeIndex >= 0 && !options[activeIndex].disabled) {
+				if (activeIndex >= 0 && !options[activeIndex]?.disabled) {
 					select(options[activeIndex]);
 				}
 				break;

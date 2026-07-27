@@ -82,6 +82,7 @@
 	function closeMenu() {
 		open = false;
 		activeIndex = -1;
+		menuStyle = '';
 	}
 
 	function getStartingIndex() {
@@ -239,6 +240,9 @@
 	$effect(() => {
 		if (!open || !menuRef) return;
 
+		// Position synchronously so the menu never renders a frame at a stale
+		// position; the rAF below re-measures once layout has settled.
+		updateMenuPosition();
 		const raf = requestAnimationFrame(() => {
 			updateMenuPosition();
 			menuRef?.focus();

@@ -47,7 +47,8 @@
 			? alarmAfterMinutes * 60_000
 			: null
 	);
-	let lastIntervalCount = $state(0);
+	// Effect-internal bookkeeping only — intentionally not reactive state.
+	let lastIntervalCount = 0;
 
 	const display = $derived.by(() => {
 		const totalSec = Math.floor(durationMs / 1000);
@@ -110,10 +111,15 @@
 	});
 
 	$effect(() => {
+		// Read synchronously so the effect re-runs (re-arming the interval) when
+		// `from` or `countDown` change — e.g. after a completed countdown cleared it.
+		const currentFromMs = fromMs;
+		const currentCountDown = countDown;
+
 		const interval = setInterval(() => {
 			const nextNow = Date.now();
-			if (countDown && Number.isFinite(fromMs) && nextNow >= fromMs) {
-				now = fromMs;
+			if (currentCountDown && Number.isFinite(currentFromMs) && nextNow >= currentFromMs) {
+				now = currentFromMs;
 				clearInterval(interval);
 				return;
 			}

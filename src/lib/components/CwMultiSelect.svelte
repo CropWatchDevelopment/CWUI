@@ -382,7 +382,8 @@
 		} else if (activeIndex < 0 || activeIndex >= displayOptions.length) {
 			activeIndex = 0;
 		}
-		requestAnimationFrame(() => updateListboxPosition());
+		const raf = requestAnimationFrame(() => updateListboxPosition());
+		return () => cancelAnimationFrame(raf);
 	});
 
 	$effect(() => {

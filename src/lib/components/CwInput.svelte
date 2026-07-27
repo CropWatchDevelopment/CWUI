@@ -355,7 +355,7 @@
 			{required}
 			{disabled}
 			{placeholder}
-			autocomplete="off"
+			autocomplete={autocomplete ?? 'off'}
 			maxlength={maxlength ?? undefined}
 			oninput={handleInput}
 			onchange={onchange}

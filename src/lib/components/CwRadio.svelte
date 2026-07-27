@@ -88,6 +88,10 @@
 	}
 
 	.cw-radio__label {
+		/* Positioned ancestor for the visually-hidden absolute input: without it
+		   the input's containing block is <html>, escaping scroll-container
+		   clipping and stretching the document (same fix as CwCheckbox/CwSwitch). */
+		position: relative;
 		display: inline-flex;
 		align-items: flex-start;
 		gap: var(--cw-space-3);

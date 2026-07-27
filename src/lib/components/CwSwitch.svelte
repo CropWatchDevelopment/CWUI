@@ -70,6 +70,7 @@
 			id={inputId}
 			class="cw-switch__input"
 			type="checkbox"
+			role="switch"
 			bind:checked
 			{name}
 			{disabled}

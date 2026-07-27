@@ -640,6 +640,7 @@
 
 			<!-- Day grid -->
 			{#if granularity === 'day'}
+				{@const today = new Date()}
 				<div class="cw-date-picker__grid cw-date-picker__grid--day" role="grid">
 					{#each daysOfWeek as dow (dow)}
 						<div class="cw-date-picker__dow">{dow}</div>
@@ -649,7 +650,7 @@
 							type="button"
 							class="cw-date-picker__day"
 							class:cw-date-picker__day--outside={!day.inMonth}
-							class:cw-date-picker__day--today={isSameDay(day.date, new Date())}
+							class:cw-date-picker__day--today={isSameDay(day.date, today)}
 							class:cw-date-picker__day--selected={isSelected(day.date)}
 							class:cw-date-picker__day--in-range={isInRange(day.date)}
 							class:cw-date-picker__day--range-start={isRangeStart(day.date)}

@@ -17,6 +17,7 @@
 </script>
 
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import type { Snippet } from 'svelte';
 	import type { CwSize } from '../types/index.js';
 
@@ -50,6 +51,8 @@
 
 	let copied = $state(false);
 	let timer: ReturnType<typeof setTimeout> | undefined;
+
+	onDestroy(() => clearTimeout(timer));
 
 	async function handleCopy() {
 		try {

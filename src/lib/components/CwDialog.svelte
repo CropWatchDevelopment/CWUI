@@ -27,6 +27,16 @@
 	let dialogRef = $state<HTMLDialogElement | null>(null);
 	let previouslyFocused: HTMLElement | null = null;
 
+	const focusableSelector =
+		'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+	function getFocusableElements(): HTMLElement[] {
+		if (!dialogRef) return [];
+		return Array.from(dialogRef.querySelectorAll<HTMLElement>(focusableSelector)).filter(
+			(el) => el.offsetParent !== null
+		);
+	}
+
 	function close() {
 		open = false;
 		onclose?.();
@@ -39,6 +49,25 @@
 		}
 	}
 
+	function handleCancel(e: Event) {
+		// Always take over the browser's built-in Escape handling so component
+		// state stays in sync (and so closeOnEscape={false} actually prevents closing).
+		e.preventDefault();
+		if (closeOnEscape) {
+			close();
+		}
+	}
+
+	function handleNativeClose() {
+		// The dialog was closed natively outside the component's own close path
+		// (e.g. a form method="dialog" submit). Sync component state. When the
+		// close originated from close(), `open` is already false and this is a no-op,
+		// so the consumer onclose callback does not double-fire.
+		if (open) {
+			close();
+		}
+	}
+
 	function handleKeydown(e: KeyboardEvent) {
 		if (closeOnEscape && e.key === 'Escape') {
 			e.preventDefault();
@@ -47,9 +76,7 @@
 
 		// Focus trap
 		if (e.key === 'Tab' && dialogRef) {
-			const focusableElements = dialogRef.querySelectorAll<HTMLElement>(
-				'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-			);
+			const focusableElements = getFocusableElements();
 			const first = focusableElements[0];
 			const last = focusableElements[focusableElements.length - 1];
 
@@ -73,9 +100,7 @@
 			dialogRef.showModal();
 
 			// Auto-focus first focusable or the dialog itself
-			const firstFocusable = dialogRef.querySelector<HTMLElement>(
-				'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-			);
+			const firstFocusable = getFocusableElements()[0];
 			if (firstFocusable) {
 				firstFocusable.focus();
 			}
@@ -92,6 +117,8 @@
 	aria-labelledby={title ? `${uid}-title` : undefined}
 	onclick={handleBackdropClick}
 	onkeydown={handleKeydown}
+	oncancel={handleCancel}
+	onclose={handleNativeClose}
 >
 	<div class={['cw-dialog__panel', className]}>
 		<div class="cw-dialog__header">

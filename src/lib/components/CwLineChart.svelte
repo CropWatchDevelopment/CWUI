@@ -240,24 +240,44 @@
 	const secondaryTicks = $derived(calcTicks(secondaryRange.min, secondaryRange.max));
 
 	/* ── X (time) range ───────────────────────────────── */
+	// Numeric timestamps cached once per data change; path building, hover
+	// scanning, and each-keys otherwise allocate a Date per point per pass
+	// (per mousemove in the hover case).
+	const dataTimes = $derived(data.map((d) => new Date(d.timestamp).getTime()));
+	const secondaryTimes = $derived(secondaryData.map((d) => new Date(d.timestamp).getTime()));
+	const alertTimes = $derived(
+		resolvedAlertPoints.map((alertPoint) => new Date(alertPoint.timestamp).getTime())
+	);
+
+	// Stable fallback window for an empty chart: Date.now() inside the derived
+	// would shift the axis on every unrelated recompute (e.g. resize).
+	const emptyRangeEnd = Date.now();
+
 	const timeRange = $derived.by(() => {
-		const allTimes = [
-			...data.map((d) => new Date(d.timestamp).getTime()),
-			...secondaryData.map((d) => new Date(d.timestamp).getTime()),
-			...resolvedAlertPoints.map((alertPoint) => new Date(alertPoint.timestamp).getTime())
-		];
-		if (allTimes.length === 0) {
-			const now = Date.now();
-			return { min: now - 86400000, max: now };
+		let min = Infinity;
+		let max = -Infinity;
+		// Loop instead of Math.min(...spread): spreading huge series overflows
+		// the JS argument limit and allocates a merged array per recompute.
+		for (const times of [dataTimes, secondaryTimes, alertTimes]) {
+			for (const t of times) {
+				if (t < min) min = t;
+				if (t > max) max = t;
+			}
 		}
-		return { min: Math.min(...allTimes), max: Math.max(...allTimes) };
+		if (min > max) {
+			return { min: emptyRangeEnd - 86400000, max: emptyRangeEnd };
+		}
+		return { min, max };
 	});
 
 	/* ── Scale functions ──────────────────────────────── */
-	function scaleX(timestamp: string | Date): number {
-		const t = new Date(timestamp).getTime();
+	function scaleT(t: number): number {
 		const span = timeRange.max - timeRange.min || 1;
 		return ((t - timeRange.min) / span) * chartWidth;
+	}
+
+	function scaleX(timestamp: string | Date): number {
+		return scaleT(new Date(timestamp).getTime());
 	}
 
 	function scalePrimaryY(value: number): number {
@@ -273,13 +293,15 @@
 	/* ── SVG paths ────────────────────────────────────── */
 	const primaryPath = $derived(
 		data
-			.map((d, i) => `${i === 0 ? 'M' : 'L'} ${scaleX(d.timestamp)} ${scalePrimaryY(d.value)}`)
+			.map((d, i) => `${i === 0 ? 'M' : 'L'} ${scaleT(dataTimes[i])} ${scalePrimaryY(d.value)}`)
 			.join(' ')
 	);
 
 	const secondaryPath = $derived(
 		secondaryData
-			.map((d, i) => `${i === 0 ? 'M' : 'L'} ${scaleX(d.timestamp)} ${scaleSecondaryY(d.value)}`)
+			.map(
+				(d, i) => `${i === 0 ? 'M' : 'L'} ${scaleT(secondaryTimes[i])} ${scaleSecondaryY(d.value)}`
+			)
 			.join(' ')
 	);
 
@@ -326,26 +348,26 @@
 
 		let closestPrimary: CwLineChartDataPoint | null = null;
 		let closestDist = Infinity;
-		for (const d of data) {
-			const dist = Math.abs(scaleX(d.timestamp) - relX);
+		for (let i = 0; i < data.length; i++) {
+			const dist = Math.abs(scaleT(dataTimes[i]) - relX);
 			if (dist < closestDist) {
 				closestDist = dist;
-				closestPrimary = d;
+				closestPrimary = data[i];
 			}
 		}
 
 		let closestSecondary: CwLineChartSecondaryDataPoint | null = null;
 		let closestSecDist = Infinity;
-		for (const d of secondaryData) {
-			const dist = Math.abs(scaleX(d.timestamp) - relX);
+		for (let i = 0; i < secondaryData.length; i++) {
+			const dist = Math.abs(scaleT(secondaryTimes[i]) - relX);
 			if (dist < closestSecDist) {
 				closestSecDist = dist;
-				closestSecondary = d;
+				closestSecondary = secondaryData[i];
 			}
 		}
 
 		const hoveredAlerts = showPrimary
-			? resolvedAlertPoints.filter((alertPoint) => Math.abs(scaleX(alertPoint.timestamp) - relX) <= 12)
+			? resolvedAlertPoints.filter((_, i) => Math.abs(scaleT(alertTimes[i]) - relX) <= 12)
 			: [];
 		const hoveredThresholds = showThresholds
 			? resolvedThresholds.filter(
@@ -493,8 +515,8 @@
 
 			<!-- Primary data points -->
 			{#if showPrimary}
-				{#each data as point, index (`${new Date(point.timestamp).getTime()}-${index}`)}
-					{@const cx = scaleX(point.timestamp)}
+				{#each data as point, index (`${dataTimes[index]}-${index}`)}
+					{@const cx = scaleT(dataTimes[index])}
 					{@const cy = scalePrimaryY(point.value)}
 					<circle
 						{cx} {cy} r="3"

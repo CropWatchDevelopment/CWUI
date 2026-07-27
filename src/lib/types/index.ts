@@ -116,6 +116,26 @@ export interface CwDonutSegment {
 	color?: string;
 }
 
+/* ── Stacked Bar Chart types ───────────────────────────── */
+
+export interface CwStackedBarCategory {
+	/** Stable series id, e.g. a data column name like 'car_count'. */
+	id: string;
+	/** Pre-translated display label. */
+	label: string;
+	/** Explicit color; falls back to the chart's categorical palette by index. */
+	color?: string;
+}
+
+export interface CwStackedBarBucket {
+	/** Stable bucket key, e.g. an ISO timestamp. */
+	key: string;
+	/** Pre-formatted x-axis label, e.g. "09:00". */
+	label: string;
+	/** Category id → value for this bucket. */
+	values: Record<string, number>;
+}
+
 export type CwPPFDStatus = 'low' | 'optimal' | 'high';
 
 export interface CwPPFDTick {

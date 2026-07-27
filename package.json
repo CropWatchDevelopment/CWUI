@@ -1,12 +1,12 @@
 {
 	"name": "@cropwatchdevelopment/cwui",
-	"version": "0.1.110",
+	"version": "0.1.112",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/CropWatchDevelopment/CWUI.git"
 	},
 	"publishConfig": {
-		"registry": "https://npm.pkg.github.com"
+		"access": "public"
 	},
 	"description": "CropWatch reusable Svelte 5 UI component library — CSS3-first, dark/light theming, AAA accessibility",
 	"license": "MIT",

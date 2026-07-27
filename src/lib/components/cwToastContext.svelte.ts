@@ -34,7 +34,8 @@ const NOOP_TOAST_API: CwToastApi = {
  * Returns the API for adding / dismissing toasts.
  */
 export function createCwToastContext(maxItems = 5): CwToastApi {
-	let items = $state<CwToastItem[]>([]);
+	// Only ever wholesale-reassigned, so deep reactivity is unnecessary.
+	let items = $state.raw<CwToastItem[]>([]);
 	let counter = 0;
 
 	function add(opts: {

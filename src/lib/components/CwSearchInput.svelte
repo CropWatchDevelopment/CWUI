@@ -47,13 +47,17 @@
 
 	const uid = $props.id();
 	let query = $state(value);
-	let suggestions = $state<unknown[]>([]);
+	// $state.raw: the array is only ever replaced wholesale, and deep-proxying
+	// consumer-owned suggestion objects would break their === identity when
+	// handed back through onselect.
+	let suggestions = $state.raw<unknown[]>([]);
 	let loading = $state(false);
 	let open = $state(false);
 	let activeIndex = $state(-1);
 
 	let abortController: AbortController | null = null;
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+	let blurTimer: ReturnType<typeof setTimeout> | null = null;
 
 	function clearPendingSuggestions() {
 		if (debounceTimer) {
@@ -148,13 +152,15 @@
 	}
 
 	function handleBlur() {
-		setTimeout(() => {
+		if (blurTimer) clearTimeout(blurTimer);
+		blurTimer = setTimeout(() => {
 			open = false;
 		}, 150);
 	}
 
 	onDestroy(() => {
 		clearPendingSuggestions();
+		if (blurTimer) clearTimeout(blurTimer);
 	});
 
 </script>

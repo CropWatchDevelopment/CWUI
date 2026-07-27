@@ -34,13 +34,6 @@
 		value = item.value;
 		onselect?.(item);
 	}
-
-	function handleKeydown(e: KeyboardEvent, item: CwListBoxItem<T>) {
-		if (e.key === 'Enter' || e.key === ' ') {
-			e.preventDefault();
-			select(item);
-		}
-	}
 </script>
 
 <div class="cw-listbox {className}" role="listbox" aria-label={heading ?? 'List'}>
@@ -58,7 +51,6 @@
 			aria-selected={value === item.value}
 			disabled={item.disabled}
 			onclick={() => select(item)}
-			onkeydown={(e) => handleKeydown(e, item)}
 		>
 			<!-- Left side: icon/badge -->
 			<span class="cw-listbox__item-start">

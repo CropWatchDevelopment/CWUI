@@ -165,9 +165,20 @@
 
 	const text = $derived({ ...defaultText, ...rawText });
 	let displayUnit = $state<CwAlertPointUnit>(value.unit ?? STORAGE_UNIT);
-	let pointSeed = $state(Math.max(value.points.length, 1));
+	// Seed past both the point count and the highest numeric suffix of any
+	// consumer-supplied "cw-alert-point-N" id, so generated ids never collide
+	// with existing ones (duplicate keys crash the keyed {#each}).
+	let pointSeed = $state(
+		Math.max(
+			value.points.length,
+			1,
+			...value.points.map(
+				(point) =>
+					Number(/^cw-alert-point-(\d+)$/.exec(point.id)?.[1] ?? 0),
+			),
+		),
+	);
 	let numericDrafts = $state<Record<string, string>>({});
-	let suppressIncomingNormalization = false;
 	let lastKnownResetShape = $state(
 		value.points.some((point) => point.reset !== undefined),
 	);
@@ -329,12 +340,8 @@
 	}
 
 	function setInternalValue(next: CwAlertPointsValue) {
-		suppressIncomingNormalization = true;
 		value = next;
 		onchange?.(next);
-		queueMicrotask(() => {
-			suppressIncomingNormalization = false;
-		});
 	}
 
 	function clearAllDrafts() {
@@ -922,8 +929,12 @@
 	}
 
 	$effect(() => {
+		// Every internal write goes through normalizeValueToStorage (or stamps
+		// STORAGE_UNIT below), so the unit check alone is a sufficient
+		// deterministic guard: internal writes early-return here, and only a
+		// consumer-supplied non-storage unit triggers normalization.
 		const incomingUnit = value.unit ?? STORAGE_UNIT;
-		if (suppressIncomingNormalization || incomingUnit === STORAGE_UNIT) {
+		if (incomingUnit === STORAGE_UNIT) {
 			return;
 		}
 

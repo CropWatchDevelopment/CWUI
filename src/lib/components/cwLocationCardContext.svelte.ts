@@ -24,7 +24,8 @@ const NOOP_LOCATION_CARD_CONTEXT: CwLocationCardContextApi = {
 };
 
 export function createCwLocationCardContext(): CwLocationCardContextApi {
-	let sensorsById = $state<Record<string, CwLocationCardSensorState>>({});
+	// Only ever wholesale-reassigned, so deep reactivity is unnecessary.
+	let sensorsById = $state.raw<Record<string, CwLocationCardSensorState>>({});
 
 	function setSensor(sensor: CwLocationCardSensorState) {
 		const currentSensor = sensorsById[sensor.id];

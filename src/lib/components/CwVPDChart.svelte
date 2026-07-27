@@ -45,13 +45,11 @@
 		zone: VpdZoneKey;
 		zoneLabel: string;
 		inTarget: boolean;
-		isCurrent: boolean;
 	}
 
 	interface MatrixRow {
 		temperatureC: number;
 		temperatureF: number;
-		isCurrent: boolean;
 		cells: MatrixCell[];
 	}
 
@@ -257,11 +255,14 @@
 			: nearestValue(resolvedHumidities, relativeHumidityValue),
 	);
 
+	// The grid itself is static for a given temps/humidities/target combination;
+	// the "current reading" highlight is computed in the template instead, so a
+	// live temperature/humidity tick doesn't rebuild every cell object and
+	// re-diff the whole table.
 	const matrixRows = $derived.by<MatrixRow[]>(() =>
 		resolvedTemperatures.map((temperatureC) => ({
 			temperatureC,
 			temperatureF: toFahrenheit(temperatureC),
-			isCurrent: nearestTemperature === temperatureC,
 			cells: resolvedHumidities.map((humidity) => {
 				const vpd = calculateRoomVpd(temperatureC, humidity);
 				const zone = resolveZone(vpd);
@@ -274,9 +275,6 @@
 					inTarget:
 						vpd >= normalizedTarget.min &&
 						vpd <= normalizedTarget.max,
-					isCurrent:
-						nearestTemperature === temperatureC &&
-						nearestHumidity === humidity,
 				};
 			}),
 		})),
@@ -344,10 +342,11 @@
 			</thead>
 			<tbody>
 				{#each matrixRows as row (row.temperatureC)}
+					{@const rowIsCurrent = nearestTemperature === row.temperatureC}
 					<tr>
 						<th
 							scope="row"
-							class={row.isCurrent
+							class={rowIsCurrent
 								? "cw-vpd-chart__row-header cw-vpd-chart__row-header--current"
 								: "cw-vpd-chart__row-header"}
 						>
@@ -355,7 +354,7 @@
 						</th>
 						{#if useF}
 							<td
-								class={row.isCurrent
+								class={rowIsCurrent
 									? "cw-vpd-chart__fahrenheit cw-vpd-chart__fahrenheit--current"
 									: "cw-vpd-chart__fahrenheit"}
 							>
@@ -363,11 +362,12 @@
 							</td>
 						{/if}
 						{#each row.cells as cell (`${row.temperatureC}-${cell.humidity}`)}
+							{@const cellIsCurrent = rowIsCurrent && nearestHumidity === cell.humidity}
 							<td
 								class={[
 									"cw-vpd-chart__cell",
 									cell.inTarget && "cw-vpd-chart__cell--target",
-									cell.isCurrent && "cw-vpd-chart__cell--current",
+									cellIsCurrent && "cw-vpd-chart__cell--current",
 								]}
 								style:background={vpdColor(cell.vpd)}
 								aria-label={cellAriaLabel({
@@ -377,11 +377,11 @@
 									unit,
 									zoneLabel: cell.zoneLabel,
 									inTarget: cell.inTarget,
-									isCurrent: cell.isCurrent,
+									isCurrent: cellIsCurrent,
 								})}
 							>
 								<span class="cw-vpd-chart__cell-value">{vpdFormatter.format(cell.vpd)}</span>
-									{#if cell.isCurrent}
+									{#if cellIsCurrent}
 										<b class="cw-vpd-chart__cell-marker" aria-hidden="true">Now</b>
 									{/if}
 							</td>

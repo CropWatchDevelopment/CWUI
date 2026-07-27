@@ -6,7 +6,6 @@
 	import { createCwAlarmScheduler } from './cwAlarmContext.svelte.js';
 	import { useCwLocationCard } from './cwLocationCardContext.svelte.js';
 	import { formatCwSensorValue, getCwSensorReadingIcon } from './cwSensorCardRows.js';
-	import { getCwSensorStatusLabel } from './cwSensorCardStatus.js';
 	import {
 		isCwWithinTimeout,
 		resolveCwDateTimeMs,
@@ -159,7 +158,6 @@
 	const resolvedLastSeenAtMs = $derived(resolveCwDateTimeMs(resolvedLastSeenAt));
 	const resolvedExpireAfterMs = $derived(resolveCwExpireAfterMs(resolvedExpireAfterMinutes));
 	const effectiveStatus = $derived(freshnessState === false ? 'offline' : status);
-	const statusLabel = $derived(getCwSensorStatusLabel(effectiveStatus));
 	const primaryIcon = $derived(
 		getCwSensorReadingIcon('primary', {
 			label,
@@ -298,9 +296,6 @@
 
 	$effect(() => {
 		freshnessState = isCwWithinTimeout(resolvedLastSeenAt, resolvedExpireAfterMinutes);
-	});
-
-	$effect(() => {
 		updateWithinTimeoutState(freshnessState);
 	});
 
@@ -498,14 +493,6 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-	}
-
-	.cw-sensor-card__status {
-		flex-shrink: 0;
-		font-size: var(--cw-text-xs);
-		color: var(--cw-text-muted);
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
 	}
 
 	.cw-sensor-card__error {

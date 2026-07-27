@@ -258,7 +258,7 @@
 	/** Stringified value for the dropdown (CwDropdown uses string values) */
 	let pageSizeStr = $derived(String(pageSize));
 
-	let rows = $state<T[]>([]);
+	let rows = $state.raw<T[]>([]);
 	let total = $state(0);
 	let totalKnown = $state(false);
 	let page = $state(1);
@@ -910,7 +910,7 @@
 			if (err instanceof DOMException && err.name === "AbortError")
 				return;
 			if (version !== requestVersion) return;
-			error = err instanceof Error ? err.message : "An error occurred";
+			error = err instanceof Error ? err.message : l.genericError;
 			rows = [];
 			total = 0;
 			totalKnown = false;
@@ -958,7 +958,7 @@
 				return;
 			if (version !== requestVersion) return;
 			appendError =
-				err instanceof Error ? err.message : "Unable to load more rows";
+				err instanceof Error ? err.message : l.loadMoreError;
 		} finally {
 			if (version === requestVersion) {
 				appendingState = false;
@@ -1052,6 +1052,13 @@
 	});
 
 	$effect(() => {
+		if (!toolbarMenuOpen) return;
+		document.addEventListener("keydown", handleTableKeydown);
+		return () =>
+			document.removeEventListener("keydown", handleTableKeydown);
+	});
+
+	$effect(() => {
 		if (typeof totalItems !== "number" || !Number.isFinite(totalItems))
 			return;
 		total = Math.max(0, totalItems);
@@ -1066,8 +1073,6 @@
 		cancelPendingRequest();
 	});
 </script>
-
-<svelte:document onkeydown={handleTableKeydown} />
 
 <div
 	{id}
@@ -1085,7 +1090,7 @@
 		>
 			<div class="cw-data-table__loading-badge">
 				<CwSpinner size="md" />
-				Loading...
+				{l.loading}
 			</div>
 		</div>
 	{:else}
@@ -1125,7 +1130,7 @@
 				{#if rowActions}
 					<td
 						class="cw-data-table__td cw-data-table__td--actions"
-						data-label={rowActionsHeader || "Actions"}
+						data-label={rowActionsHeader || l.actions}
 						style:text-align="right"
 					>
 						<div class="cw-data-table__action-slot w-full">
@@ -1141,7 +1146,7 @@
 				<div class="cw-data-table__search-wrapper">
 					<CwSearchInput
 						value={search}
-						placeholder="Search..."
+						placeholder={l.searchPlaceholder}
 						oninput={handleSearch}
 						debounceMs={0}
 					/>
@@ -1165,8 +1170,8 @@
 					<CwDropdown
 						options={pageSizeOptions.map((n) => ({
 							label: virtualScroll
-								? `${n} rows/batch`
-								: `${n} rows`,
+								? l.pageSizeBatchOption(n)
+								: l.pageSizeOption(n),
 							value: String(n),
 						}))}
 						value={pageSizeStr}
@@ -1184,7 +1189,7 @@
 						variant="ghost"
 						size="sm"
 						type="button"
-						aria-label="Open table options"
+						aria-label={l.toolbarMenu}
 						aria-expanded={toolbarMenuOpen}
 						aria-haspopup="menu"
 						aria-controls={`${uid}-toolbar-menu`}
@@ -1218,7 +1223,7 @@
 								role="menuitem"
 								onclick={openColumnSettings}
 							>
-								Columns Settings
+								{l.columnsSettings}
 							</button>
 							<button
 								type="button"
@@ -1226,7 +1231,7 @@
 								role="menuitem"
 								onclick={refreshTable}
 							>
-								Refresh
+								{l.refresh}
 							</button>
 						</div>
 					{/if}
@@ -1311,7 +1316,7 @@
 							>
 								<div class="cw-data-table__loading">
 									<CwSpinner size="lg" />
-									Loading...
+									{l.loading}
 								</div>
 							</td>
 						</tr>
@@ -1325,7 +1330,7 @@
 									{@render errorState(error)}
 								{:else}
 									<div class="cw-data-table__error">
-										<p>Error: {error}</p>
+										<p>{l.errorPrefix(error)}</p>
 										<CwButton
 											variant="secondary"
 											size="sm"
@@ -1334,7 +1339,7 @@
 													? fetchVirtualData()
 													: fetchPageData(page)}
 										>
-											Retry
+											{l.retry}
 										</CwButton>
 									</div>
 								{/if}
@@ -1350,7 +1355,7 @@
 									{@render emptyState()}
 								{:else}
 									<p class="cw-data-table__empty">
-										No data available
+										{l.empty}
 									</p>
 								{/if}
 							</td>
@@ -1385,10 +1390,9 @@
 											<div
 												class="cw-data-table__group-count"
 											>
-												{group.rows.length}
-												{group.rows.length === 1
-													? "item"
-													: "items"}
+												{l.groupCount(
+													group.rows.length,
+												)}
 											</div>
 										</div>
 									</th>
@@ -1421,7 +1425,7 @@
 								>
 									<div class="cw-data-table__append-status">
 										<CwSpinner size="md" />
-										Loading more rows...
+										{l.loadingMore}
 									</div>
 								</td>
 							</tr>
@@ -1440,7 +1444,7 @@
 											size="sm"
 											onclick={retryVirtualAppend}
 										>
-											Retry
+											{l.retry}
 										</CwButton>
 									</div>
 								</td>
@@ -1469,29 +1473,28 @@
 				class="cw-data-table__pagination cw-data-table__pagination--virtual"
 			>
 				<span class="cw-data-table__page-info">
-					{rangeStart}–{rangeEnd}
 					{#if totalKnown}
-						of {total}
+						{l.virtualRange(rangeStart, rangeEnd, total)}
 					{:else}
-						loaded
+						{l.virtualRangeLoaded(rangeStart, rangeEnd)}
 					{/if}
 				</span>
 				<span class="cw-data-table__virtual-meta">
 					{#if appendError}
-						Load interrupted
+						{l.loadInterrupted}
 					{:else if hasMoreRows}
-						Scroll to load more
+						{l.scrollToLoadMore}
 					{:else if totalKnown}
-						All {total} rows loaded
+						{l.allRowsLoaded(total)}
 					{:else}
-						All loaded rows visible
+						{l.allLoadedVisible}
 					{/if}
 				</span>
 			</div>
 		{:else if !virtualScroll && totalPages > 1}
 			<div class="cw-data-table__pagination">
 				<span class="cw-data-table__page-info">
-					{rangeStart}–{rangeEnd} of {total}
+					{l.paginationRange(rangeStart, rangeEnd, total)}
 				</span>
 				<div class="cw-data-table__page-controls">
 					<CwButton
@@ -1499,7 +1502,7 @@
 						size="sm"
 						disabled={page <= 1}
 						onclick={handlePreviousPage}
-						aria-label="Previous page"
+						aria-label={l.previousPage}
 					>
 						<svg
 							viewBox="0 0 16 16"
@@ -1517,14 +1520,14 @@
 						</svg>
 					</CwButton>
 					<span class="cw-data-table__page-num"
-						>Page {page} of {totalPages}</span
+						>{l.pageOf(page, totalPages)}</span
 					>
 					<CwButton
 						variant="secondary"
 						size="sm"
 						disabled={page >= totalPages}
 						onclick={handleNextPage}
-						aria-label="Next page"
+						aria-label={l.nextPage}
 					>
 						<svg
 							viewBox="0 0 16 16"
@@ -1552,19 +1555,19 @@
 
 	<CwDialog
 		bind:open={columnSettingsOpen}
-		title="Columns Settings"
+		title={l.columnsSettings}
 		onclose={handleColumnSettingsClose}
 	>
 		{#snippet children()}
 			<div class="cw-data-table__column-settings-dialog">
 				<p class="cw-data-table__column-settings-copy">
-					Choose which columns are visible for this grid.
+					{l.columnSettingsCopy}
 				</p>
 
 				<div
 					class="cw-data-table__column-settings-list"
 					role="group"
-					aria-label="Visible columns"
+					aria-label={l.visibleColumns}
 				>
 					{#each columns as col (col.key)}
 						<label
@@ -1597,7 +1600,7 @@
 
 				{#if !canSaveColumnSettings}
 					<p class="cw-data-table__column-settings-warning">
-						Select at least one column before saving.
+						{l.selectAtLeastOne}
 					</p>
 				{/if}
 			</div>
@@ -1610,7 +1613,7 @@
 				type="button"
 				onclick={handleColumnSettingsClose}
 			>
-				Close
+				{l.close}
 			</CwButton>
 			<CwButton
 				variant="secondary"
@@ -1618,7 +1621,7 @@
 				type="button"
 				onclick={resetColumnSettingsDraft}
 			>
-				Reset to Default
+				{l.resetToDefault}
 			</CwButton>
 			<CwButton
 				size="sm"
@@ -1626,7 +1629,7 @@
 				disabled={!canSaveColumnSettings}
 				onclick={saveColumnSettings}
 			>
-				Save
+				{l.save}
 			</CwButton>
 		{/snippet}
 	</CwDialog>
