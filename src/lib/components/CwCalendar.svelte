@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import CwSpinner from './CwSpinner.svelte';
 
 	type CalendarDay = { date: Date; inMonth: boolean; disabled: boolean; isToday: boolean };
 	type CalendarMonthView = { year: number; month: number; date: Date };
@@ -25,6 +26,8 @@
 		onDateClick?: (date: Date) => void;
 		/** Fired when month navigation arrows are used. Receives the new year, zero-based month, and first day of that month */
 		onMonthChange?: (year: number, month: number, displayedMonth: Date) => void;
+		/** While true, both month-nav buttons are disabled and the one that was clicked shows a spinner */
+		loading?: boolean;
 		class?: string;
 	}
 
@@ -41,8 +44,18 @@
 		maxDate,
 		onDateClick,
 		onMonthChange,
+		loading = false,
 		class: className = ''
 	}: Props = $props();
+
+	/** Which nav button triggered the in-flight load, so only it shows a spinner. */
+	let pendingNav = $state<'prev' | 'next' | null>(null);
+
+	$effect(() => {
+		if (!loading) {
+			pendingNav = null;
+		}
+	});
 
 	function startOfDay(date: Date): Date {
 		const normalized = new Date(date);
@@ -215,12 +228,14 @@
 	}
 
 	function prevMonth() {
-		if (!canGoPrev) return;
+		if (!canGoPrev || loading) return;
+		pendingNav = 'prev';
 		showMonth(previousMonthView);
 	}
 
 	function nextMonth() {
-		if (!canGoNext) return;
+		if (!canGoNext || loading) return;
+		pendingNav = 'next';
 		showMonth(nextMonthView);
 	}
 
@@ -248,11 +263,16 @@
 			class="cw-calendar__nav-btn"
 			onclick={prevMonth}
 			aria-label="Previous month"
-			disabled={!canGoPrev}
+			aria-busy={loading && pendingNav === 'prev'}
+			disabled={!canGoPrev || loading}
 		>
-			<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
-				<path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-			</svg>
+			{#if loading && pendingNav === 'prev'}
+				<CwSpinner size="md" />
+			{:else}
+				<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+				</svg>
+			{/if}
 		</button>
 		<span class="cw-calendar__month-label">{monthName}</span>
 		<button
@@ -260,11 +280,16 @@
 			class="cw-calendar__nav-btn"
 			onclick={nextMonth}
 			aria-label="Next month"
-			disabled={!canGoNext}
+			aria-busy={loading && pendingNav === 'next'}
+			disabled={!canGoNext || loading}
 		>
-			<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
-				<path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-			</svg>
+			{#if loading && pendingNav === 'next'}
+				<CwSpinner size="md" />
+			{:else}
+				<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+				</svg>
+			{/if}
 		</button>
 	</div>
 
@@ -367,6 +392,11 @@
 	.cw-calendar__nav-btn:disabled {
 		cursor: not-allowed;
 		opacity: 0.4;
+	}
+	/* The button whose click started the load keeps full opacity for its spinner. */
+	.cw-calendar__nav-btn[aria-busy='true'] {
+		cursor: wait;
+		opacity: 1;
 	}
 	.cw-calendar__nav-btn:disabled:hover {
 		background: none;
