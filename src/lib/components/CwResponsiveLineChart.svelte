@@ -363,6 +363,7 @@
 	import { onMount, onDestroy, untrack } from 'svelte';
 	import CwNoDataOverlay from './CwNoDataOverlay.svelte';
 	import { getCwNoDataMessage, hasCwNoData } from './cwNoData.js';
+	import { resolveLineChartLayout } from '../utils/lineChartLayout.js';
 
 	interface Props {
 		/** Series to render. The first one becomes the default left axis if not specified. */
@@ -518,14 +519,13 @@
 		};
 	});
 
-	let resolvedLayout: CwResponsiveLineLayout = $derived.by(() => {
-		if (layout !== 'auto') return layout;
-		const w = containerWidth || 1024;
-		if (w < 520) return 'phone';
-		if (w < 820) return 'tablet';
-		if (w < 1100) return 'tablet-land';
-		return 'desktop';
-	});
+	// `containerWidth` is the BORDER-box width (see resolveLineChartLayout): the
+	// classes below change this element's padding, so resolving against the
+	// content box would let the chosen class change the measurement that chose
+	// it.
+	let layoutDecision = $derived(resolveLineChartLayout(containerWidth, layout));
+	let resolvedLayout: CwResponsiveLineLayout = $derived(layoutDecision.layout);
+	let isXs = $derived(layoutDecision.xs);
 	let compact = $derived(resolvedLayout === 'phone' || resolvedLayout === 'phone-land');
 	let sidebar = $derived(resolvedLayout === 'desktop' || resolvedLayout === 'tablet-land');
 
@@ -1392,14 +1392,46 @@
 		fireChange();
 	}
 
+	/**
+	 * Border-box size of a ResizeObserver entry.
+	 *
+	 * The layout classes this component applies change its own padding, so the
+	 * content box is not a safe thing to measure — see resolveLineChartLayout.
+	 * `borderBoxSize` is used where available, falling back to the bounding rect
+	 * (which is also a border box) on older engines.
+	 */
+	function borderBoxOf(entry: ResizeObserverEntry): { width: number; height: number } {
+		const box = entry.borderBoxSize?.[0];
+		if (box) return { width: box.inlineSize, height: box.blockSize };
+		const rect = entry.target.getBoundingClientRect();
+		return { width: rect.width, height: rect.height };
+	}
+
 	let ro: ResizeObserver | null = null;
 	onMount(() => {
+		// Measure before the first paint so the layout comes from the real width
+		// rather than the unmeasured default, which would render the desktop
+		// sidebar and then snap to the phone layout a frame later.
+		const rect = rootEl.getBoundingClientRect();
+		if (rect.width > 0 && rect.height > 0) {
+			containerWidth = rect.width;
+			containerHeight = rect.height;
+		}
+
 		initView();
 		ro = new ResizeObserver((entries) => {
 			for (const e of entries) {
 				if (e.target === rootEl) {
-					containerWidth = e.contentRect.width;
-					containerHeight = e.contentRect.height;
+					const { width, height } = borderBoxOf(e);
+					// A zero-size observation means the chart is hidden (display:none,
+					// an inactive tab), not that it shrank. Adopting it would fall
+					// through to the unmeasured default and swap in the desktop
+					// layout, which resizes the element and fires the observer again.
+					// Keep the last known size and let the next real measurement win.
+					if (width > 0 && height > 0) {
+						containerWidth = width;
+						containerHeight = height;
+					}
 				}
 			}
 			schedule();
@@ -1434,7 +1466,9 @@
 
 <div
 	bind:this={rootEl}
-	class="cw-rlc cw-no-data-host cw-rlc--{resolvedLayout} cw-rlc--{theme} {containerWidth > 0 && containerWidth < 380 ? 'cw-rlc--xs' : ''} {bare ? 'cw-rlc--bare' : ''} {className}"
+	class="cw-rlc cw-no-data-host cw-rlc--{resolvedLayout} cw-rlc--{theme} {isXs
+		? 'cw-rlc--xs'
+		: ''} {bare ? 'cw-rlc--bare' : ''} {className}"
 	class:cw-no-data-host--active={hasNoData}
 	style="--cw-rlc-bg:{themePalette.bg};
 		--cw-rlc-panel:{themePalette.panel};
