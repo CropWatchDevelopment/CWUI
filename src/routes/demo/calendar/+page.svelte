@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { CwCalendar } from '$lib/index.js';
+	import { CwCalendar, CwSwitch } from '$lib/index.js';
+	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	interface DemoEvent {
 		title: string;
@@ -83,11 +84,43 @@
 		lastMonthChange = displayedMonth;
 	}
 
+	let calendarLoading = $state(false);
+	let loadingYear = $state(today.getFullYear());
+	let loadingMonth = $state(today.getMonth());
+
+	// Simulate fetching a month of events whenever the month changes.
+	function handleLoadingMonthChange() {
+		calendarLoading = true;
+		setTimeout(() => (calendarLoading = false), 900);
+	}
+
+	const calendarExample = `<CwCalendar
+\tbind:year
+\tbind:month
+\tminDate={minDate}
+\tmaxDate={maxDate}
+\tloading={isFetchingMonth}
+\tlocale="fr-FR"
+\tonDateClick={(date) => (selected = date)}
+\tonMonthChange={(year, month) => fetchMonth(year, month)}
+>
+\t{#snippet dayContent(date)}
+\t\t{#each eventsFor(date) as event (event.id)}
+\t\t\t<div class="event">{event.title}</div>
+\t\t{/each}
+\t{/snippet}
+</CwCalendar>`;
+
 	const visibleMonthLabel = $derived(formatMonth(new Date(visibleYear, visibleMonth, 1)));
 </script>
 
 <h2>CwCalendar</h2>
-<p class="demo-desc">Month calendar with bindable month state, snippet-based day rendering, and optional min/max date constraints.</p>
+<p class="demo-desc">
+	Month calendar with bindable month state, snippet-based day rendering, optional min/max date
+	constraints and a loading state for month navigation. Day cells are keyboard-operable: arrow keys
+	move by day and week, Home/End jump to the start or end of the week, and PageUp/PageDown change
+	month.
+</p>
 
 <section class="demo-section">
 	<div class="demo-section__head">
@@ -126,12 +159,12 @@
 					{@const dayEvents = getEvents(date)}
 					{#if dayEvents.length > 0}
 						{#each dayEvents.slice(0, 2) as event (event.title)}
-							<div class="demo-event" style:border-left-color={event.color}>
+							<div class="demo-cal-event" style:border-left-color={event.color}>
 								{event.title}
 							</div>
 						{/each}
 					{:else}
-						<div class="demo-event demo-event--placeholder">
+						<div class="demo-cal-event demo-cal-event--placeholder">
 							No field work scheduled
 						</div>
 					{/if}
@@ -168,42 +201,53 @@
 </section>
 
 <section class="demo-section">
+	<h3>Loading and locale</h3>
+	<p class="demo-hint">
+		Change month to see the loading state while events are fetched; navigation is paused until
+		loading finishes. Weekday and month names come from <code>locale</code> (here
+		<code>fr-FR</code>).
+	</p>
+	<div class="demo-row">
+		<CwSwitch bind:checked={calendarLoading} label="Loading" />
+	</div>
+	<CwCalendar
+		bind:year={loadingYear}
+		bind:month={loadingMonth}
+		loading={calendarLoading}
+		locale="fr-FR"
+		onMonthChange={handleLoadingMonthChange}
+	/>
+	<DemoCodeExample code={calendarExample} title="CwCalendar example" />
+</section>
+
+<section class="demo-section">
 	<h3>Minimal month grid</h3>
 	<p class="demo-hint">Use the component with no snippets when you only need the shared month shell and date-grid layout.</p>
 	<CwCalendar />
 </section>
 
 <style>
-	h2 {
-		font-size: var(--cw-text-xl);
-		font-weight: var(--cw-font-bold);
-		margin-bottom: var(--cw-space-2);
-	}
-
-	h3 {
-		font-size: var(--cw-text-base);
-		font-weight: var(--cw-font-semibold);
-		margin: 0 0 var(--cw-space-2);
-		color: var(--cw-text-secondary);
-	}
-
-	.demo-desc {
-		color: var(--cw-text-muted);
-		font-size: var(--cw-text-sm);
-		margin-bottom: var(--cw-space-4);
-	}
-
-	.demo-hint {
-		margin: 0;
-		color: var(--cw-text-muted);
-		font-size: var(--cw-text-sm);
-		line-height: 1.65;
-	}
-
+	/* Page layout: sections stack their intro, controls and example with even gaps. */
 	.demo-section {
 		display: grid;
 		gap: var(--cw-space-4);
-		margin-bottom: var(--cw-space-8);
+	}
+
+	.demo-section h3 {
+		margin-bottom: 0;
+	}
+
+	.demo-cal-event {
+		padding: var(--cw-space-1) var(--cw-space-2);
+		border-left: 3px solid;
+		border-radius: 0 var(--cw-radius-sm) var(--cw-radius-sm) 0;
+		background-color: color-mix(in srgb, var(--cw-bg-elevated) 90%, var(--cw-bg-muted));
+		font-size: var(--cw-text-xs);
+		line-height: var(--cw-leading-tight);
+		color: var(--cw-text-primary);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	.demo-section__head {
@@ -288,21 +332,7 @@
 		font-weight: var(--cw-font-medium);
 		color: var(--cw-text-secondary);
 	}
-
-	.demo-event {
-		padding: 0.38rem 0.5rem;
-		border-left: 3px solid;
-		border-radius: 0 var(--cw-radius-sm) var(--cw-radius-sm) 0;
-		background-color: color-mix(in srgb, var(--cw-bg-elevated) 90%, var(--cw-bg-muted));
-		font-size: 0.76rem;
-		line-height: 1.35;
-		color: var(--cw-text-primary);
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.demo-event--placeholder {
+	.demo-cal-event--placeholder {
 		border-left-color: transparent;
 		color: var(--cw-text-muted);
 	}

@@ -6,36 +6,55 @@
 		total?: string;
 		/** Accessible label for a single bar, combining its bucket label and total. Default: `{label}: {total}` */
 		barLabel?: (label: string, total: string) => string;
+		/** Accessible text announced while `loading` is true. Default: "Loading chart" */
+		loading?: string;
 	}
 
 	const DEFAULT_LABELS: Required<CwStackedBarChartLabels> = {
 		ariaLabel: 'Stacked bar chart',
 		total: 'Total',
-		barLabel: (label, total) => `${label}: ${total}`
+		barLabel: (label, total) => `${label}: ${total}`,
+		loading: 'Loading chart'
 	};
+
+	/**
+	 * Theme-aware categorical palette. The `--cw-chart-cat-*` tokens resolve to
+	 * the light/dark steps below, so the chart follows the document theme.
+	 */
+	const TOKEN_CATEGORY_COLORS = [
+		'var(--cw-chart-cat-1)',
+		'var(--cw-chart-cat-2)',
+		'var(--cw-chart-cat-3)',
+		'var(--cw-chart-cat-4)',
+		'var(--cw-chart-cat-5)',
+		'var(--cw-chart-cat-6)',
+		'var(--cw-chart-cat-7)',
+		'var(--cw-chart-cat-8)'
+	];
 
 	/**
 	 * Default categorical palettes (light/dark steps of the same hues), assigned
 	 * to categories by index in fixed order. Validated for adjacent-pair CVD
-	 * separation and normal-vision distance on the CWUI light/dark surfaces.
+	 * separation and normal-vision distance, and each colour reaches 3:1 against
+	 * the chart card surface of its theme (WCAG 1.4.11 non-text contrast).
 	 */
 	const LIGHT_CATEGORY_COLORS = [
 		'#2a78d6',
-		'#eb6834',
-		'#1baf7a',
-		'#eda100',
-		'#e87ba4',
+		'#eb652f',
+		'#19a271',
+		'#bf8200',
+		'#e36192',
 		'#008300',
 		'#4a3aa7',
 		'#e34948'
 	];
 	const DARK_CATEGORY_COLORS = [
 		'#3987e5',
-		'#d95926',
+		'#da5e2d',
 		'#199e70',
 		'#c98500',
-		'#d55181',
-		'#008300',
+		'#d75987',
+		'#009a00',
 		'#9085e9',
 		'#e66767'
 	];
@@ -47,6 +66,7 @@
 		CwStackedBarBucket,
 		CwStackedBarCategory
 	} from '../types/index.js';
+	import { untrack } from 'svelte';
 	import CwNoDataOverlay from './CwNoDataOverlay.svelte';
 	import { getCwNoDataMessage, hasCwNoData } from './cwNoData.js';
 
@@ -57,12 +77,22 @@
 		buckets?: CwStackedBarBucket[] | null;
 		/** Category ids hidden on first render; the legend can re-enable them. */
 		initialHidden?: string[];
+		/**
+		 * Force the light or dark palette. When omitted (recommended) colours come
+		 * from the `--cw-chart-cat-*` tokens and follow the document theme.
+		 */
 		theme?: 'light' | 'dark';
 		height?: number;
 		showLegend?: boolean;
 		/** Formats values for axis ticks, tooltips, and a11y labels (inject locale formatting). */
 		formatValue?: (value: number) => string;
+		/**
+		 * Show the no-data overlay. When omitted the overlay appears automatically
+		 * if there are no buckets or every visible value is zero.
+		 */
 		noData?: CwNoDataMessage;
+		/** Show skeleton bars while data is loading. */
+		loading?: boolean;
 		/** Override display labels for i18n */
 		labels?: CwStackedBarChartLabels;
 		class?: string;
@@ -72,11 +102,12 @@
 		categories: categoriesInput = [],
 		buckets: bucketsInput = [],
 		initialHidden = [],
-		theme = 'light',
+		theme,
 		height = 320,
 		showLegend = true,
 		formatValue = (value) => String(value),
 		noData,
+		loading = false,
 		labels = {},
 		class: className = ''
 	}: Props = $props();
@@ -85,11 +116,18 @@
 	const categories = $derived(categoriesInput ?? []);
 	const buckets = $derived(bucketsInput ?? []);
 
-	let hidden = $state<string[]>([...initialHidden]);
+	// Seeded once from the prop; the legend owns it afterwards.
+	let hidden = $state<string[]>(untrack(() => [...initialHidden]));
 	let hoveredIndex = $state<number | null>(null);
 	let containerWidth = $state(0);
 
-	const palette = $derived(theme === 'dark' ? DARK_CATEGORY_COLORS : LIGHT_CATEGORY_COLORS);
+	const palette = $derived(
+		theme === 'dark'
+			? DARK_CATEGORY_COLORS
+			: theme === 'light'
+				? LIGHT_CATEGORY_COLORS
+				: TOKEN_CATEGORY_COLORS
+	);
 
 	// Color follows the category's position in the full list, never the count of
 	// visible series — toggling a category must not repaint the survivors.
@@ -100,7 +138,14 @@
 	const visibleCategories = $derived(categories.filter((cat) => !hidden.includes(cat.id)));
 
 	function toggleCategory(id: string) {
-		hidden = hidden.includes(id) ? hidden.filter((h) => h !== id) : [...hidden, id];
+		if (hidden.includes(id)) {
+			hidden = hidden.filter((h) => h !== id);
+			return;
+		}
+		// Never hide the last visible series — an empty chart with no way back
+		// reads as broken.
+		if (visibleCategories.length <= 1) return;
+		hidden = [...hidden, id];
 	}
 
 	function bucketTotal(bucket: CwStackedBarBucket): number {
@@ -216,7 +261,11 @@
 		].join(' ');
 	}
 
-	const hasNoData = $derived(hasCwNoData(noData) || buckets.length === 0);
+	const hasNoData = $derived(
+		!loading && (hasCwNoData(noData) || buckets.length === 0 || maxTotal <= 0)
+	);
+
+	const SKELETON_HEIGHTS = [0.55, 0.8, 0.4, 0.95, 0.65, 0.75, 0.5, 0.85];
 	const noDataMessage = $derived(getCwNoDataMessage(noData));
 
 	const hoveredBar = $derived(hoveredIndex !== null ? (bars[hoveredIndex] ?? null) : null);
@@ -245,8 +294,24 @@
 <div
 	class="cw-stacked-bar-chart cw-no-data-host {className}"
 	class:cw-no-data-host--active={hasNoData}
+	aria-busy={loading || undefined}
 >
 	<div class="cw-stacked-bar-chart__plot" bind:clientWidth={containerWidth}>
+		{#if loading}
+			<svg viewBox="0 0 {width} {height}" width="100%" {height} role="img" aria-label={l.loading}>
+				{#each SKELETON_HEIGHTS as h, i (i)}
+					{@const slot = (width - 16) / SKELETON_HEIGHTS.length}
+					<rect
+						class="cw-stacked-bar-chart__skeleton"
+						x={8 + i * slot + slot * 0.18}
+						y={MARGIN.top + (1 - h) * plotHeight}
+						width={slot * 0.64}
+						height={h * plotHeight}
+						rx="4"
+					/>
+				{/each}
+			</svg>
+		{:else}
 		<svg
 			viewBox="0 0 {width} {height}"
 			width="100%"
@@ -280,9 +345,9 @@
 				>
 					{#each bar.segments as seg (seg.categoryId)}
 						{#if seg.rounded}
-							<path d={roundedTopPath(seg, barWidth)} fill={seg.color} />
+							<path d={roundedTopPath(seg, barWidth)} style:fill={seg.color} />
 						{:else}
-							<rect x={seg.x} y={seg.y} width={barWidth} height={seg.height} fill={seg.color} />
+							<rect x={seg.x} y={seg.y} width={barWidth} height={seg.height} style:fill={seg.color} />
 						{/if}
 					{/each}
 				</g>
@@ -314,6 +379,7 @@
 				</rect>
 			{/each}
 		</svg>
+		{/if}
 
 		{#if hoveredBar}
 			<div
@@ -340,7 +406,7 @@
 		{/if}
 	</div>
 
-	{#if showLegend && categories.length > 1}
+	{#if showLegend && categories.length > 1 && !loading}
 		<div class="cw-stacked-bar-chart__legend">
 			{#each categories as cat (cat.id)}
 				<button
@@ -348,6 +414,9 @@
 					class="cw-stacked-bar-chart__legend-item"
 					class:cw-stacked-bar-chart__legend-item--hidden={hidden.includes(cat.id)}
 					aria-pressed={!hidden.includes(cat.id)}
+					aria-disabled={!hidden.includes(cat.id) && visibleCategories.length <= 1
+						? true
+						: undefined}
 					onclick={() => toggleCategory(cat.id)}
 				>
 					<span
@@ -378,8 +447,19 @@
 		width: 100%;
 	}
 
+	.cw-stacked-bar-chart__skeleton {
+		fill: var(--cw-bg-muted);
+		animation: cw-stacked-bar-pulse 1.4s var(--cw-ease-default) infinite;
+	}
+
+	@keyframes cw-stacked-bar-pulse {
+		50% {
+			opacity: 0.5;
+		}
+	}
+
 	.cw-stacked-bar-chart__gridline {
-		stroke: color-mix(in srgb, var(--cw-border-muted) 45%, transparent);
+		stroke: var(--cw-chart-grid);
 		stroke-width: 1;
 	}
 
@@ -388,8 +468,8 @@
 	}
 
 	.cw-stacked-bar-chart__tick {
-		fill: var(--cw-text-muted);
-		font-size: 0.6875rem;
+		fill: var(--cw-chart-tick, var(--cw-text-muted));
+		font-size: var(--cw-chart-tick-size, 0.6875rem);
 		font-variant-numeric: tabular-nums;
 	}
 
@@ -408,10 +488,11 @@
 		min-width: 9rem;
 		max-width: 16rem;
 		padding: var(--cw-space-2) var(--cw-space-3);
-		background-color: var(--cw-bg-surface-elevated);
-		border: 1px solid var(--cw-border-muted);
+		background-color: var(--cw-chart-tooltip-bg);
+		border: 1px solid var(--cw-chart-tooltip-border);
 		border-radius: var(--cw-radius-md);
-		box-shadow: var(--cw-shadow-md, 0 4px 12px rgba(0, 0, 0, 0.15));
+		box-shadow: var(--cw-shadow-md);
+		color: var(--cw-chart-tooltip-text);
 		pointer-events: none;
 		z-index: 2;
 	}
@@ -423,8 +504,8 @@
 	.cw-stacked-bar-chart__tooltip-title {
 		margin: 0 0 var(--cw-space-1);
 		font-size: var(--cw-text-xs);
-		font-weight: var(--cw-font-semibold, 600);
-		color: var(--cw-text-primary);
+		font-weight: var(--cw-font-semibold);
+		color: var(--cw-chart-tooltip-text);
 	}
 
 	.cw-stacked-bar-chart__tooltip-row {
@@ -438,17 +519,17 @@
 	.cw-stacked-bar-chart__tooltip-row--total {
 		margin-top: var(--cw-space-1);
 		padding-top: var(--cw-space-1);
-		border-top: 1px solid var(--cw-border-muted);
-		font-weight: var(--cw-font-semibold, 600);
+		border-top: 1px solid var(--cw-chart-tooltip-border);
+		font-weight: var(--cw-font-semibold);
 	}
 
 	.cw-stacked-bar-chart__tooltip-label {
 		flex: 1;
-		color: var(--cw-text-secondary);
+		color: var(--cw-chart-tooltip-muted);
 	}
 
 	.cw-stacked-bar-chart__tooltip-value {
-		color: var(--cw-text-primary);
+		color: var(--cw-chart-tooltip-text);
 		font-variant-numeric: tabular-nums;
 	}
 
@@ -481,7 +562,11 @@
 	}
 
 	.cw-stacked-bar-chart__legend-item--hidden {
-		opacity: 0.4;
+		opacity: 0.45;
+	}
+
+	.cw-stacked-bar-chart__legend-item[aria-disabled='true'] {
+		cursor: not-allowed;
 	}
 
 	.cw-stacked-bar-chart__legend-item--hidden .cw-stacked-bar-chart__legend-label {
@@ -491,7 +576,7 @@
 	.cw-stacked-bar-chart__swatch {
 		width: 0.625rem;
 		height: 0.625rem;
-		border-radius: 2px;
+		border-radius: var(--cw-radius-sm);
 		flex-shrink: 0;
 	}
 

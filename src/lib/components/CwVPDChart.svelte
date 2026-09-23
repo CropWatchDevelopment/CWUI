@@ -25,11 +25,59 @@
 			inTarget: boolean;
 			isCurrent: boolean;
 		}) => string;
+		/** Text after the room VPD value. Default: `room VPD · {temp} / {rh} RH`. */
+		roomVpd?: (temperature: string, humidity: string) => string;
+		/** Prefix for the target range line. Default: "Target". */
+		target?: string;
+		/** Status text when the current VPD is inside the target band. Default: "on target". */
+		onTarget?: string;
+		/** Status text when the current VPD is outside the target band. Default: "steer back to band". */
+		offTarget?: string;
+		/** Legend text for the target-band swatch. Default: "in target band". */
+		inTargetBand?: string;
+		/** Marker shown above the live cell. Default: "Now". */
+		now?: string;
+		/** Accessible text announced while `loading` is true. Default: "Loading VPD chart". */
+		loading?: string;
 	}
+
+	/**
+	 * One fill per VPD zone. Cells and the legend use the same stepped colours,
+	 * so what you see in the grid is exactly what the legend explains.
+	 */
+	export const CW_VPD_ZONE_COLORS: Record<VpdZoneKey, string> = {
+		wet: "#2563eb",
+		humid: "#0e97b5",
+		balanced: "#14b8a6",
+		optimal: "#22c55e",
+		firm: "#a3d635",
+		dry: "#f59e0b",
+		stress: "#dc2626",
+	};
+
+	function relativeLuminance(hex: string): number {
+		const h = hex.replace("#", "");
+		const channel = (i: number) => {
+			const c = parseInt(h.slice(i, i + 2), 16) / 255;
+			return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+		};
+		return 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4);
+	}
+
+	/** Dark or light text, whichever contrasts more with the zone fill. */
+	const ZONE_TEXT: Record<VpdZoneKey, string> = Object.fromEntries(
+		Object.entries(CW_VPD_ZONE_COLORS).map(([key, hex]) => {
+			const lum = relativeLuminance(hex);
+			const onWhite = 1.05 / (lum + 0.05);
+			const onInk = (lum + 0.05) / 0.0555;
+			return [key, onInk >= onWhite ? "#0b1220" : "#ffffff"];
+		}),
+	) as Record<VpdZoneKey, string>;
 </script>
 
 <script lang="ts">
 	import type { CwNoDataMessage } from "../types/index.js";
+	import { formatCwNumber } from "../utils/cwFormat.js";
 	import CwNoDataOverlay from "./CwNoDataOverlay.svelte";
 	import { getCwNoDataMessage, hasCwNoData } from "./cwNoData.js";
 
@@ -71,6 +119,10 @@
 		/** Humidity columns (%). Defaults to 35–90 in steps of 5. */
 		humidityValues?: number[];
 		noData?: CwNoDataMessage;
+		/** Dim the matrix and hide the live readout while data is loading. */
+		loading?: boolean;
+		/** BCP 47 locale for number formatting. Defaults to the runtime locale. */
+		locale?: string;
 		labels?: CwVPDChartLabels;
 		class?: string;
 	}
@@ -133,6 +185,8 @@
 		temperatureValuesC,
 		humidityValues,
 		noData,
+		loading = false,
+		locale,
 		labels = {},
 		class: className = "",
 	}: Props = $props();
@@ -140,11 +194,25 @@
 	const zoneLabels = $derived({ ...DEFAULT_ZONE_LABELS, ...labels.zones });
 	const caption = $derived(labels.caption ?? DEFAULT_CAPTION);
 	const cellAriaLabel = $derived(labels.cellAriaLabel ?? defaultCellAriaLabel);
-
-	const vpdFormatter = new Intl.NumberFormat(undefined, {
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
+	const text = $derived({
+		roomVpd:
+			labels.roomVpd ??
+			((temperature: string, humidity: string) => `room VPD · ${temperature} / ${humidity} RH`),
+		target: labels.target ?? "Target",
+		onTarget: labels.onTarget ?? "on target",
+		offTarget: labels.offTarget ?? "steer back to band",
+		inTargetBand: labels.inTargetBand ?? "in target band",
+		now: labels.now ?? "Now",
+		loading: labels.loading ?? "Loading VPD chart",
 	});
+
+	const vpdFormatter = $derived(
+		new Intl.NumberFormat(locale, {
+			minimumFractionDigits: 2,
+			maximumFractionDigits: 2,
+		}),
+	);
+	const zoneOrder = VPD_ZONES.map((zone) => zone.key);
 
 	function toFahrenheit(tempC: number): number {
 		return Math.round(tempC * (9 / 5) + 32);
@@ -190,15 +258,6 @@
 		const saturationVaporPressure =
 			0.6108 * Math.exp((17.27 * tempC) / (tempC + 237.3));
 		return saturationVaporPressure * (1 - humidity / 100);
-	}
-
-	// Continuous blue → green → red hue ramp for cell fills (matches the agriculture VPD palette).
-	function vpdColor(value: number): string {
-		const hue =
-			value <= 1
-				? 220 - (Math.max(0, value) / 1) * 90
-				: Math.max(0, 130 - ((value - 1) / 1.2) * 130);
-		return `hsl(${hue.toFixed(0)} 68% 50%)`;
 	}
 
 	function resolveZone(value: number): VpdZone {
@@ -297,22 +356,36 @@
 </script>
 
 <section
-	class={["cw-vpd-chart", "cw-no-data-host", hasNoData && "cw-no-data-host--active", className]}
+	class={[
+		"cw-vpd-chart",
+		"cw-no-data-host",
+		hasNoData && "cw-no-data-host--active",
+		loading && "cw-vpd-chart--loading",
+		className,
+	]}
+	aria-busy={loading || undefined}
 >
-	{#if currentRoomVpd !== null}
+	{#if loading}
+		<p class="cw-vpd-chart__sr-only" role="status">{text.loading}</p>
+	{:else if currentRoomVpd !== null}
 		<div class="cw-vpd-chart__readout">
 			<div class="cw-vpd-chart__readout-main">
-				<b>{vpdFormatter.format(currentRoomVpd)} {unit}</b>
-				<span>room VPD · {airTemperatureValue}°C / {relativeHumidityValue}% RH</span>
+				<b>{vpdFormatter.format(currentRoomVpd)}&nbsp;{unit}</b>
+				<span
+					>{text.roomVpd(
+						`${formatCwNumber(airTemperatureValue, { locale, maximumFractionDigits: 1 })}°C`,
+						`${formatCwNumber(relativeHumidityValue, { locale, maximumFractionDigits: 0 })}%`,
+					)}</span
+				>
 			</div>
 			{#if hasTargetBand}
 				<p class="cw-vpd-chart__readout-target">
-					Target {vpdFormatter.format(normalizedTarget.min)}–{vpdFormatter.format(
+					{text.target}
+					{vpdFormatter.format(normalizedTarget.min)}–{vpdFormatter.format(
 						normalizedTarget.max,
-					)}
-					{unit} ·
+					)}&nbsp;{unit} ·
 					<strong class={currentInTarget ? "is-on" : "is-off"}
-						>{currentInTarget ? "on target" : "steer back to band"}</strong
+						>{currentInTarget ? text.onTarget : text.offTarget}</strong
 					>
 				</p>
 			{/if}
@@ -362,14 +435,15 @@
 							</td>
 						{/if}
 						{#each row.cells as cell (`${row.temperatureC}-${cell.humidity}`)}
-							{@const cellIsCurrent = rowIsCurrent && nearestHumidity === cell.humidity}
+							{@const cellIsCurrent = !loading && rowIsCurrent && nearestHumidity === cell.humidity}
 							<td
 								class={[
 									"cw-vpd-chart__cell",
 									cell.inTarget && "cw-vpd-chart__cell--target",
 									cellIsCurrent && "cw-vpd-chart__cell--current",
 								]}
-								style:background={vpdColor(cell.vpd)}
+								style:background={CW_VPD_ZONE_COLORS[cell.zone]}
+								style:color={ZONE_TEXT[cell.zone]}
 								aria-label={cellAriaLabel({
 									temperatureC: row.temperatureC,
 									humidity: cell.humidity,
@@ -382,7 +456,7 @@
 							>
 								<span class="cw-vpd-chart__cell-value">{vpdFormatter.format(cell.vpd)}</span>
 									{#if cellIsCurrent}
-										<b class="cw-vpd-chart__cell-marker" aria-hidden="true">Now</b>
+										<b class="cw-vpd-chart__cell-marker" aria-hidden="true">{text.now}</b>
 									{/if}
 							</td>
 						{/each}
@@ -393,12 +467,19 @@
 	</div>
 
 	<div class="cw-vpd-chart__legend" aria-hidden="true">
-		<span>Humid / low</span>
-		<span class="cw-vpd-chart__legend-ramp"></span>
-		<span>Dry / high</span>
+		<ul class="cw-vpd-chart__legend-zones">
+			{#each zoneOrder as zone (zone)}
+				<li>
+					<span class="cw-vpd-chart__legend-zone" style:background={CW_VPD_ZONE_COLORS[zone]}
+					></span>
+					{zoneLabels[zone]}
+				</li>
+			{/each}
+		</ul>
 		{#if hasTargetBand}
 			<span class="cw-vpd-chart__legend-target">
-				<span class="cw-vpd-chart__legend-swatch"></span> in target band
+				<span class="cw-vpd-chart__legend-swatch"></span>
+				{text.inTargetBand}
 			</span>
 		{/if}
 	</div>
@@ -412,7 +493,7 @@
 	.cw-vpd-chart {
 		background: var(--cw-chart-card-bg, var(--cw-bg-surface));
 		border: 1px solid var(--cw-chart-card-border, var(--cw-border-default));
-		border-radius: var(--cw-radius-2xl);
+		border-radius: var(--cw-card-radius, var(--cw-radius-xl));
 		box-shadow: var(--cw-chart-card-shadow, var(--cw-shadow-md));
 		color: var(--cw-text-primary);
 		display: flex;
@@ -421,6 +502,18 @@
 		gap: var(--cw-space-4);
 		padding: var(--cw-space-5);
 		position: relative;
+	}
+
+	.cw-vpd-chart--loading .cw-vpd-chart__cell {
+		filter: saturate(0.2);
+		opacity: 0.5;
+		animation: cw-vpd-pulse 1.4s var(--cw-ease-default) infinite;
+	}
+
+	@keyframes cw-vpd-pulse {
+		50% {
+			opacity: 0.3;
+		}
 	}
 
 	.cw-vpd-chart__readout {
@@ -438,8 +531,7 @@
 
 	.cw-vpd-chart__readout-main b {
 		color: var(--cw-text-primary);
-		font-family: var(--cw-font-mono);
-		font-size: 1.4rem;
+		font-size: var(--cw-text-xl);
 		font-variant-numeric: tabular-nums;
 		font-weight: var(--cw-font-bold);
 		white-space: nowrap;
@@ -477,8 +569,8 @@
 
 	.cw-vpd-chart__matrix thead th {
 		color: var(--cw-text-muted);
-		font-family: var(--cw-font-mono);
 		font-size: var(--cw-text-xs);
+		font-variant-numeric: tabular-nums;
 		font-weight: var(--cw-font-bold);
 		padding: 0.15rem 0.2rem;
 		text-align: center;
@@ -508,11 +600,10 @@
 	.cw-vpd-chart__row-header,
 	.cw-vpd-chart__fahrenheit {
 		color: var(--cw-text-primary);
-		font-family: var(--cw-font-mono);
 		font-size: var(--cw-text-xs);
 		font-variant-numeric: tabular-nums;
 		font-weight: var(--cw-font-bold);
-		padding-right: 0.5rem;
+		padding-right: var(--cw-space-2);
 		text-align: right;
 		white-space: nowrap;
 	}
@@ -532,16 +623,13 @@
 	}
 
 	.cw-vpd-chart__cell {
-		border-radius: 5px;
-		color: rgba(255, 255, 255, 0.95);
-		font-family: var(--cw-font-mono);
+		border-radius: var(--cw-radius-sm);
 		font-size: var(--cw-text-xs);
 		font-variant-numeric: tabular-nums;
 		font-weight: var(--cw-font-semibold);
 		min-width: 2.6rem;
 		position: relative;
 		text-align: center;
-		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 	}
 
 	.cw-vpd-chart__cell span {
@@ -550,8 +638,9 @@
 	}
 
 	.cw-vpd-chart__cell--target {
+		/* Ring in the cell's own text colour, so it contrasts with every zone fill. */
 		box-shadow:
-			inset 0 0 0 2px #fff,
+			inset 0 0 0 2px currentColor,
 			0 0 0 1px rgba(0, 0, 0, 0.18);
 	}
 
@@ -587,14 +676,10 @@
 	}
 
 	.cw-vpd-chart__cell--current .cw-vpd-chart__cell-value {
-		color: #ffffff;
-		font-size: 0.9rem;
+		font-size: var(--cw-text-sm);
 		font-weight: 900;
 		letter-spacing: -0.01em;
 		position: relative;
-		text-shadow:
-			0 1px 2px rgba(0, 0, 0, 0.9),
-			0 0 4px rgba(0, 0, 0, 0.6);
 		z-index: 2;
 	}
 
@@ -608,13 +693,13 @@
 		display: block;
 		padding: 2px 8px;
 		background: var(--cw-gray-950);
-		border-radius: 999px;
+		border-radius: var(--cw-radius-full);
 		box-shadow:
 			0 0 0 1.5px #ffffff,
 			0 5px 12px color-mix(in srgb, var(--cw-gray-950) 60%, transparent);
 		color: #ffffff;
 		font-family: var(--cw-font-family);
-		font-size: 0.6rem;
+		font-size: var(--cw-text-xs);
 		font-weight: 800;
 		letter-spacing: 0.1em;
 		line-height: 1.4;
@@ -659,22 +744,29 @@
 		display: flex;
 		flex-wrap: wrap;
 		font-size: var(--cw-text-xs);
-		gap: 0.75rem;
+		gap: var(--cw-space-2) var(--cw-space-4);
 	}
 
-	.cw-vpd-chart__legend-ramp {
-		background: linear-gradient(
-			90deg,
-			hsl(220 72% 56%),
-			hsl(170 65% 48%),
-			hsl(130 60% 46%),
-			hsl(70 70% 50%),
-			hsl(30 85% 54%),
-			hsl(2 78% 55%)
-		);
-		border-radius: 6px;
-		height: 0.7rem;
-		width: 11rem;
+	.cw-vpd-chart__legend-zones {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--cw-space-1) var(--cw-space-3);
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.cw-vpd-chart__legend-zones li {
+		align-items: center;
+		display: inline-flex;
+		gap: var(--cw-space-1);
+	}
+
+	.cw-vpd-chart__legend-zone {
+		border-radius: var(--cw-radius-sm);
+		display: inline-block;
+		height: 0.625rem;
+		width: 0.625rem;
 	}
 
 	.cw-vpd-chart__legend-target {
@@ -685,9 +777,10 @@
 	}
 
 	.cw-vpd-chart__legend-swatch {
-		border-radius: 3px;
+		background: var(--cw-bg-muted);
+		border-radius: var(--cw-radius-sm);
 		box-shadow:
-			inset 0 0 0 2px #fff,
+			inset 0 0 0 2px var(--cw-text-primary),
 			0 0 0 1px rgba(0, 0, 0, 0.2);
 		display: inline-block;
 		height: 0.7rem;
@@ -704,6 +797,12 @@
 		position: absolute;
 		white-space: nowrap;
 		width: 1px;
+	}
+
+	@media (max-width: 480px) {
+		.cw-vpd-chart {
+			padding: var(--cw-space-3);
+		}
 	}
 
 	@media (max-width: 48rem) {

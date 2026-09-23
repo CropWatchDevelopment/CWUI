@@ -3,39 +3,84 @@
 	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	const options = [
-		{ label: 'Apple', value: 'apple' },
-		{ label: 'Banana', value: 'banana' },
-		{ label: 'Cherry', value: 'cherry' },
-		{ label: 'Disabled Item', value: 'none', disabled: true },
-		{ label: 'Dragonfruit', value: 'dragonfruit' },
-		{ label: 'Elderberry', value: 'elderberry' }
+		{ label: 'North field', value: 'north' },
+		{ label: 'South field', value: 'south' },
+		{ label: 'Greenhouse 1', value: 'gh1' },
+		{ label: 'Greenhouse 2 (decommissioned)', value: 'gh2', disabled: true },
+		{ label: 'Orchard', value: 'orchard' },
+		{ label: 'Packing shed', value: 'shed' }
 	];
 
-	let val1 = $state('');
-	let val2 = $state('banana');
-	let errVal = $state('');
+	const sizes = ['sm', 'md', 'lg'] as const;
+
+	let site = $state('');
+	let preselected = $state('south');
+	let requiredSite = $state('');
+	let lastEvent = $state('none yet');
+
+	const requiredError = $derived(requiredSite ? undefined : 'Choose a site to continue');
+
 	const dropdownExample = `<CwDropdown
-\toptions={options}
-\tlabel="Fruit"
-\tplaceholder="Choose a fruit…"
-\tbind:value={selectedFruit}
+\t{options}
+\tlabel="Site"
+\thint="Readings are filtered to this site"
+\trequired
+\terror={site ? undefined : 'Choose a site to continue'}
+\tbind:value={site}
 />`;
 </script>
 
 <h2>CwDropdown</h2>
-<p class="demo-desc">Keyboard-navigable custom select with ARIA combobox pattern.</p>
+<p class="demo-desc">
+	A custom select using the ARIA combobox pattern. Focus stays on the trigger while arrow keys, Home,
+	End and typeahead move through options; disabled options are skipped.
+</p>
 
-<div class="demo-grid">
-	<CwDropdown {options} label="Default" placeholder="Choose a fruit…" bind:value={val1} />
-	<CwDropdown {options} label="Pre-selected" bind:value={val2} />
-	<CwDropdown {options} label="With Error" bind:value={errVal} error="Selection required" />
-	<CwDropdown {options} label="Disabled" value="cherry" disabled />
-</div>
+<section class="demo-section">
+	<h3>Basics</h3>
+	<div class="demo-grid">
+		<CwDropdown
+			{options}
+			label="Site"
+			placeholder="Choose a site…"
+			bind:value={site}
+			onchange={(value) => (lastEvent = `Selected "${value}"`)}
+		/>
+		<CwDropdown {options} label="Pre-selected" bind:value={preselected} />
+		<CwDropdown {options} label="With hint" hint="Readings are filtered to this site" />
+		<CwDropdown {options} label="Disabled" value="orchard" disabled />
+	</div>
+	<p class="demo-event" aria-live="polite">Last event: {lastEvent}</p>
+</section>
 
-<DemoCodeExample code={dropdownExample} title="CwDropdown example" />
+<section class="demo-section">
+	<h3>Validation</h3>
+	<div class="demo-grid">
+		<CwDropdown
+			{options}
+			label="Required site"
+			required
+			error={requiredError}
+			bind:value={requiredSite}
+		/>
+		<CwDropdown options={[]} label="Empty list" placeholder="No sites yet" />
+	</div>
+	<p class="demo-hint">The required marker is visual; the control also sets <code>aria-required</code>.</p>
+</section>
+
+<section class="demo-section">
+	<h3>Sizes</h3>
+	<div class="demo-grid">
+		{#each sizes as size (size)}
+			<CwDropdown {options} {size} label={`Size ${size}`} placeholder="Choose a site…" />
+		{/each}
+	</div>
+	<DemoCodeExample code={dropdownExample} title="CwDropdown example" />
+</section>
 
 <style>
-	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }
-	.demo-desc { color: var(--cw-text-muted); font-size: var(--cw-text-sm); margin-bottom: var(--cw-space-4); }
-	.demo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: var(--cw-space-4); }
+	code {
+		font-family: var(--cw-font-mono);
+		font-size: 0.9em;
+	}
 </style>

@@ -21,6 +21,11 @@
 		children: Snippet;
 		/** Custom badge content snippet (overrides value/dot text rendering) */
 		badge?: Snippet;
+		/**
+		 * Screen-reader description of what the badge means, e.g. "unread messages".
+		 * Announced together with the value ("5 unread messages").
+		 */
+		label?: string;
 		class?: string;
 	}
 
@@ -34,6 +39,7 @@
 		hidden = false,
 		children,
 		badge,
+		label,
 		class: className = ''
 	}: Props = $props();
 
@@ -49,6 +55,9 @@
 	});
 
 	const showBadge = $derived(!hidden && (dot || !!badge || badgeValue.length > 0));
+	const srText = $derived(
+		dot ? (label ?? '') : [badgeValue, label].filter((part) => part && part.length > 0).join(' ')
+	);
 </script>
 
 <span class="cw-badge-wrap {className}">
@@ -57,14 +66,16 @@
 		<span
 			class="cw-badge cw-badge--{tone} cw-badge--{size} cw-badge--{position}"
 			class:cw-badge--dot={dot}
-			aria-label={dot ? 'badge' : `badge ${badgeValue}`}
 		>
 			{#if badge}
 				{@render badge()}
 			{:else if !dot}
-				{badgeValue}
+				<span aria-hidden={label ? 'true' : undefined}>{badgeValue}</span>
 			{/if}
 		</span>
+		{#if srText && label}
+			<span class="cw-badge__sr">{srText}</span>
+		{/if}
 	{/if}
 </span>
 
@@ -87,32 +98,44 @@
 		border: 1px solid var(--cw-bg-surface);
 		font-family: var(--cw-font-family);
 		font-weight: var(--cw-font-semibold);
-		font-size: 0.625rem;
+		font-size: 0.6875rem;
+		font-variant-numeric: tabular-nums;
 		line-height: 1;
 		white-space: nowrap;
 		pointer-events: none;
 		box-shadow: var(--cw-shadow-sm);
 	}
 
+	/* 0.6875rem (11px) is the smallest legible size used anywhere in CWUI. */
 	.cw-badge--sm {
-		min-width: 1rem;
-		height: 1rem;
-		font-size: 0.55rem;
-		padding: 0 0.25rem;
+		min-width: 1.125rem;
+		height: 1.125rem;
+		font-size: 0.6875rem;
+		padding: 0 var(--cw-space-1);
 	}
 
 	.cw-badge--md {
-		min-width: 1.125rem;
-		height: 1.125rem;
-		font-size: 0.625rem;
+		min-width: 1.25rem;
+		height: 1.25rem;
+		font-size: 0.6875rem;
 		padding: 0 var(--cw-space-1);
 	}
 
 	.cw-badge--lg {
-		min-width: 1.25rem;
-		height: 1.25rem;
-		font-size: 0.7rem;
-		padding: 0 0.35rem;
+		min-width: 1.5rem;
+		height: 1.5rem;
+		font-size: var(--cw-text-xs);
+		padding: 0 var(--cw-space-2);
+	}
+
+	.cw-badge__sr {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
 	}
 
 	.cw-badge--dot.cw-badge--sm {

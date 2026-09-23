@@ -135,7 +135,11 @@ export function buildCalendarScrollEntries<T extends CwCalendarScrollItem>({
 
 	if (showAllDates) {
 		const { start, end } = normalizeRange(startDate, endDate, parsedRows);
-		const totalDays = Math.max(0, Math.floor((end.getTime() - start.getTime()) / MS_PER_DAY));
+		const totalDays = Math.max(
+			0,
+			// Round, not floor: a range spanning a DST spring-forward is 1h short of whole days.
+			Math.round((end.getTime() - start.getTime()) / MS_PER_DAY)
+		);
 
 		visibleRows = Array.from({ length: totalDays + 1 }, (_, index) => {
 			const date = new Date(start);

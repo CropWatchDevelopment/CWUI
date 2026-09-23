@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+	<head>
+		<meta charset="utf-8" />
+		<title>CropWatch Design Style Guide</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=block"
+		/>
+		<!-- The real library tokens. Every colour and size in this guide is read from these files. -->
+		<link rel="stylesheet" href="../../src/lib/styles/tokens.css" />
+		<link rel="stylesheet" href="../../src/lib/styles/theme-dark.css" />
+		<link rel="stylesheet" href="../../src/lib/styles/theme-light.css" />
+		<link rel="stylesheet" href="./style-guide.css" />
+		<!-- Written by build.mjs: version, date and metric colours from metricColors.ts. -->
+		<script src="./generated.js"></script>
+	</head>
+	<body>
+		<!-- ───────────── 1. Cover ───────────── -->
+		<section class="page cover" data-theme="dark">
+			<div class="cover__top">
+				<img class="cover__logo" src="./logo-static.svg" alt="CropWatch logo" />
+				<span class="cover__brand">CropWatch</span>
+			</div>
+			<div class="cover__main">
+				<p class="eyebrow">Design system</p>
+				<h1>Style guide</h1>
+				<p class="cover__lead">
+					Colours, type, spacing and component rules for designing CropWatch screens in dark and
+					light mode. Every value in this document is read from the
+					<code>@cropwatchdevelopment/cwui</code> token files at build time.
+				</p>
+			</div>
+			<dl class="cover__meta">
+				<div><dt>Library version</dt><dd data-fill="version"></dd></div>
+				<div><dt>Generated</dt><dd data-fill="date"></dd></div>
+				<div><dt>Live components</dt><dd>cwui demo site · /demo</dd></div>
+			</dl>
+		</section>
+
+		<!-- ───────────── 2. Getting started ───────────── -->
+		<section class="page">
+			<header class="page__head"><span>Getting started</span><span class="page__num"></span></header>
+			<h2>Before you design your first screen</h2>
+			<p class="lead">
+				CropWatch is a sensor-monitoring platform for farms and greenhouses. Users check it on
+				desktops in an office and on phones in the field, in daylight and at night, so every screen
+				ships in a dark theme (the default) and a light theme. The UI library
+				<code>CWUI</code> implements both from one set of design tokens.
+			</p>
+
+			<div class="cols-2">
+				<div>
+					<h3>How the system is organised</h3>
+					<ol class="steps">
+						<li>
+							<strong>Palette tokens</strong> are raw colours such as <code>--cw-primary-500</code>.
+							They never change between themes.
+						</li>
+						<li>
+							<strong>Semantic tokens</strong> describe a job, such as
+							<code>--cw-text-muted</code> or <code>--cw-tone-danger-text</code>. Each theme maps
+							them to a different palette value.
+						</li>
+						<li>
+							<strong>Component tokens</strong> such as <code>--cw-control-h-md</code> or
+							<code>--cw-popover-bg</code> hold the shared sizes and surfaces that keep components
+							consistent.
+						</li>
+					</ol>
+					<p class="note">
+						Design with semantic tokens. If a mock-up uses a palette colour directly, it will look
+						right in one theme and wrong in the other.
+					</p>
+				</div>
+				<div>
+					<h3>Your first week</h3>
+					<ul class="checklist">
+						<li>Open the demo site and click through every component in both themes (moon/sun button, top right).</li>
+						<li>Set up two colour libraries in your design tool, <em>CW Dark</em> and <em>CW Light</em>, using the semantic names on pages 5 to 8. Name styles after the token, e.g. <code>text/muted</code>.</li>
+						<li>Install <strong>Inter</strong> and <strong>JetBrains Mono</strong> (page 10).</li>
+						<li>Build frames at 390, 768 and 1440 px wide (page 11).</li>
+						<li>Reuse an existing component before drawing a new one. The component list is on the demo home page.</li>
+					</ul>
+				</div>
+			</div>
+
+			<h3>Rules that apply to every screen</h3>
+			<table class="rules">
+				<tbody>
+					<tr><th>Both themes</th><td>Every screen is designed and reviewed in dark and light before hand-off.</td></tr>
+					<tr><th>Tokens, not hex</th><td>Hand-off notes name tokens (<code>--cw-bg-surface</code>), not colours (<code>#2d3243</code>).</td></tr>
+					<tr><th>Contrast</th><td>Body text 7:1 or better (AAA). Large text and icons 4.5:1 or better. Borders of inputs and meaningful graphics 3:1 or better.</td></tr>
+					<tr><th>Colour is never alone</th><td>Status also needs a label, icon or shape. About 1 in 12 men has a colour-vision deficiency.</td></tr>
+					<tr><th>Missing data</th><td>Show an em dash placeholder "—" or the no-data state. Never show 0 for a reading that did not arrive.</td></tr>
+					<tr><th>Minimum sizes</th><td>Text 11 px (0.6875rem) or larger. Touch targets 24 × 24 px minimum; 44 × 44 px for primary actions on phones.</td></tr>
+				</tbody>
+			</table>
+		</section>
+
+		<!-- ───────────── 3. Brand ───────────── -->
+		<section class="page">
+			<header class="page__head"><span>Brand</span><span class="page__num"></span></header>
+			<h2>Logo and brand colours</h2>
+			<p class="lead">
+				The mark is a bronze tree with a canopy of green leaves. The CropWatch green is used for the application
+				header in light mode and as the company colour in print. The teal accent is the interactive
+				colour inside the product.
+			</p>
+
+			<div class="logo-row">
+				<figure class="logo-tile logo-tile--dark">
+					<img src="./logo-static.svg" alt="" />
+					<figcaption>On the dark header <code>--cw-header-bg</code></figcaption>
+				</figure>
+				<figure class="logo-tile logo-tile--green">
+					<img src="./logo-static.svg" alt="" />
+					<figcaption>On CropWatch green (light header)</figcaption>
+				</figure>
+				<figure class="logo-tile logo-tile--light">
+					<img src="./logo-static.svg" alt="" />
+					<figcaption>On a light surface</figcaption>
+				</figure>
+			</div>
+
+			<div class="cols-2">
+				<ul class="checklist">
+					<li>Keep clear space around the mark of at least a quarter of its width on every side.</li>
+					<li>The side nav shows the mark at 24 px, and at 20 px in the collapsed icon rail. Do not use it smaller than 20 px.</li>
+					<li>Do not recolour, outline, stretch or rotate the mark, and do not place it on photographs.</li>
+					<li>Write the name as <strong>CropWatch</strong>: one word, capital C and W.</li>
+				</ul>
+				<div id="brand-swatches" class="brand-swatches"></div>
+			</div>
+		</section>
+
+		<!-- ───────────── 4. Palette ───────────── -->
+		<section class="page">
+			<header class="page__head"><span>Colour · palette</span><span class="page__num"></span></header>
+			<h2>Palette ramps</h2>
+			<p class="lead">
+				Each ramp runs from a light tint (50) to a dark shade (900). Palette tokens are the same in
+				both themes. Designers pick semantic tokens (next pages); the palette is listed so you can
+				read hand-off specs and spot a value that does not belong.
+			</p>
+			<div id="ramps" class="ramps"></div>
+		</section>
+
+		<!-- ───────────── 5. Surfaces, text, borders ───────────── -->
+		<section class="page">
+			<header class="page__head"><span>Colour · surfaces and text</span><span class="page__num"></span></header>
+			<h2>Surfaces, text and borders</h2>
+			<p class="lead">
+				Screens are built in layers: the page background, then cards and panels, then pop-ups and
+				menus. Ratios below are measured against <code>--cw-bg-surface</code> in each theme.
+			</p>
+			<div class="theme-pair">
+				<div class="theme-col" data-theme="dark"><h4>Dark</h4><div class="token-list" data-group="surfaces"></div></div>
+				<div class="theme-col" data-theme="light"><h4>Light</h4><div class="token-list" data-group="surfaces"></div></div>
+			</div>
+		</section>
+
+		<!-- ───────────── 6. Layering example ───────────── -->
+		<section class="page">
+			<header class="page__head"><span>Colour · surfaces and text</span><span class="page__num"></span></header>
+			<h2>How the layers stack</h2>
+			<p class="lead">
+				The same card drawn with tokens in both themes. Text on a card uses the primary, secondary,
+				muted and disabled text tokens in that order of importance.
+			</p>
+			<div class="theme-pair">
+				<div class="theme-col stack-demo" data-theme="dark"></div>
+				<div class="theme-col stack-demo" data-theme="light"></div>
+			</div>
+			<table class="spec">
+				<thead><tr><th>Layer</th><th>Token</th><th>Use it for</th></tr></thead>
+				<tbody>
+					<tr><td>Page</td><td><code>--cw-bg-base</code></td><td>The area behind all content.</td></tr>
+					<tr><td>Card / panel</td><td><code>--cw-bg-surface</code></td><td>Cards, tables, dialogs' content area, sidebars.</td></tr>
+					<tr><td>Inset / control</td><td><code>--cw-control-bg</code>, <code>--cw-bg-muted</code></td><td>Inputs, read-only fields, skeleton placeholders, selected rows.</td></tr>
+					<tr><td>Pop-up</td><td><code>--cw-popover-bg</code> + <code>--cw-elevation-popover</code></td><td>Dropdown lists, menus, date pickers, tooltips.</td></tr>
+					<tr><td>Modal</td><td><code>--cw-overlay-bg</code> + <code>--cw-elevation-modal</code> + <code>--cw-scrim</code></td><td>Dialogs and the offline notice. The scrim dims the page behind.</td></tr>
+				</tbody>
+			</table>
+		</section>
+
+		<!-- ───────────── 7. Tones ───────────── -->
+		<section class="page">
+			<header class="page__head"><span>Colour · tones</span><span class="page__num"></span></header>
+			<h2>Tones</h2>
+			<p class="lead">
+				Six tones carry meaning across chips, badges, toasts, buttons and alerts. Each tone has three
+				styles: <strong>soft</strong> (tinted background, tone text), <strong>outline</strong> (border
+				and tone text) and <strong>solid</strong> (filled, used sparingly for counts and the most
+				urgent states).
+			</p>
+			<div class="theme-pair">
+				<div class="theme-col" data-theme="dark"><h4>Dark</h4><div class="tones"></div></div>
+				<div class="theme-col" data-theme="light"><h4>Light</h4><div class="tones"></div></div>
+			</div>
+			<table class="spec">
+				<thead><tr><th>Tone</th><th>Meaning</th></tr></thead>
+				<tbody>
+					<tr><td>primary</td><td>Brand emphasis, selected filters.</td></tr>
+					<tr><td>secondary</td><td>Neutral labels and metadata; loading chips.</td></tr>
+					<tr><td>info</td><td>Neutral information, tips, "new".</td></tr>
+					<tr><td>success</td><td>Healthy, online, saved.</td></tr>
+					<tr><td>warning</td><td>Needs attention soon: near a threshold, partial outage.</td></tr>
+					<tr><td>danger</td><td>Act now: alarm, offline, error, destructive action.</td></tr>
+				</tbody>
+			</table>
+		</section>
+
+		<!-- ───────────── 8. Status, accent, focus ───────────── -->
+		<section class="page">
+			<header class="page__head"><span>Colour · status and interaction</span><span class="page__num"></span></header>
+			<h2>Device status, accent and focus</h2>
+			<p class="lead">
+				Sensor and gateway state uses one mapping everywhere: status dots, the coloured rail on
+				sensor cards, location cards and chips. Always pair the colour with the status word.
+			</p>
+			<div class="theme-pair">
+				<div class="theme-col" data-theme="dark"><h4>Dark</h4><div class="status-list"></div></div>
+				<div class="theme-col" data-theme="light"><h4>Light</h4><div class="status-list"></div></div>
+			</div>
+			<table class="spec">
+				<thead><tr><th>Status</th><th>When</th><th>Chip tone</th></tr></thead>
+				<tbody>
+					<tr><td>Online</td><td>Readings are arriving inside the expected interval.</td><td>success</td></tr>
+					<tr><td>Warning</td><td>A reading is near a threshold, or some sensors at a location are offline.</td><td>warning</td></tr>
+					<tr><td>Alarm / error</td><td>A threshold is breached or the sensor reports a fault.</td><td>danger</td></tr>
+					<tr><td>Offline</td><td>No reading within the device's timeout. Red, because a silent sensor in a greenhouse is an alert.</td><td>danger</td></tr>
+					<tr><td>Loading</td><td>State not known yet (first load).</td><td>secondary</td></tr>
+				</tbody>
+			</table>
+			<h3>Accent and focus</h3>
+			<div class="theme-pair">
+				<div class="theme-col" data-theme="dark"><div class="token-list" data-group="interaction"></div></div>
+				<div class="theme-col" data-theme="light"><div class="token-list" data-group="interaction"></div></div>
+			</div>
+			<p class="note">
+				The accent is teal in dark mode and blue in light mode. Keyboard focus is always a solid
+				2 px ring in <code>--cw-focus-ring-color</code> with a 2 px gap. Draw it on every
+				interactive element in your state sheets.
+			</p>
+		</section>
+
+		<!-- ───────────── 9. Charts ───────────── -->
+		<section class="page">
+			<header class="page__head"><span>Colour · data visualisation</span><span class="page__num"></span></header>
+			<h2>Chart colours</h2>
+			<p class="lead">
+				Charts use two colour sets. The <strong>categorical palette</strong> colours series that have
+				no fixed meaning, in this order. <strong>Metric colours</strong> are fixed per measurement so
+				temperature is red-toned and humidity is blue on every chart in the product.
+			</p>
+			<div class="theme-pair">
+				<div class="theme-col" data-theme="dark"><h4>Dark</h4><div class="cat-list"></div></div>
+				<div class="theme-col" data-theme="light"><h4>Light</h4><div class="cat-list"></div></div>
+			</div>
+			<h3>Metric colours</h3>
+			<div id="metrics" class="metrics"></div>
+			<ul class="checklist">
+				<li>Never use status colours (success, danger) for categories. A red series reads as "alarm".</li>
+				<li>Temperature lines use a value gradient: cold values blue, hot values red.</li>
+				<li>Legends sit below the plot. Each legend item toggles its series; the last visible series cannot be hidden.</li>
+				<li>Axis and tick labels are 11 px with tabular (fixed-width) numerals so values line up.</li>
+				<li>Every chart needs a loading state and a "No data available" state.</li>
+			</ul>
+		</section>
+
+		<!-- ───────────── 10. Typography ───────────── -->
+		<section class="page">
+			<header class="page__head"><span>Typography</span><span class="page__num"></span></header>
+			<h2>Typography</h2>
+			<p class="lead">
+				<strong>Inter</strong> is the interface typeface. <strong>JetBrains Mono</strong> is used for
+				device IDs (DevEUI), code and event logs. Both are free on Google Fonts.
+			</p>
+			<div id="type-scale" class="type-scale"></div>
+			<h3>Where each size is used</h3>
+			<table class="spec">
+				<thead><tr><th>Role</th><th>Size · weight</th><th>Colour token</th></tr></thead>
+				<tbody>
+					<tr><td>Page title</td><td>2xl · bold</td><td><code>--cw-text-primary</code></td></tr>
+					<tr><td>Card title</td><td>base or lg · semibold</td><td><code>--cw-text-primary</code></td></tr>
+					<tr><td>Body, table cells</td><td>sm · regular</td><td><code>--cw-text-primary</code> / <code>-secondary</code></td></tr>
+					<tr><td>Form label</td><td>sm · medium, sentence case</td><td><code>--cw-text-secondary</code></td></tr>
+					<tr><td>Hint, caption, table header</td><td>xs · regular / semibold</td><td><code>--cw-text-muted</code></td></tr>
+					<tr><td>Sensor reading (hero)</td><td>3xl · bold, tabular numerals</td><td><code>--cw-text-primary</code></td></tr>
+					<tr><td>Unit after a reading</td><td>sm · medium</td><td><code>--cw-text-muted</code></td></tr>
+				</tbody>
+			</table>
+			<div class="cols-2">
+				<div>
+					<h3>Writing values</h3>
+					<ul class="checklist">
+						<li><span class="mono">23.4&nbsp;kPa</span>: a non-breaking space between value and unit.</li>
+						<li><span class="mono">23.4°C</span>, <span class="mono">65%</span>: no space before °C, °F and %.</li>
+						<li><span class="mono">—</span> for a missing value; never <span class="mono">0</span> or <span class="mono">N/A</span>.</li>
+						<li>Use the user's locale for dates and decimals (the app supports English and Japanese).</li>
+					</ul>
+				</div>
+				<div>
+					<h3>Writing labels</h3>
+					<ul class="checklist">
+						<li>Sentence case everywhere: "Last seen", not "Last Seen".</li>
+						<li>Buttons are verbs: "Save changes", "Add device".</li>
+						<li>Use the ellipsis character "…" in placeholders, not three full stops.</li>
+					</ul>
+				</div>
+			</div>
+		</section>
+
+		<!-- ───────────── 11. Spacing, radius, elevation ───────────── -->
+		<section class="page">
+			<header class="page__head"><span>Layout</span><span class="page__num"></span></header>
+			<h2>Spacing, radius, elevation and breakpoints</h2>
+			<p class="lead">
+				Spacing uses a 4 px base. Pick the nearest step; values between steps are not part of the
+				system.
+			</p>
+			<div class="cols-2">
+				<div><h3>Spacing scale</h3><div id="spacing"></div></div>
+				<div>
+					<h3>Corner radius</h3>
+					<div id="radii" class="radii"></div>
+					<h3>Elevation</h3>
+					<div class="theme-pair theme-pair--tight">
+						<div class="theme-col elev" data-theme="dark"></div>
+						<div class="theme-col elev" data-theme="light"></div>
+					</div>
+				</div>
+			</div>
+			<div class="cols-2">
+				<div>
+					<h3>Breakpoints and frames</h3>
+					<table class="spec">
+						<thead><tr><th>Name</th><th>Width</th><th>Design frame</th><th>Side nav</th></tr></thead>
+						<tbody>
+							<tr><td>Phone</td><td>≤ 640 px</td><td>390 px</td><td>Hidden; opens over the page</td></tr>
+							<tr><td>Tablet</td><td>641–1024 px</td><td>768 px</td><td>Icon rail (mini)</td></tr>
+							<tr><td>Desktop</td><td>&gt; 1024 px</td><td>1440 px</td><td>Open, 280 px wide</td></tr>
+						</tbody>
+					</table>
+				</div>
+				<div>
+					<h3>Stacking order</h3>
+					<div id="zindex" class="kv"></div>
+				</div>
+			</div>
+		</section>
+
+		<!-- ───────────── 12. Components ───────────── -->
+		<section class="page">
+			<header class="page__head"><span>Components</span><span class="page__num"></span></header>
+			<h2>Controls and forms</h2>
+			<p class="lead">
+				Buttons, inputs, dropdowns and pickers share one height scale, so a toolbar built from mixed
+				controls lines up. Use one size per row.
+			</p>
+			<div id="control-sizes" class="theme-pair">
+				<div class="theme-col" data-theme="dark"></div>
+				<div class="theme-col" data-theme="light"></div>
+			</div>
+			<h3>Form field anatomy</h3>
+			<div class="theme-pair">
+				<div class="theme-col field-demo" data-theme="dark"></div>
+				<div class="theme-col field-demo" data-theme="light"></div>
+			</div>
+			<table class="spec">
+				<thead><tr><th>Part</th><th>Spec</th></tr></thead>
+				<tbody>
+					<tr><td>Label</td><td>Above the field, sm medium, <code>--cw-text-secondary</code>. Required fields add " *" in the danger text colour.</td></tr>
+					<tr><td>Field</td><td>Height from <code>--cw-control-h-*</code>, radius <code>--cw-control-radius</code>, 1 px <code>--cw-control-border</code>.</td></tr>
+					<tr><td>Hint / error</td><td>One line below, xs. The error replaces the hint and turns the border to <code>--cw-tone-danger-border</code>.</td></tr>
+					<tr><td>States to draw</td><td>Default, hover, focus, filled, error, disabled, read-only. Pop-ups also need empty and loading.</td></tr>
+				</tbody>
+			</table>
+		</section>
+
+		<!-- ───────────── 13. Hand-off ───────────── -->
+		<section class="page">
+			<header class="page__head"><span>Hand-off</span><span class="page__num"></span></header>
+			<h2>Hand-off checklist</h2>
+			<p class="lead">
+				Go through this list before a design goes to development. Each item maps to a rule the
+				component library already enforces, so a design that fails one will be changed in the build.
+			</p>
+			<div class="cols-2">
+				<div>
+					<h3>Every screen</h3>
+					<ul class="checklist boxed">
+						<li>Drawn in dark and light.</li>
+						<li>Drawn at phone and desktop widths.</li>
+						<li>Colours named by semantic token.</li>
+						<li>Text contrast checked: 7:1 body, 4.5:1 large text and icons.</li>
+						<li>No text smaller than 11 px.</li>
+						<li>Every status shown with a word or icon as well as colour.</li>
+						<li>Focus order and focus ring shown for interactive elements.</li>
+					</ul>
+				</div>
+				<div>
+					<h3>Every data view</h3>
+					<ul class="checklist boxed">
+						<li>Loading state (skeleton, not a blank area).</li>
+						<li>Empty state: "No data available" with a short reason.</li>
+						<li>Error state with what happened and what to do next.</li>
+						<li>Stale data: value dimmed plus "Last seen … ago".</li>
+						<li>Missing readings shown as "—".</li>
+						<li>Numbers right-aligned in tables, tabular numerals.</li>
+						<li>Units spaced per the typography page.</li>
+					</ul>
+				</div>
+			</div>
+			<h3>Where things live</h3>
+			<table class="spec">
+				<tbody>
+					<tr><th>Token source files</th><td><code>src/lib/styles/tokens.css</code>, <code>theme-dark.css</code>, <code>theme-light.css</code></td></tr>
+					<tr><th>Live components</th><td>CWUI demo site, <code>/demo</code>. Each page lists props and shows every state.</td></tr>
+					<tr><th>Metric colours</th><td><code>src/lib/utils/metricColors.ts</code></td></tr>
+					<tr><th>This PDF</th><td>Rebuilt from the token files with <code>npm run style-guide</code>. If a value here disagrees with the demo site, the demo site is correct and this file needs regenerating.</td></tr>
+				</tbody>
+			</table>
+		</section>
+
+		<script src="./style-guide.js"></script>
+	</body>
+</html>

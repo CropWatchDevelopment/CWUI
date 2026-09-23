@@ -6,6 +6,7 @@
 	let onlineOnly = $state(true);
 	let notifyByEmail = $state(false);
 	let notifyBySms = $state(false);
+	let acceptTerms = $state(false);
 	const labelPositions: CwSwitchLabelPosition[] = ['top', 'bottom', 'left', 'right'];
 
 	const switchExample = `<CwSwitch
@@ -45,6 +46,12 @@
 		<CwSwitch label="SMS notifications" bind:checked={notifyBySms} />
 		<CwSwitch label="Disabled switch" checked={true} disabled />
 		<CwSwitch aria-label="Iconless switch" />
+		<CwSwitch
+			label="Accept data-sharing terms"
+			description="Required before readings can be shared with your agronomist."
+			bind:checked={acceptTerms}
+			error={acceptTerms ? undefined : 'You must accept the terms to enable sharing'}
+		/>
 	</div>
 </section>
 
@@ -65,25 +72,15 @@
 </section>
 
 <style>
-	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }
-	h3 { font-size: var(--cw-text-base); font-weight: var(--cw-font-semibold); margin-bottom: var(--cw-space-2); color: var(--cw-text-secondary); }
-	.demo-desc { color: var(--cw-text-muted); font-size: var(--cw-text-sm); margin-bottom: var(--cw-space-4); }
-	.demo-hint { color: var(--cw-text-muted); font-size: var(--cw-text-xs); margin-top: var(--cw-space-2); }
-	.demo-hint strong { color: var(--cw-accent); }
-	.demo-section { margin-bottom: var(--cw-space-6); }
-	.demo-stack {
-		display: flex;
-		flex-direction: column;
-		gap: var(--cw-space-3);
-	}
+	.demo-hint strong { color: var(--cw-accent-text); }
 	.demo-positions {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
 		gap: var(--cw-space-4);
 	}
 	.demo-position-card {
 		padding: var(--cw-space-4);
-		border: 1px solid var(--cw-border-subtle);
+		border: 1px solid var(--cw-border-muted);
 		border-radius: var(--cw-radius-lg);
 		background-color: var(--cw-bg-surface);
 	}

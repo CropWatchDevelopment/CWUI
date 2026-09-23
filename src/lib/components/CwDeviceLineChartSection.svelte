@@ -1,7 +1,9 @@
 <script lang="ts" module>
+	import { CW_DEFAULT_NO_DATA_MESSAGE } from './cwNoData.js';
+
 	/** Override display labels for i18n. All fields optional; English defaults preserved when omitted. */
 	export interface CwDeviceLineChartSectionLabels {
-		/** Small uppercase eyebrow above the title. Default: "Line chart" */
+		/** Small uppercase eyebrow above the title. Default: "History" */
 		eyebrow?: string;
 		/** Section title shown for soil devices. Default: "Soil telemetry" */
 		soilTitle?: string;
@@ -9,7 +11,7 @@
 		airTitle?: string;
 		/** Placeholder shown while chart data is loading. Default: "Loading chart data…" */
 		loading?: string;
-		/** Placeholder shown when there is no chart data. Default: "No data available for chart" */
+		/** Message shown when there is no chart data. Default: the shared no-data message ("No Data Available") */
 		noData?: string;
 		/** Cell label above the soil temperature chart. Default: "Soil Temperature" */
 		soilTemperatureLabel?: string;
@@ -28,11 +30,11 @@
 	}
 
 	const DEFAULT_LABELS: Required<CwDeviceLineChartSectionLabels> = {
-		eyebrow: 'Line chart',
+		eyebrow: 'History',
 		soilTitle: 'Soil telemetry',
 		airTitle: 'Temperature & Humidity',
 		loading: 'Loading chart data…',
-		noData: 'No data available for chart',
+		noData: CW_DEFAULT_NO_DATA_MESSAGE,
 		soilTemperatureLabel: 'Soil Temperature',
 		soilMoistureLabel: 'Soil Moisture',
 		electricalConductivityLabel: 'Electrical Conductivity',
@@ -51,6 +53,7 @@
 	} from '../types/index.js';
 	import CwLineChart from './CwLineChart.svelte';
 	import CwNoDataOverlay from './CwNoDataOverlay.svelte';
+	import CwSpinner from './CwSpinner.svelte';
 	import { getCwNoDataMessage, hasCwNoData } from './cwNoData.js';
 
 	interface Props {
@@ -70,6 +73,14 @@
 		airHumidityChartData?: CwLineChartSecondaryDataPoint[] | null;
 		airTemperatureThreshold?: number;
 		noData?: CwNoDataMessage;
+		/** Heading level for the section title (2–6). Default 2. */
+		headingLevel?: 2 | 3 | 4 | 5 | 6;
+		/** Unit for temperature series. Default "°C". */
+		temperatureUnit?: string;
+		/** Unit for electrical conductivity. Default "mS/cm". */
+		ecUnit?: string;
+		/** BCP 47 locale forwarded to the charts. */
+		locale?: string;
 		/** Override display labels for i18n */
 		labels?: CwDeviceLineChartSectionLabels;
 		class?: string;
@@ -88,6 +99,10 @@
 		airHumidityChartData: airHumidityChartDataInput = [],
 		airTemperatureThreshold,
 		noData,
+		headingLevel = 2,
+		temperatureUnit = '°C',
+		ecUnit = 'mS/cm',
+		locale,
 		labels = {},
 		class: className = ''
 	}: Props = $props();
@@ -105,8 +120,9 @@
 	const hasData = $derived(
 		isSoilDevice
 			? soilTemperatureChartData.length > 0 || soilMoistureChartData.length > 0 || soilEcChartData.length > 0
-			: airTemperatureChartData.length > 0
+			: airTemperatureChartData.length > 0 || airHumidityChartData.length > 0
 	);
+	const showEmpty = $derived(!historyLoading && !hasData && !hasNoData);
 
 	const title = $derived(isSoilDevice ? l.soilTitle : l.airTitle);
 </script>
@@ -114,18 +130,29 @@
 <section
 	class="cw-chart-section cw-no-data-host {className}"
 	class:cw-no-data-host--active={hasNoData}
+	aria-busy={historyLoading || undefined}
 >
 	<div class="cw-chart-section__header">
 		<div class="cw-chart-section__header-text">
-			<p class="cw-chart-section__eyebrow">{l.eyebrow}</p>
-			<h2 class="cw-chart-section__title">{title}</h2>
+			{#if l.eyebrow}
+				<p class="cw-chart-section__eyebrow">{l.eyebrow}</p>
+			{/if}
+			<svelte:element this={`h${headingLevel}`} class="cw-chart-section__title">{title}</svelte:element>
 		</div>
 	</div>
 
 	{#if historyLoading}
-		<div class="cw-chart-section__placeholder">{l.loading}</div>
+		<div class="cw-chart-section__placeholder" role="status">
+			<CwSpinner size="lg" />
+			<span>{l.loading}</span>
+		</div>
 	{:else if !hasData}
-		<div class="cw-chart-section__placeholder">{l.noData}</div>
+		<!-- Empty state covers the plot area only, so the heading stays readable. -->
+		<div class="cw-chart-section__placeholder">
+			{#if showEmpty}
+				<CwNoDataOverlay message={l.noData} />
+			{/if}
+		</div>
 	{:else if isSoilDevice}
 		<div class="cw-chart-section__grid">
 			<div class="cw-chart-section__cell">
@@ -134,8 +161,9 @@
 					data={soilTemperatureChartData}
 					threshold={soilTemperatureThreshold}
 					primaryLabel={l.temperatureSeriesLabel}
-					primaryUnit="°C"
+					primaryUnit={temperatureUnit}
 					height={260}
+					{locale}
 				/>
 			</div>
 			<div class="cw-chart-section__cell">
@@ -146,6 +174,7 @@
 					primaryLabel={l.moistureSeriesLabel}
 					primaryUnit="%"
 					height={260}
+					{locale}
 				/>
 			</div>
 			<div class="cw-chart-section__cell">
@@ -154,8 +183,9 @@
 					data={soilEcChartData}
 					threshold={soilEcThreshold}
 					primaryLabel={l.ecSeriesLabel}
-					primaryUnit=" mS/cm"
+					primaryUnit={ecUnit}
 					height={260}
+					{locale}
 				/>
 			</div>
 		</div>
@@ -166,9 +196,10 @@
 			threshold={airTemperatureThreshold}
 			primaryLabel={l.temperatureSeriesLabel}
 			secondaryLabel={l.humiditySeriesLabel}
-			primaryUnit="°C"
+			primaryUnit={temperatureUnit}
 			secondaryUnit="%"
 			height={350}
+			{locale}
 		/>
 	{/if}
 
@@ -180,11 +211,18 @@
 <style>
 	/* ── Outer card ────────────────────────── */
 	.cw-chart-section {
-		border-radius: 1.5rem;
+		border-radius: var(--cw-radius-2xl);
 		border: 1px solid var(--cw-chart-card-border);
 		background-color: var(--cw-chart-card-bg);
-		padding: 1.5rem;
+		padding: var(--cw-space-5);
 		box-shadow: var(--cw-chart-card-shadow);
+		font-family: var(--cw-font-family);
+	}
+
+	@media (max-width: 480px) {
+		.cw-chart-section {
+			padding: var(--cw-space-3);
+		}
 	}
 
 	/* ── Header ───────────────────────────── */
@@ -193,35 +231,41 @@
 		flex-wrap: wrap;
 		align-items: center;
 		justify-content: space-between;
-		gap: 1rem;
-		margin-bottom: 1rem;
+		gap: var(--cw-space-4);
+		margin-bottom: var(--cw-space-4);
 	}
 	.cw-chart-section__eyebrow {
-		font-size: 0.75rem;
+		margin: 0 0 var(--cw-space-1);
+		font-size: var(--cw-text-xs);
+		font-weight: var(--cw-font-semibold);
 		text-transform: uppercase;
-		letter-spacing: 0.2em;
+		letter-spacing: 0.12em;
 		color: var(--cw-chart-card-muted);
 	}
 	.cw-chart-section__title {
-		font-size: 1.25rem;
-		font-weight: 600;
+		font-size: var(--cw-text-lg);
+		font-weight: var(--cw-font-semibold);
+		line-height: var(--cw-leading-tight);
 		color: var(--cw-chart-card-title);
 		margin: 0;
 	}
 
 	/* ── Loading / empty ──────────────────── */
 	.cw-chart-section__placeholder {
+		position: relative;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		height: 350px;
+		gap: var(--cw-space-2);
+		min-height: 350px;
 		color: var(--cw-chart-card-muted);
+		font-size: var(--cw-text-sm);
 	}
 
 	/* ── Soil 3-col grid ──────────────────── */
 	.cw-chart-section__grid {
 		display: grid;
-		gap: 1.5rem;
+		gap: var(--cw-space-4);
 		grid-template-columns: 1fr;
 	}
 	@media (min-width: 1024px) {
@@ -232,16 +276,18 @@
 
 	/* ── Individual cell ──────────────────── */
 	.cw-chart-section__cell {
-		border-radius: 1rem;
+		min-width: 0;
+		border-radius: var(--cw-radius-xl);
 		border: 1px solid var(--cw-chart-card-cell-border);
 		background-color: var(--cw-chart-card-cell-bg);
-		padding: 1rem;
+		padding: var(--cw-space-4);
 	}
 	.cw-chart-section__cell-label {
-		font-size: 0.75rem;
+		font-size: var(--cw-text-xs);
+		font-weight: var(--cw-font-semibold);
 		text-transform: uppercase;
-		letter-spacing: 0.2em;
+		letter-spacing: 0.12em;
 		color: var(--cw-chart-card-muted);
-		margin-bottom: 0.75rem;
+		margin: 0 0 var(--cw-space-3);
 	}
 </style>

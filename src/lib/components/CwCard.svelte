@@ -7,6 +7,10 @@
 		titleAlign?: "left" | "center" | "right";
 		padded?: boolean;
 		elevated?: boolean;
+		/** Heading level for `title` (default 3). */
+		headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
+		/** Shows a skeleton in place of the body and marks the card busy. */
+		loading?: boolean;
 		class?: string;
 		children?: Snippet;
 		header?: Snippet;
@@ -20,6 +24,8 @@
 		titleAlign = "left",
 		padded = true,
 		elevated = false,
+		headingLevel = 3,
+		loading = false,
 		class: className = "",
 		children,
 		header,
@@ -32,6 +38,7 @@
 	class="cw-card {className}"
 	class:cw-card--padded={padded}
 	class:cw-card--elevated={elevated}
+	aria-busy={loading || undefined}
 >
 	{#if header || title || actions}
 		<div class="cw-card__header">
@@ -40,7 +47,7 @@
 			{:else}
 				<div class="cw-card__titles cw-card__titles--{titleAlign}">
 					{#if title}
-						<h3 class="cw-card__title">{title}</h3>
+						<svelte:element this={`h${headingLevel}`} class="cw-card__title">{title}</svelte:element>
 					{/if}
 					{#if subtitle}
 						<p class="cw-card__subtitle">
@@ -59,7 +66,15 @@
 			{/if}
 		</div>
 	{/if}
-	{#if children}
+	{#if loading}
+		<div class="cw-card__body" aria-hidden="true">
+			<div class="cw-card__skeleton">
+				<span class="cw-card__skeleton-line cw-card__skeleton-line--wide"></span>
+				<span class="cw-card__skeleton-line"></span>
+				<span class="cw-card__skeleton-line cw-card__skeleton-line--short"></span>
+			</div>
+		</div>
+	{:else if children}
 		<div class="cw-card__body">
 			{@render children()}
 		</div>
@@ -70,7 +85,8 @@
 	.cw-card {
 		background-color: var(--cw-bg-surface);
 		border: 1px solid var(--cw-border-default);
-		border-radius: var(--cw-radius-lg);
+		border-radius: var(--cw-card-radius);
+		box-shadow: var(--cw-shadow-sm);
 		overflow: hidden;
 	}
 
@@ -114,11 +130,12 @@
 		color: var(--cw-text-primary);
 		line-height: var(--cw-leading-tight);
 		margin: 0;
+		overflow-wrap: anywhere;
 	}
 
 	.cw-card__subtitle {
 		font-size: var(--cw-text-sm);
-		color: var(--cw-text-secondary);
+		color: var(--cw-text-muted);
 		margin-top: var(--cw-space-1);
 	}
 
@@ -135,5 +152,48 @@
 
 	.cw-card--padded .cw-card__body {
 		padding: var(--cw-space-4) var(--cw-space-6) var(--cw-space-6);
+	}
+
+	.cw-card__skeleton {
+		display: grid;
+		gap: var(--cw-space-3);
+	}
+
+	.cw-card__skeleton-line {
+		display: block;
+		height: 0.875rem;
+		width: 70%;
+		border-radius: var(--cw-radius-sm);
+		background: linear-gradient(
+			90deg,
+			var(--cw-bg-muted) 0%,
+			var(--cw-bg-subtle) 50%,
+			var(--cw-bg-muted) 100%
+		);
+		background-size: 200% 100%;
+		animation: cw-card-shimmer 1.4s ease-in-out infinite;
+	}
+
+	.cw-card__skeleton-line--wide {
+		width: 90%;
+	}
+
+	.cw-card__skeleton-line--short {
+		width: 40%;
+	}
+
+	@keyframes cw-card-shimmer {
+		from {
+			background-position: 100% 0;
+		}
+		to {
+			background-position: -100% 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.cw-card__skeleton-line {
+			animation: none;
+		}
 	}
 </style>

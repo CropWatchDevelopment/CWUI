@@ -54,6 +54,27 @@ body {
 	outline: none;
 }
 
+/* Keep focus visible in Windows High Contrast / forced-colors mode,
+   where box-shadow based rings are removed. */
+@media (forced-colors: active) {
+	:focus-visible {
+		outline: 2px solid CanvasText;
+	}
+}
+
+/* ── Screen-reader-only utility ────────────────────────── */
+.cw-visually-hidden {
+	position: absolute !important;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+	border: 0;
+}
+
 /* ── Scrollbar styling (Webkit/Blink) ──────────────────── */
 ::-webkit-scrollbar {
 	width: 8px;

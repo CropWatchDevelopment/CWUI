@@ -28,6 +28,8 @@ export { default as CwDeviceLineChartSection } from './components/CwDeviceLineCh
 export { default as CwDonutChart } from './components/CwDonutChart.svelte';
 export { default as CwStackedBarChart } from './components/CwStackedBarChart.svelte';
 export { default as DliCard } from './components/DliCard.svelte';
+/** Cw-prefixed name for `DliCard` (preferred). */
+export { default as CwDliCard } from './components/DliCard.svelte';
 export { default as CwPPFDChart } from './components/CwPPFDChart.svelte';
 export { default as CwVPDChart } from './components/CwVPDChart.svelte';
 export { default as CwWindCompass } from './components/CwWindCompass.svelte';
@@ -52,7 +54,13 @@ export { default as CwAlertPointsEditor } from './components/CwAlertPointsEditor
 // ── Toast system ────────────────────────────────────────────
 export { default as CwToastContainer } from './components/CwToastContainer.svelte';
 export { default as CwToastItemComponent } from './components/CwToastItem.svelte';
-export { createCwToastContext, useCwToast } from './components/cwToastContext.svelte.js';
+export {
+	CW_TOAST_DEFAULT_DURATION,
+	createCwToastContext,
+	hasCwToastContext,
+	useCwToast
+} from './components/cwToastContext.svelte.js';
+export type { CwToastApi, CwToastOptions } from './components/cwToastContext.svelte.js';
 
 // ── Alarm system (non-visual) ──────────────────────────────
 export { createCwAlarmScheduler, createCwAlarmContext, useCwAlarm } from './components/cwAlarmContext.svelte.js';
@@ -79,6 +87,16 @@ export {
 	isCwPhoneView,
 	isCwTabletView
 } from './utils/cwViewSize.js';
+
+// ── Formatting ─────────────────────────────────────────────
+export {
+	CW_EMPTY_VALUE,
+	formatCwMeasurement,
+	formatCwNumber,
+	isCwFiniteNumber,
+	joinCwUnit
+} from './utils/cwFormat.js';
+export type { CwFormatNumberOptions } from './utils/cwFormat.js';
 
 // ── Chart color conventions ────────────────────────────────
 export { metricColor, normalizeMetric, METRIC_COLORS } from './utils/metricColors.js';
@@ -137,6 +155,7 @@ export type {
 	CwRangeDateValue,
 	CwDateValue,
 	CwTimeValue,
+	CwTimePickerLabels,
 	CwCalendarScrollItem,
 	CwCalendarScrollMeta,
 	CwCalendarScrollEntry,
@@ -177,10 +196,28 @@ export type { CwDeviceLineChartSectionLabels } from './components/CwDeviceLineCh
 export type { CwPPFDChartLabels } from './components/CwPPFDChart.svelte';
 export type { CwDataTableLabels } from './components/CwDataTable.svelte';
 export type { DliCardLabels } from './components/DliCard.svelte';
+export type { DliCardLabels as CwDliCardLabels } from './components/DliCard.svelte';
+export type {
+	DliStatusLabel as CwDliStatusLabel,
+	DliHistoryPoint as CwDliHistoryPoint
+} from './types/index.js';
+
+// ── Sensor status helpers ──────────────────────────────────
+export {
+	aggregateCwSensorStatuses,
+	getCwSensorStatusLabel,
+	getCwSensorTone,
+	getCwStatusColor
+} from './components/cwSensorCardStatus.js';
+export type { CwSensorStatusLabels } from './components/cwSensorCardStatus.js';
+export { buildCwSensorCardDetailRows, formatCwSensorValue } from './components/cwSensorCardRows.js';
+export type { CwSensorCardRowLabels } from './components/cwSensorCardRows.js';
 export type { CwLineChartLabels } from './components/CwLineChart.svelte';
 export type { CwHeatmapLabels } from './components/CwHeatmap.svelte';
 export type { CwCalendarScrollLabels } from './components/CwCalendarScroll.svelte';
 export type { CwDateTimeRangePickerLabels } from './components/CwDateTimeRangePicker.svelte';
 export type { CwCopyLabels } from './components/CwCopy.svelte';
+export type { CwSpinnerSize } from './components/CwSpinner.svelte';
+export type { CwTooltipPosition } from './components/CwTooltip.svelte';
 export type { CwDonutChartLabels } from './components/CwDonutChart.svelte';
 export type { CwStackedBarChartLabels } from './components/CwStackedBarChart.svelte';

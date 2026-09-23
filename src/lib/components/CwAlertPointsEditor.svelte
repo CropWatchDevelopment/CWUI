@@ -66,13 +66,20 @@
 	const CENTER_DRAFT_KEY = "center";
 	const DEFAULT_TICK_INTERVALS = 10;
 
+	/**
+	 * Default colours for new alert points. These are stored in the value and
+	 * edited with <input type="color">, so they must be literal hex rather than
+	 * CSS variables. They mirror the shared categorical chart palette
+	 * (--cw-chart-cat-1…8), which is validated for colour-vision deficiency and
+	 * contrast on both themes.
+	 */
 	const colorPalette = [
-		"#f7903b",
-		"#42edf0",
-		"#7a8cff",
-		"#e35c8d",
-		"#4fcf7a",
-		"#ffcf5a",
+		"#3987e5",
+		"#da5e2d",
+		"#199e70",
+		"#c98500",
+		"#d75987",
+		"#9085e9",
 	];
 	const numberFormatter = new Intl.NumberFormat(undefined, {
 		maximumFractionDigits: 2,
@@ -87,6 +94,7 @@
 		maxValueFieldLabel: "Max Value",
 		resetFieldLabel: "Reset",
 		colorFieldLabel: "Color",
+		previewLabel: "Alert points preview",
 		addAlertPointButton: "Add Alert Point",
 		removePointButton: "Remove",
 		emptyTitle: "No alert points yet.",
@@ -107,7 +115,7 @@
 		defaultPointName: (index) => `Alert Point ${index}`,
 		unitCelsiusLabel: "°C",
 		unitFahrenheitLabel: "°F",
-		unitKelvinLabel: "°K",
+		unitKelvinLabel: "K",
 		conditionEqualsLabel: "Equals (=)",
 		conditionRangeLabel: "Range",
 		conditionLessThanLabel: "Less than (<)",
@@ -1036,17 +1044,15 @@
 	<CwCard class="cw-alert-points__preview-card" padded={false}>
 		<section
 			class="cw-alert-points__preview"
-			aria-labelledby="cw-alert-points-preview"
+			aria-label={text.previewLabel}
 		>
 			<div class="cw-alert-points__toolbar">
 				<div class="cw-alert-points__toolbar-fields">
 					<div
 						class="cw-alert-points__toolbar-field cw-alert-points__toolbar-field--unit"
 					>
-						<span class="cw-alert-points__toolbar-label"
-							>{text.unitFieldLabel}</span
-						>
 						<CwDropdown
+							label={text.unitFieldLabel}
 							options={unitOptions}
 							value={displayUnit}
 							onchange={(nextUnit) =>
@@ -1330,7 +1336,8 @@
 
 						<div class="cw-alert-points__remove">
 							<CwButton
-								variant="danger"
+								variant="ghost"
+								aria-label="{text.removePointButton}: {point.name}"
 								onclick={() => removePoint(point.id)}
 							>
 								<svg
@@ -1451,9 +1458,9 @@
 					</div>
 
 					{#if point.min && point.max && point.min === point.max}
-						<div class="w-full">
-							<p class="text-red-600">{text.minEqualsMaxWarning}</p>
-						</div>
+						<p class="cw-alert-points__warning" role="status">
+							{text.minEqualsMaxWarning}
+						</p>
 					{/if}
 				</article>
 			</CwCard>
@@ -1463,6 +1470,7 @@
 
 <style>
 	.cw-alert-points {
+		container: cw-alert-points / inline-size;
 		display: grid;
 		gap: var(--cw-space-5);
 	}
@@ -1487,12 +1495,6 @@
 		gap: var(--cw-space-2);
 	}
 
-	.cw-alert-points__toolbar-label {
-		font-size: var(--cw-text-sm);
-		font-weight: var(--cw-font-medium);
-		color: var(--cw-text-secondary);
-	}
-
 	:global(.cw-alert-points__preview-card .cw-card__body),
 	:global(.cw-alert-points__card-shell .cw-card__body) {
 		padding: 0;
@@ -1501,7 +1503,7 @@
 	:global(.cw-alert-points__card-shell--invalid) {
 		border-color: color-mix(
 			in srgb,
-			var(--cw-danger-500) 32%,
+			var(--cw-tone-danger-border) 60%,
 			var(--cw-border-default)
 		);
 	}
@@ -1510,31 +1512,6 @@
 		display: grid;
 		gap: var(--cw-space-4);
 		padding: clamp(1rem, 2vw, 1.5rem);
-	}
-
-	.cw-alert-points__preview-head {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: space-between;
-		gap: var(--cw-space-3);
-		align-items: start;
-	}
-
-	.cw-alert-points__eyebrow {
-		margin: 0 0 var(--cw-space-1);
-		font-size: 0.72rem;
-		font-weight: var(--cw-font-semibold);
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		color: var(--cw-accent);
-	}
-
-	.cw-alert-points__preview-head p,
-	.cw-alert-points__rule-text {
-		margin: 0;
-		color: var(--cw-text-secondary);
-		font-size: var(--cw-text-sm);
-		line-height: 1.6;
 	}
 
 	.cw-alert-points__plot {
@@ -1570,7 +1547,7 @@
 	.cw-alert-points__legend-swatch {
 		width: 0.75rem;
 		height: 0.75rem;
-		border-radius: 999px;
+		border-radius: var(--cw-radius-full);
 		background: var(--cw-alert-color);
 		box-shadow: 0 0 0 2px
 			color-mix(in srgb, var(--cw-alert-color) 18%, transparent);
@@ -1588,7 +1565,7 @@
 	}
 
 	.cw-alert-points__legend-copy span {
-		font-size: 0.72rem;
+		font-size: var(--cw-text-xs);
 		color: var(--cw-text-muted);
 	}
 
@@ -1610,7 +1587,7 @@
 	}
 
 	.cw-alert-points__legend-reset--danger {
-		color: var(--cw-danger-500);
+		color: var(--cw-tone-danger-text);
 	}
 
 	.cw-alert-points__line-visual {
@@ -1668,7 +1645,7 @@
 		transform: translate(-50%, -50%);
 		width: 1rem;
 		height: 1rem;
-		border-radius: 999px;
+		border-radius: var(--cw-radius-full);
 		border: 2px solid var(--cw-alert-color);
 		background: var(--cw-bg-base);
 		box-shadow: 0 0 0 4px
@@ -1779,7 +1756,7 @@
 		place-items: center;
 		width: 1.35rem;
 		height: 1.35rem;
-		border-radius: 999px;
+		border-radius: var(--cw-radius-full);
 		border: 2px solid var(--cw-alert-color);
 		background: var(--cw-bg-base);
 		color: var(--cw-alert-color);
@@ -1799,14 +1776,14 @@
 	}
 
 	.cw-alert-points__reset-marker--danger {
-		border-color: var(--cw-danger-500);
-		color: var(--cw-danger-500);
+		border-color: var(--cw-tone-danger-text);
+		color: var(--cw-tone-danger-text);
 		box-shadow: 0 0 0 4px
-			color-mix(in srgb, var(--cw-danger-500) 12%, transparent);
+			color-mix(in srgb, var(--cw-tone-danger-text) 12%, transparent);
 	}
 
 	.cw-alert-points__reset-marker--filled.cw-alert-points__reset-marker--danger {
-		background: var(--cw-danger-500);
+		background: var(--cw-tone-danger-text);
 		color: var(--cw-bg-base);
 	}
 
@@ -1840,7 +1817,7 @@
 	}
 
 	.cw-alert-points__plot-note--danger {
-		color: var(--cw-danger-500);
+		color: var(--cw-tone-danger-text);
 	}
 
 	.cw-alert-points__axis {
@@ -1920,21 +1897,32 @@
 			);
 	}
 
-	.cw-alert-points__rule-text {
-		padding: var(--cw-space-3);
+	.cw-alert-points__warning {
+		margin: 0;
+		padding: var(--cw-space-2) var(--cw-space-3);
+		border: 1px solid var(--cw-tone-warning-border);
 		border-radius: var(--cw-radius-md);
-		background: color-mix(in srgb, var(--cw-bg-base) 74%, transparent);
-		border: 1px solid
-			color-mix(in srgb, var(--cw-border-default) 72%, transparent);
+		background: var(--cw-tone-warning-bg-subtle);
+		color: var(--cw-tone-warning-text);
+		font-size: var(--cw-text-sm);
 	}
 
-	@media (max-width: 960px) {
+	.cw-alert-points__remove :global(.cw-button) {
+		color: var(--cw-tone-danger-text);
+	}
+
+	.cw-alert-points__remove :global(.cw-button:hover) {
+		background: var(--cw-tone-danger-bg-subtle);
+		color: var(--cw-tone-danger-text);
+	}
+
+	@container cw-alert-points (max-width: 60rem) {
 		.cw-alert-points__card-top {
 			grid-template-columns: repeat(2, minmax(12rem, 1fr));
 		}
 	}
 
-	@media (max-width: 720px) {
+	@container cw-alert-points (max-width: 45rem) {
 		.cw-alert-points__toolbar-fields,
 		.cw-alert-points__card-top,
 		.cw-alert-points__values {
@@ -1946,7 +1934,7 @@
 		}
 
 		.cw-alert-points__tick-label {
-			font-size: 0.68rem;
+			font-size: var(--cw-text-xs);
 		}
 	}
 </style>

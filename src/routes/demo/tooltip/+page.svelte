@@ -8,7 +8,11 @@
 </script>
 
 <h2>CwTooltip</h2>
-<p class="demo-desc">Hover tooltips with position and tone variants.</p>
+<p class="demo-desc">
+	Short descriptions that appear on hover and on keyboard focus. The bubble is linked to its
+	trigger with <code>aria-describedby</code>, stays open while the pointer moves onto it, and
+	closes with Escape.
+</p>
 
 <section class="demo-section">
 	<h3>Positions</h3>
@@ -54,25 +58,40 @@
 </section>
 
 <section class="demo-section">
-	<h3>On Inline Text</h3>
-	<p class="demo-text">
-		Hover over
-		<CwTooltip value="I'm a tooltip!" tone="primary">
-			<span class="demo-highlight">this word</span>
+	<h3>Keyboard</h3>
+	<p class="demo-hint">
+		Tab to a trigger to show its tooltip, then press Escape to hide it without moving focus.
+	</p>
+	<div class="demo-row">
+		<CwTooltip value="Exports the last 24 hours as CSV" position="bottom">
+			<CwButton variant="secondary">Export</CwButton>
 		</CwTooltip>
-		to see a tooltip on inline content.
+		<CwTooltip value="Readings refresh every 5 minutes" position="bottom">
+			<CwButton variant="ghost">Refresh</CwButton>
+		</CwTooltip>
+	</div>
+</section>
+
+<section class="demo-section">
+	<h3>On inline text</h3>
+	<p class="demo-text">
+		Hover or focus
+		<CwTooltip value="Vapour pressure deficit" tone="primary">
+			<button type="button" class="demo-highlight">VPD</button>
+		</CwTooltip>
+		to see a tooltip on inline content. Use a focusable element so keyboard users can reach it.
 	</p>
 </section>
 
 <style>
-	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }
-	h3 { font-size: var(--cw-text-base); font-weight: var(--cw-font-semibold); margin-bottom: var(--cw-space-2); color: var(--cw-text-secondary); }
-	.demo-desc { color: var(--cw-text-muted); font-size: var(--cw-text-sm); margin-bottom: var(--cw-space-4); }
-	.demo-section { margin-top: var(--cw-space-6); }
-	.demo-row { display: flex; flex-wrap: wrap; gap: var(--cw-space-4); align-items: center; }
 	.demo-text { color: var(--cw-text-secondary); font-size: var(--cw-text-sm); }
+	code { font-family: var(--cw-font-mono); font-size: var(--cw-text-xs); }
 	.demo-highlight {
-		color: var(--cw-accent);
+		padding: 0;
+		border: 0;
+		background: none;
+		font: inherit;
+		color: var(--cw-accent-text);
 		text-decoration: underline;
 		text-decoration-style: dotted;
 		cursor: help;

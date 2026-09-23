@@ -13,6 +13,12 @@
         onToggleNav?: () => void;
         /** Extra content rendered on the right side of the header (e.g. profile menu, theme picker) */
         actions?: Snippet;
+        /** Destination of the logo/title link. Pass `null` to render it without a link. */
+        href?: string | null;
+        /** Accessible name for the home link (defaults to `title`, then "Home"). */
+        homeLabel?: string;
+        /** Accessible label for the hamburger button. */
+        toggleNavLabel?: string;
         class?: string;
     }
 
@@ -22,6 +28,9 @@
         sideNavMode = $bindable<CwSideNavMode>("open"),
         onToggleNav,
         actions,
+        href = "/",
+        homeLabel,
+        toggleNavLabel = "Toggle navigation",
         class: className = "",
     }: Props = $props();
 
@@ -41,13 +50,17 @@
     }
 </script>
 
-<header class="cw-header {className}">
-    <!-- Hamburger button — hidden on desktop when nav is open/mini, shown on tablet/phone -->
+<header class={["cw-header", className]}>
+    <!-- Hamburger — always shown on tablet/phone; on desktop only while the nav is hidden
+         (otherwise the nav's own collapse control is used). -->
     <button
         type="button"
-        class="cw-header__hamburger"
+        class={[
+            "cw-header__hamburger",
+            sideNavMode === "hidden" && "cw-header__hamburger--always",
+        ]}
         onclick={handleHamburger}
-        aria-label="Toggle navigation"
+        aria-label={toggleNavLabel}
         aria-expanded={sideNavMode !== "hidden"}
     >
         <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -60,21 +73,30 @@
         </svg>
     </button>
 
-    <!-- Logo — visible on desktop and tablet, hidden on phone -->
-
-    {#if sideNavMode !== "open"}
-    <a href="/" class="cw-header__link">
-        {#if logo}
-            <div class="cw-header__logo">
-                {@render logo()}
+    {#if sideNavMode !== "open" && (logo || title)}
+        {#if href}
+            <a {href} class="cw-header__link" aria-label={homeLabel ?? (title || "Home")}>
+                {#if logo}
+                    <div class="cw-header__logo">
+                        {@render logo()}
+                    </div>
+                {/if}
+                {#if title}
+                    <span class="cw-header__title" aria-hidden="true">{title}</span>
+                {/if}
+            </a>
+        {:else}
+            <div class="cw-header__link">
+                {#if logo}
+                    <div class="cw-header__logo">
+                        {@render logo()}
+                    </div>
+                {/if}
+                {#if title}
+                    <span class="cw-header__title">{title}</span>
+                {/if}
             </div>
         {/if}
-
-        <!-- Title text — desktop only -->
-        {#if title}
-            <span class="cw-header__title">{title}</span>
-        {/if}
-    </a>
     {/if}
 
     <!-- Spacer pushes actions to the right -->
@@ -101,12 +123,16 @@
         display: flex;
         align-items: center;
         gap: var(--cw-space-3);
-        height: 5rem;
-        padding: 0 var(--cw-space-4);
+        height: calc(5rem + env(safe-area-inset-top, 0px));
+        padding: env(safe-area-inset-top, 0px)
+            max(var(--cw-space-4), env(safe-area-inset-right, 0px)) 0
+            max(var(--cw-space-4), env(safe-area-inset-left, 0px));
         background-color: var(--cw-header-bg);
+        color: var(--cw-header-fg);
         border-bottom: 2px solid var(--cw-border-muted);
         font-family: var(--cw-font-family);
         flex-shrink: 0;
+        min-width: 0;
     }
 
     /* ── Hamburger ─────────────────────────── */
@@ -114,13 +140,14 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 2rem;
-        height: 2rem;
+        width: 2.75rem;
+        height: 2.75rem;
+        margin-inline-start: calc(-1 * var(--cw-space-2));
         padding: 0;
         background: none;
         border: none;
         border-radius: var(--cw-radius-md);
-        color: var(--cw-text-primary);
+        color: var(--cw-header-fg);
         cursor: pointer;
         flex-shrink: 0;
         transition: background-color var(--cw-duration-fast)
@@ -128,13 +155,7 @@
     }
 
     .cw-header__hamburger:hover {
-        background-color: color-mix(in srgb, var(--cw-text-inverse) 20%, transparent);
-    }
-
-    .cw-header__hamburger:focus-visible {
-        outline: none;
-        box-shadow: 0 0 0 2px
-            color-mix(in srgb, var(--cw-focus-ring-color) 40%, transparent);
+        background-color: color-mix(in srgb, var(--cw-header-fg) 16%, transparent);
     }
 
     .cw-header__hamburger svg {
@@ -142,20 +163,23 @@
         height: 1.25rem;
     }
 
-    /* Desktop: hide hamburger when sidenav is open or mini */
+    /* Desktop: the nav has its own collapse control, so only show the hamburger
+       when the nav is fully hidden (otherwise there'd be no way to reopen it). */
     @media (min-width: 1024px) {
-        .cw-header__hamburger {
+        .cw-header__hamburger:not(.cw-header__hamburger--always) {
             display: none;
         }
     }
 
-    /* ── Logo ──────────────────────────────── */
-
+    /* ── Logo / home link ──────────────────── */
     .cw-header__link {
         display: flex;
         align-items: center;
         gap: var(--cw-space-3);
+        min-width: 0;
+        color: inherit;
         text-decoration: none;
+        border-radius: var(--cw-radius-md);
     }
 
     .cw-header__logo {
@@ -164,25 +188,19 @@
         flex-shrink: 0;
     }
 
-    /* Phone: hide logo */
-    @media (max-width: 639px) {
-        .cw-header__logo {
-            display: none;
-        }
-    }
-
     /* ── Title ─────────────────────────────── */
     .cw-header__title {
+        min-width: 0;
         font-size: var(--cw-text-base);
         font-weight: var(--cw-font-bold);
-        color: #fff;
+        color: var(--cw-header-fg);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    /* Tablet and phone: hide title */
-    @media (max-width: 1023px) {
+    /* Phone: the title is dropped for space; the logo stays so the app is still branded. */
+    @media (max-width: 639px) {
         .cw-header__title {
             display: none;
         }
@@ -198,6 +216,7 @@
         display: flex;
         align-items: center;
         gap: var(--cw-space-2);
-        flex-shrink: 0;
+        flex-shrink: 1;
+        min-width: 0;
     }
 </style>

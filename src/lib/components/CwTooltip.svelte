@@ -1,8 +1,10 @@
+<script lang="ts" module>
+	export type CwTooltipPosition = 'top' | 'bottom' | 'left' | 'right';
+</script>
+
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { CwTone } from '../types/index.js';
-
-	type CwTooltipPosition = 'top' | 'bottom' | 'left' | 'right';
 
 	interface Props {
 		/** Tooltip text content */
@@ -24,6 +26,11 @@
 		class: className = ''
 	}: Props = $props();
 
+	const bubbleId = $props.id();
+	const FOCUSABLE =
+		'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
+
+	let wrapper = $state<HTMLSpanElement>();
 	let visible = $state(false);
 
 	function show() {
@@ -32,10 +39,38 @@
 	function hide() {
 		visible = false;
 	}
+
+	/* Link the trigger to the bubble so screen readers announce the tooltip text
+	   as its description (WCAG 1.3.1 / 4.1.2). */
+	// bind:this + $effect rather than {@attach}: the peer range is svelte ^5.0.0
+	// and attachments need 5.29+.
+	$effect(() => {
+		const trigger = wrapper?.querySelector<HTMLElement>(FOCUSABLE);
+		if (!trigger) return;
+		const existing = trigger.getAttribute('aria-describedby') ?? '';
+		const ids = existing.split(/\s+/).filter(Boolean);
+		if (ids.includes(bubbleId)) return;
+		trigger.setAttribute('aria-describedby', [...ids, bubbleId].join(' '));
+		return () => {
+			const current = (trigger.getAttribute('aria-describedby') ?? '')
+				.split(/\s+/)
+				.filter((id) => id && id !== bubbleId);
+			if (current.length) trigger.setAttribute('aria-describedby', current.join(' '));
+			else trigger.removeAttribute('aria-describedby');
+		};
+	});
+
+	/* WCAG 1.4.13: the tooltip can be dismissed without moving pointer or focus. */
+	function handleWindowKeydown(event: KeyboardEvent) {
+		if (visible && event.key === 'Escape') hide();
+	}
 </script>
+
+<svelte:window onkeydown={handleWindowKeydown} />
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <span
+	bind:this={wrapper}
 	class="cw-tooltip {className}"
 	onpointerenter={show}
 	onpointerleave={hide}
@@ -44,15 +79,16 @@
 >
 	{@render children()}
 
-	{#if visible}
-		<span
-			class="cw-tooltip__bubble cw-tooltip__bubble--{position} cw-tooltip__bubble--{tone}"
-			role="tooltip"
-		>
-			{value}
-			<span class="cw-tooltip__arrow"></span>
-		</span>
-	{/if}
+	<!-- Always in the DOM so aria-describedby resolves; only shown while visible. -->
+	<span
+		id={bubbleId}
+		class="cw-tooltip__bubble cw-tooltip__bubble--{position} cw-tooltip__bubble--{tone}"
+		class:cw-tooltip__bubble--visible={visible}
+		role="tooltip"
+	>
+		{value}
+		<span class="cw-tooltip__arrow" aria-hidden="true"></span>
+	</span>
 </span>
 
 <style>
@@ -63,74 +99,97 @@
 
 	/* ── Bubble ──────────────────────────── */
 	.cw-tooltip__bubble {
+		--cw-tooltip-offset: var(--cw-space-2);
+		--cw-tooltip-arrow: var(--cw-space-2);
 		position: absolute;
-		z-index: var(--cw-z-toast);
+		z-index: var(--cw-z-tooltip);
 		padding: var(--cw-space-1) var(--cw-space-2);
 		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-medium);
 		line-height: var(--cw-leading-tight);
 		white-space: nowrap;
 		border-radius: var(--cw-radius-md);
-		pointer-events: none;
-		box-shadow: var(--cw-shadow-md);
+		box-shadow: var(--cw-elevation-popover);
+		display: none;
+	}
+
+	.cw-tooltip__bubble--visible {
+		display: block;
+		/* Animate the individual `scale` property so the positioning
+		   `translate` below is never overwritten. */
 		animation: cw-tooltip-in var(--cw-duration-fast) var(--cw-ease-out);
 	}
 
+	/* Invisible bridge across the offset gap so the pointer can move onto the
+	   bubble without it closing (WCAG 1.4.13 hoverable). */
+	.cw-tooltip__bubble::before {
+		content: '';
+		position: absolute;
+		inset: calc(var(--cw-tooltip-offset) * -1);
+		z-index: -1;
+	}
+
 	@keyframes cw-tooltip-in {
-		from { opacity: 0; transform: scale(0.95); }
-		to   { opacity: 1; transform: scale(1); }
+		from {
+			opacity: 0;
+			scale: 0.95;
+		}
+		to {
+			opacity: 1;
+			scale: 1;
+		}
 	}
 
 	/* ── Position ────────────────────────── */
 	.cw-tooltip__bubble--top {
-		bottom: calc(100% + 6px);
+		bottom: calc(100% + var(--cw-tooltip-offset));
 		left: 50%;
-		transform: translateX(-50%);
+		translate: -50% 0;
 	}
 	.cw-tooltip__bubble--bottom {
-		top: calc(100% + 6px);
+		top: calc(100% + var(--cw-tooltip-offset));
 		left: 50%;
-		transform: translateX(-50%);
+		translate: -50% 0;
 	}
 	.cw-tooltip__bubble--left {
-		right: calc(100% + 6px);
+		right: calc(100% + var(--cw-tooltip-offset));
 		top: 50%;
-		transform: translateY(-50%);
+		translate: 0 -50%;
 	}
 	.cw-tooltip__bubble--right {
-		left: calc(100% + 6px);
+		left: calc(100% + var(--cw-tooltip-offset));
 		top: 50%;
-		transform: translateY(-50%);
+		translate: 0 -50%;
 	}
 
 	/* ── Arrow ───────────────────────────── */
 	.cw-tooltip__arrow {
 		position: absolute;
-		width: 6px;
-		height: 6px;
+		width: var(--cw-tooltip-arrow);
+		height: var(--cw-tooltip-arrow);
 		background: inherit;
 		transform: rotate(45deg);
 	}
 
 	.cw-tooltip__bubble--top .cw-tooltip__arrow {
-		bottom: -3px;
+		bottom: calc(var(--cw-tooltip-arrow) / -2);
 		left: 50%;
-		margin-left: -3px;
+		margin-left: calc(var(--cw-tooltip-arrow) / -2);
 	}
 	.cw-tooltip__bubble--bottom .cw-tooltip__arrow {
-		top: -3px;
+		top: calc(var(--cw-tooltip-arrow) / -2);
 		left: 50%;
-		margin-left: -3px;
+		margin-left: calc(var(--cw-tooltip-arrow) / -2);
 	}
 	.cw-tooltip__bubble--left .cw-tooltip__arrow {
-		right: -3px;
+		right: calc(var(--cw-tooltip-arrow) / -2);
 		top: 50%;
-		margin-top: -3px;
+		margin-top: calc(var(--cw-tooltip-arrow) / -2);
 	}
 	.cw-tooltip__bubble--right .cw-tooltip__arrow {
-		left: -3px;
+		left: calc(var(--cw-tooltip-arrow) / -2);
 		top: 50%;
-		margin-top: -3px;
+		margin-top: calc(var(--cw-tooltip-arrow) / -2);
 	}
 
 	/* ── Tone colours ────────────────────── */

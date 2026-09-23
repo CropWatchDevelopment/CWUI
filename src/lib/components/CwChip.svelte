@@ -9,6 +9,8 @@
 		disabled?: boolean;
 		ondismiss?: () => void;
 		label: string;
+		/** Accessible label for the dismiss button. Defaults to "Dismiss {label}". */
+		dismissLabel?: string;
 		class?: string;
 	}
 
@@ -20,18 +22,12 @@
 		disabled = false,
 		ondismiss,
 		label,
+		dismissLabel,
 		class: className = ''
 	}: Props = $props();
 
 	function handleDismiss() {
 		if (!disabled && ondismiss) ondismiss();
-	}
-
-	function handleKeydown(e: KeyboardEvent) {
-		if (e.key === 'Enter' || e.key === ' ') {
-			e.preventDefault();
-			handleDismiss();
-		}
 	}
 </script>
 
@@ -40,6 +36,7 @@
 	class:cw-chip--disabled={disabled}
 	class:cw-chip--interactive={dismissible}
 	role={dismissible ? 'group' : undefined}
+	aria-label={dismissible ? label : undefined}
 	aria-disabled={disabled || undefined}
 >
 	<span class="cw-chip__label">{label}</span>
@@ -48,9 +45,8 @@
 			type="button"
 			class="cw-chip__dismiss"
 			onclick={handleDismiss}
-			onkeydown={handleKeydown}
 			{disabled}
-			aria-label="Dismiss {label}"
+			aria-label={dismissLabel ?? `Dismiss ${label}`}
 		>
 			<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
 				<path
@@ -70,6 +66,8 @@
 		align-items: center;
 		gap: var(--cw-space-1);
 		border-radius: var(--cw-radius-full);
+		/* Every variant carries a 1px border so outline chips are the same size. */
+		border: 1px solid transparent;
 		font-family: var(--cw-font-family);
 		font-weight: var(--cw-font-medium);
 		line-height: 1;
@@ -163,7 +161,7 @@
 	}
 	.cw-chip--outline.cw-chip--warning {
 		background-color: transparent;
-		color: var(--cw-tone-warning-border);
+		color: var(--cw-tone-warning-text);
 		border: 1px solid var(--cw-tone-warning-border);
 	}
 	.cw-chip--outline.cw-chip--danger {
@@ -179,12 +177,14 @@
 
 	/* ── Disabled ─────────────────────────── */
 	.cw-chip--disabled {
-		opacity: 0.5;
+		opacity: var(--cw-opacity-disabled);
 		pointer-events: none;
 	}
 
 	/* ── Dismiss button ──────────────────── */
 	.cw-chip__dismiss {
+		position: relative;
+		flex-shrink: 0;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -200,7 +200,16 @@
 		transition: opacity var(--cw-duration-fast) var(--cw-ease-default);
 	}
 
-	.cw-chip__dismiss:hover {
+	/* Extend the hit area to --cw-hit-target-min without growing the chip. */
+	.cw-chip__dismiss::before {
+		content: '';
+		position: absolute;
+		inset: calc((1em - var(--cw-hit-target-min)) / 2);
+		border-radius: inherit;
+	}
+
+	.cw-chip__dismiss:hover,
+	.cw-chip__dismiss:focus-visible {
 		opacity: 1;
 	}
 

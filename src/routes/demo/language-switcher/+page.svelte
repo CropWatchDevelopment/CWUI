@@ -244,18 +244,26 @@
 	<DemoCodeExample code={toolbarExample} title="Rich option array" />
 </section>
 
-<style>
-	h2 {
-		margin: 0 0 var(--cw-space-2);
-		font-size: var(--cw-text-xl);
-		font-weight: var(--cw-font-bold);
-	}
+<section class="demo-section">
+	<h3>Sizes &amp; empty list</h3>
+	<div class="demo-size-row">
+		<CwLanguageSwitcher label="Small" size="sm" options={releaseOptions} locale="en" />
+		<CwLanguageSwitcher label="Medium" size="md" options={releaseOptions} locale="en" />
+		<CwLanguageSwitcher label="Large" size="lg" options={releaseOptions} locale="en" />
+		<CwLanguageSwitcher
+			label="No languages"
+			options={[]}
+			labels={{ empty: 'No translations published yet' }}
+		/>
+	</div>
+</section>
 
-	h3 {
-		margin: 0;
-		font-size: clamp(1rem, 1.6vw, 1.15rem);
-		font-weight: var(--cw-font-semibold);
-		color: var(--cw-text-primary);
+<style>
+	.demo-size-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		gap: var(--cw-space-4);
 	}
 
 	.demo-desc,
@@ -266,10 +274,6 @@
 		font-size: var(--cw-text-sm);
 		line-height: 1.65;
 		color: var(--cw-text-secondary);
-	}
-
-	.demo-desc {
-		margin: 0 0 var(--cw-space-2);
 	}
 
 	.demo-note {
@@ -283,10 +287,6 @@
 		border-radius: var(--cw-radius-sm);
 		background: var(--cw-bg-muted);
 		font-size: var(--cw-text-xs);
-	}
-
-	.demo-section {
-		margin-bottom: var(--cw-space-7);
 	}
 
 	.demo-section--hero {
@@ -331,8 +331,8 @@
 		padding: 0.18rem 0.55rem;
 		border-radius: var(--cw-radius-full);
 		background: color-mix(in srgb, var(--cw-accent) 14%, var(--cw-bg-muted));
-		color: var(--cw-accent);
-		font-size: 0.7rem;
+		color: var(--cw-accent-text);
+		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-semibold);
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
@@ -354,12 +354,6 @@
 	.demo-toolbar {
 		grid-template-columns: minmax(0, 1fr) auto;
 		align-items: center;
-	}
-
-	.demo-hint {
-		margin: var(--cw-space-3) 0 0;
-		font-size: var(--cw-text-xs);
-		color: var(--cw-text-muted);
 	}
 
 	@media (max-width: 720px) {

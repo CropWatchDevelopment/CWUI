@@ -23,18 +23,26 @@
 		pageSizeBatchOption?: (n: number) => string;
 		/** Aria-label for the toolbar overflow menu button. Default: "Open table options" */
 		toolbarMenu?: string;
-		/** Toolbar menu item and column-settings dialog title. Default: "Columns Settings" */
+		/** Toolbar menu item and column-settings dialog title. Default: "Column settings" */
 		columnsSettings?: string;
 		/** Toolbar menu item that refreshes the table. Default: "Refresh" */
 		refresh?: string;
 		/** Fallback header for the row actions column. Default: "Actions" */
 		actions?: string;
-		/** Builds the inline error message shown in the table body. Default: `Error: ${message}` */
+		/** Builds the error detail text shown under the error title. Default: the raw message. */
 		errorPrefix?: (message: string) => string;
+		/** Heading of the error state. Default: "Couldn't load data" */
+		errorTitle?: string;
 		/** Retry button label for error and append-error states. Default: "Retry" */
 		retry?: string;
-		/** Empty-state text when there are no rows. Default: "No data available" */
+		/** Empty-state heading when there are no rows. Default: "No data available" */
 		empty?: string;
+		/** Optional supporting text under the empty-state heading. Default: "" */
+		emptyDescription?: string;
+		/** Empty-state text when a search returns no rows. Default: `No results for "${query}"` */
+		noResults?: (query: string) => string;
+		/** Group heading used when `groupBy` resolves to an empty value. Default: "Ungrouped" */
+		ungrouped?: string;
 		/** Fallback message when an initial data load fails. Default: "An error occurred" */
 		genericError?: string;
 		/** Fallback message when loading additional virtual-scroll rows fails. Default: "Unable to load more rows" */
@@ -69,28 +77,32 @@
 		selectAtLeastOne?: string;
 		/** Column-settings dialog close button. Default: "Close" */
 		close?: string;
-		/** Column-settings dialog reset button. Default: "Reset to Default" */
+		/** Column-settings dialog reset button. Default: "Reset to default" */
 		resetToDefault?: string;
 		/** Column-settings dialog save button. Default: "Save" */
 		save?: string;
 	}
 
 	const DEFAULT_LABELS: Required<CwDataTableLabels> = {
-		searchPlaceholder: "Search...",
-		loading: "Loading...",
-		loadingMore: "Loading more rows...",
+		searchPlaceholder: "Search…",
+		loading: "Loading…",
+		loadingMore: "Loading more rows…",
 		noSort: "No sort",
 		sortAscOption: (header: string) => `${header} (A-Z)`,
 		sortDescOption: (header: string) => `${header} (Z-A)`,
 		pageSizeOption: (n: number) => `${n} rows`,
 		pageSizeBatchOption: (n: number) => `${n} rows/batch`,
 		toolbarMenu: "Open table options",
-		columnsSettings: "Columns Settings",
+		columnsSettings: "Column settings",
 		refresh: "Refresh",
 		actions: "Actions",
-		errorPrefix: (message: string) => `Error: ${message}`,
+		errorPrefix: (message: string) => message,
+		errorTitle: "Couldn't load data",
 		retry: "Retry",
 		empty: "No data available",
+		emptyDescription: "",
+		noResults: (query: string) => `No results for “${query}”`,
+		ungrouped: "Ungrouped",
 		genericError: "An error occurred",
 		loadMoreError: "Unable to load more rows",
 		groupCount: (count: number) =>
@@ -113,7 +125,7 @@
 		visibleColumns: "Visible columns",
 		selectAtLeastOne: "Select at least one column before saving.",
 		close: "Close",
-		resetToDefault: "Reset to Default",
+		resetToDefault: "Reset to default",
 		save: "Save",
 	};
 </script>
@@ -133,6 +145,7 @@
 	import CwSearchInput from "./CwSearchInput.svelte";
 	import moreVertIcon from "../icons/more_vert.svg?raw";
 	import { getCwViewSize, isCwPhoneView } from "../utils/cwViewSize.js";
+	import { formatCwNumber, isCwFiniteNumber } from "../utils/cwFormat.js";
 
 	type CwTableSort = { column: string; direction: "asc" | "desc" } | null;
 	type CwTableFilters = Record<string, string[]>;
@@ -153,7 +166,7 @@
 		rowKey: keyof T & string;
 		/** Native id placed on the table's root container element. */
 		id?: string;
-		/** When true, hides table content and shows a centered loading badge. */
+		/** When true, shows skeleton rows in the table body (the toolbar stays mounted). */
 		loading?: boolean;
 		onRowClick?: (row: T) => void;
 		/** Fired when the user moves to the next page from the pagination controls. */
@@ -200,6 +213,20 @@
 		gridId?: string;
 		/** When true, fills parent height and makes the table body region scroll on overflow. */
 		fillParent?: boolean;
+		/**
+		 * Caps the table body height (CSS length) and scrolls inside it. The column header
+		 * only sticks while scrolling inside the table — i.e. with `maxHeight`, `fillParent`
+		 * or `virtualScroll`; it cannot stick to the page scroll because the table scrolls
+		 * horizontally.
+		 */
+		maxHeight?: string;
+		/** Row density. `compact` reduces cell padding. Default: "default" */
+		density?: "default" | "compact";
+		/**
+		 * Default alignment for columns without `align` (numeric columns default to right).
+		 * Default: "center" (kept for backwards compatibility).
+		 */
+		columnAlign?: "left" | "center" | "right";
 		/** When true, incrementally loads pages while only rendering the visible row window. */
 		virtualScroll?: boolean;
 		/** Scroll viewport height used when `virtualScroll` is enabled without `fillParent`. */
@@ -240,9 +267,12 @@
 		rowActionsHeader = "",
 		rowTextSizeKey,
 		groupBy,
-		ungroupedLabel = "Ungrouped",
+		ungroupedLabel,
 		gridId,
 		fillParent = false,
+		maxHeight,
+		density = "default",
+		columnAlign = "center",
 		virtualScroll = false,
 		virtualScrollHeight = "28rem",
 		virtualRowHeight = 52,
@@ -277,6 +307,8 @@
 	let containerWidth = $state(0);
 	let scrollRef = $state<HTMLDivElement | null>(null);
 	let toolbarMenuOpen = $state(false);
+	let toolbarMenuRef = $state<HTMLDivElement | null>(null);
+	let toolbarMenuListRef = $state<HTMLDivElement | null>(null);
 	let columnSettingsOpen = $state(false);
 	let resolvedGridId = $state("datatable_grid");
 	let appliedVisibleColumnKeys = $state<string[] | null>(null);
@@ -385,7 +417,7 @@
 					: rawGroup == null
 						? ""
 						: String(rawGroup);
-			const label = normalizedGroup || ungroupedLabel;
+			const label = normalizedGroup || (ungroupedLabel ?? l.ungrouped);
 			const existingGroup = groups.get(label);
 
 			if (existingGroup) {
@@ -431,6 +463,13 @@
 				: Math.min(page * pageSize, total),
 	);
 	const toolbarActionsSnippet = $derived(actionsHeader ?? toolbarActions);
+	const isBusy = $derived(loading || loadingState);
+	const showSkeleton = $derived(
+		loading || (loadingState && rows.length === 0 && !error),
+	);
+	const skeletonRowCount = $derived(
+		Math.max(1, Math.min(pageSize, 6)),
+	);
 	const canSaveColumnSettings = $derived(
 		(draftVisibleColumnKeys ?? defaultVisibleColumnKeys).length > 0,
 	);
@@ -616,8 +655,57 @@
 		}, 250);
 	}
 
-	function closeToolbarMenu() {
+	function getToolbarMenuItems(): HTMLButtonElement[] {
+		return toolbarMenuListRef
+			? Array.from(
+					toolbarMenuListRef.querySelectorAll<HTMLButtonElement>(
+						'[role="menuitem"]',
+					),
+				)
+			: [];
+	}
+
+	function focusToolbarTrigger() {
+		toolbarMenuRef
+			?.querySelector<HTMLButtonElement>(".cw-data-table__toolbar-menu-button")
+			?.focus();
+	}
+
+	function closeToolbarMenu(returnFocus = false) {
 		toolbarMenuOpen = false;
+		if (returnFocus) focusToolbarTrigger();
+	}
+
+	function handleToolbarMenuKeydown(e: KeyboardEvent) {
+		const items = getToolbarMenuItems();
+		if (items.length === 0) return;
+		const index = items.indexOf(document.activeElement as HTMLButtonElement);
+
+		switch (e.key) {
+			case "ArrowDown":
+				e.preventDefault();
+				items[(index + 1) % items.length].focus();
+				break;
+			case "ArrowUp":
+				e.preventDefault();
+				items[(index - 1 + items.length) % items.length].focus();
+				break;
+			case "Home":
+				e.preventDefault();
+				items[0].focus();
+				break;
+			case "End":
+				e.preventDefault();
+				items[items.length - 1].focus();
+				break;
+			case "Escape":
+				e.preventDefault();
+				closeToolbarMenu(true);
+				break;
+			case "Tab":
+				closeToolbarMenu();
+				break;
+		}
 	}
 
 	function applySort(nextSort: CwTableSort) {
@@ -659,13 +747,16 @@
 		applySort({ column, direction });
 	}
 
-	function toggleToolbarMenu() {
+	async function toggleToolbarMenu() {
 		toolbarMenuOpen = !toolbarMenuOpen;
+		if (!toolbarMenuOpen) return;
+		await tick();
+		getToolbarMenuItems()[0]?.focus();
 	}
 
-	function handleTableKeydown(e: KeyboardEvent) {
-		if (e.key === "Escape") {
-			toolbarMenuOpen = false;
+	function handleDocumentPointerDown(e: PointerEvent) {
+		if (toolbarMenuRef && !toolbarMenuRef.contains(e.target as Node)) {
+			closeToolbarMenu();
 		}
 	}
 
@@ -812,7 +903,14 @@
 	function getCellValue(row: T, col: CwColumnDef<T>): string {
 		if (col.cell) return col.cell(row);
 		const val = (row as Record<string, unknown>)[col.key];
+		if (col.numeric && isCwFiniteNumber(val)) {
+			return formatCwNumber(val, { decimals: col.decimals });
+		}
 		return val != null ? String(val) : "";
+	}
+
+	function getColumnAlign(col: CwColumnDef<T>): "left" | "center" | "right" {
+		return col.align ?? (col.numeric ? "right" : columnAlign);
 	}
 
 	function getRowTextSize(row: T): string | undefined {
@@ -1053,9 +1151,12 @@
 
 	$effect(() => {
 		if (!toolbarMenuOpen) return;
-		document.addEventListener("keydown", handleTableKeydown);
+		document.addEventListener("pointerdown", handleDocumentPointerDown);
 		return () =>
-			document.removeEventListener("keydown", handleTableKeydown);
+			document.removeEventListener(
+				"pointerdown",
+				handleDocumentPointerDown,
+			);
 	});
 
 	$effect(() => {
@@ -1079,478 +1180,485 @@
 	class="cw-data-table {className}"
 	class:cw-data-table--fill-parent={fillParent}
 	class:cw-data-table--virtual={virtualScroll}
+	class:cw-data-table--compact={density === "compact"}
 	data-view-size={viewSize ?? undefined}
 	bind:clientWidth={containerWidth}
 >
-	{#if loading}
-		<div
-			class="cw-data-table__loading-container"
-			role="status"
-			aria-live="polite"
+	{#snippet renderDataRow(row: T, rowIndex: number)}
+		{@const rowLoading = isRowLoading(row)}
+		<!--
+			Clickable rows keep native row semantics (no role override) so screen
+			readers still announce cells; they are focusable and activate with
+			Enter/Space.
+		-->
+		<tr
+			class="cw-data-table__row"
+			class:cw-data-table__row--even={rowIndex % 2 === 1}
+			class:cw-data-table__row--clickable={!!onRowClick}
+			class:cw-data-table__row--loading={rowLoading}
+			aria-busy={rowLoading || undefined}
+			onclick={onRowClick ? () => handleRowClick(row) : undefined}
+			onkeydown={onRowClick ? (e) => handleRowKeydown(e, row) : undefined}
+			tabindex={onRowClick ? 0 : undefined}
+			style:font-size={getRowTextSize(row)}
 		>
-			<div class="cw-data-table__loading-badge">
-				<CwSpinner size="md" />
-				{l.loading}
-			</div>
-		</div>
-	{:else}
-		{#snippet renderDataRow(row: T, rowIndex: number)}
-			<tr
-				class="cw-data-table__row"
-				class:cw-data-table__row--even={rowIndex % 2 === 1}
-				class:cw-data-table__row--clickable={!!onRowClick}
-				class:cw-data-table__row--loading={isRowLoading(row)}
-				onclick={() => handleRowClick(row)}
-				onkeydown={(e) => handleRowKeydown(e, row)}
-				tabindex={onRowClick ? 0 : undefined}
-				role={onRowClick ? "button" : undefined}
-				style:font-size={getRowTextSize(row)}
-			>
-				{#each visibleColumns as col (col.key)}
-					<td
-						class="cw-data-table__td"
-						class:cw-data-table__td--hide-sm={col.hideBelow ===
-							"sm"}
-						class:cw-data-table__td--hide-md={col.hideBelow ===
-							"md"}
-						class:cw-data-table__td--hide-lg={col.hideBelow ===
-							"lg"}
-						class:cw-data-table__td--sorted={sort?.column ===
-							col.key}
-						data-label={col.header}
-						style:text-align={col.align ?? "center"}
-					>
-						{#if cell}
-							{@render cell(row, col, getCellValue(row, col))}
-						{:else}
-							{getCellValue(row, col)}
-						{/if}
-					</td>
-				{/each}
-				{#if rowActions}
-					<td
-						class="cw-data-table__td cw-data-table__td--actions"
-						data-label={rowActionsHeader || l.actions}
-						style:text-align="right"
-					>
-						<div class="cw-data-table__action-slot w-full">
-							{@render rowActions(row)}
-						</div>
-					</td>
-				{/if}
-			</tr>
-		{/snippet}
+			{#each visibleColumns as col (col.key)}
+				{@const value = getCellValue(row, col)}
+				<td
+					class="cw-data-table__td"
+					class:cw-data-table__td--hide-sm={col.hideBelow === "sm"}
+					class:cw-data-table__td--hide-md={col.hideBelow === "md"}
+					class:cw-data-table__td--hide-lg={col.hideBelow === "lg"}
+					class:cw-data-table__td--sorted={sort?.column === col.key}
+					class:cw-data-table__td--numeric={col.numeric}
+					class:cw-data-table__td--truncate={col.truncate}
+					data-label={col.header}
+					style:text-align={getColumnAlign(col)}
+					style:max-width={col.truncate ? (col.width ?? "16rem") : undefined}
+					title={col.truncate && !cell ? value : undefined}
+				>
+					{#if cell}
+						{@render cell(row, col, value)}
+					{:else if col.truncate}
+						<span class="cw-data-table__truncate">{value}</span>
+					{:else}
+						{value}
+					{/if}
+				</td>
+			{/each}
+			{#if rowActions}
+				<td
+					class="cw-data-table__td cw-data-table__td--actions"
+					data-label={rowActionsHeader || l.actions}
+					style:text-align="right"
+				>
+					<div class="cw-data-table__action-slot">
+						{@render rowActions(row)}
+					</div>
+				</td>
+			{/if}
+		</tr>
+	{/snippet}
 
-		<div class="cw-data-table__toolbar">
-			{#if searchable}
-				<div class="cw-data-table__search-wrapper">
-					<CwSearchInput
-						value={search}
-						placeholder={l.searchPlaceholder}
-						oninput={handleSearch}
-						debounceMs={0}
+	{#snippet sortIcon(direction: "asc" | "desc" | null)}
+		<svg
+			class="cw-data-table__sort-icon"
+			viewBox="0 0 16 16"
+			fill="none"
+			aria-hidden="true"
+		>
+			<path
+				d="M5 6.5 8 3.5l3 3"
+				stroke="currentColor"
+				stroke-width="1.5"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				opacity={direction === "desc" ? 0.3 : 1}
+			/>
+			<path
+				d="M5 9.5 8 12.5l3-3"
+				stroke="currentColor"
+				stroke-width="1.5"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				opacity={direction === "asc" ? 0.3 : 1}
+			/>
+		</svg>
+	{/snippet}
+
+	<div class="cw-data-table__toolbar">
+		{#if searchable}
+			<div class="cw-data-table__search-wrapper">
+				<CwSearchInput
+					value={search}
+					placeholder={l.searchPlaceholder}
+					oninput={handleSearch}
+					debounceMs={0}
+				/>
+			</div>
+		{/if}
+
+		<span class="cw-data-table__toolbar-spacer"></span>
+
+		<div class="cw-data-table__toolbar-end">
+			{#if sortableColumns.length > 0}
+				<div class="cw-data-table__mobile-sort">
+					<CwDropdown
+						options={mobileSortOptions}
+						value={mobileSortValue}
+						onchange={handleMobileSortChange}
 					/>
 				</div>
 			{/if}
 
-			<span class="cw-data-table__toolbar-spacer"></span>
+			<div class="cw-data-table__page-size">
+				<CwDropdown
+					options={pageSizeOptions.map((n) => ({
+						label: virtualScroll
+							? l.pageSizeBatchOption(n)
+							: l.pageSizeOption(n),
+						value: String(n),
+					}))}
+					value={pageSizeStr}
+					onchange={handlePageSizeChange}
+				/>
+			</div>
 
-			<div class="cw-data-table__toolbar-end">
-				{#if sortableColumns.length > 0}
-					<div class="cw-data-table__mobile-sort">
-						<CwDropdown
-							options={mobileSortOptions}
-							value={mobileSortValue}
-							onchange={handleMobileSortChange}
-						/>
+			<div class="cw-data-table__toolbar-actions">
+				{#if toolbarActionsSnippet}
+					{@render toolbarActionsSnippet()}
+				{/if}
+			</div>
+			<div class="cw-data-table__toolbar-menu" bind:this={toolbarMenuRef}>
+				<CwButton
+					variant="ghost"
+					size="sm"
+					type="button"
+					aria-label={l.toolbarMenu}
+					aria-expanded={toolbarMenuOpen}
+					aria-haspopup="menu"
+					aria-controls={`${uid}-toolbar-menu`}
+					class="cw-data-table__toolbar-menu-button"
+					onclick={toggleToolbarMenu}
+				>
+					<span
+						class="cw-data-table__toolbar-menu-icon"
+						aria-hidden="true"
+					>
+						{@html moreVertIcon}
+					</span>
+				</CwButton>
+
+				{#if toolbarMenuOpen}
+					<div
+						bind:this={toolbarMenuListRef}
+						class="cw-data-table__toolbar-menu-dropdown"
+						id={`${uid}-toolbar-menu`}
+						role="menu"
+						tabindex="-1"
+						aria-label={l.toolbarMenu}
+						onkeydown={handleToolbarMenuKeydown}
+					>
+						<button
+							type="button"
+							class="cw-data-table__toolbar-menu-item"
+							role="menuitem"
+							tabindex="-1"
+							onclick={openColumnSettings}
+						>
+							{l.columnsSettings}
+						</button>
+						<button
+							type="button"
+							class="cw-data-table__toolbar-menu-item"
+							role="menuitem"
+							tabindex="-1"
+							onclick={refreshTable}
+						>
+							{l.refresh}
+						</button>
 					</div>
 				{/if}
-
-				<div class="cw-data-table__page-size">
-					<CwDropdown
-						options={pageSizeOptions.map((n) => ({
-							label: virtualScroll
-								? l.pageSizeBatchOption(n)
-								: l.pageSizeOption(n),
-							value: String(n),
-						}))}
-						value={pageSizeStr}
-						onchange={handlePageSizeChange}
-					/>
-				</div>
-
-				<div class="cw-data-table__toolbar-actions">
-					{#if toolbarActionsSnippet}
-						{@render toolbarActionsSnippet()}
-					{/if}
-				</div>
-				<div class="cw-data-table__toolbar-menu">
-					<CwButton
-						variant="ghost"
-						size="sm"
-						type="button"
-						aria-label={l.toolbarMenu}
-						aria-expanded={toolbarMenuOpen}
-						aria-haspopup="menu"
-						aria-controls={`${uid}-toolbar-menu`}
-						class="cw-data-table__toolbar-menu-button"
-						onclick={toggleToolbarMenu}
-						style="padding: 0;"
-					>
-						<span
-							class="cw-data-table__toolbar-menu-icon"
-							aria-hidden="true"
-						>
-							{@html moreVertIcon}
-						</span>
-					</CwButton>
-
-					{#if toolbarMenuOpen}
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div
-							class="cw-data-table__toolbar-menu-backdrop"
-							onclick={closeToolbarMenu}
-							onkeydown={() => {}}
-						></div>
-						<div
-							class="cw-data-table__toolbar-menu-dropdown"
-							id={`${uid}-toolbar-menu`}
-							role="menu"
-						>
-							<button
-								type="button"
-								class="cw-data-table__toolbar-menu-item"
-								role="menuitem"
-								onclick={openColumnSettings}
-							>
-								{l.columnsSettings}
-							</button>
-							<button
-								type="button"
-								class="cw-data-table__toolbar-menu-item"
-								role="menuitem"
-								onclick={refreshTable}
-							>
-								{l.refresh}
-							</button>
-						</div>
-					{/if}
-				</div>
 			</div>
 		</div>
+	</div>
 
-		<div
-			bind:this={scrollRef}
-			bind:clientHeight={viewportHeight}
-			class="cw-data-table__scroll"
-			class:cw-data-table__scroll--virtual={virtualScroll}
-			onscroll={handleScroll}
-			style:max-height={virtualScroll && !fillParent
-				? virtualScrollHeight
+	<div
+		bind:this={scrollRef}
+		bind:clientHeight={viewportHeight}
+		class="cw-data-table__scroll"
+		class:cw-data-table__scroll--virtual={virtualScroll}
+		class:cw-data-table__scroll--capped={!!maxHeight && !virtualScroll}
+		onscroll={handleScroll}
+		style:max-height={virtualScroll && !fillParent
+			? virtualScrollHeight
+			: !fillParent
+				? maxHeight
 				: undefined}
-		>
-			<table class="cw-data-table__table" role="grid">
-				<thead bind:offsetHeight={headerHeight}>
-					<tr>
-						{#each visibleColumns as col (col.key)}
-							<th
-								class="cw-data-table__th"
-								class:cw-data-table__th--sortable={col.sortable}
-								class:cw-data-table__th--hide-sm={col.hideBelow ===
-									"sm"}
-								class:cw-data-table__th--hide-md={col.hideBelow ===
-									"md"}
-								class:cw-data-table__th--hide-lg={col.hideBelow ===
-									"lg"}
-								class:cw-data-table__th--sorted={sort?.column ===
-									col.key}
-								style:width={col.width}
-								style:text-align={col.align ?? "center"}
-								aria-sort={sort?.column === col.key
+	>
+		<table class="cw-data-table__table" aria-busy={isBusy || undefined}>
+			<thead bind:offsetHeight={headerHeight}>
+				<tr>
+					{#each visibleColumns as col (col.key)}
+						{@const colAlign = getColumnAlign(col)}
+						<th
+							scope="col"
+							class="cw-data-table__th"
+							class:cw-data-table__th--sortable={col.sortable}
+							class:cw-data-table__th--hide-sm={col.hideBelow === "sm"}
+							class:cw-data-table__th--hide-md={col.hideBelow === "md"}
+							class:cw-data-table__th--hide-lg={col.hideBelow === "lg"}
+							class:cw-data-table__th--sorted={sort?.column === col.key}
+							style:width={col.width}
+							style:text-align={colAlign}
+							aria-sort={col.sortable
+								? sort?.column === col.key
 									? sort.direction === "asc"
 										? "ascending"
 										: "descending"
-									: undefined}
-							>
-								{#if col.sortable}
-									<button
-										type="button"
-										class="cw-data-table__sort-btn"
-										onclick={() => handleSort(col)}
-									>
-										{col.header}
-										<span
-											class="cw-data-table__sort-icon"
-											aria-hidden="true"
-										>
-											{#if sort?.column === col.key}
-												{sort.direction === "asc"
-													? "↑"
-													: "↓"}
-											{:else}
-												↕
-											{/if}
-										</span>
-									</button>
-								{:else}
+									: "none"
+								: undefined}
+						>
+							{#if col.sortable}
+								<button
+									type="button"
+									class="cw-data-table__sort-btn"
+									class:cw-data-table__sort-btn--left={colAlign === "left"}
+									class:cw-data-table__sort-btn--right={colAlign === "right"}
+									onclick={() => handleSort(col)}
+								>
 									{col.header}
-								{/if}
-							</th>
-						{/each}
-						{#if rowActions}
-							<th
-								class="cw-data-table__th cw-data-table__th--actions"
-								style:text-align="right"
-							>
-								{rowActionsHeader}
-							</th>
-						{/if}
+									{@render sortIcon(
+										sort?.column === col.key ? sort.direction : null,
+									)}
+								</button>
+							{:else}
+								{col.header}
+							{/if}
+						</th>
+					{/each}
+					{#if rowActions}
+						<th
+							scope="col"
+							class="cw-data-table__th cw-data-table__th--actions"
+							style:text-align="right"
+						>
+							{rowActionsHeader}
+						</th>
+					{/if}
+				</tr>
+			</thead>
+			<tbody>
+				{#if showSkeleton}
+					{#each { length: skeletonRowCount }, index (index)}
+						<tr class="cw-data-table__row cw-data-table__row--skeleton" aria-hidden="true">
+							{#each visibleColumns as col (col.key)}
+								<td
+									class="cw-data-table__td"
+									class:cw-data-table__td--hide-sm={col.hideBelow === "sm"}
+									class:cw-data-table__td--hide-md={col.hideBelow === "md"}
+									class:cw-data-table__td--hide-lg={col.hideBelow === "lg"}
+									style:text-align={getColumnAlign(col)}
+								>
+									<span
+										class="cw-data-table__skeleton"
+										style:width={`${55 + ((index * 17 + col.key.length * 7) % 40)}%`}
+									></span>
+								</td>
+							{/each}
+							{#if rowActions}
+								<td class="cw-data-table__td cw-data-table__td--actions">
+									<span class="cw-data-table__skeleton cw-data-table__skeleton--action"></span>
+								</td>
+							{/if}
+						</tr>
+					{/each}
+				{:else if error}
+					<tr>
+						<td colspan={colCount} class="cw-data-table__status">
+							{#if errorState}
+								{@render errorState(error)}
+							{:else}
+								<div class="cw-data-table__state cw-data-table__state--error" role="alert">
+									<svg class="cw-data-table__state-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+										<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5" />
+										<path d="M12 7.5v5.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+										<circle cx="12" cy="16.25" r="1.1" fill="currentColor" />
+									</svg>
+									<p class="cw-data-table__state-title">{l.errorTitle}</p>
+									<p class="cw-data-table__state-body">{l.errorPrefix(error)}</p>
+									<CwButton
+										variant="secondary"
+										size="sm"
+										onclick={() =>
+											virtualScroll
+												? fetchVirtualData()
+												: fetchPageData(page)}
+									>
+										{l.retry}
+									</CwButton>
+								</div>
+							{/if}
+						</td>
 					</tr>
-				</thead>
-				<tbody>
-					{#if loadingState && rows.length === 0}
-						<tr>
+				{:else if rows.length === 0}
+					<tr>
+						<td colspan={colCount} class="cw-data-table__status">
+							{#if emptyState}
+								{@render emptyState()}
+							{:else}
+								<div class="cw-data-table__state">
+									<svg class="cw-data-table__state-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+										<rect x="3.5" y="5" width="17" height="14" rx="2" stroke="currentColor" stroke-width="1.5" />
+										<path d="M3.5 9.5h17M9 9.5V19" stroke="currentColor" stroke-width="1.5" />
+									</svg>
+									<p class="cw-data-table__state-title">
+										{appliedSearch.trim() ? l.noResults(appliedSearch.trim()) : l.empty}
+									</p>
+									{#if l.emptyDescription && !appliedSearch.trim()}
+										<p class="cw-data-table__state-body">{l.emptyDescription}</p>
+									{/if}
+								</div>
+							{/if}
+						</td>
+					</tr>
+				{:else}
+					{#if virtualScroll && topSpacerHeight > 0}
+						<tr aria-hidden="true" class="cw-data-table__spacer-row">
 							<td
 								colspan={colCount}
-								class="cw-data-table__status"
-							>
-								<div class="cw-data-table__loading">
-									<CwSpinner size="lg" />
-									{l.loading}
+								class="cw-data-table__spacer-cell"
+								style:height={`${topSpacerHeight}px`}
+							></td>
+						</tr>
+					{/if}
+
+					{#if groupingEnabled}
+						{#each groupedRows as group (group.key)}
+							<tr class="cw-data-table__group-row">
+								<th
+									colspan={colCount}
+									scope="colgroup"
+									class="cw-data-table__group-cell"
+								>
+									<div class="cw-data-table__group-heading">
+										<span class="cw-data-table__group-label">
+											{group.label}
+										</span>
+										<span class="cw-data-table__group-count">
+											{l.groupCount(group.rows.length)}
+										</span>
+									</div>
+								</th>
+							</tr>
+
+							{#each group.rows as entry (entry.row[rowKey])}
+								{@render renderDataRow(entry.row, entry.rowIndex)}
+							{/each}
+						{/each}
+					{:else}
+						{#each visibleRows as row, visibleIndex (row[rowKey])}
+							{@const rowIndex = virtualScroll
+								? virtualStartIndex + visibleIndex
+								: visibleIndex}
+							{@render renderDataRow(row, rowIndex)}
+						{/each}
+					{/if}
+
+					{#if virtualScroll && appendingState}
+						<tr class="cw-data-table__append-row">
+							<td colspan={colCount} class="cw-data-table__append-cell">
+								<div class="cw-data-table__append-status" role="status">
+									<CwSpinner size="sm" />
+									{l.loadingMore}
 								</div>
 							</td>
 						</tr>
-					{:else if error}
-						<tr>
-							<td
-								colspan={colCount}
-								class="cw-data-table__status"
-							>
-								{#if errorState}
-									{@render errorState(error)}
-								{:else}
-									<div class="cw-data-table__error">
-										<p>{l.errorPrefix(error)}</p>
-										<CwButton
-											variant="secondary"
-											size="sm"
-											onclick={() =>
-												virtualScroll
-													? fetchVirtualData()
-													: fetchPageData(page)}
-										>
-											{l.retry}
-										</CwButton>
-									</div>
-								{/if}
-							</td>
-						</tr>
-					{:else if rows.length === 0}
-						<tr>
-							<td
-								colspan={colCount}
-								class="cw-data-table__status"
-							>
-								{#if emptyState}
-									{@render emptyState()}
-								{:else}
-									<p class="cw-data-table__empty">
-										{l.empty}
-									</p>
-								{/if}
-							</td>
-						</tr>
-					{:else}
-						{#if virtualScroll && topSpacerHeight > 0}
-							<tr
-								aria-hidden="true"
-								class="cw-data-table__spacer-row"
-							>
-								<td
-									colspan={colCount}
-									class="cw-data-table__spacer-cell"
-									style:height={`${topSpacerHeight}px`}
-								></td>
-							</tr>
-						{/if}
+					{/if}
 
-						{#if groupingEnabled}
-							{#each groupedRows as group (group.key)}
-								<tr class="cw-data-table__group-row">
-									<th
-										colspan={colCount}
-										class="cw-data-table__group-cell"
+					{#if virtualScroll && appendError}
+						<tr class="cw-data-table__append-row">
+							<td colspan={colCount} class="cw-data-table__append-cell">
+								<div class="cw-data-table__append-error" role="alert">
+									<span>{appendError}</span>
+									<CwButton
+										variant="secondary"
+										size="sm"
+										onclick={retryVirtualAppend}
 									>
-										<div class="cw-data-table__group-heading">
-											<div
-												class="cw-data-table__group-label"
-											>
-												{group.label}
-											</div>
-											<div
-												class="cw-data-table__group-count"
-											>
-												{l.groupCount(
-													group.rows.length,
-												)}
-											</div>
-										</div>
-									</th>
-								</tr>
-
-								{#each group.rows as entry (entry.row[rowKey])}
-									{@render renderDataRow(
-										entry.row,
-										entry.rowIndex,
-									)}
-								{/each}
-							{/each}
-						{:else}
-							{#each visibleRows as row, visibleIndex (row[rowKey])}
-								{@const rowIndex = virtualScroll
-									? virtualStartIndex + visibleIndex
-									: visibleIndex}
-								{@render renderDataRow(row, rowIndex)}
-							{/each}
-						{/if}
-
-						{#if virtualScroll && appendingState}
-							<tr
-								class="cw-data-table__append-row"
-								aria-live="polite"
-							>
-								<td
-									colspan={colCount}
-									class="cw-data-table__append-cell"
-								>
-									<div class="cw-data-table__append-status">
-										<CwSpinner size="md" />
-										{l.loadingMore}
-									</div>
-								</td>
-							</tr>
-						{/if}
-
-						{#if virtualScroll && appendError}
-							<tr class="cw-data-table__append-row">
-								<td
-									colspan={colCount}
-									class="cw-data-table__append-cell"
-								>
-									<div class="cw-data-table__append-error">
-										<span>{appendError}</span>
-										<CwButton
-											variant="secondary"
-											size="sm"
-											onclick={retryVirtualAppend}
-										>
-											{l.retry}
-										</CwButton>
-									</div>
-								</td>
-							</tr>
-						{/if}
-
-						{#if virtualScroll && bottomSpacerHeight > 0}
-							<tr
-								aria-hidden="true"
-								class="cw-data-table__spacer-row"
-							>
-								<td
-									colspan={colCount}
-									class="cw-data-table__spacer-cell"
-									style:height={`${bottomSpacerHeight}px`}
-								></td>
-							</tr>
-						{/if}
+										{l.retry}
+									</CwButton>
+								</div>
+							</td>
+						</tr>
 					{/if}
-				</tbody>
-			</table>
+
+					{#if virtualScroll && bottomSpacerHeight > 0}
+						<tr aria-hidden="true" class="cw-data-table__spacer-row">
+							<td
+								colspan={colCount}
+								class="cw-data-table__spacer-cell"
+								style:height={`${bottomSpacerHeight}px`}
+							></td>
+						</tr>
+					{/if}
+				{/if}
+			</tbody>
+		</table>
+	</div>
+
+	{#if isBusy}
+		<span class="cw-data-table__sr-status" role="status">{l.loading}</span>
+	{/if}
+
+	{#if !loading && virtualScroll && rows.length > 0}
+		<div class="cw-data-table__pagination cw-data-table__pagination--virtual">
+			<span class="cw-data-table__page-info">
+				{#if totalKnown}
+					{l.virtualRange(rangeStart, rangeEnd, total)}
+				{:else}
+					{l.virtualRangeLoaded(rangeStart, rangeEnd)}
+				{/if}
+			</span>
+			<span class="cw-data-table__virtual-meta">
+				{#if appendError}
+					{l.loadInterrupted}
+				{:else if hasMoreRows}
+					{l.scrollToLoadMore}
+				{:else if totalKnown}
+					{l.allRowsLoaded(total)}
+				{:else}
+					{l.allLoadedVisible}
+				{/if}
+			</span>
 		</div>
-
-		{#if virtualScroll && rows.length > 0}
-			<div
-				class="cw-data-table__pagination cw-data-table__pagination--virtual"
-			>
-				<span class="cw-data-table__page-info">
-					{#if totalKnown}
-						{l.virtualRange(rangeStart, rangeEnd, total)}
-					{:else}
-						{l.virtualRangeLoaded(rangeStart, rangeEnd)}
-					{/if}
-				</span>
-				<span class="cw-data-table__virtual-meta">
-					{#if appendError}
-						{l.loadInterrupted}
-					{:else if hasMoreRows}
-						{l.scrollToLoadMore}
-					{:else if totalKnown}
-						{l.allRowsLoaded(total)}
-					{:else}
-						{l.allLoadedVisible}
-					{/if}
-				</span>
+	{:else if !loading && !virtualScroll && totalPages > 1}
+		<div class="cw-data-table__pagination">
+			<span class="cw-data-table__page-info">
+				{l.paginationRange(rangeStart, rangeEnd, total)}
+			</span>
+			<div class="cw-data-table__page-controls">
+				<CwButton
+					variant="secondary"
+					size="sm"
+					disabled={page <= 1}
+					onclick={handlePreviousPage}
+					aria-label={l.previousPage}
+				>
+					<svg class="cw-data-table__page-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						<path
+							d="M10 4l-4 4 4 4"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/>
+					</svg>
+				</CwButton>
+				<span class="cw-data-table__page-num">{l.pageOf(page, totalPages)}</span>
+				<CwButton
+					variant="secondary"
+					size="sm"
+					disabled={page >= totalPages}
+					onclick={handleNextPage}
+					aria-label={l.nextPage}
+				>
+					<svg class="cw-data-table__page-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						<path
+							d="M6 4l4 4-4 4"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/>
+					</svg>
+				</CwButton>
 			</div>
-		{:else if !virtualScroll && totalPages > 1}
-			<div class="cw-data-table__pagination">
-				<span class="cw-data-table__page-info">
-					{l.paginationRange(rangeStart, rangeEnd, total)}
-				</span>
-				<div class="cw-data-table__page-controls">
-					<CwButton
-						variant="secondary"
-						size="sm"
-						disabled={page <= 1}
-						onclick={handlePreviousPage}
-						aria-label={l.previousPage}
-					>
-						<svg
-							viewBox="0 0 16 16"
-							fill="none"
-							aria-hidden="true"
-							style="width:1rem;height:1rem"
-						>
-							<path
-								d="M10 4l-4 4 4 4"
-								stroke="currentColor"
-								stroke-width="1.5"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							/>
-						</svg>
-					</CwButton>
-					<span class="cw-data-table__page-num"
-						>{l.pageOf(page, totalPages)}</span
-					>
-					<CwButton
-						variant="secondary"
-						size="sm"
-						disabled={page >= totalPages}
-						onclick={handleNextPage}
-						aria-label={l.nextPage}
-					>
-						<svg
-							viewBox="0 0 16 16"
-							fill="none"
-							aria-hidden="true"
-							style="width:1rem;height:1rem"
-						>
-							<path
-								d="M6 4l4 4-4 4"
-								stroke="currentColor"
-								stroke-width="1.5"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							/>
-						</svg>
-					</CwButton>
-				</div>
-			</div>
-		{/if}
+		</div>
+	{/if}
 
-		{#if !virtualScroll && loadingState && rows.length > 0}
-			<div class="cw-data-table__overlay" aria-hidden="true"></div>
-		{/if}
+	{#if !loading && !virtualScroll && loadingState && rows.length > 0}
+		<div class="cw-data-table__overlay" aria-hidden="true"></div>
 	{/if}
 
 	<CwDialog
@@ -1585,21 +1693,15 @@
 								onchange={() =>
 									toggleDraftColumnVisibility(col.key)}
 							/>
-							<span class="cw-data-table__column-settings-labels">
-								<span
-									class="cw-data-table__column-settings-name"
-									>{col.header}</span
-								>
-								<span class="cw-data-table__column-settings-key"
-									>{col.key}</span
-								>
-							</span>
+							<span class="cw-data-table__column-settings-name"
+								>{col.header}</span
+							>
 						</label>
 					{/each}
 				</div>
 
 				{#if !canSaveColumnSettings}
-					<p class="cw-data-table__column-settings-warning">
+					<p class="cw-data-table__column-settings-warning" role="status">
 						{l.selectAtLeastOne}
 					</p>
 				{/if}
@@ -1638,37 +1740,22 @@
 <style>
 	.cw-data-table {
 		--cw-datatable-mobile-label-width: 5.5rem;
+		--cw-datatable-cell-py: var(--cw-space-3);
+		--cw-datatable-cell-px: var(--cw-space-4);
 		container-type: inline-size;
 		position: relative;
 		display: flex;
 		flex-direction: column;
-		background: --cw-bg-surface-elevated;
-		/* 	linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-bg-surface-elevated) 82%, var(--cw-accent) 4%) 0%,
-				var(--cw-bg-surface) 7rem
-			); */
-		border: 1px solid
-			color-mix(
-				in srgb,
-				var(--cw-border-default) 84%,
-				var(--cw-accent) 16%
-			);
-		border-radius: calc(var(--cw-radius-xl) + 2px);
-		box-shadow:
-			0 1px 0 color-mix(in srgb, var(--cw-text-primary) 6%, transparent),
-			0 18px 32px -26px color-mix(in srgb, var(--cw-bg-overlay) 70%, transparent),
-			0 22px 44px -34px color-mix(in srgb, var(--cw-accent) 34%, transparent);
+		background: var(--cw-bg-surface);
+		border: 1px solid var(--cw-border-default);
+		border-radius: var(--cw-card-radius);
+		box-shadow: var(--cw-shadow-sm);
 		overflow: visible;
 	}
 
-	.cw-data-table::before {
-		content: "";
-		position: absolute;
-		inset: 0 0 auto;
-		height: 1px;
-		pointer-events: none;
-		z-index: 1;
+	.cw-data-table--compact {
+		--cw-datatable-cell-py: var(--cw-space-2);
+		--cw-datatable-cell-px: var(--cw-space-3);
 	}
 
 	.cw-data-table--fill-parent {
@@ -1677,45 +1764,19 @@
 		min-height: 0;
 	}
 
-	.cw-data-table__loading-container {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: var(--cw-space-10) var(--cw-space-4);
-		min-height: 14rem;
+	.cw-data-table__sr-status {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
+		border: 0;
 	}
 
-	.cw-data-table--fill-parent .cw-data-table__loading-container {
-		flex: 1 1 auto;
-		min-height: 0;
-	}
-
-	.cw-data-table__loading-badge {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--cw-space-2);
-		padding: var(--cw-space-2) var(--cw-space-4);
-		border-radius: var(--cw-radius-pill);
-		border: 1px solid
-			color-mix(
-				in srgb,
-				var(--cw-border-default) 72%,
-				var(--cw-accent) 28%
-			);
-		background: color-mix(
-			in srgb,
-			var(--cw-bg-muted) 86%,
-			var(--cw-accent) 14%
-		);
-		color: var(--cw-text-secondary);
-		font-size: var(--cw-text-sm);
-		font-weight: var(--cw-font-medium);
-	}
-
-	.cw-data-table__loading-badge svg {
-		width: 1rem;
-		height: 1rem;
-	}
+	/* ── Toolbar ─────────────────────────────────────────── */
 
 	.cw-data-table__toolbar {
 		display: flex;
@@ -1723,9 +1784,8 @@
 		gap: var(--cw-space-3);
 		padding: var(--cw-space-3) var(--cw-space-4);
 		background-color: var(--cw-bg-surface);
-		border-bottom: 1px solid
-			color-mix(in srgb, var(--cw-border-muted) 78%, var(--cw-accent) 22%);
-		box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--cw-text-primary) 4%, transparent);
+		border-bottom: 1px solid var(--cw-border-muted);
+		border-radius: var(--cw-card-radius) var(--cw-card-radius) 0 0;
 	}
 
 	.cw-data-table__search-wrapper {
@@ -1769,15 +1829,9 @@
 		flex-shrink: 0;
 	}
 
-	.cw-data-table__toolbar-menu-backdrop {
-		position: fixed;
-		inset: 0;
-		z-index: var(--cw-z-dropdown);
-	}
-
-	.cw-data-table__toolbar-menu-button {
-		min-width: 2rem;
-		padding-inline: var(--cw-space-2);
+	.cw-data-table__toolbar-menu :global(.cw-data-table__toolbar-menu-button) {
+		min-width: var(--cw-control-h-sm);
+		padding-inline: 0;
 	}
 
 	.cw-data-table__toolbar-menu-icon {
@@ -1798,24 +1852,20 @@
 		position: absolute;
 		top: calc(100% + var(--cw-space-1));
 		right: 0;
-		z-index: calc(var(--cw-z-dropdown) + 1);
+		z-index: var(--cw-z-popover);
 		min-width: 12rem;
 		padding: var(--cw-space-1);
-		background: var(--cw-bg-surface);
-		border: 1px solid
-			color-mix(
-				in srgb,
-				var(--cw-border-default) 74%,
-				var(--cw-accent) 26%
-			);
-		border-radius: var(--cw-radius-lg);
-		box-shadow: var(--cw-shadow-lg);
+		background: var(--cw-popover-bg);
+		border: 1px solid var(--cw-popover-border);
+		border-radius: var(--cw-popover-radius);
+		box-shadow: var(--cw-elevation-popover);
 	}
 
 	.cw-data-table__toolbar-menu-item {
 		display: flex;
 		align-items: center;
 		width: 100%;
+		min-height: var(--cw-option-min-h);
 		padding: var(--cw-space-2) var(--cw-space-3);
 		background: none;
 		border: none;
@@ -1825,24 +1875,19 @@
 		color: var(--cw-text-primary);
 		cursor: pointer;
 		text-align: left;
-		transition:
-			background-color var(--cw-duration-fast) var(--cw-ease-default),
-			color var(--cw-duration-fast) var(--cw-ease-default);
+		transition: background-color var(--cw-duration-fast) var(--cw-ease-default);
 	}
 
-	.cw-data-table__toolbar-menu-item:hover {
-		background-color: color-mix(
-			in srgb,
-			var(--cw-accent) 12%,
-			var(--cw-bg-muted)
-		);
+	.cw-data-table__toolbar-menu-item:hover,
+	.cw-data-table__toolbar-menu-item:focus-visible {
+		background-color: var(--cw-option-hover-bg);
 	}
 
 	.cw-data-table__toolbar-menu-item:focus-visible {
-		outline: none;
-		box-shadow: inset 0 0 0 2px
-			color-mix(in srgb, var(--cw-focus-ring-color) 40%, transparent);
+		outline-offset: -2px;
 	}
+
+	/* ── Column settings dialog ─────────────────────────── */
 
 	.cw-data-table__column-settings-dialog {
 		display: grid;
@@ -1865,21 +1910,13 @@
 
 	.cw-data-table__column-settings-item {
 		display: flex;
-		align-items: flex-start;
+		align-items: center;
 		gap: var(--cw-space-3);
-		padding: var(--cw-space-3);
-		border: 1px solid
-			color-mix(
-				in srgb,
-				var(--cw-border-default) 72%,
-				var(--cw-accent) 28%
-			);
+		min-height: var(--cw-control-h-md);
+		padding: var(--cw-space-2) var(--cw-space-3);
+		border: 1px solid var(--cw-border-default);
 		border-radius: var(--cw-radius-lg);
-		background: color-mix(
-			in srgb,
-			var(--cw-bg-surface-elevated) 86%,
-			var(--cw-accent) 14%
-		);
+		background: var(--cw-control-bg);
 		cursor: pointer;
 		transition:
 			border-color var(--cw-duration-fast) var(--cw-ease-default),
@@ -1887,40 +1924,22 @@
 	}
 
 	.cw-data-table__column-settings-item:hover {
-		border-color: color-mix(
-			in srgb,
-			var(--cw-border-default) 58%,
-			var(--cw-accent) 42%
-		);
-		background: color-mix(
-			in srgb,
-			var(--cw-bg-surface-elevated) 78%,
-			var(--cw-accent) 22%
-		);
+		border-color: var(--cw-control-border-hover);
+		background: var(--cw-option-hover-bg);
 	}
 
 	.cw-data-table__column-settings-checkbox {
-		margin-top: 0.15rem;
 		flex-shrink: 0;
+		width: 1rem;
+		height: 1rem;
 		accent-color: var(--cw-accent);
 	}
 
-	.cw-data-table__column-settings-labels {
-		display: grid;
-		gap: 0.125rem;
-		min-width: 0;
-	}
-
 	.cw-data-table__column-settings-name {
+		min-width: 0;
 		font-size: var(--cw-text-sm);
 		font-weight: var(--cw-font-medium);
 		color: var(--cw-text-primary);
-	}
-
-	.cw-data-table__column-settings-key {
-		font-family: var(--cw-font-mono);
-		font-size: var(--cw-text-xs);
-		color: var(--cw-text-muted);
 	}
 
 	.cw-data-table__column-settings-warning {
@@ -1929,19 +1948,16 @@
 		font-size: var(--cw-text-xs);
 	}
 
+	/* ── Scroll region / table ───────────────────────────── */
+
 	.cw-data-table__scroll {
-		border-radius: 0 0 var(--cw-radius-lg) var(--cw-radius-lg);
+		border-radius: 0 0 var(--cw-card-radius) var(--cw-card-radius);
 		overflow-x: auto;
 		overflow-y: hidden;
-		/* background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-bg-surface) 96%, var(--cw-accent) 4%) 0%,
-				var(--cw-bg-surface) 3.5rem
-			); */
 	}
 
 	.cw-data-table__scroll--virtual,
+	.cw-data-table__scroll--capped,
 	.cw-data-table--fill-parent .cw-data-table__scroll {
 		flex: 1 1 auto;
 		min-height: 0;
@@ -1961,141 +1977,100 @@
 		position: sticky;
 		top: 0;
 		z-index: 2;
-		padding: var(--cw-space-3) var(--cw-space-4);
+		padding: var(--cw-datatable-cell-py) var(--cw-datatable-cell-px);
+		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-semibold);
-		color: color-mix(
-			in srgb,
-			var(--cw-text-secondary) 88%,
-			var(--cw-accent) 12%
-		);
-		background-color: var(--cw-bg-surface);
-		/* background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-bg-muted) 76%, var(--cw-bg-surface-elevated)) 0%,
-				color-mix(in srgb, var(--cw-bg-elevated) 82%, var(--cw-bg-surface)) 100%
-			); */
-		border-bottom: 1px solid
-			color-mix(
-				in srgb,
-				var(--cw-border-default) 80%,
-				var(--cw-accent) 20%
-			);
-		box-shadow:
-			inset 0 1px 0
-				color-mix(in srgb, var(--cw-text-inverse) 4%, transparent),
-			inset 0 -1px 0 color-mix(in srgb, var(--cw-text-primary) 4%, transparent);
-		text-align: left;
-		white-space: nowrap;
-		font-size: var(--cw-text-md);
+		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		letter-spacing: 0.08em;
+		white-space: nowrap;
+		color: var(--cw-text-secondary);
+		background-color: var(--cw-bg-surface);
+		border-bottom: 1px solid var(--cw-border-default);
 	}
 
 	.cw-data-table__th--sorted {
-		color: color-mix(
-			in srgb,
-			var(--cw-text-primary) 86%,
-			var(--cw-accent) 14%
-		);
-		/* background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-accent) 18%, var(--cw-bg-muted)) 0%,
-				color-mix(in srgb, var(--cw-accent) 12%, var(--cw-bg-surface-elevated)) 100%
-			); */
-	}
-
-	.cw-data-table__th--sortable {
-		cursor: pointer;
-		user-select: none;
+		color: var(--cw-text-primary);
 	}
 
 	.cw-data-table__sort-btn {
 		display: inline-flex;
 		align-items: center;
-		text-align: center;
 		justify-content: center;
-		gap: var(--cw-space-3);
+		gap: var(--cw-space-1);
 		width: 100%;
+		min-height: var(--cw-hit-target-min);
+		padding: var(--cw-space-1) var(--cw-space-2);
+		margin: calc(var(--cw-space-1) * -1) calc(var(--cw-space-2) * -1);
 		background: none;
 		border: none;
+		border-radius: var(--cw-radius-md);
 		color: inherit;
 		font: inherit;
 		text-transform: inherit;
 		letter-spacing: inherit;
 		cursor: pointer;
-		padding: var(--cw-space-1) var(--cw-space-2);
-		margin: calc(var(--cw-space-1) * -1) calc(var(--cw-space-2) * -1);
-		border-radius: var(--cw-radius-md);
-		transition:
-			background-color var(--cw-duration-fast) var(--cw-ease-default),
-			color var(--cw-duration-fast) var(--cw-ease-default),
-			box-shadow var(--cw-duration-fast) var(--cw-ease-default);
+		transition: background-color var(--cw-duration-fast) var(--cw-ease-default);
+	}
+
+	.cw-data-table__sort-btn--left {
+		justify-content: flex-start;
+	}
+
+	.cw-data-table__sort-btn--right {
+		justify-content: flex-end;
 	}
 
 	.cw-data-table__sort-btn:hover {
-		background-color: color-mix(in srgb, var(--cw-accent) 10%, transparent);
-	}
-
-	.cw-data-table__sort-btn:focus-visible {
-		outline: none;
-		box-shadow: 0 0 0 2px
-			color-mix(in srgb, var(--cw-focus-ring-color) 32%, transparent);
+		background-color: var(--cw-option-hover-bg);
 	}
 
 	.cw-data-table__sort-icon {
-		font-size: 0.75em;
-		opacity: 0.6;
-		color: color-mix(in srgb, currentColor 84%, var(--cw-accent) 16%);
-		transition:
-			opacity var(--cw-duration-fast) var(--cw-ease-default),
-			color var(--cw-duration-fast) var(--cw-ease-default),
-			transform var(--cw-duration-fast) var(--cw-ease-default);
-	}
-
-	.cw-data-table__sort-btn:hover .cw-data-table__sort-icon {
-		opacity: 0.85;
-		transform: translateY(-1px);
+		flex-shrink: 0;
+		width: 0.875rem;
+		height: 0.875rem;
+		color: var(--cw-text-muted);
 	}
 
 	.cw-data-table__th--sorted .cw-data-table__sort-icon {
-		opacity: 1;
-		color: var(--cw-accent);
+		color: var(--cw-accent-text);
 	}
 
 	.cw-data-table__td {
-		padding: var(--cw-space-3) var(--cw-space-4);
+		padding: var(--cw-datatable-cell-py) var(--cw-datatable-cell-px);
 		color: var(--cw-datatable-row-text);
-		border-bottom: 1px solid
-			color-mix(in srgb, var(--cw-border-muted) 72%, transparent);
+		border-bottom: 1px solid var(--cw-border-muted);
 		vertical-align: middle;
-		filter: none;
 		background-color: transparent;
-		/* transition:
-			background-color var(--cw-duration-fast) var(--cw-ease-default),
-			border-color var(--cw-duration-fast) var(--cw-ease-default),
-			color var(--cw-duration-fast) var(--cw-ease-default),
-			filter var(--cw-duration-fast) var(--cw-ease-default),
-			box-shadow var(--cw-duration-fast) var(--cw-ease-default); */
+		font-variant-numeric: tabular-nums;
+	}
+
+	.cw-data-table__td--numeric {
+		white-space: nowrap;
+	}
+
+	.cw-data-table__td--truncate {
+		overflow: hidden;
+	}
+
+	.cw-data-table__truncate {
+		display: block;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.cw-data-table__td--sorted {
-		background-color: color-mix(in srgb, var(--cw-accent) 7%, transparent);
+		background-color: color-mix(in srgb, var(--cw-accent) 6%, transparent);
 	}
+
+	/* ── Rows ────────────────────────────────────────────── */
 
 	.cw-data-table__row {
 		color: var(--cw-datatable-row-text);
-		outline: 1px solid transparent;
-		outline-offset: -1px;
-		transition:
-			background-color var(--cw-duration-fast) var(--cw-ease-default),
-			outline-color var(--cw-duration-fast) var(--cw-ease-default),
-			box-shadow var(--cw-duration-fast) var(--cw-ease-default);
+		transition: background-color var(--cw-duration-fast) var(--cw-ease-default);
 	}
 
 	.cw-data-table__row--even {
-		/* background-color: var(--cw-datatable-row-bg-alt); */
 		background-color: color-mix(
 			in srgb,
 			var(--cw-bg-surface) 80%,
@@ -2103,70 +2078,108 @@
 		);
 	}
 
-	.cw-data-table__row:hover,
-	.cw-data-table__row:focus-visible {
-		outline-color: color-mix(in srgb, var(--cw-accent) 26%, transparent);
-		box-shadow: 0 12px 20px -24px color-mix(in srgb, var(--cw-accent) 56%, transparent);
+	.cw-data-table__row--clickable {
+		cursor: pointer;
 	}
 
-	.cw-data-table__row:hover > .cw-data-table__td,
-	.cw-data-table__row:focus-visible > .cw-data-table__td {
-		background-color: color-mix(
-			in srgb,
-			var(--cw-accent) 10%,
-			var(--cw-datatable-row-bg-hover)
-		);
-		border-bottom-color: color-mix(
-			in srgb,
-			var(--cw-border-default) 64%,
-			var(--cw-accent) 36%
-		);
+	.cw-data-table__row--clickable:focus-visible {
+		outline-offset: calc(var(--cw-focus-ring-width) * -1);
 	}
 
-	.cw-data-table__row--even:hover > .cw-data-table__td,
-	.cw-data-table__row--even:focus-visible > .cw-data-table__td {
-		background-color: color-mix(
-			in srgb,
-			var(--cw-accent) 10%,
-			var(--cw-datatable-row-bg-alt-hover)
-		);
+	.cw-data-table__row--clickable:hover > .cw-data-table__td,
+	.cw-data-table__row--clickable:focus-visible > .cw-data-table__td {
+		background-color: var(--cw-datatable-row-bg-hover);
 	}
 
-	.cw-data-table__row:hover > .cw-data-table__td:first-child,
-	.cw-data-table__row:focus-visible > .cw-data-table__td:first-child {
-		box-shadow: inset 3px 0 0
-			color-mix(in srgb, var(--cw-accent) 76%, transparent);
+	.cw-data-table__row--clickable.cw-data-table__row--even:hover > .cw-data-table__td,
+	.cw-data-table__row--clickable.cw-data-table__row--even:focus-visible > .cw-data-table__td {
+		background-color: var(--cw-datatable-row-bg-alt-hover);
 	}
 
-	.cw-data-table__row--loading,
-	.cw-data-table__row--loading.cw-data-table__row--even,
-	.cw-data-table__row--loading:hover,
-	.cw-data-table__row--loading.cw-data-table__row--even:hover {
-		background-color: var(--cw-warning-700);
-		outline-color: transparent;
-		box-shadow: none;
-	}
-
-	.cw-data-table__row--loading .cw-data-table__td {
-		filter: blur(1.75px);
-		opacity: 0.75;
-		color: var(--cw-text-primary);
+	.cw-data-table__row--clickable:hover > .cw-data-table__td:first-child {
+		box-shadow: inset 3px 0 0 var(--cw-accent);
 	}
 
 	.cw-data-table__row:last-child .cw-data-table__td {
 		border-bottom: none;
 	}
 
+	/* Row being refreshed (row.cwloading === true): dim contents + shimmer. */
+	.cw-data-table__row--loading > .cw-data-table__td {
+		position: relative;
+		color: var(--cw-text-muted);
+		background-color: var(--cw-bg-muted);
+	}
+
+	.cw-data-table__row--loading > .cw-data-table__td::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background: linear-gradient(
+			90deg,
+			transparent 0%,
+			color-mix(in srgb, var(--cw-text-primary) 7%, transparent) 50%,
+			transparent 100%
+		);
+		background-size: 200% 100%;
+		animation: cw-data-table-shimmer 1.4s linear infinite;
+	}
+
+	/* ── Skeleton (initial / `loading`) ─────────────────── */
+
+	.cw-data-table__row--skeleton > .cw-data-table__td {
+		border-bottom-color: var(--cw-border-muted);
+	}
+
+	.cw-data-table__skeleton {
+		display: inline-block;
+		height: 0.75rem;
+		max-width: 100%;
+		border-radius: var(--cw-radius-sm);
+		vertical-align: middle;
+		background: linear-gradient(
+			90deg,
+			var(--cw-bg-muted) 0%,
+			color-mix(in srgb, var(--cw-bg-muted) 70%, var(--cw-text-muted)) 50%,
+			var(--cw-bg-muted) 100%
+		);
+		background-size: 200% 100%;
+		animation: cw-data-table-shimmer 1.4s linear infinite;
+	}
+
+	.cw-data-table__skeleton--action {
+		width: 4rem;
+	}
+
+	@keyframes cw-data-table-shimmer {
+		from {
+			background-position: 100% 0;
+		}
+		to {
+			background-position: -100% 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.cw-data-table__skeleton,
+		.cw-data-table__row--loading > .cw-data-table__td::after {
+			animation: none;
+		}
+	}
+
+	/* ── Groups ──────────────────────────────────────────── */
+
 	.cw-data-table__group-cell {
 		position: relative;
+		padding: var(--cw-space-2) var(--cw-datatable-cell-px);
 		background-color: var(--cw-header-bg);
-		padding: var(--cw-space-3) var(--cw-space-4);
 		border-bottom: 1px solid var(--cw-border-default);
+		text-align: center;
 	}
 
 	.cw-data-table__group-heading {
 		display: flex;
-		flex-direction: row;
 		align-items: center;
 		justify-content: center;
 		width: 100%;
@@ -2179,29 +2192,22 @@
 		font-weight: var(--cw-font-semibold);
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		/* color: color-mix(
-			in srgb,
-			var(--cw-text-primary) 88%,
-			var(--cw-accent) 12%
-		); */
-		color: white;
+		color: var(--cw-header-fg);
 	}
 
 	.cw-data-table__group-count {
 		position: absolute;
-		right: var(--cw-space-4);
-		font-size: 0.6875rem;
-		font-weight: var(--cw-font-medium);
-		color: var(--cw-text-muted);
-		background: color-mix(in srgb, var(--cw-accent) 10%, var(--cw-bg-muted));
+		right: var(--cw-datatable-cell-px);
 		padding: var(--cw-space-1) var(--cw-space-2);
-		border-radius: var(--cw-radius-pill);
+		border-radius: var(--cw-radius-full);
+		font-size: var(--cw-text-xs);
+		font-weight: var(--cw-font-medium);
 		line-height: 1;
+		color: var(--cw-header-fg);
+		background: color-mix(in srgb, var(--cw-header-fg) 16%, transparent);
 	}
 
-	.cw-data-table__row--clickable {
-		cursor: pointer;
-	}
+	/* ── Actions column ─────────────────────────────────── */
 
 	.cw-data-table__th--actions,
 	.cw-data-table__td--actions {
@@ -2219,41 +2225,49 @@
 		flex-wrap: wrap;
 	}
 
+	/* ── Empty / error states ───────────────────────────── */
+
 	.cw-data-table__status {
 		padding: var(--cw-space-12) var(--cw-space-4);
 		text-align: center;
 		color: var(--cw-text-muted);
-		/* background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-bg-surface-elevated) 84%, var(--cw-accent) 16%),
-				var(--cw-bg-surface)
-			); */
 	}
 
-	.cw-data-table__loading {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: var(--cw-space-2);
-	}
-
-	.cw-data-table__loading svg {
-		width: 1.25rem;
-		height: 1.25rem;
-	}
-
-	.cw-data-table__error {
+	.cw-data-table__state {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: var(--cw-space-3);
+		gap: var(--cw-space-2);
+		max-width: 28rem;
+		margin-inline: auto;
+	}
+
+	.cw-data-table__state-icon {
+		width: 2rem;
+		height: 2rem;
+		margin-bottom: var(--cw-space-1);
+		color: var(--cw-text-muted);
+	}
+
+	.cw-data-table__state--error .cw-data-table__state-icon {
 		color: var(--cw-tone-danger-text);
 	}
 
-	.cw-data-table__empty {
+	.cw-data-table__state-title {
 		margin: 0;
+		font-size: var(--cw-text-base);
+		font-weight: var(--cw-font-semibold);
+		color: var(--cw-text-primary);
 	}
+
+	.cw-data-table__state-body {
+		margin: 0 0 var(--cw-space-2);
+		font-size: var(--cw-text-sm);
+		color: var(--cw-text-muted);
+		overflow-wrap: anywhere;
+	}
+
+	/* ── Virtual scroll helpers ─────────────────────────── */
 
 	.cw-data-table__spacer-row {
 		pointer-events: none;
@@ -2280,6 +2294,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: var(--cw-space-2);
+		font-size: var(--cw-text-sm);
 		color: var(--cw-text-secondary);
 	}
 
@@ -2287,17 +2302,20 @@
 		color: var(--cw-tone-danger-text);
 	}
 
+	/* ── Pagination ─────────────────────────────────────── */
+
 	.cw-data-table__pagination {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		gap: var(--cw-space-3);
 		padding: var(--cw-space-3) var(--cw-space-4);
 		background-color: var(--cw-bg-surface);
-		border-top: 1px solid
-			color-mix(in srgb, var(--cw-border-muted) 76%, var(--cw-accent) 24%);
+		border-top: 1px solid var(--cw-border-muted);
+		border-radius: 0 0 var(--cw-card-radius) var(--cw-card-radius);
 		font-size: var(--cw-text-sm);
 		color: var(--cw-text-secondary);
-		gap: var(--cw-space-3);
+		font-variant-numeric: tabular-nums;
 	}
 
 	.cw-data-table__pagination--virtual {
@@ -2315,6 +2333,11 @@
 		gap: var(--cw-space-2);
 	}
 
+	.cw-data-table__page-icon {
+		width: 1rem;
+		height: 1rem;
+	}
+
 	.cw-data-table__page-num {
 		font-variant-numeric: tabular-nums;
 	}
@@ -2322,13 +2345,12 @@
 	.cw-data-table__overlay {
 		position: absolute;
 		inset: 0;
-		background-color: color-mix(
-			in srgb,
-			var(--cw-bg-surface) 60%,
-			transparent
-		);
 		z-index: 1;
+		border-radius: inherit;
+		background-color: color-mix(in srgb, var(--cw-bg-surface) 60%, transparent);
 	}
+
+	/* ── Responsive ─────────────────────────────────────── */
 
 	@container (max-width: 640px) {
 		.cw-data-table__th--hide-sm,
@@ -2379,10 +2401,6 @@
 		.cw-data-table__toolbar-end,
 		.cw-data-table__pagination {
 			width: 100%;
-		}
-
-		.cw-data-table__toolbar-end,
-		.cw-data-table__pagination {
 			flex-direction: column;
 			align-items: stretch;
 		}
@@ -2404,7 +2422,6 @@
 			left: auto;
 			right: 0;
 			min-width: min(100%, 12rem);
-			background: var(--cw-bg-surface);
 		}
 
 		.cw-data-table__mobile-sort {
@@ -2413,6 +2430,7 @@
 
 		.cw-data-table__scroll {
 			overflow-x: hidden;
+			padding-top: var(--cw-space-2);
 		}
 
 		.cw-data-table__table thead {
@@ -2431,33 +2449,38 @@
 		.cw-data-table__row {
 			display: block;
 			margin: 0 var(--cw-space-2) var(--cw-space-2);
-			border: 1px solid
-				color-mix(
-					in srgb,
-					var(--cw-border-default) 76%,
-					var(--cw-accent) 24%
-				);
+			border: 1px solid var(--cw-border-default);
 			border-radius: var(--cw-radius-lg);
 			overflow: hidden;
-			box-shadow: 0 10px 18px -20px color-mix(in srgb, var(--cw-accent)
-						46%, transparent);
+			box-shadow: var(--cw-shadow-sm);
+		}
+
+		.cw-data-table__row:last-child .cw-data-table__td {
+			border-bottom: 1px solid var(--cw-border-muted);
+		}
+
+		.cw-data-table__row > .cw-data-table__td:last-child {
+			border-bottom: none;
 		}
 
 		.cw-data-table__group-row {
 			display: block;
 			margin: 0 var(--cw-space-2) var(--cw-space-2);
+			border-radius: var(--cw-radius-lg);
 			overflow: hidden;
 		}
-		
+
 		.cw-data-table__group-cell {
 			display: block;
 			padding: var(--cw-space-2) var(--cw-space-3);
 		}
-		
+
 		.cw-data-table__group-heading {
-			align-items: flex-start;
-			flex-direction: column;
-			gap: 0.125rem;
+			justify-content: space-between;
+		}
+
+		.cw-data-table__group-count {
+			position: static;
 		}
 
 		.cw-data-table__row > .cw-data-table__td {
@@ -2467,11 +2490,16 @@
 				minmax(0, 1fr);
 			gap: var(--cw-space-2);
 			align-items: start;
+			max-width: none;
 			padding: var(--cw-space-2) var(--cw-space-3);
 			text-align: left !important;
 			white-space: normal;
 			word-break: break-word;
 			overflow-wrap: anywhere;
+		}
+
+		.cw-data-table__row--skeleton > .cw-data-table__td {
+			grid-template-columns: minmax(0, 1fr);
 		}
 
 		.cw-data-table__row > .cw-data-table__td:first-child {
@@ -2481,11 +2509,15 @@
 		.cw-data-table__row > .cw-data-table__td::before {
 			content: attr(data-label);
 			color: var(--cw-text-muted);
-			font-size: 0.6875rem;
+			font-size: var(--cw-text-xs);
 			font-weight: var(--cw-font-semibold);
 			line-height: 1.3;
 			letter-spacing: 0.04em;
 			text-transform: uppercase;
+		}
+
+		.cw-data-table__row--skeleton > .cw-data-table__td::before {
+			content: none;
 		}
 
 		.cw-data-table__row > .cw-data-table__td--actions {

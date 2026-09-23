@@ -26,6 +26,8 @@
 	} from '../_data/cwSensorCardDemoData';
 
 	let demoStatus = $state<CwStatusDotStatus>('online');
+	// Three hours ago — older than the 30-minute expiry used in the stale example.
+	const staleLastSeen = new Date(Date.now() - 3 * 60 * 60 * 1000);
 	let navigateTarget = $state('');
 	let panelEvent = $state('');
 	let expireEvent = $state('');
@@ -88,12 +90,12 @@
 	}
 </script>
 
-<h2>CwLocationCard / CwSensorCard / CwDataList</h2>
+<h2>CwSensorCard</h2>
 <p class="demo-desc">
-	The sensor-card API is now composition-first: <code>CwLocationCard</code> owns the location
+	Sensor cards are built by composition, from three components: <code>CwLocationCard</code> owns the location
 	shell, <code>CwSensorCard</code> owns a single expandable sensor panel, and
-	<code>CwDataList</code> renders the detail rows. No <code>devices</code> prop, no internal
-	cloned arrays, and the nested cards stay reactive when the parent updates their props.
+	<code>CwDataList</code> renders the detail rows. Nested cards stay reactive when the parent
+	updates their props, and the location header rolls up the status of every sensor inside it.
 </p>
 
 <section class="demo-section">
@@ -236,9 +238,9 @@
 	</div>
 </section>
 
-<section class="demo-section">
+<section class="demo-section" id="data-list">
 	<div class="demo-section__copy">
-		<span class="demo-label">Shared list</span>
+		<span class="demo-label">CwDataList</span>
 		<h3>The extracted detail-list component</h3>
 		<p class="demo-hint">
 			Use <code>CwDataList</code> for the standard sensor detail rows inside an expanded
@@ -253,9 +255,9 @@
 	</div>
 </section>
 
-<section class="demo-section">
+<section class="demo-section" id="location-card">
 	<div class="demo-section__copy">
-		<span class="demo-label">Aggregate status</span>
+		<span class="demo-label">CwLocationCard · aggregate status</span>
 		<h3>Nested sensor panels roll up to the location header</h3>
 		<p class="demo-hint">
 			The location shell now derives its own header status from the sensor cards rendered
@@ -383,6 +385,53 @@
 	</div>
 </section>
 
+<section class="demo-section">
+	<div class="demo-section__copy">
+		<span class="demo-label">States &amp; localisation</span>
+		<h3>Loading, stale readings and translated labels</h3>
+		<p class="demo-hint">
+			<code>loading</code> shows skeleton readings. When <code>lastSeenAt</code> is older than
+			<code>expireAfterMinutes</code>, the readings dim and a “Last seen … ago” line appears.
+			Every visible string can be replaced through <code>labels</code>.
+		</p>
+	</div>
+
+	<div class="demo-grid">
+		<CwLocationCard title="Loading">
+			<CwSensorCard label="CW-AIR-001" loading primaryUnit="°C" secondaryUnit="%" />
+		</CwLocationCard>
+
+		<CwLocationCard title="Stale reading">
+			<CwSensorCard
+				label="CW-AIR-002"
+				status="online"
+				primaryValue={21.4}
+				primaryUnit="°C"
+				secondaryValue={63}
+				secondaryUnit="%"
+				lastSeenAt={staleLastSeen}
+				expireAfterMinutes={30}
+			/>
+		</CwLocationCard>
+
+		<CwLocationCard
+			title="温室 B"
+			status="warning"
+			labels={{ online: 'オンライン', offline: 'オフライン', warning: '警告', loading: '読み込み中', viewLocation: '場所を表示' }}
+		>
+			<CwSensorCard
+				label="CW-AIR-003"
+				status="warning"
+				primaryValue={null}
+				primaryUnit="°C"
+				secondaryValue={71}
+				secondaryUnit="%"
+				labels={{ details: '詳細', noDetails: '詳細データはまだありません。', noValue: '—', lastSeen: '最終受信', ago: '前' }}
+			/>
+		</CwLocationCard>
+	</div>
+</section>
+
 <DemoCodeExample code={sensorCardSingleDeviceExample} title="Single sensor inside a location card" />
 <DemoCodeExample
 	code={sensorCardFreshnessExample}
@@ -393,68 +442,11 @@
 <DemoCodeExample code={sensorCardCustomRowsExample} title="Custom rows for specialized sensors" />
 
 <style>
-	h2 {
-		font-size: var(--cw-text-xl);
-		font-weight: var(--cw-font-bold);
-		margin-bottom: var(--cw-space-2);
-	}
-
-	h3 {
-		margin: 0;
-		font-size: var(--cw-text-base);
-		font-weight: var(--cw-font-semibold);
-		color: var(--cw-text-primary);
-	}
-
-	.demo-desc {
-		margin-bottom: var(--cw-space-5);
-		font-size: var(--cw-text-sm);
-		color: var(--cw-text-muted);
-		line-height: 1.65;
-		max-width: 72ch;
-	}
-
-	.demo-section {
-		display: grid;
-		gap: var(--cw-space-4);
-		margin-bottom: var(--cw-space-6);
-		padding: var(--cw-space-4);
-		border: 1px solid var(--cw-border-muted);
-		border-radius: var(--cw-radius-lg);
-		background: var(--cw-bg-elevated);
-	}
 
 	.demo-section__copy {
 		display: grid;
 		gap: var(--cw-space-2);
 		max-width: 72ch;
-	}
-
-	.demo-label {
-		display: inline-flex;
-		align-items: center;
-		width: fit-content;
-		padding: 0.15rem 0.5rem;
-		border-radius: var(--cw-radius-full);
-		background: var(--cw-bg-muted);
-		color: var(--cw-text-muted);
-		font-size: 0.72rem;
-		font-weight: var(--cw-font-semibold);
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-	}
-
-	.demo-hint {
-		margin: 0;
-		font-size: var(--cw-text-sm);
-		color: var(--cw-text-secondary);
-		line-height: 1.65;
-	}
-
-	.demo-event {
-		margin: 0;
-		font-size: var(--cw-text-xs);
-		color: var(--cw-text-secondary);
 	}
 
 	.demo-center {

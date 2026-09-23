@@ -214,27 +214,27 @@
 	<DemoCodeExample code={vpdExample} title="CwVPDChart example" />
 </section>
 
+<section class="demo-section demo-section--stack">
+	<div class="demo-section__copy">
+		<h3>Loading &amp; missing readings</h3>
+		<p class="demo-copy">
+			<code>loading</code> shows a skeleton. Without a current temperature or humidity reading the
+			grid still renders, but no cell is highlighted as “now”.
+		</p>
+	</div>
+	<div class="demo-state-grid">
+		<CwVPDChart loading />
+		<CwVPDChart targetMin={0.8} targetMax={1.2} airTemperatureC={null} relativeHumidity={null} />
+	</div>
+</section>
+
 <style>
-	h2 {
-		font-size: var(--cw-text-xl);
-		font-weight: var(--cw-font-bold);
-		margin-bottom: var(--cw-space-2);
+	.demo-state-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(24rem, 100%), 1fr));
+		gap: var(--cw-space-4);
 	}
 
-	h3 {
-		color: var(--cw-text-primary);
-		font-size: clamp(1.2rem, 2vw, 1.45rem);
-		font-weight: var(--cw-font-semibold);
-		margin: 0;
-	}
-
-	.demo-desc {
-		color: var(--cw-text-secondary);
-		font-size: var(--cw-text-sm);
-		line-height: 1.65;
-		margin: 0 0 var(--cw-space-6);
-		max-width: 66ch;
-	}
 
 	.demo-copy {
 		color: var(--cw-text-secondary);
@@ -242,12 +242,6 @@
 		line-height: 1.65;
 		margin: 0;
 		max-width: 64ch;
-	}
-
-	.demo-section {
-		display: grid;
-		gap: var(--cw-space-4);
-		margin-bottom: var(--cw-space-8);
 	}
 
 	.demo-section--stack {
@@ -287,11 +281,11 @@
 	}
 
 	.demo-scenario-button--active {
-		background: color-mix(in srgb, #1a5662 14%, var(--cw-bg-surface));
-		border-color: color-mix(in srgb, #1a5662 72%, transparent);
+		background: color-mix(in srgb, var(--cw-accent) 14%, var(--cw-bg-surface));
+		border-color: color-mix(in srgb, var(--cw-accent) 72%, transparent);
 		box-shadow:
-			inset 0 0 0 1px color-mix(in srgb, white 18%, transparent),
-			0 16px 24px color-mix(in srgb, #1a5662 18%, transparent);
+			inset 0 0 0 1px color-mix(in srgb, var(--cw-bg-surface-elevated) 18%, transparent),
+			0 16px 24px color-mix(in srgb, var(--cw-accent) 18%, transparent);
 		transform: translateY(-1px);
 	}
 
@@ -321,7 +315,7 @@
 
 	.demo-slider,
 	.demo-live-card {
-		background: color-mix(in srgb, var(--cw-bg-muted) 44%, white);
+		background: color-mix(in srgb, var(--cw-bg-muted) 44%, var(--cw-bg-surface-elevated));
 		border: 1px solid color-mix(in srgb, var(--cw-border-default) 74%, transparent);
 		border-radius: 1.1rem;
 		display: grid;
@@ -339,7 +333,7 @@
 	}
 
 	.demo-slider input {
-		accent-color: #1a5662;
+		accent-color: var(--cw-accent);
 		width: 100%;
 	}
 

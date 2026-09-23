@@ -2,6 +2,7 @@
 	import { onDestroy, untrack } from 'svelte';
 	import type { Snippet } from 'svelte';
 	import CwDataIcon from './CwDataIcon.svelte';
+	import CwDuration from './CwDuration.svelte';
 	import CwExpandPanel from './CwExpandPanel.svelte';
 	import { createCwAlarmScheduler } from './cwAlarmContext.svelte.js';
 	import { useCwLocationCard } from './cwLocationCardContext.svelte.js';
@@ -16,6 +17,21 @@
 	import type { CwDateTimeInput, CwStatusDotStatus } from '../types/index.js';
 
 	type IconContent = string | Snippet;
+
+	interface CwSensorCardLabels {
+		/** Badge text when `hasError` is `true`. */
+		error?: string;
+		/** Heading shown above the expanded details. */
+		details?: string;
+		/** Text shown when there is no detail content. */
+		noDetails?: string;
+		/** Text shown for a missing reading. */
+		noValue?: string;
+		/** Prefix for the stale "last seen" line. */
+		lastSeen?: string;
+		/** Suffix after the stale duration. */
+		ago?: string;
+	}
 
 	interface Props {
 		/** Sensor or device label shown in the panel header. */
@@ -87,6 +103,12 @@
 		onTimeoutReset?: (label: string) => void;
 		/** Called whenever the freshness state changes. */
 		onWithinTimeoutChange?: (withinTimeout: boolean | null) => void;
+		/** Shows skeleton readings until the first value arrives. */
+		loading?: boolean;
+		/** Heading level for the details heading (default 4). */
+		detailsHeadingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
+		/** Override display strings for i18n. */
+		labels?: CwSensorCardLabels;
 		/** Extra CSS class for the sensor panel root. */
 		class?: string;
 	}
@@ -120,7 +142,7 @@
 		lastUpdated,
 		expectedUpdateAfterMinutes,
 		withinTimeout = $bindable<boolean | null>(null),
-		detailsHeading = 'Details',
+		detailsHeading,
 		children,
 		onExpand,
 		onCollapse,
@@ -129,8 +151,22 @@
 		AlarmCallback,
 		onTimeoutReset,
 		onWithinTimeoutChange,
+		loading = false,
+		detailsHeadingLevel = 4,
+		labels = {},
 		class: className = ''
 	}: Props = $props();
+
+	const l = $derived({
+		error: 'SENSOR ERROR',
+		details: 'Details',
+		noDetails: 'No detailed readings available yet.',
+		noValue: 'N/A',
+		lastSeen: 'Last seen',
+		ago: 'ago',
+		...labels
+	});
+	const resolvedDetailsHeading = $derived(detailsHeading ?? l.details);
 
 	let hasResolvedInitialOpen = false;
 	let lastReportedTimeoutState: boolean | null = null;
@@ -182,14 +218,17 @@
 	);
 	const hasErrorState = $derived(hasError != null && hasError !== false);
 	const errorText = $derived(
-		typeof hasError === 'string' && hasError.trim() ? hasError : 'SENSOR ERROR'
+		typeof hasError === 'string' && hasError.trim() ? hasError : l.error
 	);
+	/** Data has gone past its freshness timeout: dim readings and show when it was last seen. */
+	const isStale = $derived(freshnessState === false && resolvedLastSeenAt != null);
 	const expandClassName = $derived(
 		[
 			'cw-sensor-card',
 			className,
 			slotStatusClass(effectiveStatus),
-			hasErrorState ? 'cw-sensor-card--error' : ''
+			hasErrorState ? 'cw-sensor-card--error' : '',
+			isStale ? 'cw-sensor-card--stale' : ''
 		]
 			.filter(Boolean)
 			.join(' ')
@@ -250,7 +289,7 @@
 	}
 
 	function formatReading(value: number | null | undefined): string {
-		return value == null ? 'N/A' : formatCwSensorValue(value);
+		return value == null ? l.noValue : formatCwSensorValue(value);
 	}
 
 	function slotStatusClass(devStatus?: string): string {
@@ -344,7 +383,12 @@
 					<span class="cw-sensor-card__label">{label}</span>
 				</div>
 
-				{#if hasErrorState}
+				{#if loading && !hasErrorState}
+					<div class="cw-sensor-card__skeleton" aria-hidden="true">
+						<span class="cw-sensor-card__skeleton-block"></span>
+						<span class="cw-sensor-card__skeleton-block"></span>
+					</div>
+				{:else if hasErrorState}
 					<div class="cw-sensor-card__error" role="alert">
 						<span class="cw-sensor-card__error-icon" aria-hidden="true">!</span>
 						<span class="cw-sensor-card__error-text">{errorText}</span>
@@ -392,35 +436,45 @@
 						{/if}
 					</div>
 				{/if}
+
+				{#if isStale && !hasErrorState && resolvedLastSeenAt != null}
+					<span class="cw-sensor-card__stale">
+						{l.lastSeen}
+						<CwDuration from={resolvedLastSeenAt} />
+						{l.ago}
+					</span>
+				{/if}
 			</div>
 		</div>
 	{/snippet}
 
 	{#if children}
 		<div class="cw-sensor-card__details-inner">
-			<h4 class="cw-sensor-card__details-heading">{detailsHeading}</h4>
+			<svelte:element this={`h${detailsHeadingLevel}`} class="cw-sensor-card__details-heading">
+				{resolvedDetailsHeading}
+			</svelte:element>
 			{@render children()}
 		</div>
 	{:else}
-		<p class="cw-sensor-card__details-empty">No detailed readings available yet.</p>
+		<p class="cw-sensor-card__details-empty">{l.noDetails}</p>
 	{/if}
 </CwExpandPanel>
 
 <style>
 	:global(.cw-sensor-card.cw-expand) {
 		border: 1px solid var(--cw-border-default);
-		border-radius: var(--cw-radius-xl);
+		border-radius: var(--cw-card-radius);
 		background: var(--cw-bg-elevated);
 		box-shadow: var(--cw-shadow-sm);
 		overflow: hidden;
 	}
 
 	:global(.cw-sensor-card.cw-expand.cw-sensor-card__slot--online) {
-		--_sensor-color: var(--cw-success-500);
+		--_sensor-color: var(--cw-status-online);
 	}
 
 	:global(.cw-sensor-card.cw-expand.cw-sensor-card__slot--offline) {
-		--_sensor-color: var(--cw-danger-500);
+		--_sensor-color: var(--cw-status-offline);
 	}
 
 	:global(.cw-sensor-card.cw-expand.cw-sensor-card__slot--loading) {
@@ -428,14 +482,14 @@
 	}
 
 	:global(.cw-sensor-card.cw-expand.cw-sensor-card__slot--warning) {
-		--_sensor-color: var(--cw-warning-400);
+		--_sensor-color: var(--cw-status-warning);
 	}
 
 	/* Error state: warning-tinted background + danger accent to grab attention. */
 	:global(.cw-sensor-card.cw-expand.cw-sensor-card--error) {
-		--_sensor-color: var(--cw-danger-500);
-		background: color-mix(in srgb, var(--cw-warning-400) 16%, var(--cw-bg-elevated));
-		border-color: color-mix(in srgb, var(--cw-warning-400) 45%, var(--cw-border-default));
+		--_sensor-color: var(--cw-status-error);
+		background: color-mix(in srgb, var(--cw-status-warning) 16%, var(--cw-bg-elevated));
+		border-color: color-mix(in srgb, var(--cw-status-warning) 45%, var(--cw-border-default));
 	}
 
 	:global(.cw-sensor-card .cw-expand__header) {
@@ -473,7 +527,7 @@
 	.cw-sensor-card__device {
 		display: grid;
 		flex: 1 1 auto;
-		gap: 0.3rem;
+		gap: var(--cw-space-1);
 		min-width: 0;
 	}
 
@@ -509,8 +563,8 @@
 		width: 1.5rem;
 		height: 1.5rem;
 		border-radius: var(--cw-radius-full);
-		border: 2px solid var(--cw-danger-500);
-		color: var(--cw-danger-500);
+		border: 2px solid var(--cw-tone-danger-text);
+		color: var(--cw-tone-danger-text);
 		font-size: var(--cw-text-sm);
 		font-weight: var(--cw-font-bold);
 		line-height: 1;
@@ -523,18 +577,18 @@
 		font-size: var(--cw-text-sm);
 		font-weight: var(--cw-font-bold);
 		line-height: 1.25;
-		color: var(--cw-danger-500);
+		color: var(--cw-tone-danger-text);
 	}
 
 	@keyframes cw-sensor-card-error-pulse {
 		0% {
-			box-shadow: 0 0 0 0 color-mix(in srgb, var(--cw-danger-500) 55%, transparent);
+			box-shadow: 0 0 0 0 color-mix(in srgb, var(--cw-status-error) 55%, transparent);
 		}
 		70% {
-			box-shadow: 0 0 0 7px color-mix(in srgb, var(--cw-danger-500) 0%, transparent);
+			box-shadow: 0 0 0 7px transparent;
 		}
 		100% {
-			box-shadow: 0 0 0 0 color-mix(in srgb, var(--cw-danger-500) 0%, transparent);
+			box-shadow: 0 0 0 0 transparent;
 		}
 	}
 
@@ -569,12 +623,13 @@
 		flex-shrink: 0;
 	}
 
+	/* Tone text tokens meet ≥3:1 non-text contrast in both themes. */
 	.cw-sensor-card__stat-icon--temp {
-		color: #f36d5b;
+		color: var(--cw-tone-danger-text);
 	}
 
 	.cw-sensor-card__stat-icon--humidity {
-		color: var(--cw-info-300);
+		color: var(--cw-tone-info-text);
 	}
 
 	:global(.cw-sensor-card__stat-icon svg) {
@@ -585,7 +640,7 @@
 	.cw-sensor-card__stat-reading {
 		display: inline-flex;
 		align-items: baseline;
-		gap: 0.2rem;
+		gap: var(--cw-space-1);
 		min-width: 0;
 	}
 
@@ -595,6 +650,52 @@
 		line-height: 1;
 		color: var(--cw-text-primary);
 		white-space: nowrap;
+		font-variant-numeric: tabular-nums;
+		transition: color var(--cw-duration-normal) var(--cw-ease-default);
+	}
+
+	:global(.cw-sensor-card--stale) .cw-sensor-card__stat-value {
+		color: var(--cw-text-muted);
+	}
+
+	.cw-sensor-card__stale {
+		display: inline-flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--cw-space-1);
+		font-size: var(--cw-text-xs);
+		font-weight: var(--cw-font-medium);
+		color: var(--cw-tone-danger-text);
+	}
+
+	.cw-sensor-card__skeleton {
+		display: flex;
+		gap: var(--cw-space-3);
+	}
+
+	.cw-sensor-card__skeleton-block {
+		display: block;
+		width: 4.5rem;
+		height: 1.125rem;
+		border-radius: var(--cw-radius-sm);
+		background: linear-gradient(90deg, var(--cw-bg-muted) 0%, var(--cw-bg-subtle) 50%, var(--cw-bg-muted) 100%);
+		background-size: 200% 100%;
+		animation: cw-sensor-card-shimmer 1.4s ease-in-out infinite;
+	}
+
+	@keyframes cw-sensor-card-shimmer {
+		from {
+			background-position: 100% 0;
+		}
+		to {
+			background-position: -100% 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.cw-sensor-card__skeleton-block {
+			animation: none;
+		}
 	}
 
 	.cw-sensor-card__stat-unit {
@@ -615,7 +716,7 @@
 		padding-top: var(--cw-space-1);
 		font-size: var(--cw-text-sm);
 		font-weight: var(--cw-font-semibold);
-		color: var(--cw-accent);
+		color: var(--cw-accent-text);
 	}
 
 	.cw-sensor-card__details-empty {

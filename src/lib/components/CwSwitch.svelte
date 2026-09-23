@@ -7,7 +7,10 @@
 		id?: string;
 		name?: HTMLInputAttributes['name'];
 		label?: string;
+		/** Helper text, announced as the switch's description (not part of its name). */
 		description?: string;
+		/** Error message; marks the switch invalid. */
+		error?: string;
 		labelPosition?: CwSwitchLabelPosition;
 		onchange?: (checked: boolean, event: Event) => void;
 		oninput?: (checked: boolean, event: Event) => void;
@@ -20,6 +23,7 @@
 		name,
 		label,
 		description,
+		error,
 		labelPosition = 'right' as CwSwitchLabelPosition,
 		disabled = false,
 		onchange,
@@ -31,6 +35,13 @@
 	const uid = $props.id();
 	const inputId = $derived(id ?? `${uid}-input`);
 	const resolvedLabelPosition = $derived(normalizeLabelPosition(labelPosition));
+	const titleId = $derived(`${inputId}-label`);
+	const descriptionId = $derived(`${inputId}-description`);
+	const errorId = $derived(`${inputId}-error`);
+	const describedBy = $derived(
+		[description ? descriptionId : null, error ? errorId : null].filter(Boolean).join(' ') ||
+			undefined
+	);
 
 	function normalizeLabelPosition(value: CwSwitchLabelPosition | undefined): CwSwitchLabelPosition {
 		switch (value) {
@@ -60,6 +71,7 @@
 <div
 	class="cw-switch {className}"
 	class:cw-switch--disabled={disabled}
+	class:cw-switch--invalid={!!error}
 	class:cw-switch--label-top={resolvedLabelPosition === 'top'}
 	class:cw-switch--label-bottom={resolvedLabelPosition === 'bottom'}
 	class:cw-switch--label-left={resolvedLabelPosition === 'left'}
@@ -74,6 +86,9 @@
 			bind:checked
 			{name}
 			{disabled}
+			aria-labelledby={label ? titleId : undefined}
+			aria-describedby={describedBy}
+			aria-invalid={error ? 'true' : undefined}
 			oninput={handleInput}
 			onchange={handleChange}
 			{...rest}
@@ -82,13 +97,16 @@
 			<span class="cw-switch__thumb"></span>
 		</span>
 
-		{#if label || description}
+		{#if label || description || error}
 			<span class="cw-switch__text">
 				{#if label}
-					<span class="cw-switch__title">{label}</span>
+					<span id={titleId} class="cw-switch__title">{label}</span>
 				{/if}
 				{#if description}
-					<span class="cw-switch__description">{description}</span>
+					<span id={descriptionId} class="cw-switch__description">{description}</span>
+				{/if}
+				{#if error}
+					<span id={errorId} class="cw-switch__error">{error}</span>
 				{/if}
 			</span>
 		{/if}
@@ -149,11 +167,10 @@
 		padding: 0.125rem;
 		border-radius: var(--cw-radius-full);
 		background-color: var(--cw-bg-muted);
-		border: 1px solid var(--cw-border-default);
+		border: 1px solid var(--cw-control-border);
 		transition:
-			background-color 180ms var(--cw-ease-default),
-			border-color 180ms var(--cw-ease-default),
-			box-shadow 180ms var(--cw-ease-default);
+			background-color var(--cw-duration-normal) var(--cw-ease-default),
+			border-color var(--cw-duration-normal) var(--cw-ease-default);
 		flex-shrink: 0;
 	}
 
@@ -170,9 +187,12 @@
 		   unpainted until a scroll/resize. The slide still animates via the transition. */
 		transform: translateX(0);
 		transition:
-			transform 210ms cubic-bezier(0.22, 1, 0.36, 1),
-			background-color 180ms var(--cw-ease-default),
-			box-shadow 180ms var(--cw-ease-default);
+			transform var(--cw-duration-normal) var(--cw-ease-out),
+			background-color var(--cw-duration-normal) var(--cw-ease-default);
+	}
+
+	.cw-switch__label:hover .cw-switch__input:not(:disabled) + .cw-switch__control {
+		border-color: var(--cw-control-border-hover);
 	}
 
 	.cw-switch__input:checked + .cw-switch__control {
@@ -182,15 +202,21 @@
 
 	.cw-switch__input:checked + .cw-switch__control .cw-switch__thumb {
 		transform: translateX(1rem);
-		background-color: #fff;
+		background-color: var(--cw-text-inverse);
 	}
 
+	/* The native input is visually hidden, so draw the global focus ring on the track. */
 	.cw-switch__input:focus-visible + .cw-switch__control {
-		box-shadow: 0 0 0 2px color-mix(in srgb, var(--cw-focus-ring-color) 35%, transparent);
+		outline: var(--cw-focus-ring-width) solid var(--cw-focus-ring-color);
+		outline-offset: var(--cw-focus-ring-offset);
+	}
+
+	.cw-switch--invalid .cw-switch__control {
+		border-color: var(--cw-tone-danger-border);
 	}
 
 	.cw-switch__input:disabled + .cw-switch__control {
-		opacity: 0.6;
+		opacity: var(--cw-opacity-disabled);
 	}
 
 	.cw-switch__text {
@@ -204,23 +230,25 @@
 		font-size: var(--cw-text-sm);
 		font-weight: var(--cw-font-medium);
 		color: var(--cw-text-primary);
-		line-height: 1.2;
+		line-height: var(--cw-leading-tight);
 	}
 
-	.cw-switch__description {
+	.cw-switch__description,
+	.cw-switch__error {
 		font-size: var(--cw-text-xs);
 		color: var(--cw-text-muted);
-		line-height: 1.3;
+		line-height: var(--cw-leading-normal);
+	}
+
+	.cw-switch__error {
+		color: var(--cw-tone-danger-text);
 	}
 
 	.cw-switch--disabled .cw-switch__label {
 		cursor: not-allowed;
 	}
 
-	@media (prefers-reduced-motion: reduce) {
-		.cw-switch__control,
-		.cw-switch__thumb {
-			transition-duration: 140ms !important;
-		}
+	.cw-switch--disabled .cw-switch__title {
+		color: var(--cw-text-disabled);
 	}
 </style>

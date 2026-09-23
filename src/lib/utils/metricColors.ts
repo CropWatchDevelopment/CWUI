@@ -1,18 +1,18 @@
 /**
  * Canonical CropWatch metric → chart-color conventions.
  *
- * These colors are tuned to stay legible on BOTH the light (#fafaf7) and dark
- * (#0e0e0c) chart backgrounds used by CwResponsiveLineChart, and to keep
- * related metrics grouped by hue while remaining easy to tell apart:
+ * Every color sits in a narrow luminance band so it keeps at least 3:1
+ * contrast (WCAG 1.4.11 non-text) against BOTH theme chart surfaces
+ * (`--cw-chart-card-bg`: #293950 dark, #f7fafc light). Metrics are told
+ * apart by hue, and related metrics share a hue family:
  *
  *  • Temperature       → the value-mapped gradient (cold = blue, hot = red).
- *  • Soil temperature  → solid brown-red (a warmer, earthier red than air temp).
- *  • Water (humidity,  → shades of blue, each a distinct hue so they don't blur
- *    soil moisture,       together when plotted on the same chart.
+ *  • Soil temperature  → solid clay (an earthier red than air temperature).
+ *  • Water (humidity,  → blue / teal / indigo / sky, each a distinct hue so
+ *    soil moisture,       they don't blur together on the same chart.
  *    rain, dew point)
  *  • CO₂               → purple.
- *  • Light / PAR / lux → gold-yellow (dark enough to read on a light background,
- *                          bright enough to read on a dark one).
+ *  • Light / PAR / lux → gold.
  *
  * Pass a measurement key (e.g. "temperature_c", "soil_moisture", "co2") to
  * {@link metricColor} to get the line color and gradient flag for a series.
@@ -26,17 +26,17 @@ export interface MetricColor {
 }
 
 // ── Shared swatches ────────────────────────────────────────────
-const TEMPERATURE: MetricColor = { color: '#ef4444', gradient: true }; // red, value-gradient
-const SOIL_TEMPERATURE: MetricColor = { color: '#b45309' }; // earthy brown-red
-const HUMIDITY: MetricColor = { color: '#3b82f6' }; // blue
-const SOIL_MOISTURE: MetricColor = { color: '#06b6d4' }; // cyan
-const RAIN: MetricColor = { color: '#0284c7' }; // deep sky blue
-const DEW_POINT: MetricColor = { color: '#38bdf8' }; // light sky blue
-const CO2: MetricColor = { color: '#a855f7' }; // purple
-const LIGHT: MetricColor = { color: '#ca8a04' }; // gold (legible on light + dark)
-const SOIL_EC: MetricColor = { color: '#ec4899' }; // pink (distinct from CO₂ purple)
-const VPD: MetricColor = { color: '#f97316' }; // orange
-const PRESSURE: MetricColor = { color: '#64748b' }; // slate
+const TEMPERATURE: MetricColor = { color: '#f05151', gradient: true }; // red, value-gradient
+const SOIL_TEMPERATURE: MetricColor = { color: '#bf7758' }; // earthy clay
+const HUMIDITY: MetricColor = { color: '#4286f6' }; // blue
+const SOIL_MOISTURE: MetricColor = { color: '#119a8b' }; // teal
+const RAIN: MetricColor = { color: '#747ef0' }; // indigo
+const DEW_POINT: MetricColor = { color: '#0b92cc' }; // sky blue
+const CO2: MetricColor = { color: '#af64f8' }; // purple
+const LIGHT: MetricColor = { color: '#b87e04' }; // gold
+const SOIL_EC: MetricColor = { color: '#ec499a' }; // pink (distinct from CO₂ purple)
+const VPD: MetricColor = { color: '#e46106' }; // orange
+const PRESSURE: MetricColor = { color: '#7b8aa0' }; // slate
 
 /** Measurement key → color. Keys are normalized (see {@link normalizeMetric}). */
 const METRIC_COLORS: Record<string, MetricColor> = {
@@ -86,7 +86,7 @@ const METRIC_COLORS: Record<string, MetricColor> = {
 };
 
 /** Deterministic fallback hues for metrics not in the map above. */
-const FALLBACK_COLORS = ['#64748b', '#14b8a6', '#8b5cf6', '#f43f5e', '#84cc16', '#0ea5e9'];
+const FALLBACK_COLORS = ['#7b8aa0', '#119a8b', '#996ff7', '#f54966', '#629710', '#0c92ce'];
 
 /**
  * Normalize a measurement key: lowercase, collapse spaces/dashes to underscores,

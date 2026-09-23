@@ -1,276 +1,317 @@
 <script lang="ts">
-	import CwCopy from "$lib/components/CwCopy.svelte";
-	import WORKER_IMAGE from "$lib/images/office-work.webp";
+	import DemoCodeExample from './_components/DemoCodeExample.svelte';
+	import { getDemoNavGroups } from './_components/demoNav';
 
-	const publishWorkflowUrl =
-		"https://github.com/CropWatchDevelopment/CWUI/actions/workflows/publish.yml";
+	const navGroups = getDemoNavGroups();
+	const componentCount = navGroups.reduce((total, group) => total + group.items.length, 0);
 
-	const releaseSteps = [
-		{
-			step: "01",
-			title: "Confirm the release version",
-			body: "Bump package.json, then make sure the release commit on main is the exact code you want to publish.",
-		},
-		{
-			step: "02",
-			title: "Push the release commit",
-			body: "If your version bump is only local, push main first so the tag points at a commit GitHub Actions can build.",
-			code: "git push origin main",
-		},
-		{
-			step: "03",
-			title: "Create the matching tag",
-			body: "The publish workflow only runs for tags shaped like v<version>. The tag must match package.json exactly.",
-			code: "git tag v<your-version>",
-		},
-		{
-			step: "04",
-			title: "Push the tag to publish",
-			body: "Pushing the tag triggers the GitHub Packages release workflow.",
-			code: "git push origin v<your-version>",
-		},
-		{
-			step: "05",
-			title: "Watch the workflow finish",
-			body: "Open the publish workflow in GitHub Actions and wait for the package job to complete before announcing the release.",
-		},
-	];
+	const npmrcSnippet = `@cropwatchdevelopment:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}`;
+
+	const installSnippet = 'pnpm add @cropwatchdevelopment/cwui';
+
+	const layoutSnippet = `<script lang="ts">
+	import '@cropwatchdevelopment/cwui/styles';
+
+	let { children } = $props();
+</${'script'}>
+
+{@render children()}`;
+
+	const themeSnippet = `<!-- app.html: dark is the default; set "light" to switch -->
+<html lang="en" data-theme="dark">`;
+
+	const upgradeSnippet = `rm -rf node_modules .svelte-kit
+pnpm install
+pnpm up @cropwatchdevelopment/cwui --latest`;
 </script>
 
-<img src={WORKER_IMAGE} alt="CWUI In development Header" style="width: 100%;" />
+<section class="home-intro" aria-labelledby="home-title">
+	<p class="home-intro__eyebrow">Svelte 5 component library</p>
+	<h2 id="home-title">CropWatch UI</h2>
+	<p class="demo-desc">
+		The shared interface kit behind CropWatch: {componentCount} accessible components, charts and
+		helpers built on plain CSS custom properties, with matching dark and light themes. Browse the
+		components below or from the sidebar. Every page has live examples, the full API and
+		copy-paste snippets.
+	</p>
+	<ul class="home-intro__links">
+		<li>
+			<a href="https://github.com/CropWatchDevelopment/CWUI" target="_blank" rel="noopener noreferrer">
+				Source on GitHub
+			</a>
+		</li>
+		<li>
+			<a href="/llms.txt" target="_blank" rel="noopener noreferrer">
+				LLM docs (<code>/llms.txt</code>)
+			</a>
+		</li>
+	</ul>
+</section>
 
-<h2>CropWatch UI Demo</h2>
-<p class="demo-desc">
-	Select a component from the sidebar to view demos, API behavior, and
-	copy-paste examples.
-</p>
-<p class="demo-links">
-	<a href="/llms.txt" target="_blank" rel="noopener noreferrer"
-		>LLM Docs: <code>/llms.txt</code></a
+<section class="home-guide" aria-labelledby="home-guide-title">
+	<div class="home-guide__body">
+		<p class="home-intro__eyebrow">For designers</p>
+		<h3 id="home-guide-title" class="home-guide__title">Design style guide</h3>
+		<p class="home-guide__text">
+			Colour tokens for dark and light mode with measured contrast ratios, the logo and brand
+			colours, typography, spacing, chart colours, form anatomy and a hand-off checklist. Start here
+			before designing a CropWatch screen.
+		</p>
+	</div>
+	<a
+		class="home-guide__download"
+		href="/cropwatch-style-guide.pdf"
+		download="CropWatch-Style-Guide.pdf"
 	>
-</p>
-
-<section class="demo-section">
-	<h3>Update Existing Install</h3>
-	<p class="demo-copy">
-		If you already use <code>@cropwatchdevelopment/cwui</code>, clear local
-		build artifacts first, then upgrade:
-	</p>
-	<code>
-		<CwCopy
-			value="
-		rm -rf node_modules .svelte-kit
-		pnpm install
-		pnpm up @cropwatchdevelopment/cwui --latest
-		"
-		>
-			<pre class="demo-code">
-rm -rf node_modules .svelte-kit
-pnpm install
-pnpm up @cropwatchdevelopment/cwui --latest
-		</pre>
-		</CwCopy>
-	</code>
+		<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+			<path
+				d="M8 2v8m0 0L5 7m3 3l3-3M3 12.5h10"
+				stroke="currentColor"
+				stroke-width="1.5"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			/>
+		</svg>
+		Download PDF
+	</a>
 </section>
 
-<section class="demo-section">
-	<h3>Getting Started (Not Installed Yet)</h3>
-	<p class="demo-copy">Install the package in your SvelteKit project:</p>
-	<pre class="demo-code"><code>pnpm add @cropwatchdevelopment/cwui</code
-		></pre>
-
-	<p class="demo-copy">
-		Load the base styles and a theme once (typically in your root layout):
-	</p>
-	<pre class="demo-code"><code
-			>&lt;script lang="ts"&gt;
-	import '@cropwatchdevelopment/cwui/styles';
-	import '@cropwatchdevelopment/cwui/styles/tokens';
-	import '@cropwatchdevelopment/cwui/styles/theme-light';
-&lt;/script&gt;
-
-&lt;slot /&gt;</code
-		></pre>
-</section>
-
-<section class="demo-section">
-	<h3>Verify</h3>
-	<p class="demo-copy">
-		Start your app and open this demo route to validate everything is wired
-		correctly:
-	</p>
-	<pre class="demo-code"><code>pnpm dev</code></pre>
-</section>
-
-<section class="demo-section release-section">
-	<p class="demo-kicker">Maintainer Workflow</p>
-	<h3>Publish A New Package</h3>
-	<p class="demo-copy">
-		CWUI publishes through GitHub Packages at <code>npm.pkg.github.com</code
-		>. After bumping the version, release by pushing a matching Git tag.
-	</p>
-
-	<ol class="release-steps">
-		{#each releaseSteps as releaseStep (releaseStep.step)}
-			<li class="release-step">
-				<div class="release-step-number" aria-hidden="true">
-					{releaseStep.step}
-				</div>
-				<div class="release-step-body">
-					<h4>{releaseStep.title}</h4>
-					<p>{releaseStep.body}</p>
-					{#if releaseStep.code}
-						<pre class="demo-code"><code>{releaseStep.code}</code
-							></pre>
-					{/if}
-				</div>
-			</li>
+<section class="demo-section" aria-labelledby="home-components">
+	<h3 id="home-components">Components</h3>
+	<div class="home-groups">
+		{#each navGroups as group (group.group)}
+			<div class="home-group">
+				<h4 class="home-group__title">{group.group}</h4>
+				<ul class="home-group__list">
+					{#each group.items as item (item.id)}
+						<li>
+							<a class="home-group__link" href={item.href}>
+								{#if typeof item.icon === 'string'}
+									<svg
+										class="home-group__icon"
+										viewBox="0 0 16 16"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="1.25"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										aria-hidden="true"
+									>
+										<path d={item.icon} />
+									</svg>
+								{/if}
+								<span>{item.label}</span>
+							</a>
+						</li>
+					{/each}
+				</ul>
+			</div>
 		{/each}
-	</ol>
+	</div>
+</section>
 
-	<p class="demo-copy demo-note">
-		The workflow checks whether the tagged version already exists. If that
-		version is already in the registry, the publish step is skipped instead
-		of failing.
-	</p>
-	<p class="demo-links">
-		<a href={publishWorkflowUrl} target="_blank" rel="noopener noreferrer">
-			Open the publish workflow in GitHub Actions
-		</a>
-	</p>
+<section class="demo-section" aria-labelledby="home-install">
+	<h3 id="home-install">Getting started</h3>
+	<ol class="home-steps">
+		<li>
+			<strong>Point the scope at GitHub Packages.</strong>
+			<span>Add this to your project's <code>.npmrc</code>, with a token that has <code>read:packages</code>.</span>
+			<DemoCodeExample title=".npmrc" code={npmrcSnippet} />
+		</li>
+		<li>
+			<strong>Install the package.</strong>
+			<DemoCodeExample title="Terminal" code={installSnippet} />
+		</li>
+		<li>
+			<strong>Load the styles once in your root layout.</strong>
+			<span>This single import brings in the design tokens and both themes.</span>
+			<DemoCodeExample title="src/routes/+layout.svelte" code={layoutSnippet} />
+		</li>
+		<li>
+			<strong>Choose a theme.</strong>
+			<span>
+				Themes switch with the <code>data-theme</code> attribute on <code>&lt;html&gt;</code>, or use
+				<a href="/demo/themepicker">CwThemePicker</a> to let people choose.
+			</span>
+			<DemoCodeExample title="src/app.html" code={themeSnippet} />
+		</li>
+	</ol>
+</section>
+
+<section class="demo-section" aria-labelledby="home-upgrade">
+	<h3 id="home-upgrade">Upgrading an existing install</h3>
+	<p class="demo-hint">Clear local build artifacts first so SvelteKit picks up the new components.</p>
+	<DemoCodeExample title="Terminal" code={upgradeSnippet} />
 </section>
 
 <style>
-	h2 {
-		font-size: var(--cw-text-xl);
-		font-weight: var(--cw-font-bold);
-		margin-bottom: var(--cw-space-2);
+	.home-intro {
+		margin-bottom: var(--cw-space-8);
 	}
 
-	h3 {
-		font-size: var(--cw-text-base);
+	.home-intro__eyebrow {
+		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-semibold);
-		margin: 0 0 var(--cw-space-2);
-		color: var(--cw-text-secondary);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--cw-accent-text);
+		margin-bottom: var(--cw-space-1);
 	}
 
-	.demo-desc {
+	.home-intro h2 {
+		font-size: var(--cw-text-3xl);
+		font-weight: var(--cw-font-bold);
+		line-height: var(--cw-leading-tight);
+		margin-bottom: var(--cw-space-3);
+	}
+
+	.home-intro__links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--cw-space-2) var(--cw-space-6);
+		list-style: none;
+		font-size: var(--cw-text-sm);
+	}
+
+	a {
+		color: var(--cw-accent-text);
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
+	}
+
+	code {
+		font-family: var(--cw-font-mono);
+		font-size: 0.9em;
+	}
+
+	.home-guide {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--cw-space-4) var(--cw-space-6);
+		margin-bottom: var(--cw-space-8);
+		padding: var(--cw-space-5);
+		background: var(--cw-bg-surface);
+		border: 1px solid var(--cw-border-default);
+		border-inline-start: 4px solid var(--cw-brand-green);
+		border-radius: var(--cw-card-radius);
+		box-shadow: var(--cw-shadow-sm);
+	}
+
+	.home-guide__body {
+		flex: 1 1 22rem;
+		min-width: 0;
+	}
+
+	.home-guide__title {
+		margin-bottom: var(--cw-space-1);
+	}
+
+	.home-guide__text {
+		max-width: 60ch;
 		color: var(--cw-text-muted);
 		font-size: var(--cw-text-sm);
-		margin-bottom: var(--cw-space-5);
 	}
 
-	.demo-links {
-		margin: 0 0 var(--cw-space-5);
+	.home-guide__download {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--cw-space-2);
+		min-height: var(--cw-control-h-md);
+		padding-inline: var(--cw-control-px-lg);
+		border: 1px solid var(--cw-button-primary-border);
+		border-radius: var(--cw-control-radius);
+		background: var(--cw-button-primary-bg);
+		box-shadow: var(--cw-button-primary-shadow);
+		color: var(--cw-button-primary-text);
 		font-size: var(--cw-text-sm);
-	}
-
-	.demo-links a {
-		color: var(--cw-primary-400);
-		text-decoration: underline;
-		text-underline-offset: 2px;
-	}
-
-	.demo-links a:hover {
-		color: var(--cw-primary-300);
-	}
-
-	.demo-section {
-		background: var(--cw-bg-elevated);
-		border: 1px solid var(--cw-border-muted);
-		border-radius: var(--cw-radius-md);
-		padding: var(--cw-space-4);
-		margin-bottom: var(--cw-space-4);
-	}
-
-	.release-section {
-		background: color-mix(in srgb, var(--cw-primary-500) 6%, var(--cw-bg-elevated));
-	}
-
-	.demo-kicker {
-		margin: 0 0 var(--cw-space-2);
-		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-semibold);
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		color: var(--cw-primary-300);
+		text-decoration: none;
+		white-space: nowrap;
 	}
 
-	.demo-copy {
-		font-size: var(--cw-text-sm);
-		color: var(--cw-text-secondary);
-		margin: 0 0 var(--cw-space-2);
+	.home-guide__download:hover {
+		border-color: var(--cw-button-primary-border-hover);
+		background: var(--cw-button-primary-bg-hover);
 	}
 
-	.demo-note {
-		margin-top: var(--cw-space-4);
+	.home-guide__download svg {
+		width: 1rem;
+		height: 1rem;
 	}
 
-	.demo-code {
-		margin: 0;
-		padding: var(--cw-space-3);
-		border-radius: var(--cw-radius-sm);
-		background: color-mix(in srgb, var(--cw-bg-base) 80%, black);
-		border: 1px solid var(--cw-border-muted);
-		overflow-x: auto;
-	}
-
-	.demo-code code {
-		font-family: var(--cw-font-mono);
-		font-size: var(--cw-text-xs);
-		color: var(--cw-text-primary);
-		line-height: 1.6;
-	}
-
-	.release-steps {
-		list-style: none;
-		padding: 0;
-		margin: var(--cw-space-4) 0 0;
+	.home-groups {
 		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
 		gap: var(--cw-space-4);
 	}
 
-	.release-step {
-		display: grid;
-		grid-template-columns: auto 1fr;
-		gap: var(--cw-space-3);
-		align-items: start;
+	.home-group {
+		padding: var(--cw-space-4);
+		background: var(--cw-bg-surface);
+		border: 1px solid var(--cw-border-default);
+		border-radius: var(--cw-card-radius);
+		box-shadow: var(--cw-shadow-sm);
 	}
 
-	.release-step-number {
-		min-width: 3rem;
-		padding: var(--cw-space-2) var(--cw-space-3);
-		border-radius: 999px;
-		border: 1px solid
-			color-mix(in srgb, var(--cw-primary-400) 30%, transparent);
-		background: color-mix(in srgb, var(--cw-primary-500) 12%, transparent);
-		font-family: var(--cw-font-mono);
+	.home-group__title {
 		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-semibold);
-		text-align: center;
-		color: var(--cw-primary-200);
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--cw-text-muted);
+		margin-bottom: var(--cw-space-2);
 	}
 
-	.release-step-body h4 {
-		margin: 0 0 var(--cw-space-1);
-		font-size: var(--cw-text-sm);
-		font-weight: var(--cw-font-semibold);
+	.home-group__list {
+		list-style: none;
+		display: grid;
+		gap: var(--cw-space-1);
+	}
+
+	.home-group__link {
+		display: flex;
+		align-items: center;
+		gap: var(--cw-space-2);
+		min-height: 2rem;
+		padding-inline: var(--cw-space-2);
+		margin-inline: calc(var(--cw-space-2) * -1);
+		border-radius: var(--cw-radius-md);
 		color: var(--cw-text-primary);
-	}
-
-	.release-step-body p {
-		margin: 0 0 var(--cw-space-2);
 		font-size: var(--cw-text-sm);
-		color: var(--cw-text-secondary);
+		text-decoration: none;
+		transition: background-color var(--cw-duration-fast) var(--cw-ease-default);
 	}
 
-	@media (max-width: 640px) {
-		.release-step {
-			grid-template-columns: 1fr;
-		}
+	.home-group__link:hover {
+		background: var(--cw-option-hover-bg);
+	}
 
-		.release-step-number {
-			width: fit-content;
-		}
+	.home-group__icon {
+		width: 1rem;
+		height: 1rem;
+		flex-shrink: 0;
+		color: var(--cw-text-muted);
+	}
+
+	.home-steps {
+		display: grid;
+		gap: var(--cw-space-6);
+		padding-inline-start: var(--cw-space-5);
+		max-width: 60rem;
+	}
+
+	.home-steps li {
+		display: grid;
+		gap: var(--cw-space-1);
+		color: var(--cw-text-secondary);
+		font-size: var(--cw-text-sm);
+	}
+
+	.home-steps strong {
+		color: var(--cw-text-primary);
+		font-weight: var(--cw-font-semibold);
 	}
 </style>

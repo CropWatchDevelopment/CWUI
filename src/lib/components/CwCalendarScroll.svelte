@@ -17,7 +17,7 @@
 		contentPlaceholder?: string;
 		/** Placeholder shown when a row has no data. Default: "No data for this date.". */
 		noDataForDate?: string;
-		/** Title shown in the empty state when there are no rows. Default: "No dated rows to show.". */
+		/** Title shown in the empty state when there are no rows. Default: "Nothing to show yet". */
 		emptyTitle?: string;
 		/** Copy shown in the empty state when there are no rows. */
 		emptyCopy?: string;
@@ -30,10 +30,10 @@
 		noData: 'No data',
 		rowAriaLabel: (key, status) => `${key}, ${status}`,
 		actionsAriaLabel: (key) => `Actions for ${key}`,
-		contentPlaceholder: 'An item exists for this date. Provide a `content` snippet to render it.',
+		contentPlaceholder: 'Data is available for this date.',
 		noDataForDate: 'No data for this date.',
-		emptyTitle: 'No dated rows to show.',
-		emptyCopy: 'Add dated items or enable `showAllDates` with a range.'
+		emptyTitle: 'Nothing to show yet',
+		emptyCopy: 'Nothing has been recorded for this period.'
 	};
 </script>
 
@@ -99,6 +99,22 @@
 		})
 	);
 
+	/** Only make the viewport a tab stop when it actually scrolls (keyboard scrolling). */
+	let scrollable = $state(false);
+
+	function trackScrollable(node: HTMLDivElement) {
+		// Re-run when rows change so the observed list element is current.
+		void rows.length;
+		const measure = () => {
+			scrollable = node.scrollHeight > node.clientHeight + 1;
+		};
+		measure();
+		const observer = new ResizeObserver(measure);
+		observer.observe(node);
+		if (node.firstElementChild) observer.observe(node.firstElementChild);
+		return () => observer.disconnect();
+	}
+
 	const viewportStyle = $derived(`--cw-calendar-scroll-max-height: ${maxHeight};`);
 
 	const weekdayFormatter = new Intl.DateTimeFormat(undefined, { weekday: 'long' });
@@ -120,8 +136,16 @@
 </script>
 
 <div class="cw-calendar-scroll {className}" style={viewportStyle}>
-	<div class="cw-calendar-scroll__viewport" role="list" aria-label={ariaLabel ?? l.ariaLabel}>
+	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+	<div
+		{@attach trackScrollable}
+		class="cw-calendar-scroll__viewport"
+		role="region"
+		aria-label={ariaLabel ?? l.ariaLabel}
+		tabindex={scrollable ? 0 : undefined}
+	>
 		{#if rows.length > 0}
+			<div class="cw-calendar-scroll__list" role="list">
 			{#each rows as row (row.key)}
 				<article
 					class="cw-calendar-scroll__item"
@@ -170,6 +194,7 @@
 					</div>
 				</article>
 			{/each}
+			</div>
 		{:else if emptyState}
 			<div class="cw-calendar-scroll__empty">
 				{@render emptyState()}
@@ -191,15 +216,18 @@
 		min-width: 0;
 		min-height: 0;
 		border: 1px solid var(--cw-border-default);
-		border-radius: var(--cw-radius-xl);
+		border-radius: var(--cw-card-radius);
 		background: var(--cw-bg-surface);
 		box-shadow: var(--cw-shadow-sm);
 		overflow: hidden;
 	}
 
-	.cw-calendar-scroll__viewport {
+	.cw-calendar-scroll__list {
 		display: grid;
 		gap: var(--cw-space-3);
+	}
+
+	.cw-calendar-scroll__viewport {
 		max-block-size: var(--cw-calendar-scroll-max-height);
 		overflow-y: auto;
 		overscroll-behavior-y: contain;
@@ -259,8 +287,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		padding: 0.38rem 0.7rem;
-		border-radius: var(--cw-radius-pill);
+		padding: var(--cw-space-1) var(--cw-space-3);
+		border-radius: var(--cw-radius-full);
 		background: color-mix(in srgb, var(--cw-accent) 12%, transparent);
 		border: 1px solid color-mix(in srgb, var(--cw-accent) 30%, transparent);
 		color: var(--cw-text-primary);
@@ -315,6 +343,11 @@
 		gap: var(--cw-space-2);
 		min-width: 0;
 		padding-inline-start: var(--cw-space-1);
+	}
+
+	/* Viewport focus ring sits inside the clipped card. */
+	.cw-calendar-scroll__viewport:focus-visible {
+		outline-offset: calc(var(--cw-focus-ring-width) * -1);
 	}
 
 	.cw-calendar-scroll__actions :global(*) {

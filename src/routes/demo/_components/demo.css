@@ -1,0 +1,86 @@
+/* ============================================================
+   Shared demo-page styles. Imported once by demo/+layout.svelte.
+   Every demo page is scoped under .demo-shell__page, so pages
+   should NOT redefine these in their own <style> blocks.
+   ============================================================ */
+
+.demo-shell__page > h2,
+.demo-page > h2 {
+	font-size: var(--cw-text-2xl);
+	font-weight: var(--cw-font-bold);
+	line-height: var(--cw-leading-tight);
+	color: var(--cw-text-primary);
+	margin-bottom: var(--cw-space-2);
+}
+
+.demo-shell__page h3 {
+	font-size: var(--cw-text-base);
+	font-weight: var(--cw-font-semibold);
+	color: var(--cw-text-primary);
+	margin-bottom: var(--cw-space-3);
+}
+
+.demo-shell__page .demo-desc {
+	max-width: 70ch;
+	color: var(--cw-text-muted);
+	font-size: var(--cw-text-sm);
+	line-height: var(--cw-leading-relaxed);
+	margin-bottom: var(--cw-space-6);
+}
+
+.demo-shell__page .demo-section {
+	margin-bottom: var(--cw-space-8);
+}
+
+.demo-shell__page .demo-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--cw-space-3);
+	align-items: center;
+}
+
+.demo-shell__page .demo-stack {
+	display: flex;
+	flex-direction: column;
+	gap: var(--cw-space-3);
+}
+
+.demo-shell__page .demo-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
+	gap: var(--cw-space-4);
+}
+
+/* A bordered stage for live examples. */
+.demo-shell__page .demo-panel {
+	padding: var(--cw-space-4);
+	border: 1px solid var(--cw-border-muted);
+	border-radius: var(--cw-radius-lg);
+	background: var(--cw-bg-surface);
+}
+
+.demo-shell__page .demo-label {
+	display: block;
+	font-size: var(--cw-text-xs);
+	font-weight: var(--cw-font-semibold);
+	color: var(--cw-text-muted);
+	margin-bottom: var(--cw-space-2);
+}
+
+.demo-shell__page .demo-hint {
+	margin-top: var(--cw-space-2);
+	color: var(--cw-text-muted);
+	font-size: var(--cw-text-xs);
+}
+
+/* "Last event: …" readout used instead of console.log / alert(). */
+.demo-shell__page .demo-event {
+	margin-top: var(--cw-space-3);
+	padding: var(--cw-space-2) var(--cw-space-3);
+	border-radius: var(--cw-radius-md);
+	background: var(--cw-bg-muted);
+	color: var(--cw-text-secondary);
+	font-family: var(--cw-font-mono);
+	font-size: var(--cw-text-xs);
+	overflow-wrap: anywhere;
+}

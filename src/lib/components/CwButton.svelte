@@ -36,6 +36,7 @@
 		disabled = false,
 		fullWidth = false,
 		icon,
+		type = 'button',
 		class: className = '',
 		children,
 		...rest
@@ -51,8 +52,9 @@
 	class="cw-button cw-button--{variant} cw-button--{size} {className}"
 	class:cw-button--full={fullWidth}
 	class:cw-button--loading={loading}
+	{type}
 	disabled={isDisabled}
-	aria-busy={loading}
+	aria-busy={loading || undefined}
 	{...rest}
 >
 	{#if loading}
@@ -82,13 +84,15 @@
 		--cw-button-icon-size: 1.4em;
 		gap: var(--cw-space-2);
 		border: 1px solid transparent;
-		border-radius: var(--cw-radius-xl);
+		border-radius: var(--cw-control-radius);
 		font-family: var(--cw-font-family);
 		font-weight: var(--cw-font-medium);
 		line-height: 1;
 		cursor: pointer;
+		/* Backgrounds are gradients, which can't be interpolated; animate the
+		   properties that can. */
 		transition:
-			background-color var(--cw-duration-fast) var(--cw-ease-default),
+			filter var(--cw-duration-fast) var(--cw-ease-default),
 			border-color var(--cw-duration-fast) var(--cw-ease-default),
 			color var(--cw-duration-fast) var(--cw-ease-default),
 			box-shadow var(--cw-duration-fast) var(--cw-ease-default);
@@ -98,22 +102,23 @@
 	}
 
 	/* ── Sizes ───────────────────────────── */
+	/* Heights match every other form control (--cw-control-h-*). */
 	.cw-button--sm {
-		padding: var(--cw-space-1) var(--cw-space-3);
+		padding: 0 var(--cw-space-3);
 		font-size: var(--cw-text-xs);
-		min-height: 1.75rem;
+		min-height: var(--cw-control-h-sm);
 		--cw-button-icon-size: 1.5em;
 	}
 	.cw-button--md {
-		padding: var(--cw-space-2) var(--cw-space-4);
-		font-size: var(--cw-text-sm);
-		min-height: 2.25rem;
+		padding: 0 var(--cw-space-4);
+		font-size: var(--cw-control-text-md);
+		min-height: var(--cw-control-h-md);
 		--cw-button-icon-size: 1.7em;
 	}
 	.cw-button--lg {
-		padding: var(--cw-space-3) var(--cw-space-6);
-		font-size: var(--cw-text-base);
-		min-height: 2.75rem;
+		padding: 0 var(--cw-space-6);
+		font-size: var(--cw-control-text-lg);
+		min-height: var(--cw-control-h-lg);
 		--cw-button-icon-size: 1.8em;
 	}
 
@@ -203,17 +208,14 @@
 
 	/* ── States ──────────────────────────── */
 	.cw-button:disabled {
-		opacity: 0.5;
+		opacity: var(--cw-opacity-disabled);
 		cursor: not-allowed;
 	}
 
-	.cw-button:focus-visible {
-		outline: none;
-		box-shadow:
-			0 0 0 var(--cw-focus-ring-width)
-				color-mix(in srgb, var(--cw-focus-ring-color) 34%, transparent),
-			0 0 0 calc(var(--cw-focus-ring-width) + 2px) var(--cw-bg-surface),
-			var(--cw-button-focus-base-shadow, none);
+	/* Loading buttons are disabled but should not look greyed out. */
+	.cw-button--loading:disabled {
+		opacity: 1;
+		cursor: progress;
 	}
 
 	.cw-button--full {
@@ -221,10 +223,14 @@
 	}
 
 	/* ── Loading ─────────────────────────── */
+	/* The spinner overlays the (invisible) content so the button keeps its
+	   width while loading. */
 	.cw-button__spinner {
-		display: inline-flex;
-		width: 1em;
-		height: 1em;
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.cw-button__content {
@@ -247,8 +253,6 @@
 
 	.cw-button__content--hidden {
 		visibility: hidden;
-		width: 0;
-		overflow: hidden;
 	}
 
 	.cw-button__content :global(img),
@@ -263,5 +267,4 @@
 	.cw-button--loading {
 		pointer-events: none;
 	}
-
 </style>

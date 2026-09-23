@@ -104,7 +104,7 @@
 				data: airTemp,
 				decimals: 1,
 				gapMs,
-				thresholds: [{ value: 0, label: 'Frost', color: 'rgba(59,130,246,0.6)' }]
+				thresholds: [{ value: 0, label: 'Frost' }]
 			},
 			{
 				id: 'soilTemp',
@@ -186,7 +186,7 @@
 				id: 'temp',
 				label: 'Temperature',
 				unit: '°C',
-				color: '#ef4444',
+				...metricColor('air_temperature'),
 				data,
 				decimals: 1
 			} satisfies CwResponsiveLineSeries
@@ -194,7 +194,7 @@
 	})();
 
 	const fullExample = `<script lang="ts">
-	import { CwResponsiveLineChart } from '@cropwatchdevelopment/cwui';
+	import { CwResponsiveLineChart, metricColor } from '@cropwatchdevelopment/cwui';
 	import type { CwResponsiveLineSeries } from '@cropwatchdevelopment/cwui';
 
 	const series: CwResponsiveLineSeries[] = [
@@ -202,18 +202,17 @@
 			id: 'airTemp',
 			label: 'Air temperature',
 			unit: '°C',
-			color: '#ef4444',
-			gradient: true,           // value-mapped temperature gradient
+			...metricColor('air_temperature'), // colour + value-mapped gradient
 			data: airTempPoints,      // [{ t: epochMs, v: number | null }]
 			decimals: 1,
 			gapMs: 8 * 60 * 1000,     // mark > 8-min jumps as "no signal"
-			thresholds: [{ value: 0, label: 'Frost', color: 'rgba(59,130,246,0.6)' }]
+			thresholds: [{ value: 0, label: 'Frost' }]
 		},
 		{
 			id: 'airHumidity',
 			label: 'Air humidity',
 			unit: '%RH',
-			color: '#3b82f6',
+			...metricColor('humidity'),
 			data: humidityPoints,
 			decimals: 0
 		}
@@ -225,7 +224,6 @@
 	title="North Greenhouse · Bay 3"
 	subtitle="Live sensor telemetry"
 	initialRange="24h"
-	themeAuto
 />`;
 
 	const soilExample = `<CwResponsiveLineChart
@@ -249,10 +247,11 @@
 <h2>CwResponsiveLineChart</h2>
 <p class="demo-desc">
 	A Canvas2D, touch-first multi-series time chart for farm sensor telemetry. Drag horizontally to pan,
-	pinch (two fingers) or Ctrl + scroll to zoom, tap to lock the crosshair, double-tap to reset. Built-in support for
-	dual Y-axes, a value-mapped temperature gradient, named threshold lines, anomaly markers, explicit
-	data-gap bands, night-time shading, and a fully responsive shell that picks a layout from its
-	container width.
+	pinch (two fingers) or Ctrl/⌘ + scroll to zoom, tap to lock the crosshair, double-tap to reset.
+	Built-in support for dual Y-axes, a value-mapped temperature gradient, named threshold lines,
+	anomaly markers, explicit data-gap bands, night-time shading, and a fully responsive shell that
+	picks a layout from its container width. Colours come from the theme tokens and follow the
+	page theme automatically — try the theme picker in the header.
 </p>
 
 <section class="demo-section">
@@ -270,7 +269,6 @@
 		title="North Greenhouse · Bay 3"
 		subtitle="Live sensor telemetry · one Y-axis per series"
 		initialRange="24h"
-		height={560}
 	/>
 	<DemoCodeExample code={fullExample} title="Full configuration" />
 </section>
@@ -286,7 +284,7 @@
 		title="Soil profile · Bay 3"
 		subtitle="Moisture and electrical conductivity"
 		initialRange="24h"
-		height={420}
+		height={400}
 	/>
 	<DemoCodeExample code={soilExample} title="Soil-focused example" />
 </section>
@@ -310,10 +308,45 @@
 </section>
 
 <section class="demo-section">
+	<h3>Keyboard navigation</h3>
+	<p class="demo-note">
+		Tab to the plot, then use <kbd>←</kbd> <kbd>→</kbd> to move the crosshair, <kbd>+</kbd> /
+		<kbd>-</kbd> to zoom, <kbd>0</kbd> to reset and <kbd>Esc</kbd> to clear. The current reading is
+		announced to screen readers.
+	</p>
+</section>
+
+<section class="demo-section">
+	<h3>Loading, no data &amp; locale</h3>
+	<div class="demo-grid">
+		<div>
+			<span class="demo-label">loading</span>
+			<CwResponsiveLineChart series={[]} loading bare height={220} ranges={[]} />
+		</div>
+		<div>
+			<span class="demo-label">Empty series (no-data state)</span>
+			<CwResponsiveLineChart series={[]} bare height={220} ranges={[]} />
+		</div>
+		<div>
+			<span class="demo-label">locale="ja-JP"</span>
+			<CwResponsiveLineChart
+				series={MINI}
+				locale="ja-JP"
+				bare
+				height={220}
+				showLegend={false}
+				ranges={[]}
+			/>
+		</div>
+	</div>
+</section>
+
+<section class="demo-section">
 	<h3>Forced dark theme</h3>
 	<p class="demo-note">
-		Pass <code>theme="dark"</code> (or bind it) for surfaces that always render dark. Pair with
-		<code>themeAuto</code> to follow the OS color-scheme preference instead.
+		By default the chart follows the page's <code>data-theme</code>. Pass <code>theme="dark"</code>
+		(or bind it) for surfaces that always render dark, or <code>themeAuto</code> to follow the OS
+		colour-scheme preference instead.
 	</p>
 	<CwResponsiveLineChart
 		series={FARM.series}
@@ -323,35 +356,24 @@
 		subtitle="Dark surface · 7-day window"
 		initialRange="7d"
 		theme="dark"
-		height={520}
+		height={440}
 	/>
 </section>
 
 <style>
-	h2 {
-		font-size: var(--cw-text-xl);
-		font-weight: var(--cw-font-bold);
-		margin-bottom: var(--cw-space-2);
-	}
-	h3 {
-		font-size: var(--cw-text-base);
-		font-weight: var(--cw-font-semibold);
-		margin-bottom: var(--cw-space-2);
-		color: var(--cw-text-secondary);
-	}
-	.demo-desc {
-		color: var(--cw-text-muted);
-		font-size: var(--cw-text-sm);
-		margin-bottom: var(--cw-space-4);
-		max-width: 80ch;
-	}
 	.demo-note {
 		color: var(--cw-text-secondary);
 		font-size: var(--cw-text-sm);
 		margin: 0 0 var(--cw-space-3);
 		max-width: 80ch;
 	}
-	.demo-section {
-		margin-bottom: var(--cw-space-6);
+
+	kbd {
+		padding: 0 var(--cw-space-1);
+		border: 1px solid var(--cw-border-default);
+		border-radius: var(--cw-radius-sm);
+		background: var(--cw-bg-muted);
+		font-family: var(--cw-font-mono);
+		font-size: var(--cw-text-xs);
 	}
 </style>

@@ -1,8 +1,10 @@
-<script lang="ts">
+<script lang="ts" module>
 	import type { CwSize } from '../types/index.js';
 
-	type CwSpinnerSize = CwSize | 'xl';
+	export type CwSpinnerSize = CwSize | 'xl';
+</script>
 
+<script lang="ts">
 	interface Props {
 		size?: CwSpinnerSize;
 		showLabel?: boolean;
@@ -13,7 +15,7 @@
 	let {
 		size = 'md',
 		showLabel = false,
-		label = 'Loading...',
+		label = 'Loading…',
 		class: className = ''
 	}: Props = $props();
 </script>
@@ -21,9 +23,9 @@
 <span
 	class="cw-spinner cw-spinner--{size} {className}"
 	role={showLabel ? 'status' : undefined}
-	aria-live={showLabel ? 'polite' : undefined}
+	aria-hidden={showLabel ? undefined : 'true'}
 >
-	<svg viewBox="0 0 24 24" fill="none" class="cw-spinner__icon cw-spin" aria-hidden={showLabel ? undefined : 'true'}>
+	<svg viewBox="0 0 24 24" fill="none" class="cw-spinner__icon cw-spin" aria-hidden="true">
 		<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity="0.25" />
 		<path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
 	</svg>
@@ -39,6 +41,7 @@
 		justify-content: center;
 		gap: var(--cw-space-2);
 		color: currentColor;
+		line-height: 1;
 	}
 
 	.cw-spinner__icon {

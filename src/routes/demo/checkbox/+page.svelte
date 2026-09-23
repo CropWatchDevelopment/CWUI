@@ -8,6 +8,28 @@
 	let smsAlerts = $state(false);
 	let emailDigest = $state(true);
 	let pushAlerts = $state(false);
+	let acceptTerms = $state(false);
+
+	let sensors = $state([
+		{ id: 'temp', label: 'Temperature', checked: true },
+		{ id: 'humidity', label: 'Humidity', checked: false },
+		{ id: 'co2', label: 'CO₂', checked: true }
+	]);
+
+	const checkedCount = $derived(sensors.filter((sensor) => sensor.checked).length);
+	const allChecked = $derived(checkedCount === sensors.length);
+	const someChecked = $derived(checkedCount > 0 && !allChecked);
+
+	function toggleAll(checked: boolean) {
+		for (const sensor of sensors) sensor.checked = checked;
+	}
+
+	const indeterminateExample = `<CwCheckbox
+\tlabel="All sensors"
+\tchecked={allChecked}
+\tindeterminate={someChecked}
+\tonchange={(checked) => toggleAll(checked)}
+/>`;
 
 	const checkboxExample = `<script lang="ts">
 \timport { CwCheckbox } from '@cropwatchdevelopment/cwui';
@@ -43,8 +65,8 @@
 </section>
 
 <section class="demo-section">
-	<h3>Stacked Options</h3>
-	<div class="demo-stack">
+	<h3>Stacked options</h3>
+	<div class="demo-stack demo-panel">
 		<CwCheckbox
 			name="filters"
 			value="alerts"
@@ -71,8 +93,40 @@
 </section>
 
 <section class="demo-section">
-	<h3>Compact Row</h3>
-	<div class="demo-inline-group" aria-label="Notification preferences">
+	<h3>Indeterminate "select all"</h3>
+	<div class="demo-stack demo-panel">
+		<CwCheckbox
+			label="All sensors"
+			description="Mixed state shows a dash when only some sensors are selected."
+			checked={allChecked}
+			indeterminate={someChecked}
+			onchange={(checked) => toggleAll(checked)}
+		/>
+		<div class="demo-nested">
+			{#each sensors as sensor (sensor.id)}
+				<CwCheckbox name="sensors" value={sensor.id} label={sensor.label} bind:checked={sensor.checked} />
+			{/each}
+		</div>
+	</div>
+	<DemoCodeExample code={indeterminateExample} title="Indeterminate checkbox" />
+</section>
+
+<section class="demo-section">
+	<h3>Required with error</h3>
+	<div class="demo-panel">
+		<CwCheckbox
+			name="terms"
+			label="I confirm the calibration values are correct"
+			required
+			error={acceptTerms ? undefined : 'Confirm before saving the calibration'}
+			bind:checked={acceptTerms}
+		/>
+	</div>
+</section>
+
+<section class="demo-section">
+	<h3>Compact row</h3>
+	<div class="demo-inline-group demo-panel" role="group" aria-label="Notification preferences">
 		<CwCheckbox name="notifySms" label="SMS alerts" bind:checked={smsAlerts} />
 		<CwCheckbox name="notifyEmail" label="Email digest" bind:checked={emailDigest} />
 		<CwCheckbox name="notifyPush" label="Push alerts" bind:checked={pushAlerts} />
@@ -90,56 +144,19 @@
 </section>
 
 <style>
-	h2 {
-		font-size: var(--cw-text-xl);
-		font-weight: var(--cw-font-bold);
-		margin-bottom: var(--cw-space-2);
-	}
-
-	h3 {
-		font-size: var(--cw-text-base);
-		font-weight: var(--cw-font-semibold);
-		margin-bottom: var(--cw-space-2);
-		color: var(--cw-text-secondary);
-	}
-
-	.demo-desc {
-		color: var(--cw-text-muted);
-		font-size: var(--cw-text-sm);
-		margin-bottom: var(--cw-space-4);
-	}
-
-	.demo-section {
-		margin-bottom: var(--cw-space-6);
-	}
-
-	.demo-stack {
-		display: flex;
-		flex-direction: column;
-		gap: var(--cw-space-3);
-		padding: var(--cw-space-4);
-		border: 1px solid var(--cw-border-muted);
-		border-radius: var(--cw-radius-lg);
-		background: var(--cw-bg-elevated);
-	}
-
 	.demo-inline-group {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--cw-space-4);
-		padding: var(--cw-space-4);
-		border: 1px solid var(--cw-border-muted);
-		border-radius: var(--cw-radius-lg);
-		background: var(--cw-bg-elevated);
 	}
-
-	.demo-hint {
-		margin-top: var(--cw-space-2);
-		color: var(--cw-text-muted);
-		font-size: var(--cw-text-xs);
+	.demo-nested {
+		display: flex;
+		flex-direction: column;
+		gap: var(--cw-space-3);
+		padding-left: var(--cw-space-6);
 	}
 
 	.demo-hint strong {
-		color: var(--cw-accent);
+		color: var(--cw-accent-text);
 	}
 </style>

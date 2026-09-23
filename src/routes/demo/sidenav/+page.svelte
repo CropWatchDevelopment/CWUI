@@ -35,7 +35,9 @@
 			id: "users",
 			label: "Users",
 			icon: icons.users,
-			goto: () => console.log("goto -> users"),
+			goto: () => {
+				lastEvent = "goto → users";
+			},
 			group: "Main",
 			trailing: 18,
 		},
@@ -71,12 +73,14 @@
 	let side = $state<"left" | "right">("left");
 
 	let activeId = $state("home");
+	let lastEvent = $state("none yet");
 	const itemsWithActive = $derived(
 		demoItems.map((item) => ({ ...item, active: item.id === activeId })),
 	);
 
 	function handleSelect(item: CwSideNavItem) {
 		activeId = item.id;
+		lastEvent = `select → ${item.id}`;
 	}
 
 	const sideNavExample = `<CwSideNav
@@ -94,10 +98,25 @@
 
 <h2>CwSideNav</h2>
 <p class="demo-desc">
-	Collapsible side navigation with open, mini, and hidden modes. Supports
-	left/right positioning, groups, separators, per-item href/goto, and right-aligned item content.
-	In mini mode, hover temporarily expands it until mouseout.
+	Collapsible side navigation with open, mini and hidden modes. Supports left/right positioning,
+	groups, separators, per-item href/goto, trailing counters and custom trailing content.
 </p>
+
+<ul class="demo-notes">
+	<li>
+		<strong>Mini:</strong> icon-only rail. Each item's label appears as a tooltip on hover and on
+		keyboard focus, and the active item has a leading accent bar.
+	</li>
+	<li>
+		<strong>Hidden:</strong> the nav is removed from the tab order, so keyboard users never land on
+		links they can't see.
+	</li>
+	<li>
+		<strong>Phones (≤ 640px):</strong> an open nav slides over the page with a scrim. Escape, the
+		scrim or choosing an item closes it and focus returns to where it was. Resize the window to try
+		it.
+	</li>
+</ul>
 
 <div class="demo-controls">
 	<div class="demo-controls__group">
@@ -139,17 +158,18 @@
 			<div class="demo-logo">
 				<img
 					src="/cropwatch_animated.svg"
-					alt="CropWatch Logo"
-					style="width:1.5rem;height:1.5rem"
+					alt=""
+					class="demo-logo__img"
 				/>
-				<span class="demo-logo__text">𝘾𝙧𝙤𝙥𝙒𝙖𝙩𝙘𝙝®</span>
+				<span class="demo-logo__text">CropWatch</span>
 			</div>
 		{/snippet}
 		{#snippet headerMini()}
 			<svg
 				viewBox="0 0 24 24"
 				fill="none"
-				style="width:1.25rem;height:1.25rem;color:var(--cw-accent)"
+				class="demo-logo__mini"
+				aria-hidden="true"
 			>
 				<path
 					d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
@@ -175,6 +195,7 @@
 					onclick={(event) => {
 						event.preventDefault();
 						event.stopPropagation();
+						lastEvent = "trailing button → settings";
 					}}
 				>
 					Open
@@ -205,19 +226,11 @@
 	</div>
 </div>
 
+<p class="demo-event" aria-live="polite">Last event: {lastEvent}</p>
+
 <DemoCodeExample code={sideNavExample} title="CwSideNav example" />
 
 <style>
-	h2 {
-		font-size: var(--cw-text-xl);
-		font-weight: var(--cw-font-bold);
-		margin-bottom: var(--cw-space-2);
-	}
-	.demo-desc {
-		color: var(--cw-text-muted);
-		font-size: var(--cw-text-sm);
-		margin-bottom: var(--cw-space-4);
-	}
 
 	.demo-controls {
 		display: flex;
@@ -262,7 +275,27 @@
 	}
 
 	.demo-content strong {
-		color: var(--cw-accent);
+		color: var(--cw-accent-text);
+	}
+
+	.demo-notes {
+		display: grid;
+		gap: var(--cw-space-2);
+		max-width: 70ch;
+		margin: 0 0 var(--cw-space-6) var(--cw-space-5);
+		font-size: var(--cw-text-sm);
+		color: var(--cw-text-secondary);
+	}
+
+	.demo-logo__img {
+		width: 1.5rem;
+		height: 1.5rem;
+	}
+
+	.demo-logo__mini {
+		width: 1.25rem;
+		height: 1.25rem;
+		color: var(--cw-accent-text);
 	}
 
 	.demo-logo {
@@ -274,7 +307,7 @@
 	.demo-logo__text {
 		font-size: var(--cw-text-lg);
 		font-weight: var(--cw-font-bold);
-		color: var(--cw-accent);
+		color: var(--cw-accent-text);
 	}
 
 	.demo-version {
@@ -283,14 +316,14 @@
 	}
 
 	:global(.demo-trail-btn) {
-		padding: 0.15rem 0.4rem;
-		min-height: 1.3rem;
-		font-size: 0.675rem;
+		padding: 0 var(--cw-space-2);
+		min-height: var(--cw-hit-target-min);
+		font-size: var(--cw-text-xs);
 	}
 
 	.demo-trail-icon {
 		width: 0.9rem;
 		height: 0.9rem;
-		color: #8eb0e6;
+		color: var(--cw-sidenav-item-text);
 	}
 </style>

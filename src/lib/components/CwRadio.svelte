@@ -7,7 +7,10 @@
 		value?: CwRadioValue;
 		id?: string;
 		label?: string;
+		/** Helper text, announced as the radio's description (not part of its name). */
 		description?: string;
+		/** Error message; marks the radio invalid. For groups, prefer one error on the group container. */
+		error?: string;
 		onchange?: (value: CwRadioValue, event: Event) => void;
 		oninput?: (value: CwRadioValue, event: Event) => void;
 		class?: string;
@@ -19,7 +22,9 @@
 		id,
 		label,
 		description,
+		error,
 		disabled = false,
+		required = false,
 		onchange,
 		oninput,
 		class: className = '',
@@ -29,6 +34,13 @@
 	const uid = $props.id();
 	const inputId = $derived(id ?? `${uid}-input`);
 	const isSelected = $derived(group === value);
+	const titleId = $derived(`${inputId}-label`);
+	const descriptionId = $derived(`${inputId}-description`);
+	const errorId = $derived(`${inputId}-error`);
+	const describedBy = $derived(
+		[description ? descriptionId : null, error ? errorId : null].filter(Boolean).join(' ') ||
+			undefined
+	);
 
 	function handleInput(event: Event) {
 		const target = event.currentTarget as HTMLInputElement;
@@ -49,6 +61,7 @@
 	class="cw-radio {className}"
 	class:cw-radio--disabled={disabled}
 	class:cw-radio--selected={isSelected}
+	class:cw-radio--invalid={!!error}
 >
 	<label class="cw-radio__label" for={inputId}>
 		<input
@@ -58,6 +71,9 @@
 			bind:group
 			{value}
 			{disabled}
+			{required}
+			aria-labelledby={label ? titleId : undefined}
+			aria-describedby={describedBy}
 			oninput={handleInput}
 			onchange={handleChange}
 			{...rest}
@@ -67,13 +83,16 @@
 			<span class="cw-radio__dot"></span>
 		</span>
 
-		{#if label || description}
+		{#if label || description || error}
 			<span class="cw-radio__text">
 				{#if label}
-					<span class="cw-radio__title">{label}</span>
+					<span id={titleId} class="cw-radio__title">{label}</span>
 				{/if}
 				{#if description}
-					<span class="cw-radio__description">{description}</span>
+					<span id={descriptionId} class="cw-radio__description">{description}</span>
+				{/if}
+				{#if error}
+					<span id={errorId} class="cw-radio__error">{error}</span>
 				{/if}
 			</span>
 		{/if}
@@ -116,19 +135,13 @@
 		height: 1.25rem;
 		margin-top: 0.125rem;
 		border-radius: var(--cw-radius-full);
-		border: 1px solid var(--cw-border-default);
-		background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-bg-surface) 82%, var(--cw-bg-elevated)) 0%,
-				var(--cw-bg-elevated) 100%
-			);
+		border: 1px solid var(--cw-control-border);
+		background: var(--cw-control-bg);
 		box-shadow: var(--cw-shadow-sm);
 		flex-shrink: 0;
 		transition:
 			background-color var(--cw-duration-fast) var(--cw-ease-default),
-			border-color var(--cw-duration-fast) var(--cw-ease-default),
-			box-shadow var(--cw-duration-fast) var(--cw-ease-default);
+			border-color var(--cw-duration-fast) var(--cw-ease-default);
 	}
 
 	.cw-radio__dot {
@@ -139,18 +152,17 @@
 		opacity: 0;
 		transform: scale(0.2);
 		transition:
-			transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
-			opacity 150ms var(--cw-ease-default);
+			transform var(--cw-duration-normal) var(--cw-ease-out),
+			opacity var(--cw-duration-fast) var(--cw-ease-default);
+	}
+
+	.cw-radio__label:hover .cw-radio__input:not(:disabled) + .cw-radio__control {
+		border-color: var(--cw-control-border-hover);
 	}
 
 	.cw-radio__input:checked + .cw-radio__control {
 		border-color: var(--cw-accent);
-		background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-accent-bg) 56%, var(--cw-bg-surface)) 0%,
-				color-mix(in srgb, var(--cw-accent-bg) 72%, var(--cw-bg-elevated)) 100%
-			);
+		background: color-mix(in srgb, var(--cw-accent-bg) 64%, var(--cw-control-bg));
 	}
 
 	.cw-radio__input:checked + .cw-radio__control .cw-radio__dot {
@@ -158,15 +170,19 @@
 		transform: scale(1);
 	}
 
+	/* The native input is visually hidden, so draw the global focus ring on the control. */
 	.cw-radio__input:focus-visible + .cw-radio__control {
-		box-shadow:
-			0 0 0 var(--cw-focus-ring-width)
-				color-mix(in srgb, var(--cw-focus-ring-color) 28%, transparent),
-			var(--cw-shadow-sm);
+		outline: var(--cw-focus-ring-width) solid var(--cw-focus-ring-color);
+		outline-offset: var(--cw-focus-ring-offset);
+	}
+
+	.cw-radio--invalid .cw-radio__control {
+		border-color: var(--cw-tone-danger-border);
 	}
 
 	.cw-radio__input:disabled + .cw-radio__control {
-		opacity: 0.64;
+		opacity: var(--cw-opacity-disabled);
+		box-shadow: none;
 	}
 
 	.cw-radio__text {
@@ -179,28 +195,27 @@
 	.cw-radio__title {
 		font-size: var(--cw-text-sm);
 		font-weight: var(--cw-font-medium);
-		line-height: 1.25;
+		line-height: var(--cw-leading-tight);
 		color: var(--cw-text-primary);
+		padding-top: 0.1875rem;
 	}
 
-	.cw-radio__description {
+	.cw-radio__description,
+	.cw-radio__error {
 		font-size: var(--cw-text-xs);
-		line-height: 1.35;
+		line-height: var(--cw-leading-normal);
 		color: var(--cw-text-muted);
 	}
 
-	.cw-radio--selected .cw-radio__title {
-		color: color-mix(in srgb, var(--cw-text-primary) 78%, var(--cw-accent));
+	.cw-radio__error {
+		color: var(--cw-tone-danger-text);
 	}
 
 	.cw-radio--disabled .cw-radio__label {
 		cursor: not-allowed;
 	}
 
-	@media (prefers-reduced-motion: reduce) {
-		.cw-radio__control,
-		.cw-radio__dot {
-			transition-duration: 140ms !important;
-		}
+	.cw-radio--disabled .cw-radio__title {
+		color: var(--cw-text-disabled);
 	}
 </style>

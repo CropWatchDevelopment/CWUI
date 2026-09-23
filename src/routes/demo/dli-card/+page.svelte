@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { DliCard } from "$lib/index.js";
-	import type { DliHistoryPoint } from "$lib/index.js";
+	import { CwDliCard } from "$lib/index.js";
+	import type { CwDliHistoryPoint } from "$lib/index.js";
 	import DemoCodeExample from "../_components/DemoCodeExample.svelte";
 
 	type CropName = "Tomato" | "Pepper" | "Lettuce" | "Basil";
@@ -11,10 +11,10 @@
 		targetMin: number;
 		targetMax: number;
 		max: number;
-		history: DliHistoryPoint[];
+		history: CwDliHistoryPoint[];
 	}
 
-	const tomatoHistory: DliHistoryPoint[] = [
+	const tomatoHistory: CwDliHistoryPoint[] = [
 		{ date: "2026-05-23", value: 18.2 },
 		{ date: "2026-05-24", value: 21.5 },
 		{ date: "2026-05-25", value: 26.1 },
@@ -105,7 +105,7 @@
 	}
 
 	const dliExample = `<script lang="ts">
-\timport { DliCard } from '@cropwatchdevelopment/cwui';
+\timport { CwDliCard } from '@cropwatchdevelopment/cwui';
 
 \tconst history = [
 \t\t{ date: "2026-05-23", value: 18.2 },
@@ -118,7 +118,7 @@
 \t];
 <\/script>
 
-<DliCard
+<CwDliCard
 \tvalue={24.3}
 \ttargetMin={20}
 \ttargetMax={30}
@@ -128,10 +128,12 @@
 />`;
 </script>
 
-<h2>DliCard</h2>
+<h2>CwDliCard</h2>
 <p class="demo-desc">
 	Daily Light Integral card for agricultural dashboards. It presents DLI as a daily total
-	against a crop target band, with optional daily bars for recent history.
+	against a crop target band, with optional daily bars for recent history. Missing readings show
+	"—" instead of a fake zero, and the status and target band hide when no target is configured.
+	(<code>DliCard</code> is still exported as an alias.)
 </p>
 
 <section class="demo-section">
@@ -150,10 +152,11 @@
 					type="button"
 					class="demo-crop-button"
 					class:demo-crop-button--active={selectedCrop === crop}
+					aria-pressed={selectedCrop === crop}
 					onclick={() => selectCrop(crop)}
 				>
 					<span>{crop}</span>
-					<small>{preset.targetMin}-{preset.targetMax} mol/m²/day</small>
+					<small>{preset.targetMin}–{preset.targetMax} mol/m²/day</small>
 				</button>
 			{/each}
 		</div>
@@ -165,7 +168,7 @@
 		</label>
 	</div>
 
-	<DliCard
+	<CwDliCard
 		value={currentDli}
 		targetMin={activePreset.targetMin}
 		targetMax={activePreset.targetMax}
@@ -174,7 +177,7 @@
 		history={activePreset.history}
 	/>
 
-	<DemoCodeExample code={dliExample} title="DliCard example" />
+	<DemoCodeExample code={dliExample} title="CwDliCard example" />
 </section>
 
 <section class="demo-section">
@@ -187,7 +190,7 @@
 
 	<div class="demo-status-grid">
 		{#each statusExamples as example (example.label)}
-			<DliCard
+			<CwDliCard
 				title={example.label}
 				value={example.value}
 				targetMin={example.targetMin}
@@ -208,14 +211,38 @@
 	</div>
 
 	<div class="demo-single-card">
-		<DliCard
+		<CwDliCard
 			value={42.6}
 			targetMin={20}
 			targetMax={30}
 			max={40}
 			cropName="Tomato"
-			title="DLI Today"
+			title="DLI today"
 		/>
+	</div>
+</section>
+
+<section class="demo-section">
+	<div class="demo-section__copy">
+		<h3>Missing reading and missing target</h3>
+		<p class="demo-copy">
+			A <code>null</code> value renders "—" with no marker or status. Without
+			<code>targetMin</code>/<code>targetMax</code>, the status pill and target band are hidden
+			rather than judging the reading against a 0–0 range.
+		</p>
+	</div>
+
+	<div class="demo-status-grid">
+		<CwDliCard
+			title="Awaiting first reading"
+			value={null}
+			targetMin={20}
+			targetMax={30}
+			max={40}
+			cropName="Tomato"
+			compact
+		/>
+		<CwDliCard title="No crop target set" value={24.3} max={40} compact />
 	</div>
 </section>
 
@@ -228,8 +255,8 @@
 	</div>
 
 	<div class="demo-single-card">
-		<DliCard
-			value={0}
+		<CwDliCard
+			value={null}
 			noData="The current sensor is not available on your device"
 			targetMin={20}
 			targetMax={30}
@@ -241,27 +268,6 @@
 </section>
 
 <style>
-	h2 {
-		margin-bottom: var(--cw-space-2);
-		font-size: var(--cw-text-xl);
-		font-weight: var(--cw-font-bold);
-	}
-
-	h3 {
-		margin: 0;
-		color: var(--cw-text-primary);
-		font-size: var(--cw-text-lg);
-		font-weight: var(--cw-font-semibold);
-	}
-
-	.demo-desc {
-		max-width: 68ch;
-		margin: 0 0 var(--cw-space-6);
-		color: var(--cw-text-secondary);
-		font-size: var(--cw-text-sm);
-		line-height: 1.65;
-	}
-
 	.demo-copy {
 		max-width: 64ch;
 		margin: 0;
@@ -269,13 +275,6 @@
 		font-size: var(--cw-text-sm);
 		line-height: 1.65;
 	}
-
-	.demo-section {
-		display: grid;
-		gap: var(--cw-space-4);
-		margin-bottom: var(--cw-space-8);
-	}
-
 	.demo-section__copy {
 		display: grid;
 		gap: var(--cw-space-2);

@@ -162,6 +162,10 @@ function resolveAlarmDelayMs(options: CwAlarmRegistration): number {
  * Uses a min-heap plus a single active timeout, making it suitable for large alarm sets.
  */
 export function createCwAlarmScheduler(): CwAlarmApi {
+	return createAlarmSchedulerInternal().api;
+}
+
+function createAlarmSchedulerInternal(): { api: CwAlarmApi; flush: () => void } {
 	const tasks = new Map<string, AlarmTask>();
 	const heap = new AlarmMinHeap();
 	let timeout: ReturnType<typeof setTimeout> | null = null;
@@ -264,7 +268,7 @@ export function createCwAlarmScheduler(): CwAlarmApi {
 		}
 	};
 
-	return api;
+	return { api, flush: flushDueAlarms };
 }
 
 /**
@@ -272,9 +276,24 @@ export function createCwAlarmScheduler(): CwAlarmApi {
  * Call once from a top-level layout/component.
  */
 export function createCwAlarmContext(): CwAlarmApi {
-	const api = createCwAlarmScheduler();
+	const { api, flush } = createAlarmSchedulerInternal();
 	setContext(ALARM_KEY, api);
-	onDestroy(() => api.clear());
+
+	// Browsers throttle or suspend timers in background tabs and during sleep.
+	// When the page becomes visible again, fire anything that came due and re-arm.
+	const onVisibilityChange = () => {
+		if (document.visibilityState === 'visible') flush();
+	};
+	if (typeof document !== 'undefined') {
+		document.addEventListener('visibilitychange', onVisibilityChange);
+	}
+
+	onDestroy(() => {
+		if (typeof document !== 'undefined') {
+			document.removeEventListener('visibilitychange', onVisibilityChange);
+		}
+		api.clear();
+	});
 	return api;
 }
 

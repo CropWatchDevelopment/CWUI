@@ -17,20 +17,23 @@
 	--cw-gray-700: #334155;
 	--cw-gray-800: #1e293b;
 	--cw-gray-850: #172033;
-	--cw-gray-900: #0f172b;
+	--cw-gray-900: #0f172a;
 	--cw-gray-950: #020618;
 
 	/* ── Palette: Brand / Primary (bright teal-cyan) ──── */
 	--cw-primary-50: #e6fffa;
-	--cw-primary-100: #b2f5ea;
-	--cw-primary-200: #81e6d9;
-	--cw-primary-300: #4fd1c5;
-	--cw-primary-400: #38b2ac;
+	--cw-primary-100: #b3f5e6;
+	--cw-primary-200: #80ecd5;
+	--cw-primary-300: #4de3c4;
+	--cw-primary-400: #26dab6;
 	--cw-primary-500: #00d4aa;
 	--cw-primary-600: #00b894;
 	--cw-primary-700: #00997a;
 	--cw-primary-800: #007a62;
 	--cw-primary-900: #05433a;
+
+	/* ── Palette: Brand ────────────────────────────────── */
+	--cw-brand-green: #006045;
 
 	/* ── Palette: Secondary (slate-blue) ───────────────── */
 	--cw-secondary-50: #f8fafc;
@@ -59,23 +62,23 @@
 	/* ── Palette: Warning (amber) ──────────────────────── */
 	--cw-warning-50: #fffbeb;
 	--cw-warning-100: #fef3c7;
-	--cw-warning-200: #f0e4b3;
-	--cw-warning-300: #f3d983;
+	--cw-warning-200: #fde68a;
+	--cw-warning-300: #fcd34d;
 	--cw-warning-400: #fbbf24;
-	--cw-warning-500: #ecba63;
-	--cw-warning-600: #ecdc49;
-	--cw-warning-700: #f3cc1c;
-	--cw-warning-800: #fddc1e;
-	--cw-warning-900: #eed600;
+	--cw-warning-500: #f59e0b;
+	--cw-warning-600: #d97706;
+	--cw-warning-700: #b45309;
+	--cw-warning-800: #92400e;
+	--cw-warning-900: #78350f;
 
 	/* ── Palette: Danger (red) ─────────────────────────── */
-	--cw-danger-50: #f76767;
-	--cw-danger-100: #f84c4c;
-	--cw-danger-200: #f73b3b;
-	--cw-danger-300: #f51d1d;
-	--cw-danger-400: #f51f1f;
-	--cw-danger-500: #eb2f2f;
-	--cw-danger-600: #dd0f0f;
+	--cw-danger-50: #fef2f2;
+	--cw-danger-100: #fee2e2;
+	--cw-danger-200: #fecaca;
+	--cw-danger-300: #fca5a5;
+	--cw-danger-400: #f87171;
+	--cw-danger-500: #ef4444;
+	--cw-danger-600: #dc2626;
 	--cw-danger-700: #b91c1c;
 	--cw-danger-800: #991b1b;
 	--cw-danger-900: #7f1d1d;
@@ -113,6 +116,7 @@
 	--cw-text-xs: 0.75rem;
 	--cw-text-sm: 0.875rem;
 	--cw-text-base: 1rem;
+	--cw-text-md: var(--cw-text-base);
 	--cw-text-lg: 1.125rem;
 	--cw-text-xl: 1.25rem;
 	--cw-text-2xl: 1.5rem;
@@ -148,6 +152,7 @@
 	/* ── Scale: Motion ─────────────────────────────────── */
 	--cw-duration-fast: 100ms;
 	--cw-duration-normal: 200ms;
+	--cw-duration-medium: 250ms;
 	--cw-duration-slow: 300ms;
 	--cw-ease-default: cubic-bezier(0.4, 0, 0.2, 1);
 	--cw-ease-in: cubic-bezier(0.4, 0, 1, 1);
@@ -158,7 +163,35 @@
 	--cw-z-sticky: 200;
 	--cw-z-overlay: 300;
 	--cw-z-modal: 400;
+	--cw-z-popover: 350; /* menus/listboxes: above in-flow overlays, below modals */
 	--cw-z-toast: 500;
+	--cw-z-tooltip: 600;
+	--cw-z-inline-overlay: 10; /* overlays scoped to a component (no-data, loading) */
+
+	/* ── Controls (buttons, inputs, selects, pickers) ──── */
+	/* One size scale shared by every form control and button so they
+	   line up when placed side by side. */
+	--cw-control-h-sm: 2rem;
+	--cw-control-h-md: 2.5rem;
+	--cw-control-h-lg: 3rem;
+	--cw-control-px-sm: var(--cw-space-2);
+	--cw-control-px-md: var(--cw-space-3);
+	--cw-control-px-lg: var(--cw-space-4);
+	--cw-control-text-sm: var(--cw-text-sm);
+	--cw-control-text-md: var(--cw-text-sm);
+	--cw-control-text-lg: var(--cw-text-base);
+	--cw-control-radius: var(--cw-radius-lg);
+	--cw-option-min-h: 2.25rem;
+	--cw-hit-target-min: 1.5rem; /* WCAG 2.5.8 minimum for small icon buttons */
+	--cw-opacity-disabled: 0.5;
+
+	/* ── Surfaces ──────────────────────────────────────── */
+	--cw-popover-radius: var(--cw-radius-lg);
+	--cw-card-radius: var(--cw-radius-xl);
+	--cw-modal-radius: var(--cw-radius-xl);
+
+	/* ── Breakpoints (reference only; CSS vars can't be used in @media) ──
+	   sm 640px · md 768px · lg 1024px · xl 1280px */
 
 	/* ── Focus ring ────────────────────────────────────── */
 	--cw-focus-ring-width: 2px;

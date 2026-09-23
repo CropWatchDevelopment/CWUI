@@ -5,31 +5,12 @@
    Applied via [data-theme="light"].
    ============================================================ */
 
-/* ============================================================
-   CropWatch UI — Refined Light Theme
-   ============================================================
-   Professional, high-contrast, and layered for business use.
-   Applied via [data-theme="light"].
-   ============================================================ */
-
-/* ============================================================
-   CropWatch UI — Full Refined Light Theme
-   ============================================================
-   Optimized for: Business Professional Dashboards
-   Strategy: Using "Slate" grays for depth and "Blue" for intent.
-   ============================================================ */
-
-/* ============================================================
-   CropWatch UI — High-Contrast Professional Light Theme
-   ============================================================
-   Targeting: Depth, Layering, and WCAG-compliant contrast.
-   ============================================================ */
-
 [data-theme='light'] {
 	color-scheme: light;
 
 	/* ── CropWatch Color Palette ───────────────────────── */
-	--cw-green-standard: #006045;
+	/* Kept for backwards compatibility; prefer --cw-brand-green. */
+	--cw-green-standard: var(--cw-brand-green);
 
 	/* ── Surface / Background ──────────────────────────── */
 	--cw-bg-base: #d6e0ea;
@@ -37,7 +18,7 @@
 	--cw-bg-surface-elevated: #fbfdff;
 	--cw-bg-surface-callout: #279ec4d4;
 	--cw-bg-elevated: #e8eff5;
-	--cw-bg-elevated2: f3f4f6;
+	--cw-bg-elevated2: #f3f4f6;
 	--cw-bg-overlay: #94a3b8;
 	--cw-bg-muted: #dee7f0;
 	--cw-bg-subtle: #ccd8e4;
@@ -45,7 +26,8 @@
 	--cw-bg-table-row-hover: #e8eff5;
 	--cw-bg-table-row-alt: #e3ebf3;
 	--cw-bg-table-row-alt-hover: #d8e3ed;
-	--cw-header-bg: var(--cw-green-standard);
+	--cw-header-bg: var(--cw-brand-green);
+	--cw-header-fg: #ffffff;
 
 	/* ── Button / Profile Trigger ─────────────────────── */
 	--cw-button-primary-bg: linear-gradient(180deg, #40546b 0%, #2d3d4f 100%);
@@ -176,7 +158,7 @@
 	--cw-text-primary: #07111d;
 	--cw-text-secondary: #1f3144;
 	--cw-text-muted: #465b72;
-	--cw-text-disabled: #8397ac;
+	--cw-text-disabled: #6b7f94;
 	--cw-text-inverse: #fbfdff;
 
 	/* ── Border ────────────────────────────────────────── */
@@ -196,47 +178,95 @@
 	--cw-tone-primary-bg: #dbeafe;
 	--cw-tone-primary-bg-subtle: color-mix(in srgb, #2563eb 14%, transparent);
 	--cw-tone-primary-text: #1e40af;
-	--cw-tone-primary-border: #93c5fd;
-	--cw-tone-primary-solid-bg: #2563eb;
+	--cw-tone-primary-border: #3b82f6;
+	--cw-tone-primary-solid-bg: #1d4ed8;
 	--cw-tone-primary-solid-text: #ffffff;
 
 	--cw-tone-secondary-bg: #e2e8f0;
 	--cw-tone-secondary-bg-subtle: color-mix(in srgb, #475569 12%, transparent);
 	--cw-tone-secondary-text: #334155;
-	--cw-tone-secondary-border: #b2c0cf;
+	--cw-tone-secondary-border: #70869d;
 	--cw-tone-secondary-solid-bg: #475569;
 	--cw-tone-secondary-solid-text: #ffffff;
 
 	--cw-tone-info-bg: #e0f2fe;
 	--cw-tone-info-bg-subtle: color-mix(in srgb, #0284c7 12%, transparent);
 	--cw-tone-info-text: #075985;
-	--cw-tone-info-border: #7dd3fc;
-	--cw-tone-info-solid-bg: #0284c7;
+	--cw-tone-info-border: #0284c7;
+	--cw-tone-info-solid-bg: #0369a1;
 	--cw-tone-info-solid-text: #ffffff;
 
 	--cw-tone-warning-bg: #fff7db;
 	--cw-tone-warning-bg-subtle: color-mix(in srgb, #d97706 18%, transparent);
 	--cw-tone-warning-text: #92400e;
-	--cw-tone-warning-border: #f3d983;
-	--cw-tone-warning-solid-bg: #d97706;
+	--cw-tone-warning-border: #b45309;
+	--cw-tone-warning-solid-bg: #b45309;
 	--cw-tone-warning-solid-text: #ffffff;
 
 	--cw-tone-danger-bg: #fee2e2;
 	--cw-tone-danger-bg-subtle: color-mix(in srgb, #dc2626 12%, transparent);
 	--cw-tone-danger-text: #991b1b;
-	--cw-tone-danger-border: #fca5a5;
-	--cw-tone-danger-solid-bg: #dc2626;
+	--cw-tone-danger-border: #dc2626;
+	--cw-tone-danger-solid-bg: #b91c1c;
 	--cw-tone-danger-solid-text: #ffffff;
 
 	--cw-tone-success-bg: #dcfce7;
 	--cw-tone-success-bg-subtle: color-mix(in srgb, #059669 12%, transparent);
 	--cw-tone-success-text: #166534;
-	--cw-tone-success-border: #86efac;
-	--cw-tone-success-solid-bg: #059669;
+	--cw-tone-success-border: #059669;
+	--cw-tone-success-solid-bg: #047857;
 	--cw-tone-success-solid-text: #ffffff;
 
 	/* ── Focus ─────────────────────────────────────────── */
 	--cw-focus-ring-color: #2c6cb7;
+
+	/* ── Status (device / sensor state) ────────────────── */
+	--cw-status-online: var(--cw-success-600);
+	--cw-status-warning: var(--cw-warning-600);
+	--cw-status-alarm: var(--cw-danger-600);
+	--cw-status-error: var(--cw-danger-600);
+	--cw-status-offline: var(--cw-danger-600);
+
+	/* ── Form controls ─────────────────────────────────── */
+	--cw-control-bg: var(--cw-bg-surface-elevated);
+	--cw-control-bg-readonly: var(--cw-bg-muted);
+	--cw-control-border: var(--cw-border-strong);
+	--cw-control-border-hover: color-mix(in srgb, var(--cw-accent) 55%, var(--cw-border-strong));
+	--cw-control-text: var(--cw-text-primary);
+	--cw-control-placeholder: var(--cw-text-muted);
+	--cw-option-hover-bg: var(--cw-bg-muted);
+	--cw-option-selected-text: var(--cw-accent-text);
+
+	/* ── Overlays / elevation ──────────────────────────── */
+	--cw-popover-bg: var(--cw-bg-surface-elevated);
+	--cw-popover-border: var(--cw-border-default);
+	--cw-overlay-bg: var(--cw-bg-surface-elevated);
+	--cw-elevation-popover: 0 10px 24px -8px rgb(22 36 57 / 0.22), 0 2px 6px rgb(22 36 57 / 0.12);
+	--cw-elevation-modal: 0 24px 48px -12px rgb(22 36 57 / 0.3), 0 4px 12px rgb(22 36 57 / 0.14);
+	--cw-scrim: color-mix(in srgb, var(--cw-gray-900) 45%, transparent);
+	--cw-scrim-strong: color-mix(in srgb, var(--cw-bg-base) 92%, transparent);
+
+	/* ── Charts (shared by every chart component) ──────── */
+	--cw-chart-cat-1: #2a78d6;
+	--cw-chart-cat-2: #eb652f;
+	--cw-chart-cat-3: #19a271;
+	--cw-chart-cat-4: #bf8200;
+	--cw-chart-cat-5: #e36192;
+	--cw-chart-cat-6: #008300;
+	--cw-chart-cat-7: #4a3aa7;
+	--cw-chart-cat-8: #e34948;
+	--cw-chart-grid: color-mix(in srgb, var(--cw-border-default) 70%, transparent);
+	--cw-chart-axis: var(--cw-linechart-axis);
+	--cw-chart-tick: var(--cw-linechart-tick);
+	--cw-chart-crosshair: var(--cw-linechart-crosshair);
+	--cw-chart-threshold: var(--cw-linechart-threshold);
+	--cw-chart-band-fill: color-mix(in srgb, var(--cw-accent) 10%, transparent);
+	--cw-chart-gap-fill: color-mix(in srgb, var(--cw-text-muted) 10%, transparent);
+	--cw-chart-tooltip-bg: var(--cw-linechart-tooltip-bg);
+	--cw-chart-tooltip-border: var(--cw-linechart-tooltip-border);
+	--cw-chart-tooltip-text: var(--cw-linechart-tooltip-text);
+	--cw-chart-tooltip-muted: var(--cw-linechart-tooltip-muted);
+	--cw-chart-tick-size: 0.6875rem;
 
 	/* ── Scrollbar ─────────────────────────────────────── */
 	--cw-scrollbar-thumb: #b3c1d0;

@@ -163,11 +163,13 @@ ${SCRIPT_CLOSE}
 <script lang="ts">
 	import { createCwAlarmContext } from '@cropwatchdevelopment/cwui';
 
+	let { children } = $props();
+
 	// Create once at the root so all child routes/components can share it.
 	createCwAlarmContext();
 ${SCRIPT_CLOSE}
 
-<slot />
+{@render children()}
 
 // src/routes/devices/+page.svelte
 <script lang="ts">
@@ -182,7 +184,7 @@ ${SCRIPT_CLOSE}
 			from: Date.now(),
 			alarmAfterMinutes: 30,
 			callback: () => {
-				console.log('Device ' + deviceId + ' has been silent for 30 minutes.');
+				notifyOperator(\`\${deviceId} has been silent for 30 minutes\`);
 			}
 		});
 	}
@@ -193,57 +195,59 @@ ${SCRIPT_CLOSE}
 </CwButton>`;
 </script>
 
-<h2>CwAlarm Scheduler</h2>
+<h2>CwAlarm scheduler</h2>
 <p class="demo-desc">
 	Non-visual alarm control for TypeScript app logic. Pass a datetime plus an alarm offset, then run a callback when due.
 </p>
 
-<div class="demo-grid">
-	<section class="demo-card">
-		<h3>Live demo</h3>
-		<p class="demo-card__desc">
-			These buttons use the same API you will call in your app context or TypeScript modules.
-		</p>
+<section class="demo-section">
+	<div class="demo-grid">
+		<section class="demo-card">
+			<h3>Live demo</h3>
+			<p class="demo-card__desc">
+				These buttons use the same API you will call in your app context or TypeScript modules.
+			</p>
 
-		<div class="demo-row">
-			<CwButton onclick={() => scheduleInSeconds(5, '5-second alarm')}>
-				Alarm in 5s
-			</CwButton>
-			<CwButton variant="secondary" onclick={() => scheduleInSeconds(12, '12-second alarm')}>
-				Alarm in 12s
-			</CwButton>
-			<CwButton variant="ghost" onclick={scheduleUsingMinutes}>
-				Alarm in 0.25m
-			</CwButton>
-		</div>
+			<div class="demo-row">
+				<CwButton onclick={() => scheduleInSeconds(5, '5-second alarm')}>
+					Alarm in 5s
+				</CwButton>
+				<CwButton variant="secondary" onclick={() => scheduleInSeconds(12, '12-second alarm')}>
+					Alarm in 12s
+				</CwButton>
+				<CwButton variant="ghost" onclick={scheduleUsingMinutes}>
+					Alarm in 0.25m
+				</CwButton>
+			</div>
 
-		<div class="demo-row">
-			<CwButton variant="secondary" onclick={() => scheduleBulk(1000)}>
-				Schedule 1000 alarms
-			</CwButton>
-			<CwButton variant="danger" onclick={clearAll}>
-				Clear active alarms
-			</CwButton>
-		</div>
-	</section>
+			<div class="demo-row">
+				<CwButton variant="secondary" onclick={() => scheduleBulk(1000)}>
+					Schedule 1000 alarms
+				</CwButton>
+				<CwButton variant="danger" onclick={clearAll}>
+					Clear active alarms
+				</CwButton>
+			</div>
+		</section>
 
-	<section class="demo-card demo-card--stats">
-		<h3>Runtime state</h3>
-		<p><strong>Active alarms:</strong> {activeAlarms}</p>
-		<p><strong>Total fired callbacks:</strong> {firedCount}</p>
-		<p><strong>Last event:</strong> {lastEvent}</p>
+		<section class="demo-card demo-card--stats">
+			<h3>Runtime state</h3>
+			<p><strong>Active alarms:</strong> {activeAlarms}</p>
+			<p><strong>Total fired callbacks:</strong> {firedCount}</p>
+			<p aria-live="polite"><strong>Last event:</strong> {lastEvent}</p>
 
-		<ul class="demo-log">
-			{#if events.length === 0}
-				<li>No events yet.</li>
-			{:else}
-				{#each events as event (event)}
-					<li>{event}</li>
-				{/each}
-			{/if}
-		</ul>
-	</section>
-</div>
+			<ul class="demo-log">
+				{#if events.length === 0}
+					<li>No events yet.</li>
+				{:else}
+					{#each events as event (event)}
+						<li>{event}</li>
+					{/each}
+				{/if}
+			</ul>
+		</section>
+	</div>
+</section>
 
 <section class="demo-section">
 	<h3>Copy-paste starter (single file)</h3>
@@ -258,31 +262,6 @@ ${SCRIPT_CLOSE}
 </section>
 
 <style>
-	h2 {
-		font-size: var(--cw-text-xl);
-		font-weight: var(--cw-font-bold);
-		margin-bottom: var(--cw-space-2);
-	}
-
-	h3 {
-		font-size: var(--cw-text-base);
-		font-weight: var(--cw-font-semibold);
-		margin-bottom: var(--cw-space-2);
-		color: var(--cw-text-secondary);
-	}
-
-	.demo-desc {
-		color: var(--cw-text-muted);
-		font-size: var(--cw-text-sm);
-		margin-bottom: var(--cw-space-4);
-	}
-
-	.demo-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
-		gap: var(--cw-space-4);
-	}
-
 	.demo-card {
 		display: flex;
 		flex-direction: column;
@@ -290,7 +269,7 @@ ${SCRIPT_CLOSE}
 		padding: var(--cw-space-4);
 		background: var(--cw-bg-elevated);
 		border: 1px solid var(--cw-border-muted);
-		border-radius: var(--cw-radius-md);
+		border-radius: var(--cw-radius-lg);
 	}
 
 	.demo-card__desc {
@@ -305,12 +284,6 @@ ${SCRIPT_CLOSE}
 		color: var(--cw-text-secondary);
 	}
 
-	.demo-row {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--cw-space-2);
-	}
-
 	.demo-log {
 		margin: var(--cw-space-1) 0 0;
 		padding-left: var(--cw-space-4);
@@ -319,9 +292,5 @@ ${SCRIPT_CLOSE}
 		font-family: var(--cw-font-mono);
 		font-size: var(--cw-text-xs);
 		color: var(--cw-text-muted);
-	}
-
-	.demo-section {
-		margin-top: var(--cw-space-6);
 	}
 </style>

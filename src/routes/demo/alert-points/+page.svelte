@@ -63,7 +63,7 @@
 			{
 				id: 'with-reset-1',
 				name: 'Cold edge',
-				color: '#f7903b',
+				color: '#da5e2d',
 				condition: 'lessThan',
 				value: '0',
 				min: '',
@@ -73,7 +73,7 @@
 			{
 				id: 'with-reset-2',
 				name: 'Exact target',
-				color: '#42edf0',
+				color: '#3987e5',
 				condition: 'equals',
 				value: '5',
 				min: '',
@@ -83,7 +83,7 @@
 			{
 				id: 'with-reset-3',
 				name: 'High temp alarm',
-				color: '#e35c8d',
+				color: '#d75987',
 				condition: 'greaterThan',
 				value: '10',
 				min: '',
@@ -100,7 +100,7 @@
 			{
 				id: 'no-reset-1',
 				name: 'Alert Point 1',
-				color: '#f7903b',
+				color: '#da5e2d',
 				condition: 'equals',
 				value: '1.12',
 				min: '',
@@ -109,7 +109,7 @@
 			{
 				id: 'no-reset-2',
 				name: 'Alert Point 2',
-				color: '#42edf0',
+				color: '#3987e5',
 				condition: 'range',
 				value: '',
 				min: '5',
@@ -118,7 +118,7 @@
 			{
 				id: 'no-reset-3',
 				name: 'High temp alarm',
-				color: '#e35c8d',
+				color: '#d75987',
 				condition: 'greaterThan',
 				value: '30',
 				min: '',
@@ -161,7 +161,7 @@ ${SCRIPT_CLOSE}
 \t\t\t{
 \t\t\t\tid: 'high-temp',
 \t\t\t\tname: 'High temp alarm',
-\t\t\t\tcolor: '#e35c8d',
+\t\t\t\tcolor: '#d75987',
 \t\t\t\tcondition: 'greaterThanOrEqual',
 \t\t\t\tvalue: '100',
 \t\t\t\tmin: '',
@@ -189,7 +189,7 @@ ${SCRIPT_CLOSE}
 \t\t\t{
 \t\t\t\tid: 'alert-demo-1',
 \t\t\t\tname: t('alerts.points.coldEdge'),
-\t\t\t\tcolor: '#f7903b',
+\t\t\t\tcolor: '#da5e2d',
 \t\t\t\tcondition: 'lessThanOrEqual',
 \t\t\t\tvalue: '-2',
 \t\t\t\tmin: '',
@@ -353,45 +353,12 @@ ${SCRIPT_CLOSE}
 </section>
 
 <style>
-	h2 {
-		margin: 0 0 var(--cw-space-2);
-		font-size: var(--cw-text-xl);
-		font-weight: var(--cw-font-bold);
-	}
-
-	h3 {
-		margin: 0;
-		font-size: var(--cw-text-base);
-		font-weight: var(--cw-font-semibold);
-		color: var(--cw-text-primary);
-	}
-
 	.demo-subhead {
 		margin: 0 0 var(--cw-space-2);
 		font-size: var(--cw-text-base);
 		font-weight: var(--cw-font-semibold);
 		color: var(--cw-text-primary);
 	}
-
-	.demo-desc {
-		margin: 0 0 var(--cw-space-5);
-		color: var(--cw-text-muted);
-		font-size: var(--cw-text-sm);
-		line-height: 1.7;
-		max-width: 72ch;
-	}
-
-	.demo-section {
-		margin-bottom: var(--cw-space-6);
-	}
-
-	.demo-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(21rem, 1fr));
-		gap: var(--cw-space-4);
-		align-items: start;
-	}
-
 	:global(.demo-panel) {
 		height: 100%;
 	}
@@ -417,7 +384,7 @@ ${SCRIPT_CLOSE}
 		font-weight: var(--cw-font-semibold);
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		color: var(--cw-accent);
+		color: var(--cw-accent-text);
 	}
 
 	.demo-panel__head p {

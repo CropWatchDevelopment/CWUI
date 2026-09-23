@@ -2,17 +2,21 @@
 	import { CwCopy } from '$lib/index.js';
 	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
-	const apiKey = 'sk-proj-abc123def456ghi789';
+	const apiKey = 'cw_demo_4f9a2c71e0b8d35a';
 	const shortText = 'Hello, CropWatch!';
 	const longText = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkNyb3BXYXRjaCJ9';
 	let copyCount = $state(0);
-	const copyExample = `<CwCopy value="sk-proj-abc123def456">
-\t<code>sk-proj-abc123def456</code>
+	const copyExample = `<CwCopy value="cw_demo_4f9a2c71e0b8">
+\t<code>cw_demo_4f9a2c71e0b8</code>
 </CwCopy>`;
 </script>
 
 <h2>CwCopy</h2>
-<p class="demo-desc">Click-to-copy button with animated visual feedback. Pass any string as <code>value</code>.</p>
+<p class="demo-desc">
+	Click-to-copy button with visual feedback and a screen-reader announcement. Pass any string as
+	<code>value</code>. If the browser blocks clipboard access the button reports the failure instead of
+	pretending it worked (customise the text with <code>labels.failedFeedback</code>).
+</p>
 
 <section class="demo-section">
 	<h3>Basic (icon only)</h3>
@@ -36,19 +40,19 @@
 	<h3>Sizes</h3>
 	<div class="demo-sizes">
 		<div class="demo-size-row">
-			<span class="demo-label">sm</span>
+			<span class="demo-size-label">sm</span>
 			<CwCopy value={shortText} size="sm">
 				<code class="demo-code">{shortText}</code>
 			</CwCopy>
 		</div>
 		<div class="demo-size-row">
-			<span class="demo-label">md</span>
+			<span class="demo-size-label">md</span>
 			<CwCopy value={shortText} size="md">
 				<code class="demo-code">{shortText}</code>
 			</CwCopy>
 		</div>
 		<div class="demo-size-row">
-			<span class="demo-label">lg</span>
+			<span class="demo-size-label">lg</span>
 			<CwCopy value={shortText} size="lg">
 				<code class="demo-code">{shortText}</code>
 			</CwCopy>
@@ -67,30 +71,24 @@
 
 <section class="demo-section">
 	<h3>onCopy callback</h3>
-	<p class="demo-hint">The <code>onCopy</code> prop fires after a successful copy. Counter: <strong>{copyCount}</strong></p>
+	<p class="demo-hint">The <code>onCopy</code> prop fires after a successful copy.</p>
 	<CwCopy value="Count me!" onCopy={() => copyCount++}>
 		<span>Click to increment counter</span>
 	</CwCopy>
+	<p class="demo-event" aria-live="polite">Last event: copied {copyCount} {copyCount === 1 ? 'time' : 'times'}</p>
 </section>
 
 <style>
-	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }
-	h3 { font-size: var(--cw-text-base); font-weight: var(--cw-font-semibold); margin-bottom: var(--cw-space-2); color: var(--cw-text-secondary); }
-	.demo-desc { color: var(--cw-text-muted); font-size: var(--cw-text-sm); margin-bottom: var(--cw-space-6); }
-	.demo-desc code { background: var(--cw-bg-muted); padding: 0.1rem 0.35rem; border-radius: var(--cw-radius-sm); font-size: var(--cw-text-xs); }
-	.demo-hint { color: var(--cw-text-muted); font-size: var(--cw-text-xs); margin-bottom: var(--cw-space-2); }
-	.demo-hint code { background: var(--cw-bg-muted); padding: 0.1rem 0.3rem; border-radius: var(--cw-radius-sm); }
-	.demo-hint strong { color: var(--cw-accent); }
-	.demo-section { margin-bottom: var(--cw-space-8); }
-
-	.demo-row {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--cw-space-2);
+	.demo-desc code,
+	.demo-hint code {
+		padding: 0.1rem 0.35rem;
+		border-radius: var(--cw-radius-sm);
+		background: var(--cw-bg-muted);
+		font-family: var(--cw-font-mono);
+		font-size: var(--cw-text-xs);
 	}
-
 	.demo-code {
-		font-family: monospace;
+		font-family: var(--cw-font-mono);
 		font-size: var(--cw-text-sm);
 		color: var(--cw-text-secondary);
 		background: var(--cw-bg-muted);
@@ -110,12 +108,11 @@
 		gap: var(--cw-space-3);
 	}
 
-	.demo-label {
+	.demo-size-label {
 		width: 2rem;
 		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-semibold);
 		color: var(--cw-text-muted);
-		text-transform: uppercase;
 	}
 
 	.demo-truncated {

@@ -9,3 +9,7 @@ node_modules
 !.env.example
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Style guide build artefacts (the PDF in static/ is committed)
+scripts/style-guide/generated.js
+scripts/style-guide/logo-static.svg

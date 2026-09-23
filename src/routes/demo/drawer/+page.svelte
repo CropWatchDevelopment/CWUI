@@ -52,92 +52,96 @@
 </script>
 
 <h2>CwDrawer</h2>
-<p class="demo-desc">Bottom drawer that collapses into a summary bar with item chips, and expands to reveal full content.</p>
+<p class="demo-desc">
+	Bottom drawer that collapses into a summary bar with item chips and expands to reveal full
+	content. Content stays mounted through the close animation, the collapsed panel can't be tabbed
+	into, and the height is capped on short screens.
+</p>
 
-<section class="demo-frame">
-	<div class="demo-frame__body">
-		<p style="color: var(--cw-text-muted); font-size: var(--cw-text-sm);">Main page content sits here. The drawer lives at the bottom.</p>
-	</div>
+<section class="demo-section">
+	<h3>Alerts drawer</h3>
+	<div class="demo-frame">
+		<div class="demo-frame__body">
+			<p class="demo-frame__copy">Main page content sits here. The drawer lives at the bottom.</p>
+		</div>
 
-	<CwDrawer
-		bind:open={drawerOpen}
-		label="Alerts"
-		items={barItems}
-		height="18rem"
-	>
-		<div class="drawer-grid">
-			<!-- Status Mix card -->
-			<CwCard>
-				<div class="status-card">
-					<div class="status-card__header">
-						<span class="status-card__title">Status mix</span>
-						<span class="status-card__total">Total {statusSegments.reduce((s, x) => s + x.value, 0)}</span>
-					</div>
-					<div class="status-card__body">
-						<div class="status-card__chart">
-							<CwDonutChart segments={statusSegments} size={120} thickness={14} />
+		<CwDrawer
+			bind:open={drawerOpen}
+			label="Alerts"
+			items={barItems}
+			height="18rem"
+		>
+			<div class="drawer-grid">
+				<!-- Status Mix card -->
+				<CwCard>
+					<div class="status-card">
+						<div class="status-card__header">
+							<span class="status-card__title">Status mix</span>
+							<span class="status-card__total">Total {statusSegments.reduce((s, x) => s + x.value, 0)}</span>
 						</div>
-						<div class="status-card__legend">
-							{#each statusSegments as seg}
-								<div class="legend-row">
-									<CwChip label="{seg.label}  {seg.value}" tone={seg.label === 'Online' ? 'success' : seg.label === 'Offline' ? 'danger' : 'warning'} size="sm" variant="soft" />
+						<div class="status-card__body">
+							<div class="status-card__chart">
+								<CwDonutChart segments={statusSegments} size={120} thickness={14} />
+							</div>
+							<div class="status-card__legend">
+								{#each statusSegments as seg}
+									<div class="legend-row">
+										<CwChip label="{seg.label}  {seg.value}" tone={seg.label === 'Online' ? 'success' : seg.label === 'Offline' ? 'danger' : 'warning'} size="sm" variant="soft" />
+									</div>
+								{/each}
+							</div>
+						</div>
+					</div>
+				</CwCard>
+
+				<!-- Top Groups card -->
+				<CwCard>
+					<div class="groups-card">
+						<div class="groups-card__header">
+							<span class="groups-card__title">Top groups</span>
+							<span class="groups-card__subtitle">In view</span>
+						</div>
+						{#each topGroups as group}
+							<div class="groups-card__row">
+								<span class="groups-card__name">{group.name}</span>
+								<span class="groups-card__count">{group.count}</span>
+							</div>
+							<div class="groups-card__bar-track">
+								<div
+									class="groups-card__bar-fill"
+									style:width="{(group.count / maxGroupCount) * 100}%"
+								></div>
+							</div>
+						{/each}
+					</div>
+				</CwCard>
+
+				<!-- Active Alert List card -->
+				<CwCard>
+					<div class="alerts-card">
+						<div class="alerts-card__header">
+							<span class="alerts-card__title">Active alerts</span>
+							<span class="alerts-card__subtitle">Reported</span>
+						</div>
+						<div class="alerts-card__list">
+							{#each alerts as alert (alert.id)}
+								<div class="alerts-card__row">
+									<span class="alerts-card__icon" aria-hidden="true">🔔</span>
+									<span class="alerts-card__name">{alert.name}</span>
+									<span class="alerts-card__time">{alert.reported}</span>
 								</div>
 							{/each}
 						</div>
 					</div>
-				</div>
-			</CwCard>
+				</CwCard>
+			</div>
+		</CwDrawer>
+	</div>
 
-			<!-- Top Groups card -->
-			<CwCard>
-				<div class="groups-card">
-					<div class="groups-card__header">
-						<span class="groups-card__title">Top groups</span>
-						<span class="groups-card__subtitle">In view</span>
-					</div>
-					{#each topGroups as group}
-						<div class="groups-card__row">
-							<span class="groups-card__name">{group.name}</span>
-							<span class="groups-card__count">{group.count}</span>
-						</div>
-						<div class="groups-card__bar-track">
-							<div
-								class="groups-card__bar-fill"
-								style:width="{(group.count / maxGroupCount) * 100}%"
-							></div>
-						</div>
-					{/each}
-				</div>
-			</CwCard>
-
-			<!-- Active Alert List card -->
-			<CwCard>
-				<div class="alerts-card">
-					<div class="alerts-card__header">
-						<span class="alerts-card__title">Active Alert List</span>
-						<span class="alerts-card__subtitle">Reported Time</span>
-					</div>
-					<div class="alerts-card__list">
-						{#each alerts as alert (alert.id)}
-							<div class="alerts-card__row">
-								<span class="alerts-card__icon">🔔</span>
-								<span class="alerts-card__name">{alert.name}</span>
-								<span class="alerts-card__time">{alert.reported}</span>
-							</div>
-						{/each}
-					</div>
-				</div>
-			</CwCard>
-		</div>
-	</CwDrawer>
+	<DemoCodeExample code={drawerExample} title="CwDrawer example" />
 </section>
 
-<DemoCodeExample code={drawerExample} title="CwDrawer example" />
-
 <style>
-	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }
-	.demo-desc { color: var(--cw-text-muted); font-size: var(--cw-text-sm); margin-bottom: var(--cw-space-4); }
-
 	.demo-frame {
 		display: flex;
 		flex-direction: column;
@@ -152,10 +156,15 @@
 		padding: var(--cw-space-6);
 	}
 
+	.demo-frame__copy {
+		color: var(--cw-text-muted);
+		font-size: var(--cw-text-sm);
+	}
+
 	/* ── Drawer content grid ──────────────── */
 	.drawer-grid {
 		display: grid;
-		grid-template-columns: repeat(3, 1fr);
+		grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
 		gap: var(--cw-space-4);
 		height: 100%;
 	}
@@ -187,7 +196,7 @@
 	.groups-card__bar-fill {
 		height: 100%;
 		border-radius: var(--cw-radius-full);
-		background: var(--cw-primary-500);
+		background: var(--cw-accent);
 		transition: width var(--cw-duration-slow) var(--cw-ease-default);
 	}
 
@@ -206,5 +215,5 @@
 	}
 	.alerts-card__icon { font-size: var(--cw-text-sm); flex-shrink: 0; }
 	.alerts-card__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.alerts-card__time { flex-shrink: 0; font-size: var(--cw-text-xs); color: var(--cw-text-muted); font-family: monospace; }
+	.alerts-card__time { flex-shrink: 0; font-size: var(--cw-text-xs); color: var(--cw-text-muted); font-family: var(--cw-font-mono); font-variant-numeric: tabular-nums; }
 </style>

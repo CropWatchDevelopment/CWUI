@@ -67,6 +67,7 @@
 	import type { CwNoDataMessage, DliHistoryPoint, DliStatusLabel } from "../types/index.js";
 	import CwNoDataOverlay from "./CwNoDataOverlay.svelte";
 	import { getCwNoDataMessage, hasCwNoData } from "./cwNoData.js";
+	import { CW_EMPTY_VALUE, formatCwNumber, isCwFiniteNumber } from "../utils/cwFormat.js";
 
 	interface Props {
 		value?: number | null;
@@ -80,6 +81,10 @@
 		history?: DliHistoryPoint[];
 		compact?: boolean;
 		noData?: CwNoDataMessage;
+		/** Heading level for the title (default 3); the history heading uses the next level. */
+		headingLevel?: 1 | 2 | 3 | 4 | 5;
+		/** BCP 47 locale for numbers and dates (defaults to the runtime locale). */
+		locale?: string;
 		labels?: DliCardLabels;
 		class?: string;
 	}
@@ -105,6 +110,8 @@
 		history,
 		compact = false,
 		noData,
+		headingLevel = 3,
+		locale,
 		labels = {},
 		class: className = "",
 	}: Props = $props();
@@ -112,18 +119,12 @@
 	const l = $derived({ ...DEFAULT_LABELS, ...labels });
 
 	const uid = $props.id();
-	const valueFormatter = new Intl.NumberFormat(undefined, {
-		minimumFractionDigits: 0,
-		maximumFractionDigits: 1,
-	});
-	const scaleFormatter = new Intl.NumberFormat(undefined, {
-		minimumFractionDigits: 0,
-		maximumFractionDigits: 1,
-	});
-	const historyDateFormatter = new Intl.DateTimeFormat(undefined, {
-		month: "short",
-		day: "numeric",
-	});
+	const historyDateFormatter = $derived(
+		new Intl.DateTimeFormat(locale, {
+			month: "short",
+			day: "numeric",
+		}),
+	);
 
 	function toFiniteNumber(input: number | null | undefined, fallback: number): number {
 		return typeof input === "number" && Number.isFinite(input) ? input : fallback;
@@ -138,12 +139,8 @@
 		return clamp((bounded / scaleMax) * 100, 0, 100);
 	}
 
-	function formatDli(input: number): string {
-		return valueFormatter.format(toFiniteNumber(input, 0));
-	}
-
-	function formatScale(input: number): string {
-		return scaleFormatter.format(toFiniteNumber(input, 0));
+	function formatDli(input: number | null | undefined): string {
+		return formatCwNumber(input, { maximumFractionDigits: 1, locale });
 	}
 
 	function parseLocalDate(input: string): Date | null {
@@ -162,6 +159,10 @@
 		return date ? historyDateFormatter.format(date) : input;
 	}
 
+	/** A missing reading renders as "—" with no marker or status, never as a fake 0. */
+	const hasValue = $derived(isCwFiniteNumber(value));
+	/** Without a target range there is nothing to judge the value against. */
+	const hasTarget = $derived(isCwFiniteNumber(targetMin) || isCwFiniteNumber(targetMax));
 	const currentValue = $derived(toFiniteNumber(value, 0));
 	const hasNoData = $derived(hasCwNoData(noData));
 	const noDataMessage = $derived(getCwNoDataMessage(noData));
@@ -194,7 +195,8 @@
 		markerPercent <= 8 ? "start" : markerPercent >= 92 ? "end" : "center",
 	);
 
-	const status = $derived.by<DliStatusLabel>(() => {
+	const status = $derived.by<DliStatusLabel | null>(() => {
+		if (!hasValue || !hasTarget) return null;
 		if (currentValue < normalizedTarget.min * 0.5) return "Very low";
 		if (
 			currentValue >= normalizedTarget.min * 0.85 &&
@@ -215,9 +217,11 @@
 		return "Very high";
 	});
 
-	const statusKey = $derived(status.toLowerCase().replaceAll(" ", "-"));
+	const statusKey = $derived(status ? status.toLowerCase().replaceAll(" ", "-") : "none");
 	const statusText = $derived.by(() => {
 		switch (status) {
+			case null:
+				return "";
 			case "Very low":
 				return l.statusVeryLow;
 			case "Slightly low":
@@ -233,23 +237,31 @@
 		}
 	});
 	const resolvedTitle = $derived(title ?? l.title);
-	const formattedValue = $derived(formatDli(currentValue));
-	const formattedScaleMax = $derived(formatScale(scaleMax));
+	const formattedValue = $derived(hasValue ? formatDli(currentValue) : CW_EMPTY_VALUE);
+	const formattedScaleMax = $derived(formatDli(scaleMax));
 	const formattedTargetRange = $derived(
 		`${formatDli(normalizedTarget.min)}–${formatDli(normalizedTarget.max)} ${unit}`,
 	);
 	const trimmedCropName = $derived(cropName.trim());
 	const targetText = $derived(
-		trimmedCropName
+		!hasTarget
+			? ""
+			: trimmedCropName
 			? l.targetForCrop(trimmedCropName, formattedTargetRange)
 			: l.target(formattedTargetRange),
 	);
 	const valueAriaLabel = $derived(
-		l.valueAriaLabel(formattedValue, unit, targetText, statusText),
+		status
+			? l.valueAriaLabel(formattedValue, unit, targetText, statusText)
+			: `${resolvedTitle}: ${formattedValue}${hasValue ? ` ${unit}` : ""}`,
 	);
 	const barAriaLabel = $derived(
-		l.barAriaLabel(formattedScaleMax, formattedValue, unit, formattedTargetRange, statusText),
+		status
+			? l.barAriaLabel(formattedScaleMax, formattedValue, unit, formattedTargetRange, statusText)
+			: `${resolvedTitle}: ${formattedValue}${hasValue ? ` ${unit}` : ""}`,
 	);
+	const headingTag = $derived(`h${headingLevel}`);
+	const subHeadingTag = $derived(`h${Math.min(headingLevel + 1, 6)}`);
 
 	const historyItems = $derived.by<DisplayHistoryPoint[]>(() => {
 		if (!history?.length) return [];
@@ -281,11 +293,15 @@
 >
 	<header class="cw-dli-card__header">
 		<div class="cw-dli-card__heading">
-			<h3 id="{uid}-title" class="cw-dli-card__title">{resolvedTitle}</h3>
-			<p id="{uid}-target" class="cw-dli-card__target">{targetText}</p>
+			<svelte:element this={headingTag} id="{uid}-title" class="cw-dli-card__title">
+				{resolvedTitle}
+			</svelte:element>
+			{#if targetText}
+				<p id="{uid}-target" class="cw-dli-card__target">{targetText}</p>
+			{/if}
 		</div>
 
-		{#if showStatus}
+		{#if showStatus && status}
 			<p
 				id="{uid}-status"
 				class="cw-dli-card__status"
@@ -299,11 +315,14 @@
 
 	<div class="cw-dli-card__value" aria-label={valueAriaLabel}>
 		<strong>{formattedValue}</strong>
-		<span>{unit}</span>
+		{#if hasValue}
+			<span>{unit}</span>
+		{/if}
 	</div>
 
 	<div class="cw-dli-card__range" role="img" aria-label={barAriaLabel}>
 		<div class="cw-dli-card__stage">
+			{#if hasValue}
 			<div
 				class="cw-dli-card__marker cw-dli-card__marker--{markerAlign}"
 				style:left="{markerPercent}%"
@@ -312,13 +331,16 @@
 				<span class="cw-dli-card__marker-label">{formattedValue}</span>
 				<span class="cw-dli-card__marker-line"></span>
 			</div>
+			{/if}
 
 			<div class="cw-dli-card__track">
+				{#if hasTarget}
 				<span
 					class="cw-dli-card__target-range"
 					style:left="{targetStartPercent}%"
 					style:width="{targetWidthPercent}%"
 				></span>
+				{/if}
 			</div>
 		</div>
 
@@ -331,7 +353,9 @@
 	{#if historyItems.length > 0}
 		<section class="cw-dli-card__history" aria-labelledby="{uid}-history-title">
 			<div class="cw-dli-card__history-head">
-				<h4 id="{uid}-history-title">{l.historyTitle}</h4>
+				<svelte:element this={subHeadingTag} id="{uid}-history-title" class="cw-dli-card__history-title">
+					{l.historyTitle}
+				</svelte:element>
 				<span>{l.historyCount(historyItems.length)}</span>
 			</div>
 
@@ -372,7 +396,7 @@
 		gap: var(--cw-space-5);
 		padding: var(--cw-space-5);
 		border: 1px solid var(--cw-chart-card-border, var(--cw-border-default));
-		border-radius: var(--cw-radius-lg);
+		border-radius: var(--cw-card-radius);
 		background-color: var(--cw-chart-card-bg, var(--cw-bg-surface));
 		box-shadow: var(--cw-chart-card-shadow, var(--cw-shadow-sm));
 		color: var(--cw-text-primary);
@@ -381,7 +405,7 @@
 
 	.cw-dli-card--very-low,
 	.cw-dli-card--very-high {
-		--cw-dli-marker: var(--cw-danger-500);
+		--cw-dli-marker: var(--cw-status-alarm);
 		--cw-dli-status-bg: var(--cw-tone-danger-bg-subtle);
 		--cw-dli-status-text: var(--cw-tone-danger-text);
 		--cw-dli-status-border: var(--cw-tone-danger-border);
@@ -390,14 +414,14 @@
 	.cw-dli-card--low,
 	.cw-dli-card--slightly-low,
 	.cw-dli-card--high {
-		--cw-dli-marker: var(--cw-warning-500);
+		--cw-dli-marker: var(--cw-status-warning);
 		--cw-dli-status-bg: var(--cw-tone-warning-bg-subtle);
 		--cw-dli-status-text: var(--cw-tone-warning-text);
 		--cw-dli-status-border: var(--cw-tone-warning-border);
 	}
 
 	.cw-dli-card--good {
-		--cw-dli-marker: var(--cw-success-500);
+		--cw-dli-marker: var(--cw-status-online);
 		--cw-dli-status-bg: var(--cw-tone-success-bg-subtle);
 		--cw-dli-status-text: var(--cw-tone-success-text);
 		--cw-dli-status-border: var(--cw-tone-success-border);
@@ -440,9 +464,9 @@
 	.cw-dli-card__status {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.35rem;
+		gap: var(--cw-space-1);
 		margin: 0;
-		padding: 0.35rem 0.65rem;
+		padding: var(--cw-space-1) var(--cw-space-3);
 		border: 1px solid var(--cw-dli-status-border);
 		border-radius: var(--cw-radius-full);
 		background-color: var(--cw-dli-status-bg);
@@ -478,7 +502,7 @@
 	}
 
 	.cw-dli-card__value span {
-		color: var(--cw-text-secondary);
+		color: var(--cw-text-muted);
 		font-size: var(--cw-text-sm);
 		font-weight: var(--cw-font-medium);
 		line-height: var(--cw-leading-tight);
@@ -508,8 +532,8 @@
 		position: absolute;
 		inset-block: 0;
 		min-width: 2px;
-		border-inline: 1px solid color-mix(in srgb, var(--cw-success-500) 58%, var(--cw-bg-surface));
-		background-color: color-mix(in srgb, var(--cw-success-500) 28%, var(--cw-bg-surface));
+		border-inline: 1px solid color-mix(in srgb, var(--cw-status-online) 58%, var(--cw-bg-surface));
+		background-color: color-mix(in srgb, var(--cw-status-online) 28%, var(--cw-bg-surface));
 	}
 
 	.cw-dli-card__marker {
@@ -518,7 +542,7 @@
 		top: 0;
 		display: grid;
 		justify-items: center;
-		gap: 0.2rem;
+		gap: var(--cw-space-1);
 		transform: translateX(-50%);
 		pointer-events: none;
 	}
@@ -534,7 +558,7 @@
 	}
 
 	.cw-dli-card__marker-label {
-		padding: 0.15rem 0.45rem;
+		padding: 0.125rem var(--cw-space-2);
 		border: 1px solid color-mix(in srgb, var(--cw-dli-marker) 58%, var(--cw-bg-surface));
 		border-radius: var(--cw-radius-sm);
 		background-color: var(--cw-chart-card-bg, var(--cw-bg-surface));
@@ -577,7 +601,7 @@
 		gap: var(--cw-space-3);
 	}
 
-	.cw-dli-card__history-head h4 {
+	.cw-dli-card__history-title {
 		margin: 0;
 		color: var(--cw-text-primary);
 		font-size: var(--cw-text-sm);
@@ -606,7 +630,7 @@
 		display: grid;
 		grid-template-rows: minmax(4.6rem, 1fr) auto;
 		align-items: end;
-		gap: 0.35rem;
+		gap: var(--cw-space-1);
 		min-width: 0;
 	}
 
@@ -622,7 +646,7 @@
 	.cw-dli-card__history-date {
 		overflow: hidden;
 		color: var(--cw-text-muted);
-		font-size: 0.68rem;
+		font-size: var(--cw-text-xs);
 		line-height: 1.2;
 		text-align: center;
 		text-overflow: ellipsis;

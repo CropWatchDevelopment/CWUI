@@ -2,8 +2,26 @@
 	import type { Snippet } from 'svelte';
 	import type { HTMLInputAttributes } from 'svelte/elements';
 
+	import type { CwSize } from '../types/index.js';
+
 	type InputType = 'text' | 'numeric' | 'email' | 'password' | 'color' | 'devEui' | 'creditCard' | 'cardExpiry' | 'phone';
 	type NumericConstraint = number | string;
+
+	interface CwInputLabels {
+		clear: string;
+		showPassword: string;
+		hidePassword: string;
+		increase: string;
+		decrease: string;
+	}
+
+	const DEFAULT_LABELS: CwInputLabels = {
+		clear: 'Clear',
+		showPassword: 'Show password',
+		hidePassword: 'Hide password',
+		increase: 'Increase value',
+		decrease: 'Decrease value'
+	};
 
 	const DEFAULT_COLOR = '#000000';
 	const DEFAULT_NUMERIC_STEP = 1;
@@ -16,9 +34,16 @@
 		id?: string;
 		required?: boolean;
 		label?: string;
+		/** Helper text shown below the field. Replaced by `error` when set. */
+		hint?: string;
 		error?: string;
 		valid?: boolean;
 		disabled?: boolean;
+		readonly?: boolean;
+		/** Control size. Matches CwButton / CwDropdown heights. */
+		size?: CwSize;
+		/** Override built-in English strings (button labels). */
+		labels?: Partial<CwInputLabels>;
 		placeholder?: string;
 		autocomplete?: HTMLInputAttributes['autocomplete'];
 		maxlength?: number;
@@ -33,6 +58,18 @@
 		onkeydown?: (e: KeyboardEvent) => void;
 		onblur?: (e: FocusEvent) => void;
 		onfocus?: (e: FocusEvent) => void;
+		/** Overrides the input's role (e.g. `combobox` for autocomplete wrappers). */
+		role?: HTMLInputAttributes['role'];
+		'aria-expanded'?: HTMLInputAttributes['aria-expanded'];
+		'aria-controls'?: HTMLInputAttributes['aria-controls'];
+		'aria-activedescendant'?: HTMLInputAttributes['aria-activedescendant'];
+		'aria-autocomplete'?: HTMLInputAttributes['aria-autocomplete'];
+		'aria-haspopup'?: HTMLInputAttributes['aria-haspopup'];
+		'aria-busy'?: HTMLInputAttributes['aria-busy'];
+		/** Accessible name when no visible `label` is rendered. */
+		'aria-label'?: HTMLInputAttributes['aria-label'];
+		/** Extra ids appended to the input's aria-describedby. */
+		'aria-describedby'?: string;
 		class?: string;
 	}
 
@@ -43,9 +80,13 @@
 		id,
 		required = false,
 		label,
+		hint,
 		error,
 		valid = false,
 		disabled = false,
+		readonly = false,
+		size = 'md',
+		labels,
 		placeholder,
 		autocomplete,
 		maxlength,
@@ -60,11 +101,26 @@
 		onkeydown,
 		onblur,
 		onfocus,
+		role,
+		'aria-expanded': ariaExpanded,
+		'aria-controls': ariaControls,
+		'aria-activedescendant': ariaActiveDescendant,
+		'aria-autocomplete': ariaAutocomplete,
+		'aria-haspopup': ariaHasPopup,
+		'aria-busy': ariaBusy,
+		'aria-label': ariaLabel,
+		'aria-describedby': ariaDescribedBy,
 		class: className = '',
 	}: Props = $props();
 
 	const uid = $props.id();
 	const inputId = $derived(id ?? `${uid}-input`);
+	const text = $derived({ ...DEFAULT_LABELS, ...labels });
+	const describedBy = $derived(
+		[ariaDescribedBy, error ? `${uid}-error` : hint ? `${uid}-hint` : undefined]
+			.filter(Boolean)
+			.join(' ') || undefined
+	);
 	let inputRef = $state<HTMLInputElement | null>(null);
 	let showPassword = $state(false);
 
@@ -109,7 +165,7 @@
 	const hasValidationIcon = $derived(!!error || (valid && !error));
 
 	/** Whether the clear button should show */
-	const showClear = $derived(clearable && !isColor && value.length > 0 && !disabled);
+	const showClear = $derived(clearable && !isColor && value.length > 0 && !disabled && !readonly);
 
 	/** Whether the password visibility toggle should show */
 	const showPasswordToggle = $derived(isPassword);
@@ -165,6 +221,7 @@
 			e.defaultPrevented ||
 			type !== 'numeric' ||
 			disabled ||
+			readonly ||
 			e.altKey ||
 			e.ctrlKey ||
 			e.metaKey
@@ -198,7 +255,7 @@
 	}
 
 	function stepNumericValue(direction: 1 | -1) {
-		if (!inputRef || type !== 'numeric' || disabled) return;
+		if (!inputRef || type !== 'numeric' || disabled || readonly) return;
 
 		const currentValue = inputRef.value;
 		const currentNumber = Number(currentValue);
@@ -325,13 +382,16 @@
 </script>
 
 <div
-	class="cw-input {className}"
+	class="cw-input cw-input--{size} {className}"
 	class:cw-input--error={!!error}
 	class:cw-input--valid={valid && !error}
 	class:cw-input--disabled={disabled}
+	class:cw-input--readonly={readonly}
 >
 	{#if label}
-		<label class="cw-input__label" for={inputId}>{label}</label>
+		<label class="cw-input__label" for={inputId}>
+			{label}{#if required}<span class="cw-input__required" aria-hidden="true">&nbsp;*</span>{/if}
+		</label>
 	{/if}
 
 	<div class="cw-input__wrapper">
@@ -354,6 +414,7 @@
 			{name}
 			{required}
 			{disabled}
+			{readonly}
 			{placeholder}
 			autocomplete={autocomplete ?? 'off'}
 			maxlength={maxlength ?? undefined}
@@ -362,9 +423,16 @@
 			onkeydown={handleKeydown}
 			onblur={onblur}
 			onfocus={onfocus}
-			role={isNumeric ? 'spinbutton' : undefined}
+			role={role ?? (isNumeric ? 'spinbutton' : undefined)}
+			aria-expanded={ariaExpanded}
+			aria-controls={ariaControls}
+			aria-activedescendant={ariaActiveDescendant}
+			aria-autocomplete={ariaAutocomplete}
+			aria-haspopup={ariaHasPopup}
+			aria-busy={ariaBusy}
+			aria-label={label ? undefined : ariaLabel}
 			aria-invalid={error ? 'true' : undefined}
-			aria-describedby={error ? `${uid}-error` : undefined}
+			aria-describedby={describedBy}
 			aria-valuemin={isNumeric ? numericMin : undefined}
 			aria-valuemax={isNumeric ? numericMax : undefined}
 			aria-valuenow={isNumeric ? numericValueNow : undefined}
@@ -379,8 +447,8 @@
 						<button
 							type="button"
 							class="cw-input__stepper-button"
-							aria-label="Increase value"
-							disabled={disabled}
+							aria-label={text.increase}
+							disabled={disabled || readonly}
 							tabindex="-1"
 							onmousedown={handleStepperMouseDown}
 							onclick={() => stepNumericValue(1)}
@@ -392,8 +460,8 @@
 						<button
 							type="button"
 							class="cw-input__stepper-button"
-							aria-label="Decrease value"
-							disabled={disabled}
+							aria-label={text.decrease}
+							disabled={disabled || readonly}
 							tabindex="-1"
 							onmousedown={handleStepperMouseDown}
 							onclick={() => stepNumericValue(-1)}
@@ -405,13 +473,11 @@
 					</span>
 				{/if}
 				{#if showClear}
-					<!-- svelte-ignore a11y_consider_explicit_label -->
 					<button
 						type="button"
-						class="cw-input__clear"
-						aria-label="Clear"
+						class="cw-input__icon-button"
+						aria-label={text.clear}
 						onclick={clear}
-						tabindex="-1"
 					>
 						<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
 							<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
@@ -421,8 +487,8 @@
 				{#if showPasswordToggle}
 					<button
 						type="button"
-						class="cw-input__password-toggle"
-						aria-label={showPassword ? 'Hide password' : 'Show password'}
+						class="cw-input__icon-button"
+						aria-label={showPassword ? text.hidePassword : text.showPassword}
 						aria-pressed={showPassword}
 						disabled={disabled}
 						onclick={togglePasswordVisibility}
@@ -460,24 +526,43 @@
 	</div>
 
 	{#if error}
-		<p class="cw-input__error" id="{uid}-error" role="alert">{error}</p>
+		<p class="cw-input__message cw-input__message--error" id="{uid}-error">{error}</p>
+	{:else if hint}
+		<p class="cw-input__message" id="{uid}-hint">{hint}</p>
 	{/if}
 </div>
 
 <style>
 	.cw-input {
+		--_h: var(--cw-control-h-md);
+		--_px: var(--cw-control-px-md);
+		--_fs: var(--cw-control-text-md);
 		display: flex;
 		flex-direction: column;
 		gap: var(--cw-space-1);
 		width: 100%;
 	}
 
+	.cw-input--sm {
+		--_h: var(--cw-control-h-sm);
+		--_px: var(--cw-control-px-sm);
+		--_fs: var(--cw-control-text-sm);
+	}
+
+	.cw-input--lg {
+		--_h: var(--cw-control-h-lg);
+		--_px: var(--cw-control-px-lg);
+		--_fs: var(--cw-control-text-lg);
+	}
+
 	.cw-input__label {
-		font-size: var(--cw-text-xs);
+		font-size: var(--cw-text-sm);
 		font-weight: var(--cw-font-medium);
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: var(--cw-text-muted);
+		color: var(--cw-text-secondary);
+	}
+
+	.cw-input__required {
+		color: var(--cw-tone-danger-text);
 	}
 
 	.cw-input__wrapper {
@@ -488,27 +573,25 @@
 
 	.cw-input__field {
 		width: 100%;
-		padding: 0.625rem var(--cw-space-3);
+		min-height: var(--_h);
+		padding: 0 var(--_px);
 		font-family: var(--cw-font-family);
-		font-size: var(--cw-text-sm);
-		color: var(--cw-text-primary);
-		background-color: color-mix(in srgb, var(--cw-bg-elevated) 60%, transparent);
-		border: 1px solid var(--cw-border-default);
-		border-radius: var(--cw-radius-xl);
-		outline: none;
+		font-size: var(--_fs);
+		color: var(--cw-control-text);
+		background-color: var(--cw-control-bg);
+		border: 1px solid var(--cw-control-border);
+		border-radius: var(--cw-control-radius);
 		transition:
 			border-color var(--cw-duration-fast) var(--cw-ease-default),
-			background-color var(--cw-duration-fast) var(--cw-ease-default),
-			box-shadow var(--cw-duration-fast) var(--cw-ease-default);
-		min-height: 2.625rem;
+			background-color var(--cw-duration-fast) var(--cw-ease-default);
 	}
 
 	.cw-input__field::placeholder {
-		color: var(--cw-text-muted);
+		color: var(--cw-control-placeholder);
 	}
 
 	.cw-input__field[type='color'] {
-		padding: 0.3125rem;
+		padding: var(--cw-space-1);
 		cursor: pointer;
 	}
 
@@ -519,19 +602,15 @@
 	.cw-input__field[type='color']::-webkit-color-swatch,
 	.cw-input__field[type='color']::-moz-color-swatch {
 		border: none;
-		border-radius: calc(var(--cw-radius-xl) - 0.3125rem);
+		border-radius: var(--cw-radius-md);
 	}
 
-	.cw-input__field:hover:not(:disabled) {
-		border-color: color-mix(in srgb, var(--cw-border-default) 75%, var(--cw-info-500));
+	.cw-input__field:hover:not(:disabled):not(:read-only) {
+		border-color: var(--cw-control-border-hover);
 	}
 
-	.cw-input__field:focus,
 	.cw-input__field:focus-visible {
-		border-color: var(--cw-info-500);
-		box-shadow:
-			0 0 0 2px color-mix(in srgb, var(--cw-info-500) 40%, transparent),
-			0 0 10px color-mix(in srgb, var(--cw-info-500) 18%, transparent);
+		border-color: var(--cw-focus-ring-color);
 	}
 
 	.cw-input__field--has-left {
@@ -539,7 +618,7 @@
 	}
 
 	.cw-input__field--has-right {
-		padding-right: var(--cw-space-10);
+		padding-right: var(--cw-space-12);
 	}
 
 	.cw-input__field--has-stepper {
@@ -547,7 +626,7 @@
 	}
 
 	.cw-input__field--has-right.cw-input__field--has-stepper {
-		padding-right: 5.625rem;
+		padding-right: 6.5rem;
 	}
 
 	/* ── Slots ───────────────────────────── */
@@ -568,8 +647,7 @@
 	}
 
 	.cw-input__slot--right {
-		right: var(--cw-space-3);
-		gap: 0.375rem;
+		right: var(--cw-space-2);
 	}
 
 	.cw-input__stepper {
@@ -583,14 +661,14 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 1.25rem;
-		height: 0.8125rem;
+		width: 1.5rem;
+		height: 0.875rem;
 		padding: 0;
 		border: none;
-		background: color-mix(in srgb, var(--cw-bg-elevated) 78%, transparent);
+		background: var(--cw-bg-muted);
 		color: var(--cw-text-muted);
 		cursor: pointer;
-		border-radius: 0.375rem;
+		border-radius: var(--cw-radius-sm);
 		transition:
 			color var(--cw-duration-fast) var(--cw-ease-default),
 			background-color var(--cw-duration-fast) var(--cw-ease-default);
@@ -598,12 +676,12 @@
 
 	.cw-input__stepper-button:hover:not(:disabled) {
 		color: var(--cw-text-primary);
-		background: color-mix(in srgb, var(--cw-bg-elevated) 92%, var(--cw-info-500));
+		background: var(--cw-bg-subtle);
 	}
 
 	.cw-input__stepper-button:disabled {
 		cursor: not-allowed;
-		opacity: 0.6;
+		opacity: var(--cw-opacity-disabled);
 	}
 
 	.cw-input__stepper-button svg {
@@ -611,13 +689,13 @@
 		height: 0.75rem;
 	}
 
-	/* ── Clear button ────────────────────── */
-	.cw-input__clear {
+	/* ── Clear / password buttons ────────── */
+	.cw-input__icon-button {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 1rem;
-		height: 1rem;
+		min-width: var(--cw-hit-target-min);
+		min-height: var(--cw-hit-target-min);
 		padding: 0;
 		border: none;
 		background: none;
@@ -625,46 +703,24 @@
 		cursor: pointer;
 		pointer-events: auto;
 		border-radius: var(--cw-radius-full);
-		transition: color var(--cw-duration-fast) var(--cw-ease-default);
+		transition:
+			color var(--cw-duration-fast) var(--cw-ease-default),
+			background-color var(--cw-duration-fast) var(--cw-ease-default);
 	}
 
-	.cw-input__clear:hover {
+	.cw-input__icon-button:hover:not(:disabled) {
 		color: var(--cw-text-primary);
+		background: var(--cw-option-hover-bg);
 	}
 
-	.cw-input__clear svg {
-		width: 0.875rem;
-		height: 0.875rem;
-	}
-
-	.cw-input__password-toggle {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 1rem;
-		height: 1rem;
-		padding: 0;
-		border: none;
-		background: none;
-		color: var(--cw-text-muted);
-		cursor: pointer;
-		pointer-events: auto;
-		border-radius: var(--cw-radius-full);
-		transition: color var(--cw-duration-fast) var(--cw-ease-default);
-	}
-
-	.cw-input__password-toggle:hover:not(:disabled) {
-		color: var(--cw-text-primary);
-	}
-
-	.cw-input__password-toggle:disabled {
+	.cw-input__icon-button:disabled {
 		cursor: not-allowed;
-		opacity: 0.65;
+		opacity: var(--cw-opacity-disabled);
 	}
 
-	.cw-input__password-toggle svg {
-		width: 0.875rem;
-		height: 0.875rem;
+	.cw-input__icon-button svg {
+		width: 1rem;
+		height: 1rem;
 	}
 
 	/* ── Validation icons ────────────────── */
@@ -675,45 +731,46 @@
 	}
 
 	.cw-input__icon--error {
-		color: var(--cw-danger-500);
+		color: var(--cw-tone-danger-text);
 	}
 
 	.cw-input__icon--valid {
-		color: var(--cw-success-500);
+		color: var(--cw-tone-success-text);
 	}
 
 	/* ── States ──────────────────────────── */
-	.cw-input--error .cw-input__field {
+	.cw-input--error .cw-input__field,
+	.cw-input--error .cw-input__field:hover:not(:disabled) {
 		border-color: var(--cw-tone-danger-border);
 	}
-	.cw-input--error .cw-input__field:focus {
-		box-shadow:
-			0 0 0 var(--cw-focus-ring-width) color-mix(in srgb, var(--cw-danger-500) 30%, transparent),
-			0 0 8px color-mix(in srgb, var(--cw-danger-500) 12%, transparent);
-	}
 
-	.cw-input--valid .cw-input__field {
+	.cw-input--valid .cw-input__field,
+	.cw-input--valid .cw-input__field:hover:not(:disabled) {
 		border-color: var(--cw-tone-success-border);
 	}
-	.cw-input--valid .cw-input__field:focus {
-		box-shadow:
-			0 0 0 var(--cw-focus-ring-width) color-mix(in srgb, var(--cw-success-500) 30%, transparent),
-			0 0 8px color-mix(in srgb, var(--cw-success-500) 12%, transparent);
+
+	.cw-input--readonly .cw-input__field {
+		background-color: var(--cw-control-bg-readonly);
 	}
 
 	.cw-input--disabled .cw-input__field {
-		opacity: 0.55;
+		color: var(--cw-text-disabled);
 		cursor: not-allowed;
-		background-color: color-mix(in srgb, var(--cw-bg-muted) 80%, transparent);
+		background-color: var(--cw-control-bg-readonly);
+		border-color: var(--cw-border-muted);
 	}
 
 	.cw-input--disabled .cw-input__label {
-		opacity: 0.5;
+		color: var(--cw-text-disabled);
 	}
 
-	.cw-input__error {
-		font-size: var(--cw-text-xs);
-		color: var(--cw-tone-danger-text);
+	.cw-input__message {
 		margin: 0;
+		font-size: var(--cw-text-xs);
+		color: var(--cw-text-muted);
+	}
+
+	.cw-input__message--error {
+		color: var(--cw-tone-danger-text);
 	}
 </style>

@@ -39,6 +39,14 @@
 	];
 
 	let selectedNav = $state<string | null>('home');
+	let lastEvent = $state('none yet');
+
+	const statusItems: CwListBoxItem<string>[] = [
+		{ value: 'active', label: 'Active sensors', endText: '182' },
+		{ value: 'archived', label: 'Archived (read-only)', endText: '14', disabled: true },
+		{ value: 'pending', label: 'Pending setup', endText: '3' }
+	];
+	let selectedStatus = $state<string | null>('active');
 	const SCRIPT_CLOSE = '</' + 'script>';
 	const listBoxExample = `<script lang="ts">
 	import { CwListBox } from '$lib/index.js';
@@ -85,14 +93,12 @@ ${SCRIPT_CLOSE}
 			heading="Groups"
 			items={groups}
 			bind:value={selectedGroup}
-			onselect={(item) => console.log('Group:', item.value)}
 		/>
 
 		<CwListBox
 			heading="Locations"
 			items={locations}
 			bind:value={selectedLocation}
-			onselect={(item) => console.log('Location:', item.value)}
 		/>
 	</div>
 
@@ -112,7 +118,13 @@ ${SCRIPT_CLOSE}
 </script>
 
 <h2>CwListBox</h2>
-<p class="demo-desc">Selectable list with left badge, label, and right-aligned count/icon. Matches the sidebar pattern.</p>
+<p class="demo-desc">
+	Selectable list with left badge, label, and right-aligned count/icon. Matches the sidebar
+	pattern. Use the arrow keys, Home and End to move between items.
+</p>
+
+<section class="demo-section">
+	<h3>Sidebar lists</h3>
 
 <div class="demo-columns">
 	<div class="demo-sidebar">
@@ -120,14 +132,14 @@ ${SCRIPT_CLOSE}
 			heading="Groups"
 			items={groups}
 			bind:value={selectedGroup}
-			onselect={(item) => console.log('Group:', item.value)}
+			onselect={(item) => (lastEvent = `group → ${item.value}`)}
 		/>
 
 		<CwListBox
 			heading="Locations"
 			items={locations}
 			bind:value={selectedLocation}
-			onselect={(item) => console.log('Location:', item.value)}
+			onselect={(item) => (lastEvent = `location → ${item.value}`)}
 		/>
 	</div>
 
@@ -144,15 +156,31 @@ ${SCRIPT_CLOSE}
 		</div>
 	</div>
 </div>
+<p class="demo-event" aria-live="polite">Last event: {lastEvent}</p>
+</section>
+
+<section class="demo-section">
+	<h3>Disabled items &amp; empty list</h3>
+	<div class="demo-columns">
+		<div class="demo-sidebar">
+			<CwListBox heading="Status" items={statusItems} bind:value={selectedStatus} />
+		</div>
+		<div class="demo-sidebar">
+			<CwListBox
+				heading="Favourites"
+				items={[]}
+				emptyText="No favourites yet. Star a location to pin it here."
+			/>
+		</div>
+	</div>
+</section>
 
 <DemoCodeExample code={listBoxExample} title="CwListBox example" />
 
 <style>
-	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }
-	.demo-desc { color: var(--cw-text-muted); font-size: var(--cw-text-sm); margin-bottom: var(--cw-space-4); }
 	.demo-columns { display: flex; gap: var(--cw-space-6); flex-wrap: wrap; }
 	.demo-sidebar {
-		width: 16rem;
+		width: min(16rem, 100%);
 		padding: var(--cw-space-3);
 		background: var(--cw-bg-elevated);
 		border: 1px solid var(--cw-border-muted);
@@ -169,5 +197,5 @@ ${SCRIPT_CLOSE}
 		font-size: var(--cw-text-xs);
 		color: var(--cw-text-muted);
 	}
-	strong { color: var(--cw-accent); }
+	strong { color: var(--cw-accent-text); }
 </style>

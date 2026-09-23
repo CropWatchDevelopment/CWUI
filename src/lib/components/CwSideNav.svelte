@@ -9,7 +9,7 @@
 		CwViewSize
 	} from '../types/index.js';
 	import CwSeparator from './CwSeparator.svelte';
-	import { getCwViewSize } from '../utils/cwViewSize.js';
+	import { CW_VIEW_SIZE_BREAKPOINTS, getCwViewSize } from '../utils/cwViewSize.js';
 
 	interface Props {
 		/** Navigation items */
@@ -34,6 +34,14 @@
 		footer?: Snippet;
 		/** Compact footer for mini mode */
 		footerMini?: Snippet;
+		/** Accessible name for the navigation landmark */
+		ariaLabel?: string;
+		/** Accessible labels for the built-in toggle buttons */
+		labels?: {
+			close?: string;
+			collapse?: string;
+			expand?: string;
+		};
 		class?: string;
 	}
 
@@ -49,8 +57,16 @@
 		itemTrailing,
 		footer,
 		footerMini,
+		ariaLabel = 'Side navigation',
+		labels = {},
 		class: className = ''
 	}: Props = $props();
+
+	const resolvedLabels = $derived({
+		close: labels.close ?? 'Close navigation',
+		collapse: labels.collapse ?? 'Collapse navigation',
+		expand: labels.expand ?? 'Expand navigation'
+	});
 
 	type ResolvedSideNavIcon =
 		| { kind: 'path'; value: string }
@@ -73,18 +89,30 @@
 		items.some((item) => item.active === true)
 	);
 
-	/** Detect viewport width for phone detection (always) */
+	/*
+	 * Breakpoints follow CW_VIEW_SIZE_BREAKPOINTS (phone <= 640, tablet <= 1024).
+	 * matchMedia `change` only fires when a breakpoint is actually crossed, so
+	 * the mobile address bar showing/hiding during scroll (which fires `resize`)
+	 * no longer snaps a user-opened nav shut.
+	 */
+	const PHONE_QUERY = `(max-width: ${CW_VIEW_SIZE_BREAKPOINTS.phoneMax}px)`;
+	const TABLET_QUERY = `(max-width: ${CW_VIEW_SIZE_BREAKPOINTS.tabletMax}px)`;
+
+	/** Detect phone-sized viewport (always) */
 	$effect(() => {
-		if (typeof window === 'undefined') return;
-		const check = () => { isPhone = getCwViewSize(window.innerWidth) === 'phone'; };
+		if (typeof window === 'undefined' || !window.matchMedia) return;
+		const phoneMql = window.matchMedia(PHONE_QUERY);
+		const check = () => {
+			isPhone = phoneMql.matches;
+		};
 		check();
-		window.addEventListener('resize', check);
-		return () => window.removeEventListener('resize', check);
+		phoneMql.addEventListener('change', check);
+		return () => phoneMql.removeEventListener('change', check);
 	});
 
-	/** Detect viewport and set mode when responsive is enabled */
+	/** Set mode from the viewport when responsive is enabled */
 	$effect(() => {
-		if (!responsive || typeof window === 'undefined') return;
+		if (!responsive || typeof window === 'undefined' || !window.matchMedia) return;
 
 		function applyResponsive() {
 			if (userOverride) return;
@@ -98,23 +126,113 @@
 			}
 		}
 
-		// Set initial mode. untrack() so the effect depends only on `responsive`,
-		// not on `userOverride` — otherwise every toggle/resize that flips
-		// `userOverride` would tear down and re-add the resize listener.
+		// untrack() so the effect depends only on `responsive`, not `userOverride`.
 		untrack(() => applyResponsive());
 
-		function handleResize() {
-			// Reset user override on resize so it re-adapts
+		function handleBreakpointChange() {
+			// A real breakpoint change resets any manual override so the nav re-adapts.
 			userOverride = false;
 			applyResponsive();
 		}
 
-		window.addEventListener('resize', handleResize);
-		return () => window.removeEventListener('resize', handleResize);
+		const queries = [window.matchMedia(PHONE_QUERY), window.matchMedia(TABLET_QUERY)];
+		for (const mql of queries) mql.addEventListener('change', handleBreakpointChange);
+		return () => {
+			for (const mql of queries) mql.removeEventListener('change', handleBreakpointChange);
+		};
+	});
+
+	/* ── Phone overlay (off-canvas drawer) ─────────────────── */
+	let navEl = $state<HTMLElement | null>(null);
+
+	/** False during SSR / first paint, before the viewport has been measured. */
+	let hydrated = $state(false);
+	$effect(() => {
+		hydrated = true;
+	});
+
+	/** On phones an open nav floats over the page instead of taking layout space. */
+	const isOverlay = $derived(isPhone && mode === 'open');
+
+	$effect(() => {
+		if (!isOverlay) return;
+		const returnFocusEl =
+			document.activeElement instanceof HTMLElement ? document.activeElement : null;
+		const target = navEl?.querySelector<HTMLElement>(
+			'.cw-sidenav__items a:not([aria-disabled="true"]), .cw-sidenav__items button:not(:disabled), .cw-sidenav__toggle'
+		);
+		target?.focus();
+
+		const root = document.documentElement;
+		const previousOverflow = root.style.overflow;
+		root.style.overflow = 'hidden';
+
+		return () => {
+			root.style.overflow = previousOverflow;
+			if (returnFocusEl && returnFocusEl.isConnected) returnFocusEl.focus();
+		};
+	});
+
+	function closeOverlay() {
+		userOverride = true;
+		mode = 'hidden';
+	}
+
+	const overlayFocusableSelector =
+		'a[href]:not([tabindex="-1"]), button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
+
+	function handleNavKeydown(event: KeyboardEvent) {
+		if (!isOverlay) return;
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			closeOverlay();
+			return;
+		}
+		if (event.key === 'Tab' && navEl) {
+			const focusables = Array.from(
+				navEl.querySelectorAll<HTMLElement>(overlayFocusableSelector)
+			).filter((el) => el.offsetParent !== null);
+			if (focusables.length === 0) return;
+			const first = focusables[0];
+			const last = focusables[focusables.length - 1];
+			if (event.shiftKey && document.activeElement === first) {
+				event.preventDefault();
+				last.focus();
+			} else if (!event.shiftKey && document.activeElement === last) {
+				event.preventDefault();
+				first.focus();
+			}
+		}
+	}
+
+	/* ── Mini-mode tooltip (shown on hover AND keyboard focus) ─ */
+	let miniTip = $state<{ label: string; top: number; left: number; right: number } | null>(
+		null
+	);
+
+	function showMiniTip(event: Event, label: string) {
+		if (mode !== 'mini') return;
+		const el = event.currentTarget as HTMLElement;
+		const rect = el.getBoundingClientRect();
+		miniTip = {
+			label,
+			top: rect.top + rect.height / 2,
+			left: rect.right,
+			right: window.innerWidth - rect.left
+		};
+	}
+
+	function hideMiniTip() {
+		miniTip = null;
+	}
+
+	$effect(() => {
+		if (mode !== 'mini') miniTip = null;
 	});
 
 	/** Toggle the sidenav: close on phone, open/mini on tablet+ */
 	function toggleNav() {
+		hideMiniTip();
 		userOverride = true;
 		if (isPhone) {
 			mode = 'hidden';
@@ -177,6 +295,7 @@
 		selectedItemId = item.id;
 		await runItemGoto(item);
 		onselect?.(item);
+		if (isOverlay) closeOverlay();
 	}
 
 	function handleAnchorClick(event: MouseEvent, item: CwSideNavItem) {
@@ -186,6 +305,7 @@
 		}
 		selectedItemId = item.id;
 		onselect?.(item);
+		if (isOverlay) closeOverlay();
 	}
 
 	$effect(() => {
@@ -204,14 +324,26 @@
 
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
+{#if isOverlay}
+	<div class="cw-sidenav__scrim" aria-hidden="true" onclick={closeOverlay}></div>
+{/if}
+
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <nav
-	class="cw-sidenav {className}"
-	class:cw-sidenav--open={mode === 'open'}
-	class:cw-sidenav--mini={mode === 'mini'}
-	class:cw-sidenav--hidden={mode === 'hidden'}
-	class:cw-sidenav--right={side === 'right'}
-	aria-label="Side navigation"
+	bind:this={navEl}
+	class={[
+		'cw-sidenav',
+		mode === 'open' && 'cw-sidenav--open',
+		mode === 'mini' && 'cw-sidenav--mini',
+		mode === 'hidden' && 'cw-sidenav--hidden',
+		side === 'right' && 'cw-sidenav--right',
+		isOverlay && 'cw-sidenav--overlay',
+		responsive && !hydrated && 'cw-sidenav--pending',
+		className
+	]}
+	aria-label={ariaLabel}
+	inert={mode === 'hidden'}
+	onkeydown={handleNavKeydown}
 >
 	<!-- Header / Logo -->
 	{#if mode === 'open' && header}
@@ -224,9 +356,8 @@
 					class="cw-sidenav__toggle"
 					type="button"
 					onclick={toggleNav}
-					aria-label={isPhone ? 'Close navigation' : 'Collapse navigation'}
+					aria-label={isPhone ? resolvedLabels.close : resolvedLabels.collapse}
 				>
-				
 					<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
 						{#if isPhone}
 							<path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
@@ -237,13 +368,26 @@
 				</button>
 			</div>
 		</div>
+	{:else if mode === 'open' && isOverlay}
+		<div class="cw-sidenav__bare-toggle">
+			<button
+				class="cw-sidenav__toggle cw-sidenav__toggle--plain"
+				type="button"
+				onclick={toggleNav}
+				aria-label={resolvedLabels.close}
+			>
+				<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+				</svg>
+			</button>
+		</div>
 	{:else if mode === 'mini'}
 		<div class="cw-sidenav__header cw-sidenav__header--mini">
 			<button
 				class="cw-sidenav__toggle cw-sidenav__toggle--mini"
 				type="button"
 				onclick={toggleNav}
-				aria-label="Expand navigation"
+				aria-label={resolvedLabels.expand}
 			>
 				<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
 					<path d="M3 4h10M3 8h10M3 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
@@ -289,8 +433,12 @@
 						aria-current={isItemActive(item) ? 'page' : undefined}
 						aria-disabled={item.disabled ? 'true' : undefined}
 						tabindex={item.disabled ? -1 : undefined}
-						title={mode === 'mini' ? itemLabel : undefined}
+						aria-label={mode === 'mini' ? itemLabel : undefined}
 						onclick={(event) => handleAnchorClick(event, item)}
+						onmouseenter={(event) => showMiniTip(event, itemLabel)}
+						onmouseleave={hideMiniTip}
+						onfocus={(event) => showMiniTip(event, itemLabel)}
+						onblur={hideMiniTip}
 					>
 						{#if itemIcon.kind === 'path'}
 							<svg class="cw-sidenav__icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -307,9 +455,14 @@
 					<button
 						type="button"
 						class="cw-sidenav__item"
-						title={mode === 'mini' ? itemLabel : undefined}
+						aria-label={mode === 'mini' ? itemLabel : undefined}
+						aria-current={isItemActive(item) ? 'page' : undefined}
 						disabled={item.disabled}
 						onclick={() => handleItemClick(item)}
+						onmouseenter={(event) => showMiniTip(event, itemLabel)}
+						onmouseleave={hideMiniTip}
+						onfocus={(event) => showMiniTip(event, itemLabel)}
+						onblur={hideMiniTip}
 					>
 						{#if itemIcon.kind === 'path'}
 							<svg class="cw-sidenav__icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -344,16 +497,25 @@
 		<div class="cw-sidenav__footer">
 			{@render footer()}
 		</div>
-	{:else if mode === 'mini'}
+	{:else if mode === 'mini' && footerMini}
+		<!-- The full footer is not reused in mini mode: it overflows the 3.5rem rail. -->
 		<div class="cw-sidenav__footer cw-sidenav__footer--mini">
-			{#if footerMini}
-				{@render footerMini()}
-			{:else if footer}
-				{@render footer()}
-			{/if}
+			{@render footerMini()}
 		</div>
 	{/if}
 </nav>
+
+{#if miniTip}
+	<div
+		class="cw-sidenav__tip"
+		style:top="{miniTip.top}px"
+		style:left={side === 'right' ? undefined : `${miniTip.left}px`}
+		style:right={side === 'right' ? `${miniTip.right}px` : undefined}
+		aria-hidden="true"
+	>
+		{miniTip.label}
+	</div>
+{/if}
 
 <style>
 	.cw-sidenav {
@@ -369,8 +531,13 @@
 			transform var(--cw-duration-slow) var(--cw-ease-default);
 	}
 
+	.cw-sidenav {
+		border-inline-end: 1px solid var(--cw-border-muted);
+	}
+
 	.cw-sidenav--right {
-		border-left-width: 1px;
+		border-inline-end: none;
+		border-inline-start: 1px solid var(--cw-border-muted);
 	}
 
 	.cw-sidenav--open {
@@ -387,6 +554,88 @@
 		width: 0;
 		border-width: 0;
 		overflow: hidden;
+		/* Hide after the width transition so hidden links can't be focused or read. */
+		visibility: hidden;
+		transition:
+			width var(--cw-duration-slow) var(--cw-ease-default),
+			visibility 0s linear var(--cw-duration-slow);
+	}
+
+	/* Server-rendered markup can't know the viewport yet. On small screens,
+	   keep a responsive nav out of the layout until the breakpoint effect has
+	   picked the real mode, so phones don't flash an in-flow open nav. */
+	@media (max-width: 1024px) {
+		.cw-sidenav--pending {
+			display: none;
+		}
+	}
+
+	/* ── Phone: off-canvas overlay ─────────── */
+	.cw-sidenav--overlay {
+		position: fixed;
+		inset-block: 0;
+		inset-inline-start: 0;
+		z-index: var(--cw-z-modal);
+		width: min(17.5rem, calc(100vw - 3rem));
+		padding-bottom: env(safe-area-inset-bottom, 0px);
+		box-shadow: var(--cw-elevation-modal);
+		animation: cw-sidenav-slide-in var(--cw-duration-slow) var(--cw-ease-out);
+	}
+
+	.cw-sidenav--overlay.cw-sidenav--right {
+		inset-inline-start: auto;
+		inset-inline-end: 0;
+		animation-name: cw-sidenav-slide-in-right;
+	}
+
+	.cw-sidenav__scrim {
+		position: fixed;
+		inset: 0;
+		z-index: var(--cw-z-overlay);
+		background: var(--cw-scrim);
+		animation: cw-sidenav-fade-in var(--cw-duration-normal) var(--cw-ease-out);
+	}
+
+	@keyframes cw-sidenav-slide-in {
+		from {
+			transform: translateX(-100%);
+		}
+	}
+
+	@keyframes cw-sidenav-slide-in-right {
+		from {
+			transform: translateX(100%);
+		}
+	}
+
+	@keyframes cw-sidenav-fade-in {
+		from {
+			opacity: 0;
+		}
+	}
+
+	.cw-sidenav__bare-toggle {
+		display: flex;
+		justify-content: flex-end;
+		padding: var(--cw-space-2);
+		flex-shrink: 0;
+	}
+
+	/* ── Mini-mode tooltip ─────────────────── */
+	.cw-sidenav__tip {
+		position: fixed;
+		z-index: var(--cw-z-tooltip);
+		transform: translate(var(--cw-space-2), -50%);
+		padding: var(--cw-space-1) var(--cw-space-2);
+		border-radius: var(--cw-radius-md);
+		background: var(--cw-tone-secondary-solid-bg);
+		color: var(--cw-tone-secondary-solid-text);
+		font-family: var(--cw-font-family);
+		font-size: var(--cw-text-xs);
+		font-weight: var(--cw-font-medium);
+		white-space: nowrap;
+		pointer-events: none;
+		box-shadow: var(--cw-elevation-popover);
 	}
 
 	.cw-sidenav__header {
@@ -394,7 +643,7 @@
 		padding: 0;
 		flex-shrink: 0;
 		background-color: var(--cw-header-bg);
-		color: #fff;
+		color: var(--cw-header-fg);
 	}
 
 	.cw-sidenav__header--mini {
@@ -404,7 +653,7 @@
 		align-items: center;
 		justify-content: center;
 		background-color: var(--cw-header-bg);
-		color: #fff;
+		color: var(--cw-header-fg);
 		border-bottom: 2px solid var(--cw-border-muted);
 	}
 
@@ -429,13 +678,13 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 1.75rem;
-		height: 1.75rem;
+		width: 2.75rem;
+		height: 2.75rem;
 		padding: 0;
 		background: none;
 		border: none;
 		border-radius: var(--cw-radius-md);
-		color: #fff;
+		color: var(--cw-header-fg);
 		cursor: pointer;
 		flex-shrink: 0;
 		transition:
@@ -444,13 +693,22 @@
 	}
 
 	.cw-sidenav__toggle:hover {
-		background-color: color-mix(in srgb, #fff 20%, transparent);
-		color: #fff;
+		background-color: color-mix(in srgb, var(--cw-header-fg) 20%, transparent);
+		color: var(--cw-header-fg);
 	}
 
 	.cw-sidenav__toggle:focus-visible {
-		outline: none;
-		box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--cw-focus-ring-color) 40%, transparent);
+		outline: var(--cw-focus-ring-width) solid var(--cw-focus-ring-color);
+		outline-offset: calc(-1 * var(--cw-focus-ring-width));
+	}
+
+	.cw-sidenav__toggle--plain {
+		color: var(--cw-sidenav-item-text);
+	}
+
+	.cw-sidenav__toggle--plain:hover {
+		background-color: var(--cw-sidenav-item-hover-bg);
+		color: var(--cw-sidenav-item-text-hover);
 	}
 
 	.cw-sidenav__toggle svg {
@@ -459,8 +717,8 @@
 	}
 
 	.cw-sidenav__toggle--mini {
-		width: 2rem;
-		height: 2rem;
+		width: 2.75rem;
+		height: 2.75rem;
 	}
 
 	.cw-sidenav__toggle--mini svg {
@@ -485,7 +743,7 @@
 
 	.cw-sidenav__group-label {
 		padding: var(--cw-space-2) var(--cw-space-2) var(--cw-space-1);
-		font-size: 0.625rem;
+		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-bold);
 		text-transform: uppercase;
 		letter-spacing: 0.075em;
@@ -494,6 +752,7 @@
 	}
 
 	.cw-sidenav__item-row {
+		position: relative;
 		display: flex;
 		align-items: center;
 		gap: var(--cw-space-2);
@@ -512,6 +771,17 @@
 	.cw-sidenav__item-row--active {
 		background-color: var(--cw-sidenav-item-active-bg);
 		color: var(--cw-sidenav-item-active-text);
+	}
+
+	/* Leading bar so the active item isn't signalled by colour alone. */
+	.cw-sidenav__item-row--active::before {
+		content: '';
+		position: absolute;
+		inset-block: var(--cw-space-2);
+		inset-inline-start: 0;
+		width: 3px;
+		border-radius: var(--cw-radius-full);
+		background: var(--cw-accent);
 	}
 
 	.cw-sidenav__item-row--active:hover {
@@ -549,8 +819,8 @@
 	}
 
 	.cw-sidenav__item:focus-visible {
-		outline: none;
-		box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--cw-focus-ring-color) 40%, transparent);
+		outline: var(--cw-focus-ring-width) solid var(--cw-focus-ring-color);
+		outline-offset: calc(-1 * var(--cw-focus-ring-width));
 		border-radius: var(--cw-radius-md);
 	}
 
@@ -589,7 +859,7 @@
 		border: 1px solid var(--cw-sidenav-trailing-border);
 		background: var(--cw-sidenav-trailing-bg);
 		color: var(--cw-sidenav-trailing-text);
-		font-size: 0.6875rem;
+		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-semibold);
 		line-height: 1;
 	}
@@ -617,6 +887,7 @@
 
 	.cw-sidenav__footer--mini {
 		padding: var(--cw-space-2);
+		overflow: hidden;
 		display: flex;
 		align-items: center;
 		justify-content: center;

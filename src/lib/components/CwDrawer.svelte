@@ -32,41 +32,56 @@
 		class: className = ''
 	}: Props = $props();
 
+	const uid = $props.id();
+
+	/** Keeps panel content mounted while the close animation runs. */
+	let contentMounted = $state(false);
+
+	$effect(() => {
+		if (open) contentMounted = true;
+	});
+
 	function toggle() {
 		open = !open;
 	}
 
-	function handleKeydown(e: KeyboardEvent) {
-		if (e.key === 'Enter' || e.key === ' ') {
-			e.preventDefault();
-			toggle();
+	function handlePanelTransitionEnd(e: TransitionEvent) {
+		if (e.target === e.currentTarget && e.propertyName === 'height' && !open) {
+			contentMounted = false;
 		}
 	}
+
+	const panelHeight = $derived(open ? `min(${height}, 60dvh)` : '0');
 
 	/** Default icon – three horizontal lines (hamburger) */
 	const defaultIcon = 'M3 4h10M3 8h10M3 12h10';
 </script>
 
-<div
-	class="cw-drawer {className}"
-	class:cw-drawer--open={open}
->
-	<!-- Collapsed header bar — always visible -->
-	<button
-		type="button"
-		class="cw-drawer__header"
-		onclick={toggle}
-		onkeydown={handleKeydown}
-		aria-expanded={open}
-	>
-		<div class="cw-drawer__header-left">
+<div class={['cw-drawer', open && 'cw-drawer--open', className]}>
+	<!-- Collapsed header bar — always visible. The toggle button's hit area is
+	     stretched across the whole bar; the collapsed summary sits beside it
+	     (not inside it) so custom snippets may contain their own controls. -->
+	<div class="cw-drawer__header">
+		<button
+			type="button"
+			class="cw-drawer__toggle"
+			onclick={toggle}
+			aria-expanded={open}
+			aria-controls="{uid}-panel"
+		>
 			<svg class="cw-drawer__header-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-				<path d={icon ?? defaultIcon} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+				<path
+					d={icon ?? defaultIcon}
+					stroke="currentColor"
+					stroke-width="1.5"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				/>
 			</svg>
 			{#if label}
 				<span class="cw-drawer__header-label">{label}</span>
 			{/if}
-		</div>
+		</button>
 
 		<!-- Collapsed items row (only when closed) -->
 		{#if !open && (collapsed || items.length > 0)}
@@ -75,10 +90,21 @@
 					{@render collapsed()}
 				{:else}
 					{#each items as item (item.id)}
-						<span class="cw-drawer__item" class:cw-drawer__item--has-tone={!!item.tone}>
+						<span class="cw-drawer__item">
 							{#if item.icon}
-								<svg class="cw-drawer__item-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-									<path d={item.icon} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+								<svg
+									class="cw-drawer__item-icon"
+									viewBox="0 0 16 16"
+									fill="none"
+									aria-hidden="true"
+								>
+									<path
+										d={item.icon}
+										stroke="currentColor"
+										stroke-width="1.5"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									/>
 								</svg>
 							{/if}
 							{#if item.tone}
@@ -92,22 +118,30 @@
 		{/if}
 
 		<svg
-			class="cw-drawer__chevron"
-			class:cw-drawer__chevron--open={open}
+			class={['cw-drawer__chevron', open && 'cw-drawer__chevron--open']}
 			viewBox="0 0 16 16"
 			fill="none"
 			aria-hidden="true"
 		>
-			<path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+			<path
+				d="M4 10l4-4 4 4"
+				stroke="currentColor"
+				stroke-width="1.5"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			/>
 		</svg>
-	</button>
+	</div>
 
 	<!-- Expanded panel -->
 	<div
+		id="{uid}-panel"
 		class="cw-drawer__panel"
-		style:height={open ? height : '0'}
+		style:height={panelHeight}
+		inert={!open}
+		ontransitionend={handlePanelTransitionEnd}
 	>
-		{#if open}
+		{#if open || contentMounted}
 			<CwSeparator spacing="0" />
 			<div class="cw-drawer__content">
 				{#if children}
@@ -131,10 +165,12 @@
 
 	/* ── Header bar (always visible) ─────── */
 	.cw-drawer__header {
+		position: relative;
 		display: flex;
 		align-items: center;
 		gap: var(--cw-space-3);
 		width: 100%;
+		min-height: 2.75rem;
 		padding: var(--cw-space-2) var(--cw-space-4);
 		background-color: var(--cw-drawer-header-bg, color-mix(in srgb, var(--cw-bg-surface-elevated) 62%, var(--cw-bg-surface)));
 		border: none;
@@ -150,16 +186,34 @@
 		background-color: var(--cw-drawer-header-bg-hover, color-mix(in srgb, var(--cw-bg-surface-elevated) 76%, var(--cw-bg-surface)));
 	}
 
-	.cw-drawer__header:focus-visible {
-		outline: none;
-		box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--cw-focus-ring-color) 40%, transparent);
-	}
-
-	.cw-drawer__header-left {
+	.cw-drawer__toggle {
 		display: flex;
 		align-items: center;
 		gap: var(--cw-space-2);
 		flex-shrink: 0;
+		min-height: var(--cw-hit-target-min);
+		padding: 0;
+		border: none;
+		background: none;
+		color: inherit;
+		font: inherit;
+		cursor: pointer;
+	}
+
+	/* Stretch the toggle's hit area across the whole header bar. */
+	.cw-drawer__toggle::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+	}
+
+	.cw-drawer__toggle:focus-visible {
+		outline: none;
+	}
+
+	.cw-drawer__toggle:focus-visible::after {
+		outline: var(--cw-focus-ring-width) solid var(--cw-focus-ring-color);
+		outline-offset: calc(-1 * var(--cw-focus-ring-width));
 	}
 
 	.cw-drawer__header-icon {
@@ -176,6 +230,11 @@
 
 	/* ── Collapsed items row ─────────────── */
 	.cw-drawer__items {
+		position: relative;
+		z-index: 1;
+		/* Clicks on the summary fall through to the stretched toggle, while
+		   interactive content inside a custom snippet stays usable. */
+		pointer-events: none;
 		display: flex;
 		align-items: center;
 		gap: var(--cw-space-4);
@@ -183,6 +242,10 @@
 		min-width: 0;
 		overflow-x: auto;
 		padding: 0 var(--cw-space-2);
+	}
+
+	.cw-drawer__items :global(:is(a, button, input, select, textarea, label, [tabindex])) {
+		pointer-events: auto;
 	}
 
 	.cw-drawer__item {
@@ -207,12 +270,12 @@
 		flex-shrink: 0;
 	}
 
-	.cw-drawer__item-dot--primary { background-color: var(--cw-primary-500); }
-	.cw-drawer__item-dot--secondary { background-color: var(--cw-gray-400); }
-	.cw-drawer__item-dot--info { background-color: var(--cw-info-500); }
-	.cw-drawer__item-dot--warning { background-color: var(--cw-warning-500); }
-	.cw-drawer__item-dot--danger { background-color: var(--cw-danger-500); }
-	.cw-drawer__item-dot--success { background-color: var(--cw-success-500); }
+	.cw-drawer__item-dot--primary { background-color: var(--cw-tone-primary-solid-bg); }
+	.cw-drawer__item-dot--secondary { background-color: var(--cw-tone-secondary-solid-bg); }
+	.cw-drawer__item-dot--info { background-color: var(--cw-tone-info-solid-bg); }
+	.cw-drawer__item-dot--warning { background-color: var(--cw-tone-warning-solid-bg); }
+	.cw-drawer__item-dot--danger { background-color: var(--cw-tone-danger-solid-bg); }
+	.cw-drawer__item-dot--success { background-color: var(--cw-tone-success-solid-bg); }
 
 	.cw-drawer__item-label {
 		min-width: 0;
@@ -227,11 +290,16 @@
 		color: var(--cw-text-muted);
 		flex-shrink: 0;
 		margin-left: auto;
+		pointer-events: none;
 		transition: transform var(--cw-duration-fast) var(--cw-ease-default);
 	}
 
 	.cw-drawer__chevron--open {
 		transform: rotate(180deg);
+	}
+
+	.cw-drawer:not(.cw-drawer--open) .cw-drawer__header {
+		padding-bottom: calc(var(--cw-space-2) + env(safe-area-inset-bottom, 0px));
 	}
 
 	/* ── Expanded panel ──────────────────── */
@@ -243,6 +311,7 @@
 
 	.cw-drawer__content {
 		padding: var(--cw-space-4);
+		padding-bottom: calc(var(--cw-space-4) + env(safe-area-inset-bottom, 0px));
 		overflow-y: auto;
 		height: 100%;
 	}

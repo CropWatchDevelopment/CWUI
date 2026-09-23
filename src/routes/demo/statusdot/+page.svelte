@@ -12,55 +12,48 @@
 </script>
 
 <h2>CwStatusDot</h2>
-<p class="demo-desc">Simple status indicator for online, offline, loading, and warning states. Offline and warning statuses include ring animations; loading pulses.</p>
+<p class="demo-desc">
+	Status indicator for online, offline, loading and warning states. Colours come from the shared
+	<code>--cw-status-*</code> tokens, so dots match the sensor and location cards. Offline and
+	warning use ring animations and loading pulses; all animation stops when the user prefers
+	reduced motion. Without a visible label the dot is announced as an image with an accessible
+	name.
+</p>
 
-<div class="demo-card">
-	<div class="demo-row">
+<section class="demo-section">
+	<h3>All statuses</h3>
+	<div class="demo-panel demo-row">
 		<CwStatusDot status="online" showLabel />
 		<CwStatusDot status="offline" showLabel />
 		<CwStatusDot status="loading" showLabel />
 		<CwStatusDot status="warning" showLabel />
 	</div>
-</div>
+</section>
 
-<div class="demo-card">
-	<span class="demo-label">Sizes</span>
-	<div class="demo-row">
-		<CwStatusDot status="online" size="sm" />
-		<CwStatusDot status="online" size="md" />
-		<CwStatusDot status="online" size="lg" />
+<section class="demo-section">
+	<h3>Dot only (accessible name, no visible label)</h3>
+	<div class="demo-panel demo-row">
+		<CwStatusDot status="online" label="Gateway online" />
+		<CwStatusDot status="offline" label="Gateway offline" />
+		<CwStatusDot status="loading" label="Checking gateway" />
+		<CwStatusDot status="warning" label="Gateway degraded" />
 	</div>
-</div>
+</section>
 
-<div class="demo-card">
-	<span class="demo-label">Offline pulse</span>
-	<div class="demo-row">
+<section class="demo-section">
+	<h3>Sizes</h3>
+	<div class="demo-panel demo-row">
+		<CwStatusDot status="online" size="sm" label="Small" showLabel />
+		<CwStatusDot status="online" size="md" label="Medium" showLabel />
+		<CwStatusDot status="online" size="lg" label="Large" showLabel />
+	</div>
+</section>
+
+<section class="demo-section">
+	<h3>Animated states</h3>
+	<div class="demo-panel demo-row">
 		<CwStatusDot status="offline" size="lg" label="Offline (pulsing)" showLabel />
-	</div>
-</div>
-
-<div class="demo-card">
-	<span class="demo-label">Warning ring</span>
-	<div class="demo-row">
 		<CwStatusDot status="warning" size="lg" label="Warning (ring)" showLabel />
 	</div>
-</div>
-
-<DemoCodeExample code={statusDotExample} title="CwStatusDot example" />
-
-<style>
-	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }
-	.demo-desc { color: var(--cw-text-muted); font-size: var(--cw-text-sm); margin-bottom: var(--cw-space-4); }
-	.demo-card {
-		display: flex;
-		flex-direction: column;
-		gap: var(--cw-space-3);
-		padding: var(--cw-space-4);
-		background: var(--cw-bg-elevated);
-		border: 1px solid var(--cw-border-muted);
-		border-radius: var(--cw-radius-md);
-		margin-bottom: var(--cw-space-4);
-	}
-	.demo-row { display: flex; align-items: center; gap: var(--cw-space-5); flex-wrap: wrap; }
-	.demo-label { font-size: var(--cw-text-xs); color: var(--cw-text-muted); }
-</style>
+	<DemoCodeExample code={statusDotExample} title="CwStatusDot example" />
+</section>

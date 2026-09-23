@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { HTMLInputAttributes } from 'svelte/elements';
+	import type { CwSize } from '../types/index.js';
 
 	type GroupKey = string | number;
 
@@ -23,6 +24,21 @@
 		label: string;
 	}
 
+	interface CwMultiSelectLabels {
+		/** Accessible label for a chip's remove button. `{label}` is replaced with the chip text. */
+		remove: string;
+		/** Overflow chip text. `{count}` is replaced with the hidden count. */
+		more: string;
+		/** `{group}` is replaced with the group label. */
+		selectAllInGroup: string;
+		/** `{group}` is replaced with the group label. */
+		clearAllInGroup: string;
+		/** Accessible label for the search field. Defaults to `searchPlaceholder`. */
+		search: string;
+		/** Shown when `options` is empty. */
+		empty: string;
+	}
+
 	interface Props {
 		options: Option[];
 		/** Optional group definitions. When provided, options are rendered under group headings in the order given. Options whose `group` key is missing from this list render ungrouped at the end. */
@@ -35,8 +51,14 @@
 		placeholder?: string;
 		autocomplete?: HTMLInputAttributes['autocomplete'];
 		disabled?: boolean;
+		/** Helper text shown below the trigger. Replaced by `error` when set. */
+		hint?: string;
 		error?: string;
 		label?: string;
+		/** Control size. Matches CwInput / CwDropdown heights. */
+		size?: CwSize;
+		/** Override built-in English strings. */
+		labels?: Partial<CwMultiSelectLabels>;
 		/** Maximum number of selected chip labels to render in the trigger before collapsing into "+N more". Ignored when `showAllSelectedItems` is true. */
 		maxVisibleChips?: number;
 		/** When true, render every selected chip in the trigger and let it wrap — overrides `maxVisibleChips`. */
@@ -65,8 +87,11 @@
 		placeholder = 'Select…',
 		autocomplete,
 		disabled = false,
+		hint,
 		error,
 		label,
+		size = 'md',
+		labels,
 		maxVisibleChips = 3,
 		showAllSelectedItems = false,
 		clearable = true,
@@ -81,8 +106,27 @@
 
 	const uid = $props.id();
 	const triggerId = $derived(id ?? `${uid}-trigger`);
+	const listboxId = `${uid}-listbox`;
+	const describedBy = $derived(error ? `${uid}-error` : hint ? `${uid}-hint` : undefined);
+	const text = $derived({
+		remove: 'Remove {label}',
+		more: '+{count} more',
+		selectAllInGroup: 'Select all in {group}',
+		clearAllInGroup: 'Clear all in {group}',
+		search: searchPlaceholder,
+		empty: 'No options',
+		...labels
+	});
+
+	function fill(template: string, values: Record<string, string | number>) {
+		return template.replace(/\{(\w+)\}/g, (match, key: string) =>
+			key in values ? String(values[key]) : match
+		);
+	}
 
 	let open = $state(false);
+	let rootRef = $state<HTMLDivElement | null>(null);
+	let popoverRef = $state<HTMLDivElement | null>(null);
 	let listboxRef = $state<HTMLUListElement | null>(null);
 	let triggerRef = $state<HTMLDivElement | null>(null);
 	let searchInputRef = $state<HTMLInputElement | null>(null);
@@ -166,6 +210,37 @@
 	const displayOptions = $derived(displayBuild.flat);
 	const displayItems = $derived(displayBuild.items);
 
+	type Section = {
+		key: string;
+		header?: Extract<DisplayItem, { kind: 'header' }>;
+		options: Extract<DisplayItem, { kind: 'option' }>[];
+	};
+
+	/** displayItems regrouped so each group renders as role="group" labelled by its header. */
+	const sections = $derived.by(() => {
+		const result: Section[] = [];
+		let current: Section | null = null;
+		for (const item of displayItems) {
+			if (item.kind === 'header') {
+				current = { key: item.key, header: item, options: [] };
+				result.push(current);
+			} else {
+				if (!current) {
+					current = { key: 'ungrouped', options: [] };
+					result.push(current);
+				}
+				current.options.push(item);
+			}
+		}
+		return result;
+	});
+
+	const activeId = $derived(
+		open && activeIndex >= 0 && activeIndex < displayOptions.length
+			? `${uid}-option-${activeIndex}`
+			: undefined
+	);
+
 	function openListbox() {
 		if (disabled) return;
 		open = true;
@@ -173,9 +248,10 @@
 		activeIndex = firstSelected >= 0 ? firstSelected : 0;
 	}
 
-	function closeListbox() {
+	function closeListbox(returnFocus = false) {
 		open = false;
 		query = '';
+		if (returnFocus) triggerRef?.focus();
 	}
 
 	function toggle() {
@@ -198,7 +274,7 @@
 		if (value.length === 0) return;
 		value = [];
 		onchange?.(value);
-		triggerRef?.focus();
+		closeListbox(true);
 	}
 
 	function groupOptionsFor(groupValue: GroupKey) {
@@ -242,17 +318,24 @@
 	}
 
 	function handleTriggerKeydown(e: KeyboardEvent) {
-		switch (e.key) {
-			case 'Enter':
-			case ' ':
-			case 'ArrowDown':
+		if (disabled) return;
+		if (!open) {
+			if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown' || e.key === 'ArrowUp') {
 				e.preventDefault();
-				if (!open) openListbox();
-				break;
-			case 'Escape':
-				if (open) closeListbox();
-				break;
+				openListbox();
+			}
+			return;
 		}
+		// Open without a search field: focus stays on the trigger and drives
+		// the listbox through aria-activedescendant.
+		if (e.key === ' ') {
+			e.preventDefault();
+			if (activeIndex >= 0 && !displayOptions[activeIndex]?.disabled) {
+				toggleOption(displayOptions[activeIndex]);
+			}
+			return;
+		}
+		handleNavKey(e);
 	}
 
 	function activateOption(delta: number) {
@@ -290,8 +373,7 @@
 				return true;
 			case 'Escape':
 				e.preventDefault();
-				closeListbox();
-				triggerRef?.focus();
+				closeListbox(true);
 				return true;
 			case 'Tab':
 				closeListbox();
@@ -300,24 +382,9 @@
 		return false;
 	}
 
-	function handleListKeydown(e: KeyboardEvent) {
-		if (e.key === ' ') {
-			e.preventDefault();
-			if (activeIndex >= 0 && !displayOptions[activeIndex]?.disabled) {
-				toggleOption(displayOptions[activeIndex]);
-			}
-			return;
-		}
-		handleNavKey(e);
-	}
-
 	function handleSearchKeydown(e: KeyboardEvent) {
 		// Space must remain a literal character in the search field, so we only handle the navigation keys.
 		handleNavKey(e);
-	}
-
-	function handleBackdropClick() {
-		closeListbox();
 	}
 
 	function updateListboxPosition() {
@@ -327,7 +394,7 @@
 		const margin = 8;
 		const spacing = 6;
 		const listWidth = Math.round(rect.width);
-		const listHeight = listboxRef?.offsetHeight ?? 0;
+		const listHeight = popoverRef?.offsetHeight ?? 0;
 		const viewportWidth = window.innerWidth;
 		const viewportHeight = window.innerHeight;
 
@@ -347,29 +414,38 @@
 			}
 		}
 
-		listboxStyle = `left:${Math.round(left)}px;top:${Math.round(top)}px;width:${listWidth}px;--cw-multiselect-dropdown-height:${dropdownHeight};`;
+		listboxStyle = `left:${Math.round(left)}px;top:${Math.round(top)}px;width:${listWidth}px;`;
 	}
 
 	$effect(() => {
-		if (!open || !listboxRef) return;
+		if (!open || !popoverRef) return;
 
 		const raf = requestAnimationFrame(() => {
 			updateListboxPosition();
-			if (searchable && searchInputRef) {
-				searchInputRef.focus();
-			} else {
-				listboxRef?.focus();
-			}
+			if (searchable && searchInputRef) searchInputRef.focus();
 		});
 
 		const handleViewportChange = () => updateListboxPosition();
+		// Close on outside pointerdown without swallowing the click.
+		const handlePointerDown = (event: PointerEvent) => {
+			if (rootRef && !rootRef.contains(event.target as Node)) closeListbox();
+		};
+		// Close when focus leaves the component (e.g. Tab out of the search field).
+		const handleFocusOut = (event: FocusEvent) => {
+			const next = event.relatedTarget as Node | null;
+			if (next && rootRef && !rootRef.contains(next)) closeListbox();
+		};
 		window.addEventListener('resize', handleViewportChange);
 		window.addEventListener('scroll', handleViewportChange, true);
+		document.addEventListener('pointerdown', handlePointerDown, true);
+		rootRef?.addEventListener('focusout', handleFocusOut);
 
 		return () => {
 			cancelAnimationFrame(raf);
 			window.removeEventListener('resize', handleViewportChange);
 			window.removeEventListener('scroll', handleViewportChange, true);
+			document.removeEventListener('pointerdown', handlePointerDown, true);
+			rootRef?.removeEventListener('focusout', handleFocusOut);
 		};
 	});
 
@@ -388,24 +464,57 @@
 
 	$effect(() => {
 		if (open && listboxRef && activeIndex >= 0) {
-			const items = listboxRef.querySelectorAll('[role="option"]');
-			items[activeIndex]?.scrollIntoView({ block: 'nearest' });
+			listboxRef
+				.querySelector(`#${CSS.escape(`${uid}-option-${activeIndex}`)}`)
+				?.scrollIntoView({ block: 'nearest' });
 		}
 	});
 </script>
 
-{#if open}
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="cw-multiselect__backdrop" onclick={handleBackdropClick} onkeydown={() => {}}></div>
-{/if}
+{#snippet optionRows(items: Section['options'])}
+	{#each items as item (item.opt.value)}
+		{@const opt = item.opt}
+		{@const i = item.optionIndex}
+		{@const isSelected = selectedIds.has(opt.value)}
+		<!-- Keyboard users drive options via aria-activedescendant on the focused combobox. -->
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<li
+			id="{uid}-option-{i}"
+			role="option"
+			class="cw-multiselect__option"
+			class:cw-multiselect__option--active={i === activeIndex}
+			class:cw-multiselect__option--selected={isSelected}
+			class:cw-multiselect__option--disabled={opt.disabled}
+			class:cw-multiselect__option--alt={item.groupIndex % 2 === 1}
+			aria-selected={isSelected}
+			aria-disabled={opt.disabled || undefined}
+			onclick={() => toggleOption(opt)}
+			onpointermove={() => {
+				if (!opt.disabled) activeIndex = i;
+			}}
+		>
+			<span class="cw-multiselect__checkbox" aria-hidden="true">
+				{#if isSelected}
+					<svg viewBox="0 0 16 16" fill="none">
+						<path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+					</svg>
+				{/if}
+			</span>
+			<span class="cw-multiselect__option-label">{opt.label}</span>
+		</li>
+	{/each}
+{/snippet}
 
 <div
-	class="cw-multiselect {className}"
+	bind:this={rootRef}
+	class="cw-multiselect cw-multiselect--{size} {className}"
 	class:cw-multiselect--error={!!error}
 	class:cw-multiselect--disabled={disabled}
 >
 	{#if label}
-		<label class="cw-multiselect__label" id="{uid}-label" for={triggerId}>{label}</label>
+		<label class="cw-multiselect__label" id="{uid}-label" for={triggerId}>
+			{label}{#if required}<span class="cw-multiselect__required" aria-hidden="true">&nbsp;*</span>{/if}
+		</label>
 	{/if}
 
 	{#if name || required}
@@ -432,8 +541,12 @@
 		tabindex={disabled ? -1 : 0}
 		aria-expanded={open}
 		aria-haspopup="listbox"
-		aria-controls="{uid}-listbox"
+		aria-controls={listboxId}
+		aria-activedescendant={!searchable ? activeId : undefined}
 		aria-disabled={disabled || undefined}
+		aria-required={required || undefined}
+		aria-invalid={error ? 'true' : undefined}
+		aria-describedby={describedBy}
 		aria-labelledby={label ? `${uid}-label` : undefined}
 		onclick={toggle}
 		onkeydown={handleTriggerKeydown}
@@ -450,7 +563,7 @@
 								type="button"
 								class="cw-multiselect__chip-remove"
 								tabindex="-1"
-								aria-label="Remove {chip.label}"
+								aria-label={fill(text.remove, { label: chip.label })}
 								onclick={(e) => removeChip(e, chip.id)}
 							>
 								<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -461,7 +574,9 @@
 					</span>
 				{/each}
 				{#if overflowCount > 0}
-					<span class="cw-multiselect__chip cw-multiselect__chip--overflow">+{overflowCount} more</span>
+					<span class="cw-multiselect__chip cw-multiselect__chip--overflow">
+						{fill(text.more, { count: overflowCount })}
+					</span>
 				{/if}
 			</span>
 		{/if}
@@ -471,134 +586,150 @@
 	</div>
 
 	{#if open}
-		<ul
-			bind:this={listboxRef}
-			id="{uid}-listbox"
-			class="cw-multiselect__listbox"
+		<div
+			bind:this={popoverRef}
+			class="cw-multiselect__popover"
 			style={listboxStyle}
-			role="listbox"
-			tabindex="-1"
-			aria-multiselectable="true"
-			aria-labelledby={label ? `${uid}-label` : undefined}
-			onkeydown={handleListKeydown}
+			style:--cw-multiselect-dropdown-height={dropdownHeight}
 		>
 			{#if searchable}
-				<li class="cw-multiselect__search-wrap" role="presentation">
+				<div class="cw-multiselect__search-wrap">
 					<input
 						bind:this={searchInputRef}
 						bind:value={query}
 						type="text"
 						class="cw-multiselect__search"
 						placeholder={searchPlaceholder}
-						aria-label={searchPlaceholder}
+						aria-label={text.search}
+						role="combobox"
+						aria-expanded="true"
+						aria-controls={listboxId}
+						aria-autocomplete="list"
+						aria-activedescendant={activeId}
 						autocomplete="off"
 						spellcheck="false"
-						onkeydown={handleSearchKeydown}
+						onkeydown={handleNavKey}
 					/>
-				</li>
+				</div>
 			{/if}
-			{#if displayItems.length === 0}
-				<li class="cw-multiselect__empty" role="presentation">{noResultsLabel}</li>
-			{/if}
-			{#each displayItems as item (item.kind === 'header' ? item.key : item.opt.value)}
-				{#if item.kind === 'header'}
-					{@const state = groupSelectionState(item.groupValue)}
-					<li
-						class="cw-multiselect__group-header"
-						class:cw-multiselect__group-header--alt={item.groupIndex % 2 === 1}
-						role="presentation"
-					>
-						<span class="cw-multiselect__group-header-label">{item.label}</span>
-						<span class="cw-multiselect__group-actions">
-							<button
-								type="button"
-								class="cw-multiselect__group-action"
-								tabindex="-1"
-								disabled={state === 'all'}
-								aria-label="Select all in {item.label}"
-								title="Select all"
-								onclick={(e) => selectAllInGroup(e, item.groupValue)}
-							>
-								<svg viewBox="0 -960 960 960" aria-hidden="true">
-									<path
-										d="m424-312 282-282-56-56-226 226-114-114-56 56 170 170ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm0-560v560-560Z"
-										fill="currentColor"
-									/>
-								</svg>
-							</button>
-							<button
-								type="button"
-								class="cw-multiselect__group-action"
-								tabindex="-1"
-								disabled={state === 'none'}
-								aria-label="Clear all in {item.label}"
-								title="Clear all"
-								onclick={(e) => clearAllInGroup(e, item.groupValue)}
-							>
-								<svg viewBox="0 -960 960 960" aria-hidden="true">
-									<path
-										d="M280-440h400v-80H280v80Zm-80 320q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm0-560v560-560Z"
-										fill="currentColor"
-									/>
-								</svg>
-							</button>
-						</span>
-					</li>
-				{:else}
-					{@const opt = item.opt}
-					{@const i = item.optionIndex}
-					{@const isSelected = selectedIds.has(opt.value)}
-					<!-- svelte-ignore a11y_click_events_have_key_events -->
-					<li
-						role="option"
-						class="cw-multiselect__option"
-						class:cw-multiselect__option--active={i === activeIndex}
-						class:cw-multiselect__option--selected={isSelected}
-						class:cw-multiselect__option--disabled={opt.disabled}
-						class:cw-multiselect__option--alt={item.groupIndex % 2 === 1}
-						aria-selected={isSelected}
-						aria-disabled={opt.disabled || undefined}
-						onclick={() => toggleOption(opt)}
-					>
-						<span class="cw-multiselect__checkbox" aria-hidden="true">
-							{#if isSelected}
-								<svg viewBox="0 0 16 16" fill="none">
-									<path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
-								</svg>
-							{/if}
-						</span>
-						<span class="cw-multiselect__option-label">{opt.label}</span>
+
+			<ul
+				bind:this={listboxRef}
+				id={listboxId}
+				class="cw-multiselect__listbox"
+				role="listbox"
+				aria-multiselectable="true"
+				aria-labelledby={label ? `${uid}-label` : undefined}
+			>
+				{#if displayItems.length === 0}
+					<li class="cw-multiselect__empty" role="presentation">
+						{options.length === 0 ? text.empty : noResultsLabel}
 					</li>
 				{/if}
-			{/each}
+				{#each sections as section (section.key)}
+					{#if section.header}
+						{@const header = section.header}
+						{@const state = groupSelectionState(header.groupValue)}
+						<li role="presentation" class="cw-multiselect__group">
+							<ul
+								role="group"
+								class="cw-multiselect__group-list"
+								aria-labelledby="{uid}-group-{header.groupIndex}"
+							>
+								<li
+									class="cw-multiselect__group-header"
+									class:cw-multiselect__group-header--alt={header.groupIndex % 2 === 1}
+									role="presentation"
+								>
+									<span class="cw-multiselect__group-header-label" id="{uid}-group-{header.groupIndex}">
+										{header.label}
+									</span>
+									<!-- Pointer shortcuts; keyboard users select options individually. -->
+									<span class="cw-multiselect__group-actions" aria-hidden="true">
+										<button
+											type="button"
+											class="cw-multiselect__group-action"
+											tabindex="-1"
+											disabled={state === 'all'}
+											title={fill(text.selectAllInGroup, { group: header.label })}
+											onclick={(e) => selectAllInGroup(e, header.groupValue)}
+										>
+											<svg viewBox="0 -960 960 960" aria-hidden="true">
+												<path
+													d="m424-312 282-282-56-56-226 226-114-114-56 56 170 170ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm0-560v560-560Z"
+													fill="currentColor"
+												/>
+											</svg>
+										</button>
+										<button
+											type="button"
+											class="cw-multiselect__group-action"
+											tabindex="-1"
+											disabled={state === 'none'}
+											title={fill(text.clearAllInGroup, { group: header.label })}
+											onclick={(e) => clearAllInGroup(e, header.groupValue)}
+										>
+											<svg viewBox="0 -960 960 960" aria-hidden="true">
+												<path
+													d="M280-440h400v-80H280v80Zm-80 320q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm0-560v560-560Z"
+													fill="currentColor"
+												/>
+											</svg>
+										</button>
+									</span>
+								</li>
+								{@render optionRows(section.options)}
+							</ul>
+						</li>
+					{:else}
+						{@render optionRows(section.options)}
+					{/if}
+				{/each}
+			</ul>
 
 			{#if clearable && value.length > 0}
-				<li class="cw-multiselect__separator" role="separator"></li>
-				<!-- svelte-ignore a11y_click_events_have_key_events -->
-				<li
-					role="option"
-					aria-selected="false"
-					class="cw-multiselect__clear"
-					onclick={clearAll}
-				>
-					{clearLabel}
-				</li>
+				<div class="cw-multiselect__footer">
+					<button type="button" class="cw-multiselect__clear" onclick={clearAll}>
+						{clearLabel}
+					</button>
+				</div>
 			{/if}
-		</ul>
+		</div>
 	{/if}
 
 	{#if error}
-		<p class="cw-multiselect__error" role="alert">{error}</p>
+		<p class="cw-multiselect__message cw-multiselect__message--error" id="{uid}-error">{error}</p>
+	{:else if hint}
+		<p class="cw-multiselect__message" id="{uid}-hint">{hint}</p>
 	{/if}
 </div>
 
 <style>
 	.cw-multiselect {
+		--_h: var(--cw-control-h-md);
+		--_px: var(--cw-control-px-md);
+		--_fs: var(--cw-control-text-md);
 		position: relative;
 		display: flex;
 		flex-direction: column;
 		gap: var(--cw-space-1);
 		width: 100%;
+	}
+
+	.cw-multiselect--sm {
+		--_h: var(--cw-control-h-sm);
+		--_px: var(--cw-control-px-sm);
+		--_fs: var(--cw-control-text-sm);
+	}
+
+	.cw-multiselect--lg {
+		--_h: var(--cw-control-h-lg);
+		--_px: var(--cw-control-px-lg);
+		--_fs: var(--cw-control-text-lg);
+	}
+
+	.cw-multiselect__required {
+		color: var(--cw-tone-danger-text);
 	}
 
 	.cw-multiselect__label {
@@ -624,28 +755,24 @@
 		justify-content: space-between;
 		gap: var(--cw-space-2);
 		width: 100%;
-		padding: var(--cw-space-2) var(--cw-space-3);
+		min-height: var(--_h);
+		padding: var(--cw-space-1) var(--_px);
 		font-family: var(--cw-font-family);
-		font-size: var(--cw-text-sm);
-		color: var(--cw-text-primary);
-		background-color: var(--cw-bg-surface);
-		border: 1px solid var(--cw-border-strong);
-		border-radius: var(--cw-radius-md);
+		font-size: var(--_fs);
+		color: var(--cw-control-text);
+		background-color: var(--cw-control-bg);
+		border: 1px solid var(--cw-control-border);
+		border-radius: var(--cw-control-radius);
 		cursor: pointer;
-		min-height: 2.375rem;
 		text-align: left;
-		transition:
-			border-color var(--cw-duration-fast) var(--cw-ease-default),
-			box-shadow var(--cw-duration-fast) var(--cw-ease-default);
+		transition: border-color var(--cw-duration-fast) var(--cw-ease-default);
 	}
 
-	.cw-multiselect__trigger:focus-visible {
-		border-color: var(--cw-focus-ring-color);
-		box-shadow:
-			0 0 0 var(--cw-focus-ring-width) color-mix(in srgb, var(--cw-focus-ring-color) 35%, transparent),
-			0 0 8px color-mix(in srgb, var(--cw-focus-ring-color) 15%, transparent);
+	.cw-multiselect__trigger:hover:not([aria-disabled='true']) {
+		border-color: var(--cw-control-border-hover);
 	}
 
+	.cw-multiselect__trigger:focus-visible,
 	.cw-multiselect__trigger--open {
 		border-color: var(--cw-focus-ring-color);
 	}
@@ -658,7 +785,7 @@
 	}
 
 	.cw-multiselect__text--placeholder {
-		color: var(--cw-text-muted);
+		color: var(--cw-control-placeholder);
 	}
 
 	.cw-multiselect__chips {
@@ -672,8 +799,8 @@
 	.cw-multiselect__chip {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.25rem;
-		padding: 0.125rem 0.375rem 0.125rem 0.5rem;
+		gap: var(--cw-space-1);
+		padding: 0.125rem var(--cw-space-1) 0.125rem var(--cw-space-2);
 		font-size: var(--cw-text-xs);
 		color: var(--cw-accent-text);
 		background-color: color-mix(in srgb, var(--cw-accent) 12%, transparent);
@@ -683,7 +810,7 @@
 	}
 
 	.cw-multiselect__chip--overflow {
-		padding: 0.125rem 0.5rem;
+		padding: 0.125rem var(--cw-space-2);
 		color: var(--cw-text-secondary);
 		background-color: var(--cw-bg-muted);
 		border-color: var(--cw-border-default);
@@ -696,6 +823,7 @@
 	}
 
 	.cw-multiselect__chip-remove {
+		position: relative;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -707,6 +835,16 @@
 		border: 0;
 		border-radius: var(--cw-radius-sm);
 		cursor: pointer;
+	}
+
+	/* Extend the hit area to --cw-hit-target-min without growing the chip. */
+	.cw-multiselect__chip-remove::before {
+		content: '';
+		position: absolute;
+		inset: 50% auto auto 50%;
+		width: var(--cw-hit-target-min);
+		height: var(--cw-hit-target-min);
+		transform: translate(-50%, -50%);
 	}
 
 	.cw-multiselect__chip-remove:hover {
@@ -722,6 +860,7 @@
 		width: 1rem;
 		height: 1rem;
 		flex-shrink: 0;
+		color: var(--cw-text-muted);
 		transition: transform var(--cw-duration-fast) var(--cw-ease-default);
 	}
 
@@ -730,60 +869,61 @@
 	}
 
 	/* ── Listbox ─────────────────────────── */
-	.cw-multiselect__backdrop {
+	.cw-multiselect__popover {
 		position: fixed;
-		inset: 0;
-		z-index: var(--cw-z-overlay);
+		z-index: var(--cw-z-popover);
+		display: flex;
+		flex-direction: column;
+		max-height: var(--cw-multiselect-dropdown-height, 15rem);
+		background-color: var(--cw-popover-bg);
+		border: 1px solid var(--cw-popover-border);
+		border-radius: var(--cw-popover-radius);
+		box-shadow: var(--cw-elevation-popover);
+		overflow: hidden;
 	}
 
 	.cw-multiselect__listbox {
-		position: fixed;
-		z-index: calc(var(--cw-z-overlay) + 1);
+		flex: 1;
+		min-height: 0;
 		padding: var(--cw-space-1);
 		margin: 0;
 		list-style: none;
-		background-color: var(--cw-bg-elevated);
-		border: 1px solid var(--cw-border-default);
-		border-radius: var(--cw-radius-md);
-		box-shadow: var(--cw-shadow-lg);
-		max-height: var(--cw-multiselect-dropdown-height, 15rem);
 		overflow-y: auto;
-		outline: none;
+	}
+
+	.cw-multiselect__group,
+	.cw-multiselect__group-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
 	}
 
 	.cw-multiselect__search-wrap {
-		position: sticky;
-		top: calc(var(--cw-space-1) * -1);
-		z-index: 1;
-		margin: calc(var(--cw-space-1) * -1) calc(var(--cw-space-1) * -1) var(--cw-space-1);
-		padding: var(--cw-space-1) var(--cw-space-1) var(--cw-space-1);
-		background-color: var(--cw-bg-elevated);
+		flex-shrink: 0;
+		padding: var(--cw-space-1);
 		border-bottom: 1px solid var(--cw-border-muted);
-		list-style: none;
 	}
 
 	.cw-multiselect__search {
 		width: 100%;
 		box-sizing: border-box;
-		padding: var(--cw-space-2) var(--cw-space-3);
+		min-height: var(--cw-control-h-sm);
+		padding: 0 var(--cw-space-3);
 		font-family: var(--cw-font-family);
 		font-size: var(--cw-text-sm);
-		color: var(--cw-text-primary);
-		background-color: var(--cw-bg-surface);
-		border: 1px solid var(--cw-border-default);
-		border-radius: var(--cw-radius-sm);
-		outline: none;
+		color: var(--cw-control-text);
+		background-color: var(--cw-control-bg);
+		border: 1px solid var(--cw-control-border);
+		border-radius: var(--cw-radius-md);
 		caret-color: var(--cw-focus-ring-color, currentColor);
 	}
 
 	.cw-multiselect__search::placeholder {
-		color: var(--cw-text-muted);
+		color: var(--cw-control-placeholder);
 	}
 
 	.cw-multiselect__search:focus-visible {
 		border-color: var(--cw-focus-ring-color);
-		box-shadow: 0 0 0 var(--cw-focus-ring-width)
-			color-mix(in srgb, var(--cw-focus-ring-color) 25%, transparent);
 	}
 
 	.cw-multiselect__empty {
@@ -798,10 +938,11 @@
 		display: flex;
 		align-items: center;
 		gap: var(--cw-space-2);
+		min-height: var(--cw-option-min-h);
 		padding: var(--cw-space-2) var(--cw-space-3);
 		font-size: var(--cw-text-sm);
 		color: var(--cw-text-primary);
-		border-radius: var(--cw-radius-sm);
+		border-radius: var(--cw-radius-md);
 		cursor: pointer;
 		transition: background-color var(--cw-duration-fast) var(--cw-ease-default);
 	}
@@ -815,17 +956,16 @@
 		padding-right: calc(var(--cw-space-3) + var(--cw-space-1));
 	}
 
-	.cw-multiselect__option:hover,
 	.cw-multiselect__option--active {
-		background-color: var(--cw-bg-muted);
+		background-color: var(--cw-option-hover-bg);
 	}
 
 	.cw-multiselect__option--selected {
-		color: var(--cw-accent-text);
+		color: var(--cw-option-selected-text);
 	}
 
 	.cw-multiselect__option--disabled {
-		opacity: 0.5;
+		color: var(--cw-text-disabled);
 		cursor: not-allowed;
 	}
 
@@ -843,10 +983,10 @@
 		width: 1rem;
 		height: 1rem;
 		flex-shrink: 0;
-		color: var(--cw-accent);
-		border: 1px solid var(--cw-border-strong);
+		color: var(--cw-option-selected-text);
+		border: 1px solid var(--cw-control-border);
 		border-radius: var(--cw-radius-sm);
-		background-color: var(--cw-bg-surface);
+		background-color: var(--cw-control-bg);
 	}
 
 	.cw-multiselect__option--selected .cw-multiselect__checkbox {
@@ -857,13 +997,6 @@
 	.cw-multiselect__checkbox svg {
 		width: 0.875rem;
 		height: 0.875rem;
-	}
-
-	.cw-multiselect__separator {
-		height: 1px;
-		margin: var(--cw-space-1) 0;
-		background-color: var(--cw-border-muted);
-		list-style: none;
 	}
 
 	.cw-multiselect__group-header {
@@ -901,7 +1034,7 @@
 	.cw-multiselect__group-actions {
 		display: inline-flex;
 		align-items: center;
-		gap: 2px;
+		gap: 0.125rem;
 		flex-shrink: 0;
 	}
 
@@ -909,8 +1042,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 1.25rem;
-		height: 1.25rem;
+		width: var(--cw-hit-target-min);
+		height: var(--cw-hit-target-min);
 		padding: 0;
 		color: var(--cw-text-muted);
 		background: transparent;
@@ -927,15 +1060,8 @@
 		background-color: var(--cw-bg-muted);
 	}
 
-	.cw-multiselect__group-action:focus-visible {
-		outline: none;
-		color: var(--cw-accent);
-		box-shadow: 0 0 0 var(--cw-focus-ring-width)
-			color-mix(in srgb, var(--cw-focus-ring-color) 35%, transparent);
-	}
-
 	.cw-multiselect__group-action:disabled {
-		opacity: 0.35;
+		opacity: var(--cw-opacity-disabled);
 		cursor: default;
 	}
 
@@ -944,37 +1070,59 @@
 		height: 1rem;
 	}
 
-	.cw-multiselect__group-header + .cw-multiselect__group-header,
-	.cw-multiselect__option + .cw-multiselect__group-header {
+	.cw-multiselect__group + .cw-multiselect__group,
+	.cw-multiselect__option + .cw-multiselect__group {
 		margin-top: var(--cw-space-1);
 	}
 
+	.cw-multiselect__footer {
+		flex-shrink: 0;
+		padding: var(--cw-space-1);
+		border-top: 1px solid var(--cw-border-muted);
+	}
+
 	.cw-multiselect__clear {
+		width: 100%;
+		min-height: var(--cw-option-min-h);
 		padding: var(--cw-space-2) var(--cw-space-3);
+		font-family: inherit;
 		font-size: var(--cw-text-sm);
 		color: var(--cw-tone-danger-text);
-		border-radius: var(--cw-radius-sm);
+		background: transparent;
+		border: 0;
+		border-radius: var(--cw-radius-md);
 		cursor: pointer;
 		text-align: center;
 	}
 
 	.cw-multiselect__clear:hover {
-		background-color: var(--cw-bg-muted);
+		background-color: var(--cw-option-hover-bg);
 	}
 
-	/* ── Error state ─────────────────────── */
-	.cw-multiselect--error .cw-multiselect__trigger {
+	/* ── States ──────────────────────────── */
+	.cw-multiselect--error .cw-multiselect__trigger,
+	.cw-multiselect--error .cw-multiselect__trigger:hover {
 		border-color: var(--cw-tone-danger-border);
 	}
 
 	.cw-multiselect--disabled .cw-multiselect__trigger {
-		opacity: 0.5;
+		color: var(--cw-text-disabled);
+		background-color: var(--cw-control-bg-readonly);
+		border-color: var(--cw-border-muted);
 		cursor: not-allowed;
 	}
 
-	.cw-multiselect__error {
-		font-size: var(--cw-text-xs);
-		color: var(--cw-tone-danger-text);
+	.cw-multiselect--disabled .cw-multiselect__label {
+		color: var(--cw-text-disabled);
+	}
+
+	.cw-multiselect__message {
 		margin: 0;
+		font-size: var(--cw-text-xs);
+		color: var(--cw-text-muted);
+	}
+
+	.cw-multiselect__message--error {
+		color: var(--cw-tone-danger-text);
 	}
 </style>

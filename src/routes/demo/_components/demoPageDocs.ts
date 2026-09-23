@@ -98,6 +98,12 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				type: 'HTMLButtonAttributes',
 				description:
 					'Pass `type`, `name`, `value`, `aria-*`, `onclick`, and standard button attributes directly to the underlying `<button>`.'
+			},
+			{
+				name: "type",
+				type: "'button' | 'submit' | 'reset'",
+				description: "Native button type. Defaults to `button`, so buttons inside forms never submit by accident.",
+				defaultValue: "'button'"
 			}
 		],
 		apiNote: 'The docs table lists the CWUI-specific API. Native button attributes still pass through.',
@@ -234,6 +240,11 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'badge',
 				type: 'Snippet',
 				description: 'Optional custom badge content. Overrides normal text rendering.'
+			},
+			{
+				name: "label",
+				type: "string",
+				description: "Visually hidden text read after the value, e.g. \"unread messages\" so screen readers hear \"5 unread messages\"."
 			}
 		],
 		examples: [
@@ -324,6 +335,35 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'actions',
 				type: 'Snippet',
 				description: 'Right-aligned header actions such as buttons or status pills.'
+			},
+			{
+				name: "headingLevel",
+				type: "1 | 2 | 3 | 4 | 5 | 6",
+				description: "Heading level used for the title, so the card fits your page outline.",
+				defaultValue: "3"
+			},
+			{
+				name: "loading",
+				type: "boolean",
+				description: "Shows a skeleton body and sets `aria-busy` while data loads.",
+				defaultValue: "false"
+			},
+			{
+				name: "CwSeparator orientation",
+				type: "'horizontal' | 'vertical'",
+				description: "Direction of the separator line.",
+				defaultValue: "'horizontal'"
+			},
+			{
+				name: "CwSeparator inset",
+				type: "string",
+				description: "Inline margin (replaces the deprecated `spacing`)."
+			},
+			{
+				name: "CwSeparator decorative",
+				type: "boolean",
+				description: "Hides the separator from assistive technology when it is purely visual.",
+				defaultValue: "false"
 			}
 		],
 		examples: [
@@ -417,6 +457,11 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'ondismiss',
 				type: '() => void',
 				description: 'Called when the dismiss affordance is activated.'
+			},
+			{
+				name: "dismissLabel",
+				type: "string",
+				description: "Accessible label for the dismiss button."
 			}
 		],
 		examples: [
@@ -575,13 +620,50 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'noData',
 				type: 'string | boolean',
 				description:
-					'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No Data Available".'
+					'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No data available".'
 			},
 			{
 				name: 'class',
 				type: 'string',
 				description: 'Optional class forwarded to the chart wrapper element.',
 				defaultValue: "''"
+			},
+			{
+				name: "loading",
+				type: "boolean",
+				description: "Shows a skeleton chart and sets `aria-busy` while data loads.",
+				defaultValue: "false"
+			},
+			{
+				name: "locale",
+				type: "string",
+				description: "BCP 47 locale for number and date formatting. Defaults to the runtime locale."
+			},
+			{
+				name: "decimals",
+				type: "number",
+				description: "Fixed number of fraction digits for displayed values."
+			},
+			{
+				name: "ariaLabel",
+				type: "string",
+				description: "Accessible name for the chart."
+			},
+			{
+				name: "primaryColor / secondaryColor",
+				type: "string",
+				description: "CSS colours for the two series. Default to the chart tokens."
+			},
+			{
+				name: "CwDeviceLineChartSection headingLevel",
+				type: "1\u20136",
+				description: "Heading level of the section title.",
+				defaultValue: "2"
+			},
+			{
+				name: "CwDeviceLineChartSection temperatureUnit / ecUnit",
+				type: "string",
+				description: "Units shown in the legend and tooltips."
 			}
 		],
 		examples: [
@@ -928,7 +1010,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'noData',
 				type: 'string | boolean',
 				description:
-					'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No Data Available".'
+					'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No data available".'
 			},
 			{
 				name: 'class',
@@ -940,6 +1022,22 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'onchange',
 				type: '(e: CwResponsiveLineChangeEvent) => void',
 				description: 'Called whenever the view or visibility changes. Receives `{ viewStart, viewEnd, hidden, legendStats }`.'
+			},
+			{
+				name: "loading",
+				type: "boolean",
+				description: "Shows a skeleton chart and sets `aria-busy` while data loads.",
+				defaultValue: "false"
+			},
+			{
+				name: "locale",
+				type: "string",
+				description: "BCP 47 locale for number and date formatting. Defaults to the runtime locale."
+			},
+			{
+				name: "ariaLabel",
+				type: "string",
+				description: "Accessible name for the chart."
 			}
 		],
 		examples: [
@@ -1057,12 +1155,28 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'noData',
 				type: 'string | boolean',
 				description:
-					'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No Data Available".'
+					'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No data available".'
 			},
 			{
 				name: 'segment.color',
 				type: 'string',
 				description: 'Optional per-segment CSS color override.'
+			},
+			{
+				name: "loading",
+				type: "boolean",
+				description: "Shows a skeleton ring and sets `aria-busy` while data loads.",
+				defaultValue: "false"
+			},
+			{
+				name: "locale",
+				type: "string",
+				description: "BCP 47 locale for number and date formatting. Defaults to the runtime locale."
+			},
+			{
+				name: "decimals",
+				type: "number",
+				description: "Fixed number of fraction digits for displayed values."
 			}
 		],
 		examples: [
@@ -1152,6 +1266,22 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'name / autocomplete',
 				type: 'string',
 				description: 'Optional native form attributes forwarded to the hidden input.'
+			},
+			{
+				name: "size",
+				type: "'sm' | 'md' | 'lg'",
+				description: "Control height and font scale, shared with CwButton and every other form control.",
+				defaultValue: "'md'"
+			},
+			{
+				name: "hint",
+				type: "string",
+				description: "Helper text under the field. Replaced by `error` when both are set."
+			},
+			{
+				name: "labels",
+				type: "{ empty? }",
+				description: "Text shown when `options` is empty."
 			}
 		],
 		examples: [
@@ -1294,6 +1424,22 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'name / autocomplete',
 				type: 'string',
 				description: 'Optional native form attributes forwarded to the hidden input. The hidden input value is the comma-joined list of ids.'
+			},
+			{
+				name: "size",
+				type: "'sm' | 'md' | 'lg'",
+				description: "Control height and font scale, shared with CwButton and every other form control.",
+				defaultValue: "'md'"
+			},
+			{
+				name: "hint",
+				type: "string",
+				description: "Helper text under the field. Replaced by `error` when both are set."
+			},
+			{
+				name: "labels",
+				type: "CwMultiSelect labels",
+				description: "Strings for remove buttons, \"+N more\", group actions, search and the empty state."
 			}
 		],
 		examples: [
@@ -1385,7 +1531,24 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			},
 			{ name: 'children', type: 'Snippet', description: 'Main dialog content.' },
 			{ name: 'actions', type: 'Snippet', description: 'Footer actions row.' },
-			{ name: 'onclose', type: '() => void', description: 'Runs whenever the dialog closes itself.' }
+			{ name: 'onclose', type: '() => void', description: 'Runs whenever the dialog closes itself.' },
+			{
+				name: "ariaLabel",
+				type: "string",
+				description: "Accessible name when the dialog has no visible `title`."
+			},
+			{
+				name: "closeLabel",
+				type: "string",
+				description: "Accessible label for the close button.",
+				defaultValue: "'Close dialog'"
+			},
+			{
+				name: "hideClose",
+				type: "boolean",
+				description: "Hides the close button (keep another way to close).",
+				defaultValue: "false"
+			}
 		],
 		examples: [
 			{
@@ -1480,6 +1643,11 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				type: 'string',
 				description: 'Text displayed inside the retry button.',
 				defaultValue: 'Try Again'
+			},
+			{
+				name: "pingUrl",
+				type: "string",
+				description: "URL requested by Retry to confirm the connection is back."
 			}
 		],
 		examples: [
@@ -1580,6 +1748,27 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'onselect',
 				type: '(value: string, item: unknown) => void',
 				description: 'Runs when the user chooses a suggestion.'
+			},
+			{
+				name: "size",
+				type: "'sm' | 'md' | 'lg'",
+				description: "Control height and font scale, shared with CwButton and every other form control.",
+				defaultValue: "'md'"
+			},
+			{
+				name: "hint",
+				type: "string",
+				description: "Helper text under the field. Replaced by `error` when both are set."
+			},
+			{
+				name: "error",
+				type: "string",
+				description: "Error message under the field. Sets `aria-invalid` and links the text with `aria-describedby`."
+			},
+			{
+				name: "labels",
+				type: "CwSearchInput labels",
+				description: "Strings for the no-results and error states."
 			}
 		],
 		apiNote:
@@ -1713,6 +1902,34 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'oninput / onchange / onkeydown / onblur / onfocus',
 				type: 'callback',
 				description: 'Standard input lifecycle callbacks forwarded from the field.'
+			},
+			{
+				name: "size",
+				type: "'sm' | 'md' | 'lg'",
+				description: "Control height and font scale, shared with CwButton and every other form control.",
+				defaultValue: "'md'"
+			},
+			{
+				name: "hint",
+				type: "string",
+				description: "Helper text under the field. Replaced by `error` when both are set."
+			},
+			{
+				name: "required",
+				type: "boolean",
+				description: "Shows a required marker and sets `aria-required` on the control.",
+				defaultValue: "false"
+			},
+			{
+				name: "readonly",
+				type: "boolean",
+				description: "Read-only state with a muted fill.",
+				defaultValue: "false"
+			},
+			{
+				name: "labels",
+				type: "{ clear?; showPassword?; hidePassword?; increase?; decrease? }",
+				description: "Accessible labels for the built-in buttons, for localisation."
 			}
 		],
 		apiNote:
@@ -1903,7 +2120,12 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			{ name: 'menuItems', type: 'CwProfileMenuItem[]', description: 'Menu actions shown when the trigger opens.', defaultValue: '[]' },
 			{ name: 'onselect', type: '(item: CwProfileMenuItem) => void', description: 'Called when a menu item is chosen.' },
 			{ name: 'icon', type: 'Snippet', description: 'Optional custom icon rendered in the trigger.' },
-			{ name: 'avatar', type: 'Snippet', description: 'Custom avatar markup. Overrides initials and `avatarUrl`.' }
+			{ name: 'avatar', type: 'Snippet', description: 'Custom avatar markup. Overrides initials and `avatarUrl`.' },
+			{
+				name: "menuLabel",
+				type: "string",
+				description: "Accessible name for the menu."
+			}
 		],
 		examples: [
 			{
@@ -2177,6 +2399,11 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: '...other native checkbox attrs',
 				type: 'HTMLInputAttributes',
 				description: 'Pass `value`, `disabled`, `aria-*`, and standard checkbox attributes through to the real input.'
+			},
+			{
+				name: "error",
+				type: "string",
+				description: "Error message under the field. Sets `aria-invalid` and links the text with `aria-describedby`."
 			}
 		],
 		apiNote:
@@ -2265,6 +2492,17 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: '...other native checkbox attrs',
 				type: 'HTMLInputAttributes',
 				description: 'Pass `value`, `disabled`, `required`, `aria-*`, and standard checkbox attributes through to the real input.'
+			},
+			{
+				name: "error",
+				type: "string",
+				description: "Error message under the field. Sets `aria-invalid` and links the text with `aria-describedby`."
+			},
+			{
+				name: "indeterminate",
+				type: "boolean",
+				description: "Bindable mixed state, shown as a dash. Use for \"select all\" rows.",
+				defaultValue: "false"
 			}
 		],
 		apiNote:
@@ -2345,6 +2583,11 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: '...native radio attrs',
 				type: 'HTMLInputAttributes',
 				description: 'Pass `name`, `required`, `disabled`, `aria-*`, and standard radio attributes through to the real input.'
+			},
+			{
+				name: "error",
+				type: "string",
+				description: "Error text announced through the description (the radio role does not support `aria-invalid`)."
 			}
 		],
 		apiNote:
@@ -2416,6 +2659,11 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'onchange',
 				type: "(theme: 'dark' | 'light' | 'system') => void",
 				description: 'Runs after the user selects a theme.'
+			},
+			{
+				name: "labels",
+				type: "CwThemePicker labels",
+				description: "Strings for the trigger and each theme option."
 			}
 		],
 		examples: [
@@ -2496,6 +2744,17 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				type: 'boolean',
 				description: 'Disables the trigger and prevents opening the menu.',
 				defaultValue: 'false'
+			},
+			{
+				name: "size",
+				type: "'sm' | 'md' | 'lg'",
+				description: "Control height and font scale, shared with CwButton and every other form control.",
+				defaultValue: "'md'"
+			},
+			{
+				name: "labels",
+				type: "CwLanguageSwitcher labels",
+				description: "Strings for the trigger and menu."
 			}
 		],
 		apiNote:
@@ -2614,6 +2873,21 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'toast.items',
 				type: 'readonly CwToastItem[]',
 				description: 'Current visible toast items in the context.'
+			},
+			{
+				name: "toast title",
+				type: "string",
+				description: "Optional bold title above the message."
+			},
+			{
+				name: "CwToastContainer label",
+				type: "string",
+				description: "Accessible name for the toast region."
+			},
+			{
+				name: "CwToastContainer dismissLabel",
+				type: "string",
+				description: "Accessible label for each close button."
 			}
 		],
 		examples: [
@@ -2750,7 +3024,13 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				defaultValue: '1500'
 			},
 			{ name: 'children', type: 'Snippet', description: 'Optional visible content rendered before the copy button.' },
-			{ name: 'onCopy', type: '(value: string) => void', description: 'Runs after a successful copy operation.' }
+			{ name: 'onCopy', type: '(value: string) => void', description: 'Runs after a successful copy operation.' },
+			{
+				name: "labels.failedFeedback",
+				type: "string",
+				description: "Message shown when copying fails.",
+				defaultValue: "'Copy failed'"
+			}
 		],
 		examples: [
 			{
@@ -2850,6 +3130,21 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'dayContent',
 				type: 'Snippet<[Date]>',
 				description: 'Optional main content block rendered under the header inside each day cell.'
+			},
+			{
+				name: "locale",
+				type: "string",
+				description: "BCP 47 locale for number and date formatting. Defaults to the runtime locale."
+			},
+			{
+				name: "ariaLabel",
+				type: "string",
+				description: "Accessible name for the month grid."
+			},
+			{
+				name: "labels",
+				type: "CwCalendar labels",
+				description: "Strings for navigation buttons and the loading state."
 			}
 		],
 		examples: [
@@ -3084,6 +3379,48 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'name / required / placeholder / autocomplete',
 				type: 'native attrs',
 				description: 'Optional form integration attributes for the visible trigger input.'
+			},
+			{
+				name: "label",
+				type: "string",
+				description: "Visible label above the trigger."
+			},
+			{
+				name: "id",
+				type: "string",
+				description: "Id for the trigger, for external labels."
+			},
+			{
+				name: "hint",
+				type: "string",
+				description: "Helper text under the field. Replaced by `error` when both are set."
+			},
+			{
+				name: "error",
+				type: "string",
+				description: "Error message under the field. Sets `aria-invalid` and links the text with `aria-describedby`."
+			},
+			{
+				name: "required",
+				type: "boolean",
+				description: "Shows a required marker and sets `aria-required` on the control.",
+				defaultValue: "false"
+			},
+			{
+				name: "disabled",
+				type: "boolean",
+				description: "Disables the trigger.",
+				defaultValue: "false"
+			},
+			{
+				name: "minDate",
+				type: "Date | null",
+				description: "Earliest selectable date."
+			},
+			{
+				name: "locale",
+				type: "string",
+				description: "BCP 47 locale for number and date formatting. Defaults to the runtime locale."
 			}
 		],
 		examples: [
@@ -3178,6 +3515,22 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'onchange',
 				type: '(value: CwTimeValue) => void',
 				description: 'Runs after the user commits a changed time.'
+			},
+			{
+				name: "labels",
+				type: "CwTimePickerLabels",
+				description: "Every visible and accessible string, for localisation."
+			},
+			{
+				name: "twelveHourDisplay",
+				type: "boolean | 'auto'",
+				description: "Shows the 12-hour reading next to the 24-hour inputs. `auto` shows it only in 12-hour locales.",
+				defaultValue: "'auto'"
+			},
+			{
+				name: "locale",
+				type: "string",
+				description: "BCP 47 locale for number and date formatting. Defaults to the runtime locale."
 			}
 		],
 		examples: [
@@ -3254,7 +3607,23 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'noData',
 				type: 'string | boolean',
 				description:
-					'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No Data Available".'
+					'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No data available".'
+			},
+			{
+				name: "loading",
+				type: "boolean",
+				description: "Shows a skeleton grid and sets `aria-busy` while data loads.",
+				defaultValue: "false"
+			},
+			{
+				name: "locale",
+				type: "string",
+				description: "BCP 47 locale for number and date formatting. Defaults to the runtime locale."
+			},
+			{
+				name: "decimals",
+				type: "number",
+				description: "Fixed number of fraction digits for displayed values."
 			}
 		],
 		examples: [
@@ -3319,7 +3688,23 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'noData',
 				type: 'string | boolean',
 				description:
-					'When present, blurs the card and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No Data Available".'
+					'When present, blurs the card and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No data available".'
+			},
+			{
+				name: "headingLevel",
+				type: "1 | 2 | 3 | 4 | 5 | 6",
+				description: "Heading level used for the title, so the card fits your page outline.",
+				defaultValue: "3"
+			},
+			{
+				name: "locale",
+				type: "string",
+				description: "BCP 47 locale for number and date formatting. Defaults to the runtime locale."
+			},
+			{
+				name: "CwDliCard",
+				type: "component",
+				description: "Cw-prefixed alias of `DliCard`. Prefer it in new code."
 			}
 		],
 		apiNote:
@@ -3427,7 +3812,18 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'noData',
 				type: 'string | boolean',
 				description:
-					'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No Data Available".'
+					'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No data available".'
+			},
+			{
+				name: "loading",
+				type: "boolean",
+				description: "Shows a skeleton chart and sets `aria-busy` while data loads.",
+				defaultValue: "false"
+			},
+			{
+				name: "locale",
+				type: "string",
+				description: "BCP 47 locale for number and date formatting. Defaults to the runtime locale."
 			}
 		],
 		examples: [
@@ -3662,6 +4058,40 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				type: 'callbacks',
 				description:
 					'Optional observers for analytics, syncing external controls, or reacting to table query changes outside the table itself. `onRefresh` fires when the built-in Refresh menu action is selected.'
+			},
+			{
+				name: "maxHeight",
+				type: "string",
+				description: "Scrolls rows inside the table so the sticky header works without `fillParent`."
+			},
+			{
+				name: "density",
+				type: "'default' | 'compact'",
+				description: "Row padding.",
+				defaultValue: "'default'"
+			},
+			{
+				name: "columnAlign",
+				type: "'left' | 'center' | 'right'",
+				description: "Default alignment for every column.",
+				defaultValue: "'center'"
+			},
+			{
+				name: "column.numeric",
+				type: "boolean",
+				description: "Right-aligns the column, uses tabular figures and formats numbers.",
+				defaultValue: "false"
+			},
+			{
+				name: "column.decimals",
+				type: "number",
+				description: "Fraction digits for numeric columns."
+			},
+			{
+				name: "column.truncate",
+				type: "boolean",
+				description: "Truncates long values with an ellipsis and shows the full value on hover.",
+				defaultValue: "false"
 			}
 		],
 		examples: [
@@ -3790,7 +4220,18 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'noData',
 				type: 'string | boolean',
 				description:
-					'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No Data Available".'
+					'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No data available".'
+			},
+			{
+				name: "loading",
+				type: "boolean",
+				description: "Shows a skeleton chart and sets `aria-busy` while data loads.",
+				defaultValue: "false"
+			},
+			{
+				name: "locale",
+				type: "string",
+				description: "BCP 47 locale for number and date formatting. Defaults to the runtime locale."
 			}
 		],
 		examples: [
@@ -3945,14 +4386,25 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 					name: 'noData',
 					type: 'string | boolean',
 					description:
-						'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No Data Available".'
+						'When present, blurs the chart and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No data available".'
 				},
 				{
 					name: 'class',
 					type: 'string',
 					description: 'Optional class hook applied to the outer wrapper.'
-				}
-			],
+				},
+			{
+				name: "loading",
+				type: "boolean",
+				description: "Shows a skeleton dial and sets `aria-busy` while data loads.",
+				defaultValue: "false"
+			},
+			{
+				name: "locale",
+				type: "string",
+				description: "BCP 47 locale for number and date formatting. Defaults to the runtime locale."
+			}
+		],
 			examples: [
 				{
 					title: 'Standard meteorological reading',
@@ -4379,6 +4831,18 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'class',
 				type: 'string',
 				description: 'Extra class applied to the root row element.'
+			},
+			{
+				name: "agoLabel",
+				type: "string",
+				description: "Word used after relative times, e.g. \"ago\".",
+				defaultValue: "'ago'"
+			},
+			{
+				name: "emptyValueLabel",
+				type: "string",
+				description: "Text shown when the value is missing.",
+				defaultValue: "'N/A'"
 			}
 		],
 		apiTitle: 'Row props',
@@ -4525,6 +4989,22 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: 'class',
 				type: 'string',
 				description: 'Each component also accepts an extra `class` prop on its own root element.'
+			},
+			{
+				name: "loading",
+				type: "boolean",
+				description: "Shows a skeleton reading and sets `aria-busy` while data loads.",
+				defaultValue: "false"
+			},
+			{
+				name: "labels",
+				type: "CwSensorCard labels",
+				description: "Strings for the error, details, empty value and \"last seen\" text."
+			},
+			{
+				name: "detailsHeadingLevel",
+				type: "1\u20136",
+				description: "Heading level for the details section."
 			}
 		],
 		apiTitle: 'Composition props',
@@ -4603,6 +5083,452 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 <CwSensorCard label={weatherDevice.label} defaultExpanded>
 \t<CwDataList rows={weatherDevice.detailRows} />
 </CwSensorCard>`
+			}
+		]
+	},
+	'/demo/header': {
+		summary:
+			'CwHeader is the top bar of the app shell. It pairs with CwSideNav: bind the same `sideNavMode` to both and the header shows a hamburger whenever the nav needs one to be reopened.',
+		steps: [
+			{
+				title: 'Bind the nav mode',
+				description:
+					'Use `bind:sideNavMode` with the same state you bind to CwSideNav. The hamburger is always visible on phones and tablets, and on desktop while the nav is hidden.'
+			},
+			{
+				title: 'Give the home link a name',
+				description:
+					'The logo and title link to `href` (default `/`). Pass `homeLabel` when the title is decorative, or `href={null}` to render them without a link. Do not put your own `<a>` inside the `logo` snippet.'
+			},
+			{
+				title: 'Keep actions compact',
+				description:
+					'The `actions` snippet sits on the right. Theme pickers, profile menus and one or two buttons fit comfortably down to 360px.'
+			}
+		],
+		apiRows: [
+			{ name: 'title', type: 'string', description: 'Application name shown next to the logo on desktop.', defaultValue: "''" },
+			{ name: 'logo', type: 'Snippet', description: 'Logo markup (an `<img>` or `<svg>`). Stays visible on phones.' },
+			{ name: 'href', type: 'string | null', description: 'Destination of the logo/title link. `null` renders them without a link.', defaultValue: "'/'" },
+			{ name: 'homeLabel', type: 'string', description: 'Accessible name for the home link. Defaults to `title`, then "Home".' },
+			{ name: 'sideNavMode', type: "'open' | 'mini' | 'hidden'", description: 'Bindable. Mirrors the CwSideNav mode so the hamburger appears when needed.', defaultValue: "'open'" },
+			{ name: 'onToggleNav', type: '() => void', description: 'Called when the hamburger is pressed. Without it the header toggles `sideNavMode` itself.' },
+			{ name: 'toggleNavLabel', type: 'string', description: 'Accessible label for the hamburger button.', defaultValue: "'Toggle navigation'" },
+			{ name: 'actions', type: 'Snippet', description: 'Content on the right side of the bar.' },
+			{ name: 'class', type: 'string', description: 'Extra class on the `<header>` element.' }
+		],
+		examples: [
+			{
+				title: 'App shell header',
+				code: `<script lang="ts">
+\timport { CwHeader, CwSideNav, CwThemePicker } from '@cropwatchdevelopment/cwui';
+\timport type { CwSideNavMode } from '@cropwatchdevelopment/cwui';
+
+\tlet mode = $state<CwSideNavMode>('open');
+</script>
+
+<CwSideNav items={navItems} bind:mode responsive />
+<CwHeader title="CropWatch" href="/" homeLabel="CropWatch home" bind:sideNavMode={mode}>
+\t{#snippet logo()}
+\t\t<img src="/logo.svg" alt="" width="24" height="24" />
+\t{/snippet}
+\t{#snippet actions()}
+\t\t<CwThemePicker />
+\t{/snippet}
+</CwHeader>`
+			}
+		]
+	},
+	'/demo/sidenav': {
+		summary:
+			'CwSideNav is the primary navigation rail. It has three modes (open, mini icon rail, hidden) and, with `responsive`, picks one per breakpoint. On phones an open nav slides over the page with a scrim and traps focus until it closes.',
+		steps: [
+			{
+				title: 'Describe items as data',
+				description:
+					'Each item has an `id`, `label`, optional 16×16 `icon` path, and either `href` or `goto`. Items with the same `group` are listed under a group heading.'
+			},
+			{
+				title: 'Turn on `responsive`',
+				description:
+					'Open at ≥1024px, mini from 640px, hidden below 640px. The mode only changes when a breakpoint is crossed, so a nav the user opened stays open while they scroll.'
+			},
+			{
+				title: 'Mark the active item',
+				description:
+					'Set `active: true` on the current route. It gets `aria-current="page"` and a leading accent bar, so the state never relies on colour alone.'
+			},
+			{
+				title: 'Provide mini-mode variants',
+				description:
+					'`headerMini` and `footerMini` render in the icon rail. In mini mode item labels appear as tooltips on hover and keyboard focus.'
+			}
+		],
+		apiRows: [
+			{ name: 'items', type: 'CwSideNavItem[]', description: 'Navigation entries.', required: true },
+			{ name: 'mode', type: "'open' | 'mini' | 'hidden'", description: 'Bindable display mode.', defaultValue: "'open'" },
+			{ name: 'side', type: "'left' | 'right'", description: 'Which edge the nav is attached to.', defaultValue: "'left'" },
+			{ name: 'responsive', type: 'boolean', description: 'Choose the mode from the viewport width.', defaultValue: 'false' },
+			{ name: 'onselect', type: '(item: CwSideNavItem) => void', description: 'Called when an item is activated.' },
+			{ name: 'header / headerMini', type: 'Snippet', description: 'Logo area for open and mini modes.' },
+			{ name: 'aboveContent', type: 'Snippet', description: 'Content above the items, such as a search field.' },
+			{ name: 'itemTrailing', type: 'Snippet<[CwSideNavItem]>', description: 'Custom content on the right of each item in open mode.' },
+			{ name: 'footer / footerMini', type: 'Snippet', description: 'Bottom area for open and mini modes. Only `footerMini` shows in the icon rail.' },
+			{ name: 'ariaLabel', type: 'string', description: 'Accessible name for the navigation landmark.' },
+			{ name: 'labels', type: '{ close?; collapse?; expand? }', description: 'Accessible labels for the built-in toggle buttons.' }
+		],
+		examples: [
+			{
+				title: 'Responsive navigation',
+				code: `<script lang="ts">
+\timport { CwSideNav } from '@cropwatchdevelopment/cwui';
+\timport type { CwSideNavItem, CwSideNavMode } from '@cropwatchdevelopment/cwui';
+\timport { page } from '$app/state';
+
+\tlet mode = $state<CwSideNavMode>('open');
+
+\tconst items: CwSideNavItem[] = [
+\t\t{ id: 'dashboard', label: 'Dashboard', href: '/', group: 'Monitor' },
+\t\t{ id: 'devices', label: 'Devices', href: '/devices', group: 'Monitor' },
+\t\t{ id: 'reports', label: 'Reports', href: '/reports', group: 'Analyse' }
+\t];
+
+\tconst withActive = $derived(items.map((item) => ({ ...item, active: item.href === page.url.pathname })));
+</script>
+
+<CwSideNav items={withActive} bind:mode responsive ariaLabel="Main">
+\t{#snippet header()}<strong>CropWatch</strong>{/snippet}
+</CwSideNav>`
+			}
+		]
+	},
+	'/demo/drawer': {
+		summary:
+			'CwDrawer is a bottom panel that collapses to a summary bar. Use it for secondary detail, such as a device list under a map, that people open when they need it.',
+		steps: [
+			{
+				title: 'Summarise in the collapsed bar',
+				description:
+					'Pass `items` (label, optional icon and tone) or a custom `collapsed` snippet. The whole bar toggles the drawer, and controls inside a custom snippet stay independently clickable.'
+			},
+			{
+				title: 'Cap the height',
+				description:
+					'`height` sets the open panel height; it is capped at 60% of the viewport so landscape phones keep room for the page.'
+			},
+			{
+				title: 'Keep content mounted for the animation',
+				description:
+					'Content stays rendered until the close animation finishes and is inert while collapsed, so hidden controls are never reachable by keyboard.'
+			}
+		],
+		apiRows: [
+			{ name: 'open', type: 'boolean', description: 'Bindable expanded state.', defaultValue: 'false' },
+			{ name: 'height', type: 'string', description: 'CSS height of the open panel (capped at 60dvh).', defaultValue: "'20rem'" },
+			{ name: 'label', type: 'string', description: 'Text on the left of the collapsed bar.' },
+			{ name: 'icon', type: 'string', description: 'SVG path (16×16) for the bar icon.' },
+			{ name: 'items', type: 'CwDrawerItem[]', description: 'Summary items in the collapsed bar: `{ id, label, icon?, tone? }`.' },
+			{ name: 'collapsed', type: 'Snippet', description: 'Custom collapsed-bar content instead of `items`.' },
+			{ name: 'children', type: 'Snippet', description: 'Panel content.' }
+		],
+		examples: [
+			{
+				title: 'Drawer with status summary',
+				code: `<script lang="ts">
+\timport { CwDrawer } from '@cropwatchdevelopment/cwui';
+
+\tlet open = $state(false);
+</script>
+
+<CwDrawer
+\tbind:open
+\tlabel="Devices"
+\titems={[
+\t\t{ id: 'ok', label: '12 online', tone: 'success' },
+\t\t{ id: 'warn', label: '2 warnings', tone: 'warning' }
+\t]}
+>
+\t<p>Device list goes here.</p>
+</CwDrawer>`
+			}
+		]
+	},
+	'/demo/listbox': {
+		summary:
+			'CwListBox is an always-visible, single-select list with optional badges and trailing text. It is a proper ARIA listbox: one tab stop, arrow keys to move, Enter or Space to select.',
+		steps: [
+			{
+				title: 'Name the list',
+				description:
+					'A visible `heading` also labels the listbox. Without one, pass `ariaLabel` so screen readers announce what the options are.'
+			},
+			{
+				title: 'Bind the value',
+				description: 'Use `bind:value` for the selected item value, or listen with `onselect` to receive the whole item.'
+			},
+			{
+				title: 'Plan for empty data',
+				description: 'Set `emptyText` so an empty list explains itself instead of rendering nothing.'
+			}
+		],
+		apiRows: [
+			{ name: 'items', type: 'CwListBoxItem<T>[]', description: '`{ value, label, badge?, badgeTone?, endText?, disabled? }` entries.', required: true },
+			{ name: 'value', type: 'T | null', description: 'Bindable selected value.', defaultValue: 'null' },
+			{ name: 'heading', type: 'string', description: 'Visible heading that also labels the list.' },
+			{ name: 'ariaLabel', type: 'string', description: 'Accessible name when there is no heading.', defaultValue: "'Options'" },
+			{ name: 'emptyText', type: 'string', description: 'Message shown when `items` is empty.' },
+			{ name: 'onselect', type: '(item: CwListBoxItem<T>) => void', description: 'Called when an item is selected.' },
+			{ name: 'itemIcon / itemEnd', type: 'Snippet<[CwListBoxItem<T>]>', description: 'Custom content on the left or right of each row.' }
+		],
+		examples: [
+			{
+				title: 'Region picker',
+				code: `<script lang="ts">
+\timport { CwListBox } from '@cropwatchdevelopment/cwui';
+
+\tlet region = $state<string | null>('as923');
+</script>
+
+<CwListBox
+\theading="Frequency plan"
+\tbind:value={region}
+\titems={[
+\t\t{ value: 'as923', label: 'Asia 923 MHz', badge: 'AS', endText: '12 gateways' },
+\t\t{ value: 'eu868', label: 'Europe 868 MHz', badge: 'EU', endText: '4 gateways' }
+\t]}
+\temptyText="No regions configured"
+/>`
+			}
+		]
+	},
+	'/demo/textarea': {
+		summary:
+			'CwTextArea is the multi-line counterpart to CwInput and shares its label, hint, error and size styling. It can show a live character count against `maxlength`.',
+		steps: [
+			{
+				title: 'Label it and add a hint',
+				description: '`label` renders above the field, and `hint` below it. When `error` is set it replaces the hint and marks the field invalid.'
+			},
+			{
+				title: 'Show the count when there is a limit',
+				description: 'Combine `maxlength` with `showCount`. The counter updates visually without announcing every keystroke.'
+			},
+			{
+				title: 'Choose a resize mode',
+				description: '`resize` controls whether people can drag the field larger; `vertical` suits most forms.'
+			}
+		],
+		apiRows: [
+			{ name: 'value', type: 'string', description: 'Bindable text value.', defaultValue: "''" },
+			{ name: 'label', type: 'string', description: 'Visible label above the field.' },
+			{ name: 'hint', type: 'string', description: 'Helper text under the field.' },
+			{ name: 'error', type: 'string', description: 'Error message. Sets `aria-invalid` and replaces the hint.' },
+			{ name: 'valid', type: 'boolean', description: 'Shows the success border.', defaultValue: 'false' },
+			{ name: 'required', type: 'boolean', description: 'Adds the required marker and `aria-required`.', defaultValue: 'false' },
+			{ name: 'readonly / disabled', type: 'boolean', description: 'Native read-only and disabled states.', defaultValue: 'false' },
+			{ name: 'size', type: "'sm' | 'md' | 'lg'", description: 'Padding and font scale, matching CwInput.', defaultValue: "'md'" },
+			{ name: 'rows', type: 'number', description: 'Initial visible rows.' },
+			{ name: 'resize', type: "'none' | 'vertical' | 'horizontal' | 'both'", description: 'Resize handle behaviour.' },
+			{ name: 'showCount', type: 'boolean', description: 'Shows a character count (with `maxlength`, shows the limit).', defaultValue: 'false' },
+			{ name: 'oninput / onchange / onblur / onfocus', type: '(event) => void', description: 'Native event callbacks.' }
+		],
+		examples: [
+			{
+				title: 'Notes field with a limit',
+				code: `<script lang="ts">
+\timport { CwTextArea } from '@cropwatchdevelopment/cwui';
+
+\tlet notes = $state('');
+</script>
+
+<CwTextArea
+\tlabel="Field notes"
+\thint="Visible to everyone in this location."
+\tbind:value={notes}
+\tmaxlength={500}
+\tshowCount
+\trows={4}
+\tresize="vertical"
+/>`
+			}
+		]
+	},
+	'/demo/alarm': {
+		summary:
+			'The alarm scheduler runs callbacks at a future time using a single timer and a priority queue, so hundreds of device timeouts cost one `setTimeout`. When a background tab becomes visible again, alarms that came due are fired and the timer is re-armed.',
+		steps: [
+			{
+				title: 'Create it once',
+				description:
+					'Call `createCwAlarmContext()` in a root layout to share one scheduler through context, then `useCwAlarm()` in children. `createCwAlarmScheduler()` gives a standalone instance.'
+			},
+			{
+				title: 'Schedule relative to a timestamp',
+				description:
+					'Pass `from` (for example a device’s last-seen time) plus `alarmAfterMinutes` or `alarmAfterMs`. Reusing an `id` replaces the existing alarm, which makes “reset on new data” a single call.'
+			},
+			{
+				title: 'Cancel what you no longer need',
+				description: 'Call `cancel(id)` when a component unmounts, or `clear()` to drop everything.'
+			}
+		],
+		apiTitle: 'Scheduler API',
+		apiRows: [
+			{ name: 'schedule(options)', type: '(options: CwAlarmRegistration) => string', description: 'Schedules an alarm and returns its id.' },
+			{ name: 'options.from', type: 'Date | string | number', description: 'Base timestamp for the delay.', required: true },
+			{ name: 'options.alarmAfterMinutes', type: 'number', description: 'Delay after `from`, in minutes.' },
+			{ name: 'options.alarmAfterMs', type: 'number', description: 'Delay after `from`, in milliseconds. Wins over minutes.' },
+			{ name: 'options.callback', type: '() => void', description: 'Runs when the alarm fires.', required: true },
+			{ name: 'options.id', type: 'string', description: 'Stable id; reusing it replaces the previous alarm.' },
+			{ name: 'cancel(id)', type: '(id: string) => void', description: 'Cancels one alarm.' },
+			{ name: 'clear()', type: '() => void', description: 'Cancels every alarm.' },
+			{ name: 'size', type: 'number', description: 'Number of alarms still scheduled (read-only).' }
+		],
+		examples: [
+			{
+				title: 'Mark a device offline after its timeout',
+				code: `<script lang="ts">
+\timport { useCwAlarm } from '@cropwatchdevelopment/cwui';
+
+\tlet { device } = $props();
+\tlet offline = $state(false);
+\tconst alarm = useCwAlarm();
+
+\t$effect(() => {
+\t\toffline = false;
+\t\tconst id = alarm.schedule({
+\t\t\tid: \`device-\${device.id}\`,
+\t\t\tfrom: device.lastSeen,
+\t\t\talarmAfterMinutes: device.uploadIntervalMinutes * 2,
+\t\t\tcallback: () => (offline = true)
+\t\t});
+\t\treturn () => alarm.cancel(id);
+\t});
+</script>`
+			}
+		]
+	},
+	'/demo/statcard': {
+		summary:
+			'CwStatCard summarises a series with min, average and max, and can expand to show median, standard deviation, count and range. Values are formatted with the shared number formatter and the unit you pass.',
+		steps: [
+			{
+				title: 'Pass precomputed statistics',
+				description: '`stats` takes `min`, `max`, `avg`, `median`, `stdDev`, `count`, `lastReading` and `trend`. Missing values render as "—".'
+			},
+			{
+				title: 'Let people expand for detail',
+				description:
+					'With `expandable`, a “Show details” button (a real `<button aria-expanded>`) reveals the extra statistics as a description list.'
+			},
+			{
+				title: 'Keep the accent readable',
+				description: '`accentColor` colours the average marker and value. The default uses `--cw-accent-text`, which meets text contrast in both themes.'
+			}
+		],
+		apiRows: [
+			{ name: 'title', type: 'string', description: 'Card heading.', required: true },
+			{ name: 'stats', type: 'CwStatCardData', description: 'Statistics to display.', required: true },
+			{ name: 'unit', type: 'string', description: 'Unit shown after values, e.g. "°C".' },
+			{ name: 'accentColor', type: 'string', description: 'CSS colour for the average highlight.', defaultValue: 'var(--cw-accent-text)' },
+			{ name: 'expandable', type: 'boolean', description: 'Adds the Show/Hide details toggle.', defaultValue: 'false' },
+			{ name: 'headingLevel', type: '1–6', description: 'Heading level of the title.', defaultValue: '3' },
+			{ name: 'loading', type: 'boolean', description: 'Shows a skeleton while statistics load.', defaultValue: 'false' },
+			{ name: 'locale', type: 'string', description: 'Locale for number formatting.' },
+			{ name: 'labels', type: 'CwStatCardLabels', description: 'Overrides for every visible string, including `showDetails` and `hideDetails`.' }
+		],
+		examples: [
+			{
+				title: 'Temperature summary',
+				code: `<script lang="ts">
+\timport { CwStatCard } from '@cropwatchdevelopment/cwui';
+</script>
+
+<CwStatCard
+\ttitle="Greenhouse temperature"
+\tunit="°C"
+\texpandable
+\tstats={{ min: 17.2, avg: 22.8, max: 29.4, median: 22.5, stdDev: 2.9, count: 288 }}
+/>`
+			}
+		]
+	},
+	'/demo/data-display': {
+		summary:
+			'A full-page dashboard composed from library components. Use it as a reference for how cards, charts, status and tables fit together in a real CropWatch screen, in both themes.',
+		steps: [
+			{
+				title: 'Start from the app shell',
+				description: 'CwHeader and CwSideNav frame the page; content goes in a scrolling main region.'
+			},
+			{
+				title: 'Group readings by location',
+				description: 'CwLocationCard wraps CwSensorCard entries; status rolls up by severity so the most urgent state shows on the group.'
+			},
+			{
+				title: 'Drill down with charts and tables',
+				description: 'Line charts and CwDataTable show history for the selected device.'
+			}
+		],
+		apiTitle: 'Components used',
+		apiRows: [
+			{ name: 'CwLocationCard', type: 'component', description: 'Groups sensors under a location heading with a rolled-up status.' },
+			{ name: 'CwSensorCard', type: 'component', description: 'Latest readings with freshness and stale state.' },
+			{ name: 'CwLineChart', type: 'component', description: 'History for the selected sensor.' },
+			{ name: 'CwDataTable', type: 'component', description: 'Sortable, searchable reading log.' }
+		],
+		examples: []
+	},
+	'/demo/stackedbarchart': {
+		summary:
+			'CwStackedBarChart shows how several categories add up per bucket, such as counts per hour. Colours come from the `--cw-chart-cat-*` tokens and follow the document theme; the legend toggles series and never hides the last one.',
+		steps: [
+			{
+				title: 'Define categories in stack order',
+				description: '`categories` is bottom-of-stack first. Give each a stable `id` and a translated `label`; `color` is optional.'
+			},
+			{
+				title: 'One bucket per bar',
+				description: '`buckets` holds a `key`, a pre-formatted `label`, and a `values` map from category id to number.'
+			},
+			{
+				title: 'Format values with your locale',
+				description: '`formatValue` is used for ticks, tooltips and accessible bar labels.'
+			},
+			{
+				title: 'Let the states take care of themselves',
+				description: '`loading` shows skeleton bars. With no buckets, or when everything is zero, the no-data overlay appears automatically.'
+			}
+		],
+		apiRows: [
+			{ name: 'categories', type: 'CwStackedBarCategory[]', description: 'Series in stack order: `{ id, label, color? }`.' },
+			{ name: 'buckets', type: 'CwStackedBarBucket[]', description: 'Bars in x-axis order: `{ key, label, values }`.' },
+			{ name: 'initialHidden', type: 'string[]', description: 'Category ids hidden on first render.' },
+			{ name: 'height', type: 'number', description: 'Plot height in pixels.' },
+			{ name: 'showLegend', type: 'boolean', description: 'Shows the interactive legend.', defaultValue: 'true' },
+			{ name: 'formatValue', type: '(value: number) => string', description: 'Formats ticks, tooltips and accessible labels.' },
+			{ name: 'loading', type: 'boolean', description: 'Shows skeleton bars.', defaultValue: 'false' },
+			{ name: 'noData', type: 'string | boolean', description: 'Forces the no-data overlay, optionally with custom text. Automatic when omitted.' },
+			{ name: 'theme', type: "'light' | 'dark'", description: 'Forces a fixed palette. Omit it to follow the document theme.' },
+			{ name: 'labels', type: 'CwStackedBarChartLabels', description: '`ariaLabel`, `total`, `barLabel(label, total)`, `loading`.' }
+		],
+		examples: [
+			{
+				title: 'Counts per hour',
+				code: `<script lang="ts">
+\timport { CwStackedBarChart } from '@cropwatchdevelopment/cwui';
+
+\tconst categories = [
+\t\t{ id: 'car', label: 'Cars' },
+\t\t{ id: 'truck', label: 'Trucks' }
+\t];
+\tconst buckets = [
+\t\t{ key: '06:00', label: '06:00', values: { car: 42, truck: 9 } },
+\t\t{ key: '07:00', label: '07:00', values: { car: 58, truck: 12 } }
+\t];
+</script>
+
+<CwStackedBarChart {categories} {buckets} height={280} />`
 			}
 		]
 	}

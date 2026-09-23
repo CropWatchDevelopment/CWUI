@@ -130,7 +130,9 @@
 	});
 </script>
 
-<time class="cw-duration {className}" datetime="PT{Math.floor(durationMs / 1000)}S" aria-live="polite" aria-atomic="true">
+<!-- Not a live region: announcing a value that changes every second floods
+     screen readers. Consumers can announce milestones via alarmCallback. -->
+<time class="cw-duration {className}" datetime="PT{Math.floor(durationMs / 1000)}S">
 	{display}
 </time>
 

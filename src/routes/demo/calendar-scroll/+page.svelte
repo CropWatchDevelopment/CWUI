@@ -261,36 +261,14 @@
 </section>
 
 <style>
-	h2 {
-		font-size: var(--cw-text-xl);
-		font-weight: var(--cw-font-bold);
-		margin-bottom: var(--cw-space-2);
-	}
-
-	h3 {
-		font-size: var(--cw-text-base);
-		font-weight: var(--cw-font-semibold);
-		margin: 0 0 var(--cw-space-2);
-		color: var(--cw-text-secondary);
-	}
-
-	.demo-desc {
-		color: var(--cw-text-muted);
-		font-size: var(--cw-text-sm);
-		margin-bottom: var(--cw-space-4);
-	}
-
-	.demo-hint {
-		margin: 0;
-		color: var(--cw-text-muted);
-		font-size: var(--cw-text-sm);
-		line-height: 1.65;
-	}
-
+	/* Page layout: sections stack their intro, controls and example with even gaps. */
 	.demo-section {
 		display: grid;
 		gap: var(--cw-space-4);
-		margin-bottom: var(--cw-space-8);
+	}
+
+	.demo-section h3 {
+		margin-bottom: 0;
 	}
 
 	.demo-section__head {
@@ -378,7 +356,7 @@
 		font-weight: var(--cw-font-semibold);
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		color: var(--cw-accent);
+		color: var(--cw-accent-text);
 	}
 
 	.demo-entry__note,

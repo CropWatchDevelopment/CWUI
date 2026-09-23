@@ -9,9 +9,12 @@
 [data-theme='dark'] {
 	color-scheme: dark;
 
+	/* Kept for backwards compatibility; prefer --cw-brand-green. */
+	--cw-green-standard: var(--cw-brand-green);
+
 	/* ── Surface / Background ──────────────────────────── */
 	--cw-bg-base: #172335;
-	--cw-bg-surface: #2d3243; /*#243247;*/
+	--cw-bg-surface: #2d3243;
 	--cw-bg-surface-elevated: #2b3c54;
 	--cw-bg-surface-callout: #000000;
 	--cw-bg-elevated: #324661;
@@ -23,7 +26,8 @@
 	--cw-bg-table-row-hover: color-mix(in srgb, var(--cw-info-700) 20%, var(--cw-bg-surface));
 	--cw-bg-table-row-alt: color-mix(in srgb, var(--cw-info-700) 14%, var(--cw-bg-surface));
 	--cw-bg-table-row-alt-hover: color-mix(in srgb, var(--cw-info-700) 24%, var(--cw-bg-surface));
-	--cw-header-bg: #1a1d2a;/*#232a4d;*/
+	--cw-header-bg: #1a1d2a;
+	--cw-header-fg: #ffffff;
 
 	/* ── Button / Profile Trigger ─────────────────────── */
 	--cw-button-primary-bg: linear-gradient(180deg, #45515e 0%, #313b46 100%);
@@ -117,12 +121,6 @@
 
 	/* ── SideNav ──────────────────────────────────────── */
 	--cw-sidenav-bg: #191b23;
-		/* radial-gradient(
-			120% 70% at 0% 0%,
-			color-mix(in srgb, #6b8fc4 18%, transparent),
-			transparent 70%
-		),
-		linear-gradient(180deg, #24364d 0%, #1a2a3e 100%); */
 	--cw-sidenav-item-text: var(--cw-text-secondary);
 	--cw-sidenav-item-text-hover: var(--cw-text-primary);
 	--cw-sidenav-item-active-text: #f6fbff;
@@ -203,8 +201,8 @@
 	--cw-tone-primary-bg-subtle: color-mix(in srgb, var(--cw-primary-900) 40%, transparent);
 	--cw-tone-primary-text: var(--cw-primary-300);
 	--cw-tone-primary-border: var(--cw-primary-700);
-	--cw-tone-primary-solid-bg: var(--cw-primary-600);
-	--cw-tone-primary-solid-text: #fff;
+	--cw-tone-primary-solid-bg: var(--cw-primary-500);
+	--cw-tone-primary-solid-text: var(--cw-gray-950);
 
 	/* ── Tone: Secondary ───────────────────────────────── */
 	--cw-tone-secondary-bg: var(--cw-secondary-800);
@@ -219,23 +217,23 @@
 	--cw-tone-info-bg-subtle: color-mix(in srgb, var(--cw-info-900) 40%, transparent);
 	--cw-tone-info-text: var(--cw-info-300);
 	--cw-tone-info-border: var(--cw-info-700);
-	--cw-tone-info-solid-bg: var(--cw-info-600);
+	--cw-tone-info-solid-bg: var(--cw-info-700);
 	--cw-tone-info-solid-text: #fff;
 
 	/* ── Tone: Warning ─────────────────────────────────── */
-	--cw-tone-warning-bg: var(--cw-warning-900);
-	--cw-tone-warning-bg-subtle: var(--cw-warning-500);
-	--cw-tone-warning-text: var(--cw-gray-950);
+	--cw-tone-warning-bg: #422006;
+	--cw-tone-warning-bg-subtle: color-mix(in srgb, var(--cw-warning-900) 40%, transparent);
+	--cw-tone-warning-text: var(--cw-warning-300);
 	--cw-tone-warning-border: var(--cw-warning-700);
-	--cw-tone-warning-solid-bg: var(--cw-warning-600);
+	--cw-tone-warning-solid-bg: var(--cw-warning-500);
 	--cw-tone-warning-solid-text: var(--cw-gray-950);
 
 	/* ── Tone: Danger ──────────────────────────────────── */
-	--cw-tone-danger-bg: var(--cw-danger-900);
+	--cw-tone-danger-bg: #450a0a;
 	--cw-tone-danger-bg-subtle: color-mix(in srgb, var(--cw-danger-900) 40%, transparent);
 	--cw-tone-danger-text: var(--cw-danger-300);
 	--cw-tone-danger-border: var(--cw-danger-700);
-	--cw-tone-danger-solid-bg: var(--cw-danger-600);
+	--cw-tone-danger-solid-bg: var(--cw-danger-700);
 	--cw-tone-danger-solid-text: #fff;
 
 	/* ── Tone: Success ─────────────────────────────────── */
@@ -243,11 +241,62 @@
 	--cw-tone-success-bg-subtle: color-mix(in srgb, var(--cw-success-900) 40%, transparent);
 	--cw-tone-success-text: var(--cw-success-300);
 	--cw-tone-success-border: var(--cw-success-700);
-	--cw-tone-success-solid-bg: var(--cw-success-600);
+	--cw-tone-success-solid-bg: var(--cw-success-700);
 	--cw-tone-success-solid-text: #fff;
 
 	/* ── Focus ─────────────────────────────────────────── */
 	--cw-focus-ring-color: var(--cw-primary-500);
+
+	/* ── Status (device / sensor state) ────────────────── */
+	/* Canonical mapping used by StatusDot, SensorCard, LocationCard,
+	   DliCard and chips: online→success, warning→warning, alarm/error→danger,
+	   offline→danger, loading→--cw-status-loading. */
+	--cw-status-online: var(--cw-success-500);
+	--cw-status-warning: var(--cw-warning-400);
+	--cw-status-alarm: var(--cw-danger-500);
+	--cw-status-error: var(--cw-danger-500);
+	--cw-status-offline: var(--cw-danger-500);
+
+	/* ── Form controls ─────────────────────────────────── */
+	--cw-control-bg: var(--cw-bg-elevated);
+	--cw-control-bg-readonly: var(--cw-bg-muted);
+	--cw-control-border: var(--cw-border-strong);
+	--cw-control-border-hover: color-mix(in srgb, var(--cw-accent) 45%, var(--cw-border-strong));
+	--cw-control-text: var(--cw-text-primary);
+	--cw-control-placeholder: var(--cw-text-muted);
+	--cw-option-hover-bg: var(--cw-bg-muted);
+	--cw-option-selected-text: var(--cw-accent-text);
+
+	/* ── Overlays / elevation ──────────────────────────── */
+	--cw-popover-bg: var(--cw-bg-elevated);
+	--cw-popover-border: var(--cw-border-default);
+	--cw-overlay-bg: var(--cw-bg-surface-elevated);
+	--cw-elevation-popover: 0 10px 24px -6px rgb(2 6 23 / 0.55), 0 2px 6px rgb(2 6 23 / 0.35);
+	--cw-elevation-modal: 0 24px 48px -12px rgb(2 6 23 / 0.65), 0 4px 12px rgb(2 6 23 / 0.4);
+	--cw-scrim: color-mix(in srgb, var(--cw-gray-950) 60%, transparent);
+	--cw-scrim-strong: color-mix(in srgb, var(--cw-bg-base) 92%, transparent);
+
+	/* ── Charts (shared by every chart component) ──────── */
+	--cw-chart-cat-1: #3987e5;
+	--cw-chart-cat-2: #da5e2d;
+	--cw-chart-cat-3: #199e70;
+	--cw-chart-cat-4: #c98500;
+	--cw-chart-cat-5: #d75987;
+	--cw-chart-cat-6: #009a00;
+	--cw-chart-cat-7: #9085e9;
+	--cw-chart-cat-8: #e66767;
+	--cw-chart-grid: color-mix(in srgb, var(--cw-border-default) 55%, transparent);
+	--cw-chart-axis: var(--cw-linechart-axis);
+	--cw-chart-tick: var(--cw-linechart-tick);
+	--cw-chart-crosshair: var(--cw-linechart-crosshair);
+	--cw-chart-threshold: var(--cw-linechart-threshold);
+	--cw-chart-band-fill: color-mix(in srgb, var(--cw-accent) 10%, transparent);
+	--cw-chart-gap-fill: color-mix(in srgb, var(--cw-text-muted) 10%, transparent);
+	--cw-chart-tooltip-bg: var(--cw-linechart-tooltip-bg);
+	--cw-chart-tooltip-border: var(--cw-linechart-tooltip-border);
+	--cw-chart-tooltip-text: var(--cw-linechart-tooltip-text);
+	--cw-chart-tooltip-muted: var(--cw-linechart-tooltip-muted);
+	--cw-chart-tick-size: 0.6875rem;
 
 	/* ── Scrollbar ─────────────────────────────────────── */
 	--cw-scrollbar-thumb: #5f7691;

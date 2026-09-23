@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CwHeatmap } from '$lib/index.js';
+	import { CwHeatmap, CwSwitch } from '$lib/index.js';
 	import type { CwHeatmapDataPoint } from '$lib/index.js';
 	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
@@ -30,29 +30,46 @@
 	const weekData = generateData(7);
 	const twoWeekData = generateData(14);
 
-	let clicked = $state<string>('');
+	let clicked = $state<string>('none yet');
+	let loading = $state(true);
+
 	const heatmapExample = `<CwHeatmap
 \tdata={weekData}
 \tunit="°C"
-\ttitle="Field Temperature – Last 7 Days"
-/>`;
+\ttitle="Field temperature, last 7 days"
+/>
+
+<!-- Cells become buttons only when onCellClick is set -->
+<CwHeatmap data={weekData} onCellClick={(cell) => openHour(cell)} />`;
 </script>
 
 <h2>CwHeatmap</h2>
-<p class="demo-desc">24-hour × N-day temperature heatmap with colour-coded cells, legend, and hover tooltips. Defaults to 1 week.</p>
+<p class="demo-desc">
+	A 24-hour × N-day grid with colour-coded cells, a legend and tooltips. Readings in the same hour are
+	averaged, days without data stay in the grid, and hours follow the <code>locale</code>.
+</p>
 
 <section class="demo-section">
-	<h3>Default (7 days)</h3>
+	<h3>Read-only (default)</h3>
+	<CwHeatmap data={weekData} unit="°C" title="Field temperature, last 7 days" />
+	<p class="demo-hint">
+		Without <code>onCellClick</code> the grid is a single image with a text summary for screen readers.
+	</p>
+	<DemoCodeExample code={heatmapExample} title="CwHeatmap example" />
+</section>
+
+<section class="demo-section">
+	<h3>Interactive cells</h3>
 	<CwHeatmap
 		data={weekData}
 		unit="°C"
-		title="Field Temperature – Last 7 Days"
-		onCellClick={(p) => (clicked = `${p.date} ${String(p.hour).padStart(2,'0')}:00 → ${p.value !== null ? p.value.toFixed(1) + '°C' : 'no data'}`)}
+		title="Click or tab to a cell"
+		onCellClick={(p) =>
+			(clicked = `${p.date} ${String(p.hour).padStart(2, '0')}:00 → ${
+				p.value !== null ? p.value.toFixed(1) + '°C' : 'no data'
+			}`)}
 	/>
-	{#if clicked}
-		<p class="demo-click">Clicked: <strong>{clicked}</strong></p>
-	{/if}
-	<DemoCodeExample code={heatmapExample} title="CwHeatmap example" />
+	<p class="demo-event" aria-live="polite">Last event: {clicked}</p>
 </section>
 
 <section class="demo-section">
@@ -61,28 +78,42 @@
 		data={twoWeekData}
 		days={14}
 		unit="°C"
-		title="Soil Temperature – Last 14 Days"
-		colors={['#06b6d4', '#a3e635', '#f97316']}
+		title="Soil temperature, last 14 days"
+		colors={['var(--cw-info-500)', 'var(--cw-success-400)', 'var(--cw-warning-500)']}
 		rowHeight={20}
 	/>
+	<p class="demo-hint"><code>colors</code> accepts any CSS colour, including <code>var(--token)</code>.</p>
 </section>
 
 <section class="demo-section">
 	<h3>Fahrenheit scale, fixed range</h3>
 	<CwHeatmap
-		data={weekData.map(p => ({ ...p, value: Math.round((p.value * 9/5 + 32) * 10) / 10 }))}
+		data={weekData.map((p) => ({ ...p, value: Math.round(((p.value * 9) / 5 + 32) * 10) / 10 }))}
 		unit="°F"
 		min={50}
 		max={90}
-		title="Temperature (°F) – Fixed 50–90 Range"
+		title="Temperature (°F), fixed 50–90 range"
 	/>
 </section>
 
+<section class="demo-section">
+	<h3>Loading and no data</h3>
+	<div class="demo-row demo-toggle-row">
+		<CwSwitch bind:checked={loading} label="Loading" />
+	</div>
+	<div class="demo-stack">
+		<CwHeatmap data={weekData} unit="°C" title="Loading" {loading} />
+		<CwHeatmap data={[]} unit="°C" title="No readings yet" />
+	</div>
+</section>
+
 <style>
-	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }
-	h3 { font-size: var(--cw-text-base); font-weight: var(--cw-font-semibold); margin-bottom: var(--cw-space-2); color: var(--cw-text-secondary); }
-	.demo-desc { color: var(--cw-text-muted); font-size: var(--cw-text-sm); margin-bottom: var(--cw-space-6); }
-	.demo-section { margin-bottom: var(--cw-space-8); }
-	.demo-click { margin-top: var(--cw-space-2); font-size: var(--cw-text-xs); color: var(--cw-text-muted); }
-	.demo-click strong { color: var(--cw-accent); }
+	.demo-toggle-row {
+		margin-bottom: var(--cw-space-4);
+	}
+
+	code {
+		font-family: var(--cw-font-mono);
+		font-size: 0.9em;
+	}
 </style>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import { tick, type Snippet } from 'svelte';
 	import CwSpinner from './CwSpinner.svelte';
 
 	type CalendarDay = { date: Date; inMonth: boolean; disabled: boolean; isToday: boolean };
@@ -28,6 +28,12 @@
 		onMonthChange?: (year: number, month: number, displayedMonth: Date) => void;
 		/** While true, both month-nav buttons are disabled and the one that was clicked shows a spinner */
 		loading?: boolean;
+		/** BCP 47 locale for month/weekday names and day labels (default: runtime locale) */
+		locale?: string;
+		/** Accessible name for the date grid (default: the displayed month) */
+		ariaLabel?: string;
+		/** Accessible names for the month navigation buttons */
+		labels?: { previousMonth?: string; nextMonth?: string };
 		class?: string;
 	}
 
@@ -45,8 +51,17 @@
 		onDateClick,
 		onMonthChange,
 		loading = false,
+		locale,
+		ariaLabel,
+		labels = {},
 		class: className = ''
 	}: Props = $props();
+
+	let rootEl = $state<HTMLDivElement>();
+	/** Roving-tabindex target: only this day's button is in the tab order. */
+	let focusedKey = $state<string | null>(null);
+
+	const rootId = $props.id();
 
 	/** Which nav button triggered the in-flight load, so only it shows a spinner. */
 	let pendingNav = $state<'prev' | 'next' | null>(null);
@@ -87,10 +102,29 @@
 	}
 
 	/* ── Calendar math ───────────────────── */
-	const WEEKDAYS_SUN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-	const WEEKDAYS_MON = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+	function dayKey(date: Date): string {
+		return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+	}
 
-	const weekdays = $derived(startOnMonday ? WEEKDAYS_MON : WEEKDAYS_SUN);
+	/** Locale weekday names; 2024-01-07 is a Sunday. */
+	const weekdays = $derived.by(() => {
+		const shortFmt = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+		const longFmt = new Intl.DateTimeFormat(locale, { weekday: 'long' });
+		const names = Array.from({ length: 7 }, (_, i) => {
+			const date = new Date(2024, 0, 7 + i);
+			return { short: shortFmt.format(date), long: longFmt.format(date) };
+		});
+		return startOnMonday ? [...names.slice(1), names[0]] : names;
+	});
+
+	const dayLabelFormatter = $derived(
+		new Intl.DateTimeFormat(locale, {
+			weekday: 'long',
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric'
+		})
+	);
 
 	const normalizedBounds = $derived.by(() => {
 		const normalizedMin = minDate ? startOfDay(minDate) : null;
@@ -149,7 +183,7 @@
 	);
 
 	const monthName = $derived(
-		displayedMonthView.date.toLocaleString(undefined, { month: 'long', year: 'numeric' })
+		displayedMonthView.date.toLocaleString(locale, { month: 'long', year: 'numeric' })
 	);
 
 	$effect(() => {
@@ -217,6 +251,65 @@
 		return days;
 	});
 
+	const calendarWeeks = $derived(
+		Array.from({ length: 6 }, (_, i) => calendarDays.slice(i * 7, i * 7 + 7))
+	);
+
+	/** Falls back to today (if shown) or the 1st when the focused day isn't in this month. */
+	const activeKey = $derived.by(() => {
+		const inMonthDays = calendarDays.filter((day) => day.inMonth);
+		if (focusedKey && inMonthDays.some((day) => dayKey(day.date) === focusedKey)) {
+			return focusedKey;
+		}
+		const today = inMonthDays.find((day) => day.isToday && !day.disabled);
+		const firstEnabled = inMonthDays.find((day) => !day.disabled);
+		return dayKey((today ?? firstEnabled ?? inMonthDays[0]).date);
+	});
+
+	async function focusDate(target: Date) {
+		if (isDateDisabled(target)) return;
+		const targetView = normalizeMonthView(target.getFullYear(), target.getMonth());
+		if (compareMonthViews(targetView, displayedMonthView) !== 0) {
+			if (loading) return;
+			const clamped = clampMonthView(targetView.year, targetView.month);
+			if (compareMonthViews(clamped, targetView) !== 0) return;
+			showMonth(targetView);
+		}
+		focusedKey = dayKey(target);
+		await tick();
+		rootEl?.querySelector<HTMLElement>(`[data-day-key="${focusedKey}"]`)?.focus();
+	}
+
+	function handleGridKeydown(event: KeyboardEvent, date: Date) {
+		const offsets: Record<string, number> = {
+			ArrowLeft: -1,
+			ArrowRight: 1,
+			ArrowUp: -7,
+			ArrowDown: 7
+		};
+		let target: Date | null = null;
+
+		if (event.key in offsets) {
+			target = new Date(date.getFullYear(), date.getMonth(), date.getDate() + offsets[event.key]);
+		} else if (event.key === 'Home' || event.key === 'End') {
+			const column = (date.getDay() + (startOnMonday ? 6 : 0)) % 7;
+			const delta = event.key === 'Home' ? -column : 6 - column;
+			target = new Date(date.getFullYear(), date.getMonth(), date.getDate() + delta);
+		} else if (event.key === 'PageUp' || event.key === 'PageDown') {
+			const step = (event.key === 'PageUp' ? -1 : 1) * (event.shiftKey ? 12 : 1);
+			const lastDay = new Date(date.getFullYear(), date.getMonth() + step + 1, 0).getDate();
+			target = new Date(
+				date.getFullYear(),
+				date.getMonth() + step,
+				Math.min(date.getDate(), lastDay)
+			);
+		}
+
+		if (!target) return;
+		event.preventDefault();
+		void focusDate(target);
+	}
+
 	function emitMonthChange(view: CalendarMonthView) {
 		onMonthChange?.(view.year, view.month, new Date(view.date));
 	}
@@ -246,7 +339,12 @@
 			const interactiveTarget = event.target.closest(
 				'button, a, input, select, textarea, [role="button"]'
 			);
-			if (interactiveTarget && interactiveTarget !== event.currentTarget) {
+			// The day-number button is the cell's own keyboard target, so it still selects the date.
+			if (
+				interactiveTarget &&
+				interactiveTarget !== event.currentTarget &&
+				!interactiveTarget.classList.contains('cw-calendar__day-number')
+			) {
 				return;
 			}
 		}
@@ -255,14 +353,14 @@
 	}
 </script>
 
-<div class="cw-calendar {className}">
+<div class="cw-calendar {className}" bind:this={rootEl}>
 	<!-- Month header with nav -->
 	<div class="cw-calendar__nav">
 		<button
 			type="button"
 			class="cw-calendar__nav-btn"
 			onclick={prevMonth}
-			aria-label="Previous month"
+			aria-label={labels.previousMonth ?? 'Previous month'}
 			aria-busy={loading && pendingNav === 'prev'}
 			disabled={!canGoPrev || loading}
 		>
@@ -274,12 +372,12 @@
 				</svg>
 			{/if}
 		</button>
-		<span class="cw-calendar__month-label">{monthName}</span>
+		<span class="cw-calendar__month-label" id="{rootId}-month" aria-live="polite">{monthName}</span>
 		<button
 			type="button"
 			class="cw-calendar__nav-btn"
 			onclick={nextMonth}
-			aria-label="Next month"
+			aria-label={labels.nextMonth ?? 'Next month'}
 			aria-busy={loading && pendingNav === 'next'}
 			disabled={!canGoNext || loading}
 		>
@@ -293,55 +391,81 @@
 		</button>
 	</div>
 
-	<!-- Weekday headers -->
-	<div class="cw-calendar__weekdays">
-		{#each weekdays as wd (wd)}
-			<span class="cw-calendar__weekday">{wd}</span>
-		{/each}
-	</div>
+	<div
+		class="cw-calendar__table"
+		role="grid"
+		aria-labelledby={ariaLabel ? undefined : `${rootId}-month`}
+		aria-label={ariaLabel}
+	>
+		<!-- Weekday headers -->
+		<div class="cw-calendar__weekdays" role="row">
+			{#each weekdays as wd (wd.long)}
+				<span class="cw-calendar__weekday" role="columnheader">
+					<abbr title={wd.long}>{wd.short}</abbr>
+				</span>
+			{/each}
+		</div>
 
-	<!-- Day grid -->
-	<div class="cw-calendar__grid">
-		{#each calendarDays as { date, inMonth, disabled, isToday } (date.toISOString())}
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<!-- svelte-ignore a11y_click_events_have_key_events -->
-			<div
-				class="cw-calendar__day"
-				class:cw-calendar__day--outside={!inMonth}
-				class:cw-calendar__day--disabled={disabled}
-				aria-disabled={disabled}
-				onclick={(event) => handleDayClick(event, date, disabled)}
-			>
-				<!-- Day header row -->
-				<div class="cw-calendar__day-header">
-					<div class="cw-calendar__day-left">
-						<span
-							class="cw-calendar__day-number"
-							class:cw-calendar__day-number--today={isToday}
+		<!-- Day grid -->
+		<div class="cw-calendar__grid">
+			{#each calendarWeeks as week, weekIndex (weekIndex)}
+				<div class="cw-calendar__week" role="row">
+					{#each week as { date, inMonth, disabled, isToday } (date.toISOString())}
+						{@const key = dayKey(date)}
+						<!-- Mouse users can click anywhere in the cell; keyboard users use the day button. -->
+						<!-- svelte-ignore a11y_click_events_have_key_events -->
+						<div
+							class="cw-calendar__day"
+							class:cw-calendar__day--outside={!inMonth}
+							class:cw-calendar__day--disabled={disabled}
+							role="gridcell"
+							tabindex="-1"
+							aria-disabled={disabled || undefined}
+							onclick={(event) => handleDayClick(event, date, disabled)}
 						>
-							{date.getDate()}
-						</span>
-						{#if dayHeader}
-							<span class="cw-calendar__day-title">
-								{@render dayHeader(date)}
-							</span>
-						{/if}
-					</div>
-					{#if dayTrailing}
-						<div class="cw-calendar__day-trailing">
-							{@render dayTrailing(date)}
-						</div>
-					{/if}
-				</div>
+							<!-- Day header row -->
+							<div class="cw-calendar__day-header">
+								<div class="cw-calendar__day-left">
+									<button
+										type="button"
+										class="cw-calendar__day-number"
+										class:cw-calendar__day-number--today={isToday}
+										data-day-key={key}
+										tabindex={key === activeKey ? 0 : -1}
+										aria-label={dayLabelFormatter.format(date)}
+										aria-current={isToday ? 'date' : undefined}
+										aria-disabled={disabled || undefined}
+										onfocus={() => {
+											if (inMonth) focusedKey = key;
+										}}
+										onkeydown={(event) => handleGridKeydown(event, date)}
+									>
+										{date.getDate()}
+									</button>
+									{#if dayHeader}
+										<span class="cw-calendar__day-title">
+											{@render dayHeader(date)}
+										</span>
+									{/if}
+								</div>
+								{#if dayTrailing}
+									<div class="cw-calendar__day-trailing">
+										{@render dayTrailing(date)}
+									</div>
+								{/if}
+							</div>
 
-				<!-- Day content area -->
-				{#if dayContent}
-					<div class="cw-calendar__day-body">
-						{@render dayContent(date)}
-					</div>
-				{/if}
-			</div>
-		{/each}
+							<!-- Day content area -->
+							{#if dayContent}
+								<div class="cw-calendar__day-body">
+									{@render dayContent(date)}
+								</div>
+							{/if}
+						</div>
+					{/each}
+				</div>
+			{/each}
+		</div>
 	</div>
 </div>
 
@@ -352,7 +476,7 @@
 		font-family: var(--cw-font-family);
 		background-color: var(--cw-bg-surface);
 		border: 1px solid var(--cw-border-default);
-		border-radius: var(--cw-radius-xl);
+		border-radius: var(--cw-card-radius);
 		overflow: hidden;
 	}
 
@@ -373,8 +497,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 2rem;
-		height: 2rem;
+		width: var(--cw-control-h-sm);
+		height: var(--cw-control-h-sm);
 		padding: 0;
 		background: none;
 		border: none;
@@ -385,21 +509,17 @@
 			color var(--cw-duration-fast) var(--cw-ease-default),
 			background-color var(--cw-duration-fast) var(--cw-ease-default);
 	}
-	.cw-calendar__nav-btn:hover {
+	.cw-calendar__nav-btn:hover:not(:disabled) {
 		background-color: var(--cw-bg-muted);
 		color: var(--cw-text-primary);
 	}
 	.cw-calendar__nav-btn:disabled {
 		cursor: not-allowed;
-		opacity: 0.4;
+		color: var(--cw-text-disabled);
 	}
-	/* The button whose click started the load keeps full opacity for its spinner. */
+	/* The button whose click started the load keeps full colour for its spinner. */
 	.cw-calendar__nav-btn[aria-busy='true'] {
 		cursor: wait;
-		opacity: 1;
-	}
-	.cw-calendar__nav-btn:disabled:hover {
-		background: none;
 		color: var(--cw-text-muted);
 	}
 	.cw-calendar__nav-btn svg {
@@ -416,17 +536,24 @@
 	.cw-calendar__weekday {
 		padding: var(--cw-space-2) 0;
 		text-align: center;
-		font-size: 0.7rem;
+		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-semibold);
 		color: var(--cw-text-muted);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
+	}
+	.cw-calendar__weekday abbr {
+		text-decoration: none;
 	}
 
 	/* ── Day grid ─────────────────────────── */
 	.cw-calendar__grid {
 		display: grid;
 		grid-template-columns: repeat(7, 1fr);
+	}
+	/* Rows exist for grid semantics only; cells lay out on the parent grid. */
+	.cw-calendar__week {
+		display: contents;
 	}
 
 	/* ── Individual day cell ──────────────── */
@@ -444,16 +571,22 @@
 	.cw-calendar__day:not(.cw-calendar__day--disabled):hover {
 		background-color: var(--cw-bg-muted);
 	}
-	/* Remove right border on every 7th column */
-	.cw-calendar__day:nth-child(7n) {
+	/* Remove right border on the last column */
+	.cw-calendar__day:last-child {
 		border-right: none;
 	}
 	/* Remove bottom border on last row */
-	.cw-calendar__day:nth-last-child(-n+7) {
+	.cw-calendar__week:last-child .cw-calendar__day {
 		border-bottom: none;
 	}
 	.cw-calendar__day--outside {
-		opacity: 0.42;
+		color: var(--cw-text-disabled);
+		background-color: color-mix(in srgb, var(--cw-bg-muted) 22%, transparent);
+	}
+	.cw-calendar__day--outside .cw-calendar__day-number,
+	.cw-calendar__day--outside .cw-calendar__day-title,
+	.cw-calendar__day--outside .cw-calendar__day-body {
+		color: var(--cw-text-disabled);
 	}
 	.cw-calendar__day--disabled {
 		cursor: not-allowed;
@@ -496,15 +629,25 @@
 		justify-content: center;
 		width: 1.75rem;
 		height: 1.75rem;
-		border-radius: 9999px;
+		padding: 0;
+		border: 0;
+		border-radius: var(--cw-radius-full);
+		background: none;
+		font: inherit;
 		font-size: var(--cw-text-sm);
 		font-weight: var(--cw-font-semibold);
+		font-variant-numeric: tabular-nums;
 		color: var(--cw-text-secondary);
+		cursor: pointer;
 		flex-shrink: 0;
+	}
+	.cw-calendar__day-number[aria-disabled='true'] {
+		cursor: not-allowed;
+		color: var(--cw-text-disabled);
 	}
 	.cw-calendar__day-number--today {
 		background-color: var(--cw-accent);
-		color: var(--cw-bg-base);
+		color: var(--cw-text-inverse);
 	}
 
 	/* ── Day trailing slot ────────────────── */

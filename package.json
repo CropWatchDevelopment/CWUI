@@ -1,6 +1,6 @@
 {
 	"name": "@cropwatchdevelopment/cwui",
-	"version": "0.1.114",
+	"version": "0.1.115",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/CropWatchDevelopment/CWUI.git"
@@ -21,7 +21,8 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test": "vitest run",
-		"test:watch": "vitest"
+		"test:watch": "vitest",
+		"style-guide": "node scripts/style-guide/build.mjs"
 	},
 	"svelte": "./dist/index.js",
 	"types": "./dist/index.d.ts",

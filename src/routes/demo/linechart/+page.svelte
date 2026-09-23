@@ -81,9 +81,9 @@
 />`;
 	const deviceLineChartExample = `<CwDeviceLineChartSection
 \tisSoilDevice={false}
-\thairTemperatureChartData={tempData}
-\thairHumidityChartData={humidityData}
-\thairTemperatureThreshold={28}
+\tairTemperatureChartData={tempData}
+\tairHumidityChartData={humidityData}
+\tairTemperatureThreshold={28}
 />`;
 </script>
 
@@ -141,13 +141,48 @@
 	<DemoCodeExample code={compactChartExample} title="Compact chart example" />
 </section>
 
-<h2 style="margin-top:var(--cw-space-8)">CwDeviceLineChartSection</h2>
-<p class="demo-desc">
-	Opinionated wrapper that composes one or more <code>CwLineChart</code> instances into the device-history card used by CropWatch dashboards.
-</p>
+<section class="demo-section">
+	<h3>Keyboard navigation</h3>
+	<p class="demo-note">
+		Tab to any chart plot, then use <kbd>←</kbd> <kbd>→</kbd> to step through readings,
+		<kbd>Home</kbd>/<kbd>End</kbd> to jump to the first or last one, and <kbd>Esc</kbd> to hide the
+		tooltip. Each reading is announced to screen readers.
+	</p>
+</section>
 
 <section class="demo-section">
-	<h3>Air Device</h3>
+	<h3>Loading, no data &amp; locale</h3>
+	<div class="demo-grid">
+		<div>
+			<span class="demo-label">loading</span>
+			<CwLineChart data={[]} loading primaryLabel="Temperature" primaryUnit="°C" height={200} />
+		</div>
+		<div>
+			<span class="demo-label">Empty data (automatic no-data state)</span>
+			<CwLineChart data={[]} primaryLabel="Temperature" primaryUnit="°C" height={200} />
+		</div>
+		<div>
+			<span class="demo-label">locale="ja-JP", decimals=1</span>
+			<CwLineChart
+				data={soilMoisture}
+				locale="ja-JP"
+				decimals={1}
+				primaryLabel="土壌水分"
+				primaryUnit="%"
+				height={200}
+			/>
+		</div>
+	</div>
+</section>
+
+<section class="demo-section" id="device-line-chart-section">
+	<h3>CwDeviceLineChartSection</h3>
+	<p class="demo-note">
+		Opinionated wrapper that composes one or more <code>CwLineChart</code> instances into the
+		device-history card used by CropWatch dashboards.
+	</p>
+
+	<span class="demo-label">Air device</span>
 	<CwDeviceLineChartSection
 		isSoilDevice={false}
 		airTemperatureChartData={tempData}
@@ -155,10 +190,8 @@
 		airTemperatureThreshold={28}
 	/>
 	<DemoCodeExample code={deviceLineChartExample} title="CwDeviceLineChartSection example" />
-</section>
 
-<section class="demo-section">
-	<h3>Soil Device (3-column)</h3>
+	<span class="demo-label demo-label--spaced">Soil device (3-column)</span>
 	<CwDeviceLineChartSection
 		isSoilDevice={true}
 		soilTemperatureChartData={soilTemp}
@@ -168,22 +201,29 @@
 		soilMoistureThreshold={40}
 		soilEcThreshold={1.5}
 	/>
-</section>
 
-<section class="demo-section">
-	<h3>Loading State</h3>
-	<CwDeviceLineChartSection historyLoading={true} />
-</section>
-
-<section class="demo-section">
-	<h3>Empty State</h3>
-	<CwDeviceLineChartSection />
+	<div class="demo-grid demo-grid--spaced">
+		<div>
+			<span class="demo-label">Loading</span>
+			<CwDeviceLineChartSection historyLoading={true} />
+		</div>
+		<div>
+			<span class="demo-label">Empty</span>
+			<CwDeviceLineChartSection />
+		</div>
+	</div>
 </section>
 
 <style>
-	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }
-	h3 { font-size: var(--cw-text-base); font-weight: var(--cw-font-semibold); margin-bottom: var(--cw-space-2); color: var(--cw-text-secondary); }
-	.demo-desc { color: var(--cw-text-muted); font-size: var(--cw-text-sm); margin-bottom: var(--cw-space-4); }
 	.demo-note { color: var(--cw-text-secondary); font-size: var(--cw-text-sm); margin: 0 0 var(--cw-space-3); max-width: 72ch; }
-	.demo-section { margin-bottom: var(--cw-space-6); }
+	.demo-label--spaced,
+	.demo-grid--spaced { margin-top: var(--cw-space-6); }
+	kbd {
+		padding: 0 var(--cw-space-1);
+		border: 1px solid var(--cw-border-default);
+		border-radius: var(--cw-radius-sm);
+		background: var(--cw-bg-muted);
+		font-family: var(--cw-font-mono);
+		font-size: var(--cw-text-xs);
+	}
 </style>

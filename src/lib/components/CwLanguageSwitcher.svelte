@@ -1,5 +1,18 @@
 <script lang="ts">
-	import type { CwLanguageOption } from '../types/index.js';
+	import type { CwLanguageOption, CwSize } from '../types/index.js';
+
+	interface CwLanguageSwitcherLabels {
+		/** Trigger label when no visible `label`. `{language}` is replaced with the current language. */
+		change: string;
+		/** Accessible label for the options list when no visible `label`. */
+		options: string;
+		/** Shown when `options` is empty. */
+		empty: string;
+		/** Announced while `setLocale` is pending. */
+		applying: string;
+		/** Screen-reader hint on the trigger. */
+		open: string;
+	}
 
 	interface Props {
 		options: CwLanguageOption[];
@@ -9,6 +22,10 @@
 		onerror?: (error: unknown, locale: string, option: CwLanguageOption) => void;
 		label?: string;
 		disabled?: boolean;
+		/** Control size. Matches CwDropdown heights. */
+		size?: CwSize;
+		/** Override built-in English strings. */
+		labels?: Partial<CwLanguageSwitcherLabels>;
 		class?: string;
 	}
 
@@ -20,15 +37,26 @@
 		onerror,
 		label,
 		disabled = false,
+		size = 'md',
+		labels,
 		class: className = ''
 	}: Props = $props();
 
 	const uid = $props.id();
+	const text = $derived({
+		change: 'Change language, current {language}',
+		options: 'Language options',
+		empty: 'No languages configured',
+		applying: 'Applying language…',
+		open: 'Open language menu',
+		...labels
+	});
 	const imageSourcePattern =
 		/^(https?:|data:|\/|\.{1,2}\/)|\.(avif|gif|jpe?g|png|svg|webp)(\?.*)?$/i;
 
 	let open = $state(false);
 	let isApplying = $state(false);
+	let rootRef = $state<HTMLDivElement | null>(null);
 	let menuRef = $state<HTMLDivElement | null>(null);
 	let triggerRef = $state<HTMLButtonElement | null>(null);
 	let activeIndex = $state(-1);
@@ -141,9 +169,11 @@
 		const rect = triggerRef.getBoundingClientRect();
 		const margin = 8;
 		const spacing = 6;
-		const menuWidth = Math.max(Math.round(rect.width), 280);
-		const menuHeight = menuRef?.offsetHeight ?? 0;
 		const viewportWidth = window.innerWidth;
+		// At least 17.5rem so descriptions have room, never wider than the viewport.
+		const minWidth = 17.5 * parseFloat(getComputedStyle(document.documentElement).fontSize || '16');
+		const menuWidth = Math.min(Math.max(Math.round(rect.width), Math.round(minWidth)), viewportWidth - margin * 2);
+		const menuHeight = menuRef?.offsetHeight ?? 0;
 		const viewportHeight = window.innerHeight;
 
 		let left = rect.left;
@@ -192,6 +222,8 @@
 				break;
 			}
 			case 'Escape':
+				if (!open) return;
+				event.preventDefault();
 				closeMenu();
 				break;
 		}
@@ -249,13 +281,19 @@
 		});
 
 		const handleViewportChange = () => updateMenuPosition();
+		// Close on outside pointerdown without swallowing the click.
+		const handlePointerDown = (event: PointerEvent) => {
+			if (rootRef && !rootRef.contains(event.target as Node)) closeMenu();
+		};
 		window.addEventListener('resize', handleViewportChange);
 		window.addEventListener('scroll', handleViewportChange, true);
+		document.addEventListener('pointerdown', handlePointerDown, true);
 
 		return () => {
 			cancelAnimationFrame(raf);
 			window.removeEventListener('resize', handleViewportChange);
 			window.removeEventListener('scroll', handleViewportChange, true);
+			document.removeEventListener('pointerdown', handlePointerDown, true);
 		};
 	});
 
@@ -270,13 +308,9 @@
 	});
 </script>
 
-{#if open}
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="cw-language-switcher__backdrop" onclick={closeMenu} onkeydown={() => {}}></div>
-{/if}
-
 <div
-	class="cw-language-switcher {className}"
+	bind:this={rootRef}
+	class="cw-language-switcher cw-language-switcher--{size} {className}"
 	class:cw-language-switcher--open={open}
 	class:cw-language-switcher--busy={isApplying}
 	class:cw-language-switcher--disabled={disabled}
@@ -303,8 +337,8 @@
 			label
 				? undefined
 				: selectedOption
-					? `Change language, current ${selectedOption.label}`
-					: 'No languages configured'
+					? text.change.replace('{language}', selectedOption.label)
+					: text.empty
 		}
 		onclick={toggleMenu}
 		onkeydown={handleTriggerKeydown}
@@ -337,13 +371,13 @@
 				</span>
 			{:else}
 				<span id="{uid}-current-label" class="cw-language-switcher__empty">
-					No locales configured
+					{text.empty}
 				</span>
 			{/if}
 		</span>
 
 		<span class="cw-language-switcher__sr-only">
-			{isApplying ? 'Applying locale' : 'Open language menu'}
+			{isApplying ? text.applying : text.open}
 		</span>
 
 		<svg class="cw-language-switcher__chevron" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -366,7 +400,7 @@
 			role="listbox"
 			tabindex="-1"
 			aria-labelledby={label ? `${uid}-label` : undefined}
-			aria-label={label ? undefined : 'Language options'}
+			aria-label={label ? undefined : text.options}
 			aria-activedescendant={activeIndex >= 0 ? `${uid}-option-${activeIndex}` : undefined}
 			onkeydown={handleMenuKeydown}
 		>
@@ -383,7 +417,7 @@
 					aria-disabled={option.disabled || undefined}
 					disabled={option.disabled || isApplying}
 					onclick={() => void applySelection(option)}
-					onmouseenter={() => {
+					onpointermove={() => {
 						if (!option.disabled) activeIndex = index;
 					}}
 				>
@@ -429,29 +463,36 @@
 
 <style>
 	.cw-language-switcher {
+		--_h: var(--cw-control-h-md);
+		--_px: var(--cw-control-px-md);
+		--_flag: 1.5rem;
 		position: relative;
 		display: inline-grid;
-		gap: var(--cw-space-2);
+		gap: var(--cw-space-1);
 		min-width: 14rem;
+	}
+
+	.cw-language-switcher--sm {
+		--_h: var(--cw-control-h-sm);
+		--_px: var(--cw-control-px-sm);
+		--_flag: 1.25rem;
+	}
+
+	.cw-language-switcher--lg {
+		--_h: var(--cw-control-h-lg);
+		--_px: var(--cw-control-px-lg);
+		--_flag: 2rem;
 	}
 
 	.cw-language-switcher--open {
 		isolation: isolate;
-		z-index: calc(var(--cw-z-overlay) + 1);
+		z-index: var(--cw-z-popover);
 	}
 
 	.cw-language-switcher__label {
-		font-size: var(--cw-text-xs);
-		font-weight: var(--cw-font-semibold);
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-		color: var(--cw-text-muted);
-	}
-
-	.cw-language-switcher__backdrop {
-		position: fixed;
-		inset: 0;
-		z-index: var(--cw-z-overlay);
+		font-size: var(--cw-text-sm);
+		font-weight: var(--cw-font-medium);
+		color: var(--cw-text-secondary);
 	}
 
 	.cw-language-switcher__trigger {
@@ -460,42 +501,42 @@
 		justify-content: space-between;
 		gap: var(--cw-space-3);
 		width: 100%;
-		padding: 0.7rem 0.85rem;
-		border: 1px solid var(--cw-border-default);
-		border-radius: var(--cw-radius-lg);
-		background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-bg-elevated) 92%, white),
-				color-mix(in srgb, var(--cw-bg-muted) 72%, white)
-			);
-		color: var(--cw-text-primary);
+		min-height: var(--_h);
+		padding: var(--cw-space-1) var(--_px);
+		font-family: var(--cw-font-family);
+		border: 1px solid var(--cw-control-border);
+		border-radius: var(--cw-control-radius);
+		background-color: var(--cw-control-bg);
+		color: var(--cw-control-text);
 		cursor: pointer;
-		transition:
-			border-color var(--cw-duration-fast) var(--cw-ease-default),
-			box-shadow var(--cw-duration-fast) var(--cw-ease-default),
-			transform var(--cw-duration-fast) var(--cw-ease-default);
+		transition: border-color var(--cw-duration-fast) var(--cw-ease-default);
 	}
 
 	.cw-language-switcher__trigger:hover:not(:disabled) {
-		border-color: color-mix(in srgb, var(--cw-accent) 38%, var(--cw-border-default));
-		box-shadow: var(--cw-shadow-sm);
+		border-color: var(--cw-control-border-hover);
 	}
 
-	.cw-language-switcher__trigger:focus-visible {
-		outline: none;
-		box-shadow: 0 0 0 3px color-mix(in srgb, var(--cw-focus-ring-color) 28%, transparent);
+	.cw-language-switcher__trigger:focus-visible,
+	.cw-language-switcher--open .cw-language-switcher__trigger {
+		border-color: var(--cw-focus-ring-color);
 	}
 
 	.cw-language-switcher__trigger:disabled {
 		cursor: not-allowed;
-		opacity: 0.72;
+		color: var(--cw-text-disabled);
+		background-color: var(--cw-control-bg-readonly);
+		border-color: var(--cw-border-muted);
+	}
+
+	.cw-language-switcher--busy .cw-language-switcher__trigger:disabled {
+		cursor: progress;
+		color: var(--cw-control-text);
 	}
 
 	.cw-language-switcher__selection {
 		display: flex;
 		align-items: center;
-		gap: var(--cw-space-3);
+		gap: var(--cw-space-2);
 		min-width: 0;
 	}
 
@@ -504,11 +545,11 @@
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-		width: 2rem;
-		height: 2rem;
-		border-radius: 0.75rem;
-		background: color-mix(in srgb, var(--cw-bg-base) 70%, transparent);
-		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cw-border-default) 64%, transparent);
+		width: var(--_flag);
+		height: var(--_flag);
+		border-radius: var(--cw-radius-md);
+		background: var(--cw-bg-muted);
+		box-shadow: inset 0 0 0 1px var(--cw-border-muted);
 		overflow: hidden;
 	}
 
@@ -519,14 +560,14 @@
 	}
 
 	.cw-language-switcher__flag-text {
-		font-size: 1rem;
+		font-size: calc(var(--_flag) * 0.6);
 		line-height: 1;
 	}
 
 	.cw-language-switcher__flag-fallback {
-		font-size: 0.66rem;
+		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-bold);
-		letter-spacing: 0.08em;
+		letter-spacing: 0.04em;
 		text-transform: uppercase;
 		color: var(--cw-text-secondary);
 	}
@@ -535,12 +576,14 @@
 	.cw-language-switcher__option-copy {
 		display: grid;
 		min-width: 0;
+		line-height: var(--cw-leading-tight);
+		text-align: left;
 	}
 
 	.cw-language-switcher__name {
 		font-size: var(--cw-text-sm);
-		font-weight: var(--cw-font-semibold);
-		color: var(--cw-text-primary);
+		font-weight: var(--cw-font-medium);
+		color: inherit;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -550,6 +593,10 @@
 	.cw-language-switcher__description {
 		font-size: var(--cw-text-xs);
 		color: var(--cw-text-muted);
+	}
+
+	.cw-language-switcher--sm .cw-language-switcher__copy .cw-language-switcher__meta {
+		display: none;
 	}
 
 	.cw-language-switcher__empty {
@@ -571,23 +618,19 @@
 
 	.cw-language-switcher__menu {
 		position: fixed;
+		z-index: var(--cw-z-popover);
 		display: grid;
-		gap: 0.2rem;
-		max-height: min(22rem, calc(100vh - 1rem));
-		padding: 0.35rem;
-		border: 1px solid color-mix(in srgb, var(--cw-border-default) 82%, transparent);
-		border-radius: var(--cw-radius-xl);
-		background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-bg-elevated) 94%, white),
-				color-mix(in srgb, var(--cw-bg-muted) 78%, white)
-			);
-		box-shadow: var(--cw-shadow-lg);
+		gap: 0.125rem;
+		max-height: min(22rem, calc(100dvh - 1rem));
+		padding: var(--cw-space-1);
+		border: 1px solid var(--cw-popover-border);
+		border-radius: var(--cw-popover-radius);
+		background-color: var(--cw-popover-bg);
+		box-shadow: var(--cw-elevation-popover);
 		overflow-y: auto;
-		z-index: calc(var(--cw-z-overlay) + 1);
 	}
 
+	/* The active option carries the focus indication (aria-activedescendant). */
 	.cw-language-switcher__menu:focus-visible {
 		outline: none;
 	}
@@ -598,37 +641,40 @@
 		align-items: center;
 		gap: var(--cw-space-3);
 		width: 100%;
-		padding: 0.7rem 0.8rem;
+		min-height: var(--cw-option-min-h);
+		padding: var(--cw-space-2) var(--cw-space-3);
+		font-family: var(--cw-font-family);
 		border: none;
-		border-radius: calc(var(--cw-radius-lg) - 0.1rem);
+		border-radius: var(--cw-radius-md);
 		background: transparent;
-		color: var(--cw-text-secondary);
+		color: var(--cw-text-primary);
 		text-align: left;
 		cursor: pointer;
-		transition:
-			background-color var(--cw-duration-fast) var(--cw-ease-default),
-			color var(--cw-duration-fast) var(--cw-ease-default);
+		--_flag: 1.5rem;
+		transition: background-color var(--cw-duration-fast) var(--cw-ease-default);
 	}
 
-	.cw-language-switcher__option:hover:not(:disabled),
 	.cw-language-switcher__option--active:not(:disabled) {
-		background: color-mix(in srgb, var(--cw-accent) 12%, transparent);
-		color: var(--cw-text-primary);
+		background-color: var(--cw-option-hover-bg);
+	}
+
+	.cw-language-switcher__menu:focus-visible .cw-language-switcher__option--active:not(:disabled) {
+		box-shadow: inset 0 0 0 var(--cw-focus-ring-width) var(--cw-focus-ring-color);
 	}
 
 	.cw-language-switcher__option--selected {
-		background: color-mix(in srgb, var(--cw-accent) 14%, transparent);
+		color: var(--cw-option-selected-text);
 	}
 
 	.cw-language-switcher__option:disabled {
 		cursor: not-allowed;
-		opacity: 0.58;
+		color: var(--cw-text-disabled);
 	}
 
 	.cw-language-switcher__check {
-		width: 0.95rem;
-		height: 0.95rem;
-		color: var(--cw-accent);
+		width: 1rem;
+		height: 1rem;
+		color: var(--cw-option-selected-text);
 	}
 
 	.cw-language-switcher__sr-only {

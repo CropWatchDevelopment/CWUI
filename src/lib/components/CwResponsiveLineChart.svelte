@@ -1,11 +1,12 @@
 <!--
   CwResponsiveLineChart — high-performance Canvas2D multi-series time chart
   for sensor telemetry. Touch-first (pan, pinch, tap-lock), dual Y-axes,
-  optional value-mapped temperature gradient, light/dark theming, threshold
-  lines, anomaly markers, explicit data-gap bands, and a responsive shell
-  with legend chips and range pills.
+  optional value-mapped temperature gradient, threshold lines, anomaly
+  markers, explicit data-gap bands, and a responsive shell with legend chips
+  and range pills.
 
-  Ported from the Claude Design "phone-tablet-desktop-line-chart" handoff.
+  Colours come from the CWUI theme tokens (`--cw-chart-*`), resolved at draw
+  time, so the chart follows the document's [data-theme] automatically.
 -->
 <script lang="ts" module>
 	import type {
@@ -19,6 +20,7 @@
 		CwResponsiveLineChangeEvent,
 		CwNoDataMessage
 	} from '../types/index.js';
+	import { formatCwNumber } from '../utils/cwFormat.js';
 
 	export type {
 		CwResponsiveLineSeries,
@@ -40,22 +42,26 @@
 	const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 	const clamp = (x: number, lo: number, hi: number) => (x < lo ? lo : x > hi ? hi : x);
 
-	// Cold→hot ramp for the temperature gradient. Every stop is a mid-luminance,
-	// saturated hue so the line stays legible on both the light (#fafaf7) and dark
-	// (#0e0e0c) chart backgrounds — the old cold stop was near-black and vanished
-	// against the dark theme. Cold reads as icy indigo/blue, hot as deep red.
+	// Cold→hot ramp for the temperature gradient. Every stop sits in the same
+	// luminance band so the line keeps ≥3:1 contrast against both theme chart
+	// surfaces (#293950 dark, #f7fafc light); the stops differ by hue only.
 	const TEMP_STOPS: { v: number; c: [number, number, number] }[] = [
-		{ v: -10, c: [99, 102, 241] }, // very cold — icy indigo
-		{ v: -2, c: [59, 130, 246] }, // cold — blue
-		{ v: 8, c: [14, 165, 233] }, // cool — sky
-		{ v: 18, c: [16, 185, 129] }, // mild — emerald
-		{ v: 26, c: [245, 158, 11] }, // warm — amber
-		{ v: 34, c: [239, 68, 68] }, // hot — red
-		{ v: 42, c: [190, 30, 32] } // very hot — deep red
+		{ v: -10, c: [122, 124, 243] }, // very cold — icy indigo
+		{ v: -2, c: [66, 134, 246] }, // cold — blue
+		{ v: 8, c: [12, 146, 206] }, // cool — sky
+		{ v: 18, c: [13, 156, 109] }, // mild — emerald
+		{ v: 26, c: [190, 122, 8] }, // warm — amber
+		{ v: 34, c: [240, 81, 81] }, // hot — red
+		{ v: 42, c: [235, 79, 131] } // very hot — crimson
 	];
 
+	/** CSS gradient matching TEMP_STOPS, for legend swatches. */
+	const TEMP_GRADIENT_CSS = `linear-gradient(90deg, ${TEMP_STOPS.map(
+		(stop, i) => `rgb(${stop.c.join(',')}) ${Math.round((i / (TEMP_STOPS.length - 1)) * 100)}%`
+	).join(', ')})`;
+
 	function tempColor(v: number | null): string {
-		if (v == null || Number.isNaN(v)) return 'rgb(120,120,120)';
+		if (v == null || Number.isNaN(v)) return 'rgb(123,138,160)';
 		if (v <= TEMP_STOPS[0].v) return rgb(TEMP_STOPS[0].c);
 		const last = TEMP_STOPS[TEMP_STOPS.length - 1];
 		if (v >= last.v) return rgb(last.c);
@@ -75,81 +81,59 @@
 	}
 	const rgb = ([r, g, b]: [number, number, number]) => `rgb(${r},${g},${b})`;
 
-	interface ChartTheme {
-		bg: string;
-		panel: string;
-		panelInset: string;
+	/** Canvas colours, resolved from CSS tokens at draw time. */
+	interface ChartPalette {
 		text: string;
 		subtle: string;
-		faint: string;
-		border: string;
-		borderStrong: string;
 		grid: string;
-		gridStrong: string;
 		threshold: string;
 		crosshair: string;
 		crosshairLocked: string;
 		gap: string;
+		gapHatch: string;
+		night: string;
 		tooltipBg: string;
 		tooltipBorder: string;
-		anomalyRing: string;
-		pillBg: string;
-		pillBgActive: string;
-		pillFgActive: string;
-		chipBg: string;
-		chipBgOff: string;
+		tooltipText: string;
+		tooltipMuted: string;
+		pointRing: string;
+		shadow: string;
+		font: string;
+		mono: string;
 	}
 
-	const THEMES: Record<CwResponsiveLineTheme, ChartTheme> = {
-		light: {
-			bg: '#fafaf7',
-			panel: '#ffffff',
-			panelInset: '#f4f3ee',
-			text: '#1a1a17',
-			subtle: '#6e6b65',
-			faint: '#a8a59f',
-			border: 'rgba(20,20,18,0.08)',
-			borderStrong: 'rgba(20,20,18,0.14)',
-			grid: 'rgba(20,20,18,0.06)',
-			gridStrong: 'rgba(20,20,18,0.12)',
-			threshold: 'rgba(20,20,18,0.25)',
-			crosshair: 'rgba(20,20,18,0.5)',
-			crosshairLocked: 'rgba(20,20,18,0.85)',
-			gap: 'rgba(20,20,18,0.04)',
-			tooltipBg: 'rgba(255,255,255,0.96)',
-			tooltipBorder: 'rgba(20,20,18,0.08)',
-			anomalyRing: '#fafaf7',
-			pillBg: '#ffffff',
-			pillBgActive: '#1a1a17',
-			pillFgActive: '#fafaf7',
-			chipBg: '#ffffff',
-			chipBgOff: 'transparent'
-		},
-		dark: {
-			bg: '#0e0e0c',
-			panel: '#18181a',
-			panelInset: '#222224',
-			text: '#f0eee9',
-			subtle: '#98948e',
-			faint: '#5a5650',
-			border: 'rgba(240,238,233,0.10)',
-			borderStrong: 'rgba(240,238,233,0.18)',
-			grid: 'rgba(240,238,233,0.05)',
-			gridStrong: 'rgba(240,238,233,0.10)',
-			threshold: 'rgba(240,238,233,0.22)',
-			crosshair: 'rgba(240,238,233,0.45)',
-			crosshairLocked: 'rgba(240,238,233,0.9)',
-			gap: 'rgba(240,238,233,0.05)',
-			tooltipBg: 'rgba(24,24,26,0.96)',
-			tooltipBorder: 'rgba(240,238,233,0.10)',
-			anomalyRing: '#0e0e0c',
-			pillBg: '#222224',
-			pillBgActive: '#f0eee9',
-			pillFgActive: '#0e0e0c',
-			chipBg: '#222224',
-			chipBgOff: 'transparent'
-		}
+	/** Token (or CSS colour expression) per palette slot, with a fallback. */
+	const PALETTE_TOKENS: Record<Exclude<keyof ChartPalette, 'font' | 'mono'>, string> = {
+		text: 'var(--cw-chart-card-title, #f6fbff)',
+		subtle: 'var(--cw-chart-card-muted, #bccddd)',
+		grid: 'var(--cw-chart-grid, rgba(128,128,128,0.35))',
+		threshold: 'var(--cw-chart-threshold, #bccddd)',
+		crosshair: 'var(--cw-chart-crosshair, #bccddd)',
+		crosshairLocked: 'var(--cw-chart-card-title, #f6fbff)',
+		gap: 'var(--cw-chart-gap-fill, rgba(128,128,128,0.1))',
+		gapHatch: 'color-mix(in srgb, var(--cw-chart-card-muted, #888) 22%, transparent)',
+		night: 'color-mix(in srgb, var(--cw-chart-card-muted, #888) 7%, transparent)',
+		tooltipBg: 'var(--cw-chart-tooltip-bg, #31455e)',
+		tooltipBorder: 'var(--cw-chart-tooltip-border, #7388a3)',
+		tooltipText: 'var(--cw-chart-tooltip-text, #eff6ff)',
+		tooltipMuted: 'var(--cw-chart-tooltip-muted, #d0dceb)',
+		pointRing: 'var(--cw-chart-card-bg, #293950)',
+		shadow: 'color-mix(in srgb, var(--cw-gray-950, #020618) 35%, transparent)'
 	};
+
+	/**
+	 * Normalizes a computed colour to a form every canvas implementation
+	 * accepts. Browsers may serialize color-mix() results as `color(srgb …)`.
+	 */
+	function toCanvasColor(value: string): string {
+		const m = /^color\(srgb\s+([\d.e-]+)\s+([\d.e-]+)\s+([\d.e-]+)(?:\s*\/\s*([\d.e-]+))?\)$/.exec(
+			value.trim()
+		);
+		if (!m) return value;
+		const [r, g, b] = [m[1], m[2], m[3]].map((c) => Math.round(clamp(parseFloat(c), 0, 1) * 255));
+		const a = m[4] === undefined ? 1 : clamp(parseFloat(m[4]), 0, 1);
+		return `rgba(${r},${g},${b},${a})`;
+	}
 
 	function niceY(min: number, max: number, target = 5) {
 		if (min === max) {
@@ -211,30 +195,27 @@
 		return { ticks, mode, step };
 	}
 
-	function fmtTime(ms: number, mode: 'time' | 'date') {
+	function fmtTime(ms: number, mode: 'time' | 'date', locale?: string) {
 		const d = new Date(ms);
 		if (mode === 'date') {
-			return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' });
+			return new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric' }).format(d);
 		}
-		return d
-			.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
-			.replace(' ', '');
+		return new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' }).format(d);
 	}
 
-	function fmtCrosshairTime(ms: number) {
+	function fmtCrosshairTime(ms: number, locale?: string) {
 		const d = new Date(ms);
-		const date = d.toLocaleDateString(undefined, {
+		const date = new Intl.DateTimeFormat(locale, {
 			weekday: 'short',
 			month: 'short',
 			day: 'numeric'
-		});
-		const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+		}).format(d);
+		const time = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' }).format(d);
 		return `${date} · ${time}`;
 	}
 
-	function fmtValue(v: number | null | undefined, decimals = 1) {
-		if (v == null || Number.isNaN(v)) return '—';
-		return v.toFixed(decimals);
+	function fmtValue(v: number | null | undefined, decimals = 1, locale?: string) {
+		return formatCwNumber(v, { decimals, locale });
 	}
 
 	function nearestIdx(data: CwResponsiveLineDataPoint[], t: number) {
@@ -300,10 +281,9 @@
 		return out;
 	}
 
-	function formatTick(v: number, step: number) {
-		if (step >= 1) return Math.round(v).toString();
-		if (step >= 0.1) return v.toFixed(1);
-		return v.toFixed(2);
+	function formatTick(v: number, step: number, locale?: string) {
+		const decimals = step >= 1 ? 0 : step >= 0.1 ? 1 : 2;
+		return formatCwNumber(v, { decimals, locale });
 	}
 
 	/** User-facing strings for {@link CwResponsiveLineChart}. All optional; English defaults are used when omitted. */
@@ -314,9 +294,9 @@
 		range24h?: string;
 		/** Label for the built-in 7-day range preset (default "7D"). Overridden by a custom `ranges` prop. */
 		range7d?: string;
-		/** Accessible label for the range-preset tab group (default "Time range"). */
+		/** Accessible label for the range-preset button group (default "Time range"). */
 		rangeGroupAria?: string;
-		/** Accessible label for the theme toggle button (default "Toggle theme"). */
+		/** Accessible label for the theme toggle button (default "Toggle theme"). Only used with `showThemeToggle`. */
 		toggleThemeAria?: string;
 		/** Legend heading; receives how many sensors are on and the total (default "Sensors · {on} of {total} on"). */
 		sensorsOnOf?: (on: number, total: number) => string;
@@ -326,8 +306,30 @@
 		dataGap?: string;
 		/** In-plot caption drawn over a data-gap band (default "no signal"). */
 		noSignal?: string;
-		/** Hint shown when scrolling without Ctrl held (default "Hold {Ctrl} + scroll to zoom", with {Ctrl} a styled key). */
+		/** Hint shown when scrolling without the zoom modifier held (default "Hold Ctrl + scroll to zoom"; "Ctrl" becomes "⌘" on Apple devices). */
 		zoomHint?: string;
+		/** Legend chip stat label for the minimum (default "min"). */
+		statMin?: string;
+		/** Legend chip stat label for the average (default "avg"). */
+		statAvg?: string;
+		/** Legend chip stat label for the maximum (default "max"). */
+		statMax?: string;
+		/** Short badge for a series on the left axis (default "L"). */
+		axisLeftShort?: string;
+		/** Short badge for a series on the right axis (default "R"). */
+		axisRightShort?: string;
+		/** Full name of the left axis, used for the badge's accessible label (default "Left axis"). */
+		axisLeft?: string;
+		/** Full name of the right axis, used for the badge's accessible label (default "Right axis"). */
+		axisRight?: string;
+		/** Accessible name for the plot when there is no `title` (default "Sensor chart"). */
+		chart?: string;
+		/** Screen-reader summary per visible series. Receives the label and formatted stats. */
+		seriesSummary?: (label: string, min: string, avg: string, max: string, latest: string) => string;
+		/** Keyboard help read after the summary. */
+		keyboardHint?: string;
+		/** Status text while `loading` is true (default "Loading chart data…"). */
+		loading?: string;
 		/** Title for a legend chip that cannot be hidden because it is the last visible series; receives the series label. */
 		lastSensorTitle?: (label: string) => string;
 		/** Title for a legend chip that will hide a visible series; receives the series label (default "Hide {label}"). */
@@ -347,6 +349,19 @@
 		dataGap: 'data gap',
 		noSignal: 'no signal',
 		zoomHint: 'Hold Ctrl + scroll to zoom',
+		statMin: 'min',
+		statAvg: 'avg',
+		statMax: 'max',
+		axisLeftShort: 'L',
+		axisRightShort: 'R',
+		axisLeft: 'Left axis',
+		axisRight: 'Right axis',
+		chart: 'Sensor chart',
+		seriesSummary: (label, min, avg, max, latest) =>
+			`${label}: minimum ${min}, average ${avg}, maximum ${max}, latest ${latest}.`,
+		keyboardHint:
+			'Use the left and right arrow keys to inspect readings, plus and minus to zoom, and 0 to reset.',
+		loading: 'Loading chart data…',
 		lastSensorTitle: (label) => `${label} — at least one sensor must stay visible`,
 		hideSeries: (label) => `Hide ${label}`,
 		showSeries: (label) => `Show ${label}`
@@ -362,8 +377,10 @@
 <script lang="ts">
 	import { onMount, onDestroy, untrack } from 'svelte';
 	import CwNoDataOverlay from './CwNoDataOverlay.svelte';
+	import CwSpinner from './CwSpinner.svelte';
 	import { getCwNoDataMessage, hasCwNoData } from './cwNoData.js';
 	import { resolveLineChartLayout } from '../utils/lineChartLayout.js';
+	import { joinCwUnit } from '../utils/cwFormat.js';
 
 	interface Props {
 		/** Series to render. The first one becomes the default left axis if not specified. */
@@ -376,12 +393,21 @@
 		title?: string;
 		/** Card sub-heading. */
 		subtitle?: string;
-		/** Initial theme. */
+		/**
+		 * Forces a theme for this chart only. When omitted (default) the chart
+		 * follows the document's `data-theme`, falling back to the OS preference.
+		 */
 		theme?: CwResponsiveLineTheme;
 		/** Track the OS color-scheme preference. Overrides `theme` while active. */
 		themeAuto?: boolean;
-		/** Show / hide the built-in theme toggle button. */
+		/** Show the built-in theme toggle button. Off by default: the app normally owns the theme. */
 		showThemeToggle?: boolean;
+		/** BCP 47 locale for numbers and dates. Defaults to the runtime locale. */
+		locale?: string;
+		/** Shows a loading state over the plot. */
+		loading?: boolean;
+		/** Accessible name for the plot. Defaults to `title`. */
+		ariaLabel?: string;
 		/** Range preset shortcuts. Set to `[]` to hide. Defaults to 1H / 24H / 7D (labels come from `labels`). */
 		ranges?: CwResponsiveLineRangePreset[];
 		/** Override display labels for i18n. English defaults are used for any omitted field. */
@@ -408,6 +434,10 @@
 		height?: number | string;
 		/** Render the chart inside the host's themed card or as a bare canvas. */
 		bare?: boolean;
+		/**
+		 * Shows the no-data overlay. When omitted, the overlay appears automatically
+		 * if no series has any readings; pass `false` to suppress it.
+		 */
 		noData?: CwNoDataMessage;
 		/** Optional className applied to the root element. */
 		class?: string;
@@ -421,9 +451,12 @@
 		dataEnd,
 		title = '',
 		subtitle = '',
-		theme = $bindable<CwResponsiveLineTheme>('light'),
+		theme = $bindable<CwResponsiveLineTheme | undefined>(undefined),
 		themeAuto = false,
-		showThemeToggle = true,
+		showThemeToggle = false,
+		locale,
+		loading = false,
+		ariaLabel,
 		ranges: rangesInput,
 		labels = {},
 		initialRange = '24h',
@@ -453,11 +486,14 @@
 	);
 
 	const series = $derived(seriesInput ?? []);
-	const hasNoData = $derived(hasCwNoData(noData));
+	const isEmpty = $derived(series.every((s) => !s.data?.some((p) => p.v != null && !Number.isNaN(p.v))));
+	const hasNoData = $derived(!loading && (noData === undefined ? isEmpty : hasCwNoData(noData)));
 	const noDataMessage = $derived(getCwNoDataMessage(noData));
 
 	let rootEl: HTMLDivElement;
 	let canvasEl: HTMLCanvasElement;
+	/** Hidden element used to resolve theme tokens into concrete colours. */
+	let probeEl: HTMLSpanElement;
 	let containerWidth = $state(0);
 	let containerHeight = $state(0);
 
@@ -470,6 +506,11 @@
 	/** Transient overlay shown when the user scrolls over the chart without Ctrl. */
 	let zoomHintVisible = $state(false);
 	let zoomHintTimer: ReturnType<typeof setTimeout> | null = null;
+	/** When the mouse last entered the plot; see onWheel. */
+	let hoverSince = 0;
+	const isApple =
+		typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
+	const zoomHintText = $derived(isApple ? l.zoomHint.replace(/\bCtrl\b/g, '⌘') : l.zoomHint);
 	function flashZoomHint() {
 		zoomHintVisible = true;
 		if (zoomHintTimer) clearTimeout(zoomHintTimer);
@@ -529,18 +570,66 @@
 	let compact = $derived(resolvedLayout === 'phone' || resolvedLayout === 'phone-land');
 	let sidebar = $derived(resolvedLayout === 'desktop' || resolvedLayout === 'tablet-land');
 
-	let themePalette = $derived<ChartTheme>(THEMES[theme] ?? THEMES.light);
+	// ── Theme ────────────────────────────────────────────────
+	// The chart follows the document theme ([data-theme] on <html>) unless a
+	// theme is forced via `theme` / `themeAuto`, in which case it scopes the
+	// theme tokens to itself with its own data-theme attribute.
+	let documentTheme = $state<CwResponsiveLineTheme>('dark');
+	let osTheme = $state<CwResponsiveLineTheme>('dark');
 
-	$effect(() => {
-		if (!themeAuto || typeof window === 'undefined' || !window.matchMedia) return;
-		const mq = window.matchMedia('(prefers-color-scheme: dark)');
-		const apply = () => {
-			theme = mq.matches ? 'dark' : 'light';
+	onMount(() => {
+		const html = document.documentElement;
+		const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
+		const readOs = () => {
+			osTheme = mq && !mq.matches ? 'light' : 'dark';
 		};
-		apply();
-		mq.addEventListener('change', apply);
-		return () => mq.removeEventListener('change', apply);
+		const readDoc = () => {
+			const attr = html.getAttribute('data-theme');
+			documentTheme = attr === 'light' || attr === 'dark' ? attr : osTheme;
+		};
+		readOs();
+		readDoc();
+		const onOsChange = () => {
+			readOs();
+			readDoc();
+		};
+		mq?.addEventListener('change', onOsChange);
+		const mo = new MutationObserver(readDoc);
+		mo.observe(html, { attributes: true, attributeFilter: ['data-theme'] });
+		return () => {
+			mq?.removeEventListener('change', onOsChange);
+			mo.disconnect();
+		};
 	});
+
+	const forcedTheme = $derived<CwResponsiveLineTheme | undefined>(themeAuto ? osTheme : theme);
+	const resolvedTheme = $derived<CwResponsiveLineTheme>(forcedTheme ?? documentTheme);
+
+	// Palette cache; cleared whenever the effective theme may have changed.
+	let palette: ChartPalette | null = null;
+	$effect(() => {
+		void resolvedTheme;
+		void forcedTheme;
+		palette = null;
+		schedule();
+	});
+
+	function readPalette(): ChartPalette {
+		if (palette) return palette;
+		const probe = probeEl;
+		const out = {} as ChartPalette;
+		for (const [key, expr] of Object.entries(PALETTE_TOKENS)) {
+			probe.style.color = '';
+			probe.style.color = expr;
+			(out as unknown as Record<string, string>)[key] = toCanvasColor(getComputedStyle(probe).color);
+		}
+		probe.style.color = '';
+		const rootStyle = getComputedStyle(rootEl);
+		out.font = rootStyle.getPropertyValue('--cw-font-family').trim() || 'system-ui, sans-serif';
+		out.mono = rootStyle.getPropertyValue('--cw-font-mono').trim() || 'ui-monospace, monospace';
+		palette = out;
+		return out;
+	}
 
 	function initView() {
 		const r = ranges.find((x) => x.id === initialRange);
@@ -597,6 +686,23 @@
 
 	let stats = $derived(legendStats());
 
+	/** Whether any visible series has a data gap inside the current view. */
+	let hasGapsInView = $derived.by(() => {
+		if (!showDataGaps) return false;
+		for (const s of visibleSeries) {
+			const gapMs = s.gapMs;
+			if (!gapMs) continue;
+			let last: number | null = null;
+			for (const dp of s.data) {
+				if (dp.t > viewEnd) break;
+				if (dp.v == null || Number.isNaN(dp.v)) continue;
+				if (last !== null && dp.t >= viewStart && dp.t - last > gapMs) return true;
+				last = dp.t;
+			}
+		}
+		return false;
+	});
+
 	// Anomaly detection makes three full passes over each series' points, so it
 	// is hoisted out of draw(): a crosshair/tooltip repaint reads this cache
 	// instead of recomputing the statistics per frame. Recomputes only when the
@@ -608,6 +714,11 @@
 			map.set(s.id, anomalyPoints(s.data, viewStart, viewEnd));
 		}
 		return map;
+	});
+
+	let hasAnomaliesInView = $derived.by(() => {
+		for (const pts of anomaliesBySeries.values()) if (pts.length) return true;
+		return false;
 	});
 
 	function fireChange() {
@@ -762,7 +873,7 @@
 		const ctx = cnv.getContext('2d');
 		if (!ctx) return;
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-		const T = themePalette;
+		const T = readPalette();
 		ctx.clearRect(0, 0, W, H);
 
 		const { axisWidth, pl, pr } = computeAxisLayout(W);
@@ -774,10 +885,11 @@
 		const plot = { x: pl, y: pt, w: Math.max(1, W - pl - pr), h: Math.max(1, H - pt - pb) };
 		// drop the per-axis unit crown when each axis is too narrow to fit a label
 		const showUnitCrowns = axisWidth >= 30 && !veryNarrow;
-		const tickFontPx = veryNarrow ? 8.5 : narrow ? 9 : compact ? 10 : 11;
-		const timeFontPx = veryNarrow ? 9 : narrow ? 9.5 : compact ? 10 : 11;
-		const thresholdFontPx = veryNarrow ? 8 : narrow ? 8.5 : compact ? 9 : 10;
-		const unitFontPx = veryNarrow ? 8 : narrow ? 8.5 : compact ? 9 : 10;
+		// 11px is the library's minimum legible chart text (--cw-chart-tick-size).
+		const tickFontPx = 11;
+		const timeFontPx = 11;
+		const thresholdFontPx = 11;
+		const unitFontPx = 11;
 
 		const span = viewEnd - viewStart || 1;
 		const xS = (t: number) => plot.x + ((t - viewStart) / span) * plot.w;
@@ -812,7 +924,7 @@
 
 		// night bands
 		if (showNightBands && viewEnd - viewStart <= 14 * DAY) {
-			ctx.fillStyle = T.gap;
+			ctx.fillStyle = T.night;
 			const dS = new Date(viewStart);
 			dS.setHours(0, 0, 0, 0);
 			for (let t = dS.getTime() - DAY; t < viewEnd; t += DAY) {
@@ -841,11 +953,11 @@
 		}
 		ctx.stroke();
 		ctx.fillStyle = T.subtle;
-		ctx.font = `500 ${timeFontPx}px Geist, system-ui, sans-serif`;
+		ctx.font = `500 ${timeFontPx}px ${T.font}`;
 		ctx.textBaseline = 'top';
 		ctx.textAlign = 'center';
 		for (const t of timeTicks) {
-			ctx.fillText(fmtTime(t, timeMode), xS(t), plot.y + plot.h + 4);
+			ctx.fillText(fmtTime(t, timeMode, locale), xS(t), plot.y + plot.h + 4);
 		}
 
 		// Collect every visible tick label, then run a minimum-gap pass per side
@@ -869,7 +981,7 @@
 				plot.y + plot.h - ((v - range.lo) / (range.hi - range.lo || 1)) * plot.h;
 			for (const v of range.ticks) {
 				const y = yS(v);
-				const item: TickLabel = { y, naturalY: y, text: formatTick(v, range.step), color: col };
+				const item: TickLabel = { y, naturalY: y, text: formatTick(v, range.step, locale), color: col };
 				(p.side === 'left' ? leftLabels : rightLabels).push(item);
 			}
 		}
@@ -896,7 +1008,7 @@
 		const tickPadX = compact ? 4 : 6;
 		const leftAnchorX = plot.x - tickPadX;
 		const rightAnchorX = plot.x + plot.w + tickPadX;
-		ctx.font = `500 ${tickFontPx}px "Geist Mono", ui-monospace, monospace`;
+		ctx.font = `500 ${tickFontPx}px ${T.mono}`;
 		ctx.textBaseline = 'middle';
 		ctx.textAlign = 'right';
 		for (const lbl of leftLabels) {
@@ -916,7 +1028,7 @@
 			for (const p of axisPlacements) {
 				const onSide = p.side === 'left' ? leftAxisCount : rightAxisCount;
 				if (onSide !== 1 || !p.series.unit) continue;
-				ctx.font = `700 ${unitFontPx}px Geist, system-ui, sans-serif`;
+				ctx.font = `700 ${unitFontPx}px ${T.font}`;
 				ctx.textBaseline = 'bottom';
 				ctx.textAlign = p.side === 'left' ? 'right' : 'left';
 				ctx.fillStyle = axisColorFor(p.series);
@@ -955,7 +1067,7 @@
 					ctx.stroke();
 					ctx.restore();
 					ctx.fillStyle = th.color || T.subtle;
-					ctx.font = `500 ${thresholdFontPx}px Geist, system-ui, sans-serif`;
+					ctx.font = `500 ${thresholdFontPx}px ${T.font}`;
 					ctx.textBaseline = 'bottom';
 					ctx.textAlign = 'left';
 					ctx.fillText(th.label, plot.x + 6, y - 2);
@@ -1051,6 +1163,18 @@
 						ctx.save();
 						ctx.fillStyle = T.gap;
 						ctx.fillRect(x0, plot.y, x1 - x0, plot.h);
+						// Diagonal hatch keeps gaps distinct from the (plain) night bands.
+						ctx.beginPath();
+						ctx.rect(x0, plot.y, x1 - x0, plot.h);
+						ctx.clip();
+						ctx.strokeStyle = T.gapHatch;
+						ctx.lineWidth = 1;
+						ctx.beginPath();
+						for (let hx = x0 - plot.h; hx < x1; hx += 8) {
+							ctx.moveTo(hx, plot.y + plot.h);
+							ctx.lineTo(hx + plot.h, plot.y);
+						}
+						ctx.stroke();
 						ctx.strokeStyle = T.threshold;
 						ctx.setLineDash([2, 3]);
 						ctx.lineWidth = 1;
@@ -1060,7 +1184,7 @@
 						ctx.stroke();
 						ctx.restore();
 						ctx.fillStyle = T.subtle;
-						ctx.font = `500 ${thresholdFontPx}px Geist, system-ui, sans-serif`;
+						ctx.font = `500 ${thresholdFontPx}px ${T.font}`;
 						ctx.textAlign = 'center';
 						ctx.textBaseline = 'top';
 						if (x1 - x0 > 36) ctx.fillText(l.noSignal, (x0 + x1) / 2, plot.y + 4);
@@ -1083,7 +1207,7 @@
 					const x = xS(p.t);
 					const y = yS(p.v as number);
 					ctx.beginPath();
-					ctx.fillStyle = T.anomalyRing;
+					ctx.fillStyle = T.pointRing;
 					ctx.arc(x, y, 5, 0, TAU);
 					ctx.fill();
 					ctx.beginPath();
@@ -1132,7 +1256,7 @@
 				const py = yS(dp.v as number);
 				const col = s.gradient ? tempColor(dp.v) : s.color;
 				ctx.beginPath();
-				ctx.fillStyle = T.anomalyRing;
+				ctx.fillStyle = T.pointRing;
 				ctx.arc(px2, py, 5, 0, TAU);
 				ctx.fill();
 				ctx.beginPath();
@@ -1143,22 +1267,22 @@
 			}
 
 			// tooltip
-			const ttFontPx = veryNarrow ? 9 : narrow ? 10 : compact ? 10 : 11;
+			const ttFontPx = narrow ? 11 : 12;
 			const padX = veryNarrow ? 7 : narrow ? 8 : 10;
 			const padY = veryNarrow ? 6 : narrow ? 7 : 8;
-			const lh = veryNarrow ? 12 : compact ? 14 : 16;
-			const titleFont = `600 ${ttFontPx}px Geist, system-ui, sans-serif`;
-			const labelFont = `500 ${ttFontPx}px Geist, system-ui, sans-serif`;
-			const valFont = `600 ${ttFontPx}px "Geist Mono", ui-monospace, monospace`;
+			const lh = compact ? 15 : 17;
+			const titleFont = `600 ${ttFontPx}px ${T.font}`;
+			const labelFont = `500 ${ttFontPx}px ${T.font}`;
+			const valFont = `600 ${ttFontPx}px ${T.mono}`;
 
 			ctx.font = titleFont;
-			const titleText = fmtCrosshairTime(t);
+			const titleText = fmtCrosshairTime(t, locale);
 			let w = ctx.measureText(titleText).width;
 			for (const r of readouts) {
 				ctx.font = labelFont;
 				const lw = ctx.measureText(r.s.label).width;
 				ctx.font = valFont;
-				const val = fmtValue(r.p.v, r.s.decimals ?? 1) + (r.s.unit ? ' ' + r.s.unit : '');
+				const val = joinCwUnit(fmtValue(r.p.v, r.s.decimals ?? 1, locale), r.s.unit);
 				const vw = ctx.measureText(val).width;
 				w = Math.max(w, lw + vw + 18);
 			}
@@ -1170,7 +1294,7 @@
 			const y = plot.y + 8;
 
 			ctx.save();
-			ctx.shadowColor = theme === 'dark' ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.12)';
+			ctx.shadowColor = T.shadow;
 			ctx.shadowBlur = 16;
 			ctx.shadowOffsetY = 4;
 			ctx.fillStyle = T.tooltipBg;
@@ -1182,7 +1306,7 @@
 			roundRect(ctx, x + 0.5, y + 0.5, boxW - 1, h - 1, 8);
 			ctx.stroke();
 
-			ctx.fillStyle = T.text;
+			ctx.fillStyle = T.tooltipText;
 			ctx.font = titleFont;
 			ctx.textAlign = 'left';
 			ctx.textBaseline = 'top';
@@ -1194,15 +1318,15 @@
 				ctx.beginPath();
 				ctx.arc(x + padX + 3, ry + lh / 2 - 1, 3, 0, TAU);
 				ctx.fill();
-				ctx.fillStyle = T.subtle;
+				ctx.fillStyle = T.tooltipMuted;
 				ctx.font = labelFont;
 				ctx.textBaseline = 'top';
 				ctx.textAlign = 'left';
 				ctx.fillText(r.s.label, x + padX + 12, ry);
-				ctx.fillStyle = T.text;
+				ctx.fillStyle = T.tooltipText;
 				ctx.font = valFont;
 				ctx.textAlign = 'right';
-				const val = fmtValue(r.p.v, r.s.decimals ?? 1) + (r.s.unit ? ' ' + r.s.unit : '');
+				const val = joinCwUnit(fmtValue(r.p.v, r.s.decimals ?? 1, locale), r.s.unit);
 				ctx.fillText(val, x + boxW - padX, ry);
 				ry += lh;
 			}
@@ -1218,7 +1342,7 @@
 		void crosshairX;
 		void crosshairLocked;
 		void axisPlacements;
-		void themePalette;
+		void resolvedTheme;
 		void containerWidth;
 		void containerHeight;
 		void showThresholds;
@@ -1356,7 +1480,11 @@
 		// instead of trapping the wheel inside the chart. A Mac trackpad
 		// pinch-zoom also arrives as a ctrlKey wheel event.
 		if (!e.ctrlKey && !e.metaKey) {
-			flashZoomHint();
+			// Only hint when the pointer has been resting on the chart. While the
+			// page scrolls, the chart slides under a stationary cursor and
+			// pointerenter fires just before the wheel events; hinting then
+			// would flash the overlay on every ordinary page scroll.
+			if (hoverSince && Date.now() - hoverSince > 800) flashZoomHint();
 			return;
 		}
 		e.preventDefault();
@@ -1382,6 +1510,122 @@
 		schedule();
 		fireChange();
 	}
+
+	function onPointerEnter(e: PointerEvent) {
+		if (e.pointerType === 'mouse') hoverSince = Date.now();
+	}
+
+	function onPointerLeave(e: PointerEvent) {
+		if (e.pointerType === 'mouse') {
+			hoverSince = 0;
+			if (!crosshairLocked && !pointers.size) {
+				crosshairX = null;
+				schedule();
+			}
+		}
+	}
+
+	// ── keyboard ─────────────────────────────────────────────
+	let liveMessage = $state('');
+
+	function describeAt(t: number): string {
+		const parts = [fmtCrosshairTime(t, locale)];
+		for (const s of visibleSeries) {
+			const dp = s.data[nearestIdx(s.data, t)];
+			if (!dp || dp.v == null) continue;
+			parts.push(`${s.label} ${joinCwUnit(fmtValue(dp.v, s.decimals ?? 1, locale), s.unit)}`);
+		}
+		return parts.join(', ');
+	}
+
+	function zoomBy(k: number) {
+		const span = viewEnd - viewStart;
+		const anchor =
+			crosshairX != null
+				? viewStart + clamp((crosshairX - plotGeometry().plotX) / plotGeometry().plotW, 0, 1) * span
+				: (viewStart + viewEnd) / 2;
+		const frac = span ? (anchor - viewStart) / span : 0.5;
+		const newSpan = clamp(span * k, MIN_SPAN, bounds.hi - bounds.lo);
+		viewStart = anchor - frac * newSpan;
+		viewEnd = viewStart + newSpan;
+		clampView();
+	}
+
+	function onKeydown(e: KeyboardEvent) {
+		if (hasNoData || loading) return;
+		const { plotX, plotW } = plotGeometry();
+		const current = crosshairX ?? plotX + plotW;
+		const step = plotW * (e.shiftKey ? 0.1 : 0.02);
+		let handled = true;
+		switch (e.key) {
+			case 'ArrowLeft':
+				crosshairX = clamp(current - step, plotX, plotX + plotW);
+				crosshairLocked = true;
+				break;
+			case 'ArrowRight':
+				crosshairX = clamp(current + step, plotX, plotX + plotW);
+				crosshairLocked = true;
+				break;
+			case 'Home':
+				crosshairX = plotX;
+				crosshairLocked = true;
+				break;
+			case 'End':
+				crosshairX = plotX + plotW;
+				crosshairLocked = true;
+				break;
+			case '+':
+			case '=':
+				zoomBy(0.75);
+				break;
+			case '-':
+			case '_':
+				zoomBy(1 / 0.75);
+				break;
+			case '0':
+				viewStart = bounds.lo;
+				viewEnd = bounds.hi;
+				break;
+			case 'Escape':
+				crosshairX = null;
+				crosshairLocked = false;
+				break;
+			default:
+				handled = false;
+		}
+		if (!handled) return;
+		e.preventDefault();
+		if (crosshairX != null) {
+			const t = viewStart + ((crosshairX - plotX) / plotW) * (viewEnd - viewStart);
+			liveMessage = describeAt(t);
+		} else {
+			liveMessage = '';
+		}
+		schedule();
+		fireChange();
+	}
+
+	function onPlotBlur() {
+		if (crosshairLocked && !pointers.size) {
+			crosshairLocked = false;
+			crosshairX = null;
+			schedule();
+		}
+	}
+
+	const srSummary = $derived.by(() => {
+		const lines: string[] = [];
+		for (const s of visibleSeries) {
+			const st = stats[s.id];
+			if (!st || st.last == null) continue;
+			const f = (v: number | null) => joinCwUnit(fmtValue(v, s.decimals ?? 1, locale), s.unit);
+			lines.push(l.seriesSummary(s.label, f(st.min), f(st.avg), f(st.max), f(st.last)));
+		}
+		if (lines.length) lines.push(l.keyboardHint);
+		return lines.join(' ');
+	});
+	const accessibleName = $derived(ariaLabel ?? (title || l.chart));
+	const uid = $props.id();
 
 	function onDblClick() {
 		viewStart = bounds.lo;
@@ -1452,10 +1696,7 @@
 	);
 
 	function swatchStyle(s: CwResponsiveLineSeries) {
-		if (s.gradient) {
-			return 'background: linear-gradient(90deg, #6366f1 0%, #3b82f6 15%, #0ea5e9 35%, #10b981 54%, #f59e0b 69%, #ef4444 85%, #be1e20 100%)';
-		}
-		return `background: ${s.color}`;
+		return `background: ${s.gradient ? TEMP_GRADIENT_CSS : s.color}`;
 	}
 
 	function axisSideFor(id: string): 'left' | 'right' | null {
@@ -1466,98 +1707,113 @@
 
 <div
 	bind:this={rootEl}
-	class="cw-rlc cw-no-data-host cw-rlc--{resolvedLayout} cw-rlc--{theme} {isXs
+	class="cw-rlc cw-no-data-host cw-rlc--{resolvedLayout} cw-rlc--{resolvedTheme} {isXs
 		? 'cw-rlc--xs'
 		: ''} {bare ? 'cw-rlc--bare' : ''} {className}"
 	class:cw-no-data-host--active={hasNoData}
-	style="--cw-rlc-bg:{themePalette.bg};
-		--cw-rlc-panel:{themePalette.panel};
-		--cw-rlc-panel-inset:{themePalette.panelInset};
-		--cw-rlc-text:{themePalette.text};
-		--cw-rlc-subtle:{themePalette.subtle};
-		--cw-rlc-faint:{themePalette.faint};
-		--cw-rlc-border:{themePalette.border};
-		--cw-rlc-border-strong:{themePalette.borderStrong};
-		--cw-rlc-pill-bg:{themePalette.pillBg};
-		--cw-rlc-pill-bg-active:{themePalette.pillBgActive};
-		--cw-rlc-pill-fg-active:{themePalette.pillFgActive};
-		--cw-rlc-chip-bg:{themePalette.chipBg};
-		--cw-rlc-chip-bg-off:{themePalette.chipBgOff};
-		height:{heightCss};"
+	data-theme={forcedTheme}
+	aria-busy={loading || undefined}
+	style="height:{heightCss};"
 >
-	<div class="cw-rlc__header">
-		<div class="cw-rlc__title-wrap">
-			{#if title}<div class="cw-rlc__title">{title}</div>{/if}
-			{#if subtitle}<div class="cw-rlc__subtitle">{subtitle}</div>{/if}
+	{#if title || subtitle || ranges.length > 0 || showThemeToggle}
+		<div class="cw-rlc__header">
+			<div class="cw-rlc__title-wrap">
+				{#if title}<div class="cw-rlc__title">{title}</div>{/if}
+				{#if subtitle}<div class="cw-rlc__subtitle">{subtitle}</div>{/if}
+			</div>
+			<div class="cw-rlc__controls">
+				{#if ranges.length > 0}
+					<div class="cw-rlc__pills" role="group" aria-label={l.rangeGroupAria}>
+						{#each ranges as r (r.id)}
+							<button
+								type="button"
+								aria-pressed={activeRange === r.id}
+								class="cw-rlc__pill {activeRange === r.id ? 'is-active' : ''}"
+								onclick={() => selectRange(r.id)}>{r.label}</button
+							>
+						{/each}
+					</div>
+				{/if}
+				{#if showThemeToggle && !themeAuto}
+					<button
+						type="button"
+						class="cw-rlc__theme-btn"
+						aria-label={l.toggleThemeAria}
+						onclick={() => (theme = resolvedTheme === 'dark' ? 'light' : 'dark')}
+					>
+						{#if resolvedTheme === 'dark'}
+							<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+								<circle cx="12" cy="12" r="4" />
+								<path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+							</svg>
+						{:else}
+							<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+								<path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" />
+							</svg>
+						{/if}
+					</button>
+				{/if}
+			</div>
 		</div>
-		<div class="cw-rlc__controls">
-			{#if ranges.length > 0}
-				<div class="cw-rlc__pills" role="tablist" aria-label={l.rangeGroupAria}>
-					{#each ranges as r (r.id)}
-						<button
-							type="button"
-							role="tab"
-							aria-selected={activeRange === r.id}
-							class="cw-rlc__pill {activeRange === r.id ? 'is-active' : ''}"
-							onclick={() => selectRange(r.id)}>{r.label}</button
-						>
-					{/each}
-				</div>
-			{/if}
-			{#if showThemeToggle && !themeAuto}
-				<button
-					type="button"
-					class="cw-rlc__theme-btn"
-					aria-label={l.toggleThemeAria}
-					onclick={() => (theme = theme === 'dark' ? 'light' : 'dark')}
-				>
-					{#if theme === 'dark'}
-						<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<circle cx="12" cy="12" r="4" />
-							<path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-						</svg>
-					{:else}
-						<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" />
-						</svg>
-					{/if}
-				</button>
-			{/if}
-		</div>
-	</div>
+	{/if}
 
-	<div class="cw-rlc__plot-wrap">
+	<!-- The plot is a labelled, focusable region: arrow keys move through readings
+	     (announced via the live region below), so it takes key handlers. -->
+	<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
+	<div
+		class="cw-rlc__plot-wrap"
+		role="group"
+		aria-label={accessibleName}
+		aria-describedby={srSummary ? `${uid}-summary` : undefined}
+		tabindex={hasNoData || loading ? undefined : 0}
+		onkeydown={onKeydown}
+		onblur={onPlotBlur}
+	>
 		<canvas
 			bind:this={canvasEl}
 			class="cw-rlc__canvas"
+			aria-hidden="true"
 			onpointerdown={onPointerDown}
 			onpointermove={onPointerMove}
 			onpointerup={onPointerUp}
 			onpointercancel={onPointerUp}
+			onpointerenter={onPointerEnter}
+			onpointerleave={onPointerLeave}
 			onwheel={onWheel}
 			ondblclick={onDblClick}
 		></canvas>
-		<div class="cw-rlc__plot-hints" aria-hidden="true">
-			<span class="cw-rlc__hint">
-				<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M12 2 L22 21 L2 21 Z" />
-					<path d="M12 9 L12 14" />
-					<circle cx="12" cy="17.5" r="0.8" fill="currentColor" />
-				</svg>
-				{l.anomaly}
-			</span>
-			<span class="cw-rlc__hint">
-				<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-					<path d="M3 12 L8 12" />
-					<path d="M16 12 L21 12" />
-					<path d="M11 8 L11 16 M13 8 L13 16" />
-				</svg>
-				{l.dataGap}
-			</span>
-		</div>
+		<span bind:this={probeEl} class="cw-rlc__probe" aria-hidden="true"></span>
+		<p id="{uid}-summary" class="cw-rlc__sr-only">{srSummary}</p>
+		<p class="cw-rlc__sr-only" aria-live="polite">{liveMessage}</p>
+		{#if (showAnomalies && hasAnomaliesInView) || hasGapsInView}
+			<div class="cw-rlc__plot-hints" aria-hidden="true">
+				{#if showAnomalies && hasAnomaliesInView}
+					<span class="cw-rlc__hint">
+						<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M12 2 L22 21 L2 21 Z" />
+							<path d="M12 9 L12 14" />
+							<circle cx="12" cy="17.5" r="0.8" fill="currentColor" />
+						</svg>
+						{l.anomaly}
+					</span>
+				{/if}
+				{#if hasGapsInView}
+					<span class="cw-rlc__hint">
+						<span class="cw-rlc__hint-hatch"></span>
+						{l.dataGap}
+					</span>
+				{/if}
+			</div>
+		{/if}
 		{#if zoomHintVisible}
 			<div class="cw-rlc__zoom-hint" aria-hidden="true">
-				{l.zoomHint}
+				{zoomHintText}
+			</div>
+		{/if}
+		{#if loading}
+			<div class="cw-rlc__loading" role="status">
+				<CwSpinner size="lg" />
+				<span>{l.loading}</span>
 			</div>
 		{/if}
 	</div>
@@ -1590,18 +1846,26 @@
 						<span class="cw-rlc__chip-text">
 							<span class="cw-rlc__chip-headline">
 								<span class="cw-rlc__chip-label">{s.label}</span>
-								{#if side}<span class="cw-rlc__chip-axis">{side === 'left' ? 'L' : 'R'}</span>{/if}
+								{#if side}
+									<span
+										class="cw-rlc__chip-axis"
+										title={side === 'left' ? l.axisLeft : l.axisRight}
+									>
+										<span aria-hidden="true">{side === 'left' ? l.axisLeftShort : l.axisRightShort}</span>
+										<span class="cw-rlc__sr-only">{side === 'left' ? l.axisLeft : l.axisRight}</span>
+									</span>
+								{/if}
 							</span>
 							{#if showLegendStats}
 								<span class="cw-rlc__chip-stats">
-									<span><em>min</em>{fmtValue(st?.min, s.decimals ?? 1)}</span>
-									<span><em>avg</em>{fmtValue(st?.avg, s.decimals ?? 1)}</span>
-									<span><em>max</em>{fmtValue(st?.max, s.decimals ?? 1)}</span>
+									<span><em>{l.statMin}</em>{fmtValue(st?.min, s.decimals ?? 1, locale)}</span>
+									<span><em>{l.statAvg}</em>{fmtValue(st?.avg, s.decimals ?? 1, locale)}</span>
+									<span><em>{l.statMax}</em>{fmtValue(st?.max, s.decimals ?? 1, locale)}</span>
 								</span>
 							{/if}
 						</span>
 						<span class="cw-rlc__chip-last">
-							<span class="cw-rlc__chip-last-value">{fmtValue(st?.last, s.decimals ?? 1)}</span>
+							<span class="cw-rlc__chip-last-value">{fmtValue(st?.last, s.decimals ?? 1, locale)}</span>
 							{#if s.unit}<span class="cw-rlc__chip-last-unit">{s.unit}</span>{/if}
 						</span>
 					</button>
@@ -1617,38 +1881,66 @@
 
 <style>
 	.cw-rlc {
+		/* Internal aliases onto the shared chart tokens. */
+		--cw-rlc-bg: var(--cw-chart-card-bg);
+		--cw-rlc-panel: var(--cw-chart-card-cell-bg);
+		--cw-rlc-panel-inset: var(--cw-bg-muted);
+		--cw-rlc-text: var(--cw-chart-card-title);
+		--cw-rlc-subtle: var(--cw-chart-card-muted);
+		--cw-rlc-faint: var(--cw-text-muted);
+		--cw-rlc-border: var(--cw-chart-card-cell-border);
+		--cw-rlc-border-strong: var(--cw-border-strong);
+		--cw-rlc-pill-bg-active: var(--cw-accent);
+		--cw-rlc-pill-fg-active: var(--cw-text-inverse);
+		--cw-rlc-chip-bg: var(--cw-chart-card-cell-bg);
+		--cw-rlc-chip-bg-off: transparent;
+
+		position: relative;
 		display: flex;
 		flex-direction: column;
-		gap: 12px;
+		gap: var(--cw-space-3);
 		width: 100%;
 		max-width: 100%;
 		min-width: 0;
-		padding: 16px;
+		padding: var(--cw-space-5);
 		box-sizing: border-box;
 		background: var(--cw-rlc-bg);
 		color: var(--cw-rlc-text);
-		font-family: Geist, 'Geist Fallback', system-ui, -apple-system, 'Segoe UI', sans-serif;
-		border-radius: 12px;
-		border: 1px solid var(--cw-rlc-border);
+		font-family: var(--cw-font-family);
+		border-radius: var(--cw-radius-2xl);
+		border: 1px solid var(--cw-chart-card-border);
+		box-shadow: var(--cw-chart-card-shadow);
 		min-height: 280px;
 		overflow: hidden;
 	}
 	.cw-rlc--bare {
 		background: transparent;
 		border: none;
+		box-shadow: none;
 		padding: 0;
 	}
-	.cw-rlc--phone,
-	.cw-rlc--phone-land {
-		padding: 6px;
-		gap: 6px;
+
+	.cw-rlc__probe {
+		display: none;
+	}
+	.cw-rlc__sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
+		border: 0;
 	}
 
+	/* ── Header ─────────────────────────────── */
 	.cw-rlc__header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 8px;
+		gap: var(--cw-space-2);
 		flex-shrink: 0;
 		flex-wrap: wrap;
 	}
@@ -1657,32 +1949,24 @@
 		flex: 1 1 0;
 	}
 	.cw-rlc__title {
-		font-size: 16px;
-		font-weight: 600;
-		letter-spacing: -0.015em;
+		font-size: var(--cw-text-lg);
+		font-weight: var(--cw-font-semibold);
+		line-height: var(--cw-leading-tight);
 		color: var(--cw-rlc-text);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 	.cw-rlc__subtitle {
-		font-size: 11px;
+		font-size: var(--cw-text-sm);
 		color: var(--cw-rlc-subtle);
-		margin-top: 1px;
-	}
-	.cw-rlc--phone .cw-rlc__title,
-	.cw-rlc--phone-land .cw-rlc__title {
-		font-size: 14px;
-	}
-	.cw-rlc--phone .cw-rlc__subtitle,
-	.cw-rlc--phone-land .cw-rlc__subtitle {
-		font-size: 10px;
+		margin-top: 0.125rem;
 	}
 
 	.cw-rlc__controls {
 		display: flex;
 		align-items: center;
-		gap: 6px;
+		gap: var(--cw-space-2);
 		flex-shrink: 0;
 	}
 
@@ -1690,7 +1974,7 @@
 		display: flex;
 		background: var(--cw-rlc-panel-inset);
 		padding: 2px;
-		border-radius: 8px;
+		border-radius: var(--cw-radius-lg);
 		border: 1px solid var(--cw-rlc-border);
 	}
 	.cw-rlc__pill {
@@ -1698,46 +1982,41 @@
 		background: transparent;
 		border: none;
 		cursor: pointer;
-		padding: 5px 12px;
+		min-height: var(--cw-hit-target-min);
+		padding: var(--cw-space-1) var(--cw-space-3);
 		font: inherit;
-		font-size: 11.5px;
-		font-weight: 600;
+		font-size: var(--cw-text-xs);
+		font-weight: var(--cw-font-semibold);
 		letter-spacing: 0.02em;
 		color: var(--cw-rlc-subtle);
-		border-radius: 6px;
+		border-radius: var(--cw-radius-md);
 		transition:
-			background 0.15s,
-			color 0.15s;
+			background var(--cw-duration-fast) var(--cw-ease-default),
+			color var(--cw-duration-fast) var(--cw-ease-default);
+	}
+	.cw-rlc__pill:hover:not(.is-active) {
+		color: var(--cw-rlc-text);
 	}
 	.cw-rlc__pill.is-active {
 		background: var(--cw-rlc-pill-bg-active);
 		color: var(--cw-rlc-pill-fg-active);
 	}
-	.cw-rlc--phone .cw-rlc__pill,
-	.cw-rlc--phone-land .cw-rlc__pill {
-		padding: 4px 10px;
-		font-size: 10.5px;
-	}
 
 	.cw-rlc__theme-btn {
 		appearance: none;
 		cursor: pointer;
-		width: 32px;
-		height: 32px;
+		width: 2rem;
+		height: 2rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		border-radius: 8px;
+		border-radius: var(--cw-radius-lg);
 		background: var(--cw-rlc-panel-inset);
 		border: 1px solid var(--cw-rlc-border);
 		color: var(--cw-rlc-text);
 	}
-	.cw-rlc--phone .cw-rlc__theme-btn,
-	.cw-rlc--phone-land .cw-rlc__theme-btn {
-		width: 28px;
-		height: 28px;
-	}
 
+	/* ── Plot ───────────────────────────────── */
 	.cw-rlc__plot-wrap {
 		position: relative;
 		flex: 1 1 auto;
@@ -1745,7 +2024,7 @@
 		min-width: 0;
 		min-height: 160px;
 		background: var(--cw-rlc-panel);
-		border-radius: 12px;
+		border-radius: var(--cw-radius-xl);
 		border: 1px solid var(--cw-rlc-border);
 		overflow: hidden;
 	}
@@ -1767,20 +2046,32 @@
 	}
 	.cw-rlc__plot-hints {
 		position: absolute;
-		left: 12px;
-		bottom: 8px;
+		left: var(--cw-space-3);
+		bottom: var(--cw-space-2);
 		display: flex;
-		gap: 10px;
+		gap: var(--cw-space-3);
 		align-items: center;
-		font-size: 9.5px;
+		font-size: var(--cw-chart-tick-size);
 		color: var(--cw-rlc-faint);
-		font-weight: 500;
+		font-weight: var(--cw-font-medium);
 		pointer-events: none;
 	}
 	.cw-rlc__hint {
 		display: inline-flex;
 		align-items: center;
-		gap: 4px;
+		gap: var(--cw-space-1);
+	}
+	.cw-rlc__hint-hatch {
+		display: inline-block;
+		width: 0.75rem;
+		height: 0.625rem;
+		border: 1px dashed currentColor;
+		background: repeating-linear-gradient(
+			135deg,
+			currentColor 0 1px,
+			transparent 1px 4px
+		);
+		opacity: 0.8;
 	}
 	.cw-rlc__zoom-hint {
 		position: absolute;
@@ -1788,32 +2079,54 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 6px;
-		font-size: 13px;
-		font-weight: 600;
-		color: #fff;
-		background: rgba(0, 0, 0, 0.45);
+		gap: var(--cw-space-2);
+		font-size: var(--cw-text-sm);
+		font-weight: var(--cw-font-semibold);
+		color: var(--cw-gray-50);
+		background: var(--cw-scrim);
 		pointer-events: none;
-		animation: cw-rlc-hint-fade 1.2s ease forwards;
+		animation: cw-rlc-hint-fade 1.2s var(--cw-ease-default) forwards;
 	}
 	@keyframes cw-rlc-hint-fade {
-		0% { opacity: 0; }
-		15% { opacity: 1; }
-		70% { opacity: 1; }
-		100% { opacity: 0; }
+		0% {
+			opacity: 0;
+		}
+		15% {
+			opacity: 1;
+		}
+		70% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+		}
 	}
+	.cw-rlc__loading {
+		position: absolute;
+		inset: 0;
+		z-index: var(--cw-z-inline-overlay);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--cw-space-2);
+		color: var(--cw-rlc-subtle);
+		font-size: var(--cw-text-sm);
+		background: color-mix(in srgb, var(--cw-rlc-panel) 70%, transparent);
+	}
+
+	/* ── Legend ─────────────────────────────── */
 	.cw-rlc__legend {
 		display: flex;
 		flex-direction: column;
-		gap: 6px;
+		gap: var(--cw-space-2);
 		flex-shrink: 0;
 		min-width: 0;
 		width: 100%;
 	}
 
 	.cw-rlc__legend-heading {
-		font-size: 9.5px;
-		font-weight: 700;
+		font-size: var(--cw-chart-tick-size);
+		font-weight: var(--cw-font-semibold);
 		letter-spacing: 0.08em;
 		color: var(--cw-rlc-subtle);
 		text-transform: uppercase;
@@ -1823,7 +2136,7 @@
 		display: flex;
 		flex-direction: row;
 		flex-wrap: wrap;
-		gap: 6px;
+		gap: var(--cw-space-2);
 		min-width: 0;
 		max-width: 100%;
 	}
@@ -1832,20 +2145,20 @@
 		cursor: pointer;
 		display: inline-flex;
 		align-items: center;
-		gap: 8px;
-		padding: 6px 10px;
+		gap: var(--cw-space-2);
+		padding: var(--cw-space-1) var(--cw-space-3);
 		background: var(--cw-rlc-chip-bg);
 		color: var(--cw-rlc-text);
 		border: 1px solid var(--cw-rlc-border);
-		border-radius: 999px;
+		border-radius: var(--cw-radius-full);
 		text-align: left;
 		font: inherit;
 		transition:
-			background 0.15s,
-			opacity 0.15s,
-			border-color 0.15s,
-			box-shadow 0.15s;
-		min-height: 32px;
+			background var(--cw-duration-fast) var(--cw-ease-default),
+			opacity var(--cw-duration-fast) var(--cw-ease-default),
+			border-color var(--cw-duration-fast) var(--cw-ease-default),
+			box-shadow var(--cw-duration-fast) var(--cw-ease-default);
+		min-height: 2rem;
 		max-width: 100%;
 	}
 	.cw-rlc__chip.is-on {
@@ -1857,127 +2170,15 @@
 	}
 	.cw-rlc__chip.is-off {
 		background: var(--cw-rlc-chip-bg-off);
-		opacity: 0.45;
+		opacity: 0.55;
 	}
-	/* ─ Class-based progressive scale-down ─
-	   Driven by `containerWidth` measured in JS so it's reliable even when
-	   children would otherwise force the container wider than the viewport. */
-	.cw-rlc--phone,
-	.cw-rlc--phone-land {
-		padding: 6px;
-		gap: 6px;
-	}
-	.cw-rlc--phone .cw-rlc__title,
-	.cw-rlc--phone-land .cw-rlc__title {
-		font-size: 13px;
-	}
-	.cw-rlc--phone .cw-rlc__subtitle,
-	.cw-rlc--phone-land .cw-rlc__subtitle {
-		font-size: 10px;
-	}
-	.cw-rlc--phone .cw-rlc__pill,
-	.cw-rlc--phone-land .cw-rlc__pill {
-		padding: 3px 8px;
-		font-size: 10.5px;
-	}
-	.cw-rlc--phone .cw-rlc__theme-btn,
-	.cw-rlc--phone-land .cw-rlc__theme-btn {
-		width: 28px;
-		height: 28px;
-	}
-	.cw-rlc--phone .cw-rlc__chip-stats,
-	.cw-rlc--phone-land .cw-rlc__chip-stats {
-		display: none;
-	}
-	.cw-rlc--phone .cw-rlc__chip,
-	.cw-rlc--phone-land .cw-rlc__chip {
-		padding: 3px 8px;
-		min-height: 24px;
-		gap: 5px;
-		max-width: 100%;
-	}
-	.cw-rlc--phone .cw-rlc__chip-label,
-	.cw-rlc--phone-land .cw-rlc__chip-label {
-		font-size: 10.5px;
-		max-width: 110px;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		display: inline-block;
-	}
-	.cw-rlc--phone .cw-rlc__chip-last-value,
-	.cw-rlc--phone-land .cw-rlc__chip-last-value {
-		font-size: 11.5px;
-	}
-	.cw-rlc--phone .cw-rlc__chip-last-unit,
-	.cw-rlc--phone-land .cw-rlc__chip-last-unit {
-		font-size: 8px;
-	}
-	.cw-rlc--phone .cw-rlc__chip-swatch,
-	.cw-rlc--phone-land .cw-rlc__chip-swatch {
-		width: 9px;
-		height: 9px;
-	}
-	.cw-rlc--phone .cw-rlc__chip-axis,
-	.cw-rlc--phone-land .cw-rlc__chip-axis {
-		font-size: 7.5px;
-		padding: 0 3px;
-	}
-	.cw-rlc--phone .cw-rlc__legend-heading,
-	.cw-rlc--phone-land .cw-rlc__legend-heading {
-		font-size: 9px;
-	}
-	.cw-rlc--phone .cw-rlc__plot-wrap,
-	.cw-rlc--phone-land .cw-rlc__plot-wrap {
-		min-height: 140px;
-	}
-
-	/* extra-small: < 380px */
-	.cw-rlc--xs {
-		padding: 4px;
-		gap: 5px;
-		min-height: 240px;
-	}
-	.cw-rlc--xs .cw-rlc__title {
-		font-size: 12px;
-	}
-	.cw-rlc--xs .cw-rlc__subtitle {
-		font-size: 9.5px;
-	}
-	.cw-rlc--xs .cw-rlc__pill {
-		padding: 3px 7px;
-		font-size: 10px;
-	}
-	.cw-rlc--xs .cw-rlc__theme-btn {
-		width: 26px;
-		height: 26px;
-	}
-	.cw-rlc--xs .cw-rlc__chip {
-		padding: 3px 7px;
-		min-height: 22px;
-		gap: 4px;
-	}
-	.cw-rlc--xs .cw-rlc__chip-label {
-		font-size: 10px;
-		max-width: 86px;
-	}
-	.cw-rlc--xs .cw-rlc__chip-last-value {
-		font-size: 11px;
-	}
-	.cw-rlc--xs .cw-rlc__chip-last-unit {
-		font-size: 7.5px;
-	}
-	.cw-rlc--xs .cw-rlc__chip-swatch {
-		width: 8px;
-		height: 8px;
-	}
-	.cw-rlc--xs .cw-rlc__plot-wrap {
-		min-height: 120px;
+	.cw-rlc__chip.is-off .cw-rlc__chip-label {
+		text-decoration: line-through;
 	}
 	.cw-rlc__chip-swatch {
-		width: 12px;
-		height: 12px;
-		border-radius: 3px;
+		width: 0.75rem;
+		height: 0.75rem;
+		border-radius: var(--cw-radius-sm);
 		flex-shrink: 0;
 	}
 	.cw-rlc__chip.is-off .cw-rlc__chip-swatch {
@@ -1993,33 +2194,32 @@
 	.cw-rlc__chip-headline {
 		display: flex;
 		align-items: baseline;
-		gap: 5px;
+		gap: var(--cw-space-1);
 	}
 	.cw-rlc__chip-label {
-		font-size: 12px;
-		font-weight: 600;
-		letter-spacing: -0.005em;
+		font-size: var(--cw-text-xs);
+		font-weight: var(--cw-font-semibold);
 		white-space: nowrap;
 	}
 	.cw-rlc__chip-axis {
-		font-size: 8.5px;
+		font-size: var(--cw-chart-tick-size);
 		color: var(--cw-rlc-subtle);
-		font-weight: 700;
+		font-weight: var(--cw-font-bold);
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		padding: 0 4px;
+		padding: 0 0.25rem;
 		border: 1px solid var(--cw-rlc-border);
-		border-radius: 3px;
+		border-radius: var(--cw-radius-sm);
 		line-height: 1.3;
 	}
 	.cw-rlc__chip-stats {
 		display: flex;
-		gap: 8px;
-		font-family: 'Geist Mono', ui-monospace, monospace;
-		font-size: 9.5px;
+		gap: var(--cw-space-2);
+		font-family: var(--cw-font-mono);
+		font-size: var(--cw-chart-tick-size);
 		color: var(--cw-rlc-subtle);
 		font-variant-numeric: tabular-nums;
-		line-height: 1.1;
+		line-height: 1.2;
 	}
 	.cw-rlc__chip-stats em {
 		font-style: normal;
@@ -2029,28 +2229,108 @@
 	.cw-rlc__chip-last {
 		display: inline-flex;
 		align-items: baseline;
-		gap: 3px;
+		gap: 0.1875rem;
 		flex-shrink: 0;
 		margin-left: 2px;
 	}
 	.cw-rlc__chip-last-value {
-		font-family: 'Geist Mono', ui-monospace, monospace;
-		font-size: 13px;
-		font-weight: 600;
+		font-family: var(--cw-font-mono);
+		font-size: var(--cw-text-sm);
+		font-weight: var(--cw-font-semibold);
 		color: var(--cw-rlc-text);
 		font-variant-numeric: tabular-nums;
-		letter-spacing: -0.01em;
 	}
 	.cw-rlc__chip-last-unit {
-		font-size: 9px;
+		font-size: var(--cw-chart-tick-size);
 		color: var(--cw-rlc-faint);
-		font-weight: 500;
+		font-weight: var(--cw-font-medium);
 	}
 
 	.cw-rlc__chip:focus-visible,
 	.cw-rlc__pill:focus-visible,
-	.cw-rlc__theme-btn:focus-visible {
-		outline: 2px solid currentColor;
-		outline-offset: 2px;
+	.cw-rlc__theme-btn:focus-visible,
+	.cw-rlc__plot-wrap:focus-visible {
+		outline: var(--cw-focus-ring-width) solid var(--cw-focus-ring-color);
+		outline-offset: var(--cw-focus-ring-offset);
+	}
+
+	/* ─ Class-based progressive scale-down ─
+	   Driven by `containerWidth` measured in JS so it's reliable even when
+	   children would otherwise force the container wider than the viewport.
+	   Text never drops below --cw-chart-tick-size (11px). */
+	.cw-rlc--phone,
+	.cw-rlc--phone-land {
+		padding: var(--cw-space-3);
+		gap: var(--cw-space-2);
+	}
+	.cw-rlc--phone .cw-rlc__title,
+	.cw-rlc--phone-land .cw-rlc__title {
+		font-size: var(--cw-text-base);
+	}
+	.cw-rlc--phone .cw-rlc__subtitle,
+	.cw-rlc--phone-land .cw-rlc__subtitle {
+		font-size: var(--cw-text-xs);
+	}
+	.cw-rlc--phone .cw-rlc__pill,
+	.cw-rlc--phone-land .cw-rlc__pill {
+		padding: var(--cw-space-1) var(--cw-space-2);
+		font-size: var(--cw-chart-tick-size);
+	}
+	.cw-rlc--phone .cw-rlc__theme-btn,
+	.cw-rlc--phone-land .cw-rlc__theme-btn {
+		width: 1.75rem;
+		height: 1.75rem;
+	}
+	.cw-rlc--phone .cw-rlc__chip-stats,
+	.cw-rlc--phone-land .cw-rlc__chip-stats {
+		display: none;
+	}
+	.cw-rlc--phone .cw-rlc__chip,
+	.cw-rlc--phone-land .cw-rlc__chip {
+		padding: 0.125rem var(--cw-space-2);
+		min-height: var(--cw-hit-target-min);
+		gap: var(--cw-space-1);
+	}
+	.cw-rlc--phone .cw-rlc__chip-label,
+	.cw-rlc--phone-land .cw-rlc__chip-label {
+		font-size: var(--cw-chart-tick-size);
+		max-width: 110px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		display: inline-block;
+	}
+	.cw-rlc--phone .cw-rlc__chip-last-value,
+	.cw-rlc--phone-land .cw-rlc__chip-last-value {
+		font-size: var(--cw-text-xs);
+	}
+	.cw-rlc--phone .cw-rlc__chip-swatch,
+	.cw-rlc--phone-land .cw-rlc__chip-swatch {
+		width: 0.5625rem;
+		height: 0.5625rem;
+	}
+	.cw-rlc--phone .cw-rlc__plot-wrap,
+	.cw-rlc--phone-land .cw-rlc__plot-wrap {
+		min-height: 140px;
+	}
+
+	/* extra-small: < 380px */
+	.cw-rlc--xs {
+		padding: var(--cw-space-2);
+		gap: var(--cw-space-2);
+		min-height: 240px;
+	}
+	.cw-rlc--xs .cw-rlc__title {
+		font-size: var(--cw-text-sm);
+	}
+	.cw-rlc--xs .cw-rlc__chip-label {
+		max-width: 86px;
+	}
+	.cw-rlc--xs .cw-rlc__plot-wrap {
+		min-height: 120px;
+	}
+
+	/* Bare mode never pads, whatever the layout class. */
+	.cw-rlc.cw-rlc--bare {
+		padding: 0;
 	}
 </style>

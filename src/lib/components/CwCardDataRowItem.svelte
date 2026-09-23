@@ -11,6 +11,7 @@
 		resolveCwExpireAfterMs,
 		resolveCwLastSeenAt
 	} from '../utils/cwTimeout.js';
+	import { formatCwNumber } from '../utils/cwFormat.js';
 
 	type IconContent = CwCardDataRowItemData['icon'];
 
@@ -31,6 +32,10 @@
 		alarmCallback?: () => void;
 		/** Legacy alias for `onTimeoutReset`. */
 		alarmResetCallback?: () => void;
+		/** Suffix shown after a relative "last seen" duration. */
+		agoLabel?: string;
+		/** Text shown when `value` is missing. */
+		emptyValueLabel?: string;
 	}
 
 	const internalAlarmScheduler = createCwAlarmScheduler();
@@ -59,8 +64,18 @@
 		alarmCallback,
 		AlarmCallback,
 		alarmResetCallback,
-		AlarmResetCallback
+		AlarmResetCallback,
+		agoLabel = 'ago',
+		emptyValueLabel = 'N/A'
 	}: Props = $props();
+
+	const displayValue = $derived(
+		value == null || value === ''
+			? emptyValueLabel
+			: typeof value === 'number'
+				? formatCwNumber(value, { empty: emptyValueLabel })
+				: value
+	);
 
 	onDestroy(() => {
 		internalAlarmScheduler.clear();
@@ -167,9 +182,9 @@
 			<span class="cw-card-data-row-item__number">
 				<CwDuration from={resolvedLastSeenAt} />
 			</span>
-			<span class="cw-card-data-row-item__unit">ago</span>
+			<span class="cw-card-data-row-item__unit">{agoLabel}</span>
 		{:else}
-			<span class="cw-card-data-row-item__number">{value ?? 'N/A'}</span>
+			<span class="cw-card-data-row-item__number">{displayValue}</span>
 			{#if unit}
 				<span class="cw-card-data-row-item__unit">{unit}</span>
 			{/if}
@@ -215,16 +230,17 @@
 		height: 1rem;
 	}
 
+	/* Tone text tokens meet ≥3:1 non-text contrast in both themes. */
 	.cw-card-data-row-item__icon--drop {
-		color: var(--cw-info-300);
+		color: var(--cw-tone-info-text);
 	}
 
 	.cw-card-data-row-item__icon--thermo {
-		color: #f36d5b;
+		color: var(--cw-tone-danger-text);
 	}
 
 	.cw-card-data-row-item__icon--timer {
-		color: var(--cw-warning-300);
+		color: var(--cw-tone-warning-text);
 	}
 
 	.cw-card-data-row-item__label {
@@ -240,8 +256,9 @@
 		justify-content: flex-end;
 		gap: var(--cw-space-1);
 		min-width: 0;
-		font-weight: var(--cw-font-bold);
+		font-weight: var(--cw-font-semibold);
 		color: var(--cw-text-primary);
+		font-variant-numeric: tabular-nums;
 	}
 
 	.cw-card-data-row-item__number {
@@ -251,6 +268,7 @@
 
 	.cw-card-data-row-item__unit {
 		font-size: var(--cw-text-xs);
+		font-weight: var(--cw-font-medium);
 		color: var(--cw-text-muted);
 		white-space: nowrap;
 	}
@@ -260,7 +278,7 @@
 		color: var(--cw-text-muted);
 		font-size: var(--cw-text-sm);
 	}
-	
+
 	@media (max-width: 480px) {
 		.cw-card-data-row-item {
 			align-items: flex-start;

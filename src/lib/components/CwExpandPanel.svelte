@@ -33,24 +33,18 @@
 		onToggle?.(open);
 	}
 
-	function onKeydown(e: KeyboardEvent) {
-		if (e.key === 'Enter' || e.key === ' ') {
-			e.preventDefault();
-			toggle();
-		}
-	}
+	const uid = $props.id();
 </script>
 
-<div class="cw-expand {className}" class:cw-expand--open={open} class:cw-expand--disabled={disabled}>
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div
+<div class={['cw-expand', open && 'cw-expand--open', disabled && 'cw-expand--disabled', className]}>
+	<button
+		type="button"
 		class="cw-expand__header"
-		role="button"
-		tabindex={disabled ? -1 : 0}
+		id="{uid}-header"
 		aria-expanded={open}
-		aria-disabled={disabled}
+		aria-controls="{uid}-body"
+		{disabled}
 		onclick={toggle}
-		onkeydown={onKeydown}
 	>
 		<span class="cw-expand__header-content">
 			{#if header}
@@ -61,13 +55,27 @@
 		</span>
 
 		<svg class="cw-expand__chevron" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-			<path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+			<path
+				d="M4 6l4 4 4-4"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			/>
 		</svg>
-	</div>
+	</button>
 
-	<div class="cw-expand__body-wrapper" aria-hidden={!open}>
+	<div
+		class="cw-expand__body-wrapper"
+		id="{uid}-body"
+		role="region"
+		aria-labelledby="{uid}-header"
+		inert={!open}
+	>
 		<div class="cw-expand__body">
-			{@render children?.()}
+			<div class="cw-expand__body-inner">
+				{@render children?.()}
+			</div>
 		</div>
 	</div>
 </div>
@@ -83,6 +91,11 @@
 
 	/* ── Header ──────────────────────── */
 	.cw-expand__header {
+		width: 100%;
+		border: none;
+		font: inherit;
+		color: inherit;
+		text-align: start;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -99,14 +112,14 @@
 	}
 
 	.cw-expand__header:focus-visible {
-		outline: 2px solid var(--cw-accent);
-		outline-offset: -2px;
+		outline: var(--cw-focus-ring-width) solid var(--cw-focus-ring-color);
+		outline-offset: calc(-1 * var(--cw-focus-ring-width));
 		border-radius: var(--cw-radius-md);
 	}
 
 	.cw-expand--disabled .cw-expand__header {
 		cursor: not-allowed;
-		opacity: 0.5;
+		opacity: var(--cw-opacity-disabled);
 	}
 	.cw-expand--disabled .cw-expand__header:hover {
 		background-color: transparent;
@@ -151,7 +164,9 @@
 		overflow: hidden;
 	}
 
-	.cw-expand--open .cw-expand__body {
+	/* Padding lives on an inner wrapper so it animates with the height
+	   instead of snapping when the panel toggles. */
+	.cw-expand__body-inner {
 		padding: 0 var(--cw-space-4) var(--cw-space-4);
 	}
 </style>

@@ -78,6 +78,8 @@
 		srSpeed?: (speed: string) => string;
 		/** SR-summary line: `"Beaufort 4, Moderate"`. */
 		srBeaufort?: (force: number, label: string) => string;
+		/** Accessible text announced while `loading` is true. Default `"Loading wind data"`. */
+		loading?: string;
 	}
 
 	const DEFAULT_BEAUFORT_NAMES = [
@@ -140,6 +142,7 @@
 		srSpeed: (speed: string) => `Speed ${speed}`,
 		srBeaufort: (force: number, label: string) =>
 			`Beaufort ${force}, ${label}`,
+		loading: "Loading wind data",
 	};
 </script>
 
@@ -149,6 +152,7 @@
 		CwWindDirectionConvention,
 		CwWindSpeedUnit,
 	} from "../types/index.js";
+	import { CW_EMPTY_VALUE, isCwFiniteNumber } from "../utils/cwFormat.js";
 	import CwNoDataOverlay from "./CwNoDataOverlay.svelte";
 	import { getCwNoDataMessage, hasCwNoData } from "./cwNoData.js";
 
@@ -183,7 +187,15 @@
 		 * ("N", "NE", "ESE", …) of the FROM direction. Use with `bind:cardinal`.
 		 */
 		cardinal?: string;
+		/**
+		 * Show the no-data overlay. When omitted the overlay appears automatically
+		 * if both `direction` and `speed` are missing.
+		 */
 		noData?: CwNoDataMessage;
+		/** Hide the arrow and values while data is loading. */
+		loading?: boolean;
+		/** BCP 47 locale for numbers and dates. Defaults to the runtime locale. */
+		locale?: string;
 		/** Override display strings for i18n. English defaults are used for any omitted field. */
 		labels?: CwWindCompassLabels;
 		class?: string;
@@ -201,6 +213,8 @@
 		showSummary = true,
 		cardinal = $bindable(""),
 		noData,
+		loading = false,
+		locale,
 		labels = {},
 		class: className = "",
 	}: Props = $props();
@@ -278,7 +292,12 @@
 		return l.cardinals[idx] ?? DEFAULT_CARDINALS[idx];
 	}
 
-	const hasNoData = $derived(hasCwNoData(noData));
+	/** Missing readings render as "—" — never as a fake 0° / N / Calm. */
+	const hasDirection = $derived(!loading && isCwFiniteNumber(direction));
+	const hasSpeed = $derived(!loading && isCwFiniteNumber(speed));
+	const hasNoData = $derived(
+		!loading && (hasCwNoData(noData) || (!hasDirection && !hasSpeed)),
+	);
 	const noDataMessage = $derived(getCwNoDataMessage(noData));
 	const directionValue = $derived(toFiniteNumber(direction, 0));
 	const speedValue = $derived(toFiniteNumber(speed, 0));
@@ -406,21 +425,56 @@
 	);
 
 	/* ── Formatting ───────────────────────────────────────── */
-	const speedFormatter = new Intl.NumberFormat(undefined, {
-		minimumFractionDigits: 0,
-		maximumFractionDigits: 1,
-	});
-	const directionFormatter = new Intl.NumberFormat(undefined, {
-		minimumFractionDigits: 0,
-		maximumFractionDigits: 0,
+	const speedFormatter = $derived(
+		new Intl.NumberFormat(locale, {
+			minimumFractionDigits: 0,
+			maximumFractionDigits: 1,
+		}),
+	);
+	const directionFormatter = $derived(
+		new Intl.NumberFormat(locale, {
+			minimumFractionDigits: 0,
+			maximumFractionDigits: 0,
+		}),
+	);
+
+	const formattedSpeed = $derived(
+		hasSpeed ? `${speedFormatter.format(speedValue)}\u00a0${unit}` : CW_EMPTY_VALUE,
+	);
+	const formattedDirection = $derived(
+		hasDirection
+			? `${directionFormatter.format(normalizedDirection)}°`
+			: CW_EMPTY_VALUE,
+	);
+	const directionCardinal = $derived(
+		hasDirection ? cardinalLabel(fromDirection) : "",
+	);
+	const flowCardinal = $derived(
+		hasDirection ? cardinalLabel(flowDirection) : CW_EMPTY_VALUE,
+	);
+
+	/*
+	 * Arrow rotation is accumulated so the needle always turns the short way
+	 * (e.g. 359° → 1° rotates +2°, not −358°).
+	 */
+	let lastArrowRotation: number | null = null;
+	const arrowRotation = $derived.by(() => {
+		const target = flowDirection;
+		if (lastArrowRotation === null) {
+			lastArrowRotation = target;
+			return target;
+		}
+		const current = ((lastArrowRotation % 360) + 360) % 360;
+		const delta = ((target - current + 540) % 360) - 180;
+		lastArrowRotation += delta;
+		return lastArrowRotation;
 	});
 
-	const formattedSpeed = $derived(`${speedFormatter.format(speedValue)} ${unit}`);
-	const formattedDirection = $derived(
-		`${directionFormatter.format(normalizedDirection)}°`,
-	);
-	const directionCardinal = $derived(cardinalLabel(fromDirection));
-	const flowCardinal = $derived(cardinalLabel(flowDirection));
+	/* Keep SVG labels legible (≥ ~11px rendered) as the dial shrinks. */
+	const svgScale = $derived(VIEWBOX / Math.max(1, size));
+	const degLabelSize = $derived(Math.max(12, 11 * svgScale));
+	const cardinalSize = $derived(Math.max(19, 13 * svgScale));
+	const showDegLabels = $derived(size >= 240);
 
 	function formatUpdatedAt(value: string | Date | number): string {
 		try {
@@ -430,7 +484,7 @@
 				d = new Date(value > 1e11 ? value : value * 1000);
 			else d = new Date(value);
 			if (Number.isNaN(d.getTime())) return "";
-			return d.toLocaleString(undefined, {
+			return d.toLocaleString(locale, {
 				month: "short",
 				day: "numeric",
 				hour: "2-digit",
@@ -445,14 +499,18 @@
 		timestamp === undefined ? "" : formatUpdatedAt(timestamp),
 	);
 
-	const formattedSpeedValue = $derived(speedFormatter.format(speedValue));
+	const formattedSpeedValue = $derived(
+		hasSpeed ? speedFormatter.format(speedValue) : CW_EMPTY_VALUE,
+	);
 	const secondaryShown = $derived(
 		secondaryUnit !== undefined && secondaryUnit !== unit,
 	);
 	const secondarySpeedValue = $derived(
 		secondaryUnit === undefined
 			? ""
-			: speedFormatter.format(fromMs(speedMs, secondaryUnit)),
+			: hasSpeed
+				? speedFormatter.format(fromMs(speedMs, secondaryUnit))
+				: CW_EMPTY_VALUE,
 	);
 
 	/* Push the cardinal abbreviation back to bindable output. */
@@ -482,12 +540,15 @@
 	);
 
 	const srSummary = $derived(
-		[
-			heading,
-			l.srWind(conventionWord, formattedDirection, directionCardinal),
-			l.srSpeed(formattedSpeed),
-			l.srBeaufort(beaufort.force, beaufortName),
-		].join(". "),
+		loading
+			? l.loading
+			: [
+					l.srWind(conventionWord, formattedDirection, directionCardinal),
+					l.srSpeed(formattedSpeed),
+					hasSpeed ? l.srBeaufort(beaufort.force, beaufortName) : "",
+				]
+					.filter(Boolean)
+					.join(". "),
 	);
 </script>
 
@@ -500,20 +561,23 @@
 	]}
 	style:--cw-wind-size="{size}px"
 	aria-labelledby="{uid}-title"
+	aria-busy={loading || undefined}
 >
 	<header class="cw-wind-compass__header">
 		<div class="cw-wind-compass__header-copy">
 			<p class="cw-wind-compass__eyebrow">{l.eyebrow}</p>
 			<div class="cw-wind-compass__title-row">
 				<h3 id="{uid}-title" class="cw-wind-compass__title">{heading}</h3>
-				<span
-					class={[
-						"cw-wind-compass__beaufort-pill",
-						`cw-wind-compass__beaufort-pill--${beaufort.tone}`,
-					]}
-				>
-					{l.beaufortPill(beaufort.force, beaufortName)}
-				</span>
+				{#if hasSpeed}
+					<span
+						class={[
+							"cw-wind-compass__beaufort-pill",
+							`cw-wind-compass__beaufort-pill--${beaufort.tone}`,
+						]}
+					>
+						{l.beaufortPill(beaufort.force, beaufortName)}
+					</span>
+				{/if}
 			</div>
 			{#if l.subtitle}
 				<p class="cw-wind-compass__subtitle">{l.subtitle}</p>
@@ -544,6 +608,7 @@
 			width={size}
 			height={size}
 			role="img"
+			aria-labelledby="{uid}-title"
 			aria-describedby="{uid}-summary"
 		>
 			<defs>
@@ -614,17 +679,20 @@
 			{/each}
 
 			<!-- Number labels (e.g. 03, 06, 12, 15…) -->
-			{#each numberTicks as nt (nt.angle)}
-				<text
-					x={nt.x}
-					y={nt.y}
-					text-anchor="middle"
-					dominant-baseline="central"
-					class="cw-wind-compass__deg-label"
-				>
-					{nt.label}
-				</text>
-			{/each}
+			{#if showDegLabels}
+				{#each numberTicks as nt (nt.angle)}
+					<text
+						x={nt.x}
+						y={nt.y}
+						text-anchor="middle"
+						dominant-baseline="central"
+						class="cw-wind-compass__deg-label"
+						font-size={degLabelSize}
+					>
+						{nt.label}
+					</text>
+				{/each}
+			{/if}
 
 			<!-- Cardinal letters -->
 			{#each cardinalPositions as c (c.key)}
@@ -633,6 +701,7 @@
 					y={c.y}
 					text-anchor="middle"
 					dominant-baseline="central"
+					font-size={cardinalSize}
 					class={[
 						"cw-wind-compass__cardinal",
 						c.key === "n" && "cw-wind-compass__cardinal--north",
@@ -642,10 +711,12 @@
 				</text>
 			{/each}
 
-			<!-- Wind arrow (rotated to flow direction) -->
+			<!-- Wind arrow (rotated to flow direction via CSS so it can animate) -->
+			{#if hasDirection}
 			<g
-				transform="rotate({flowDirection} {CENTER} {CENTER})"
 				class="cw-wind-compass__arrow"
+				style:transform="rotate({arrowRotation}deg)"
+				style:transform-origin="{CENTER}px {CENTER}px"
 			>
 				<!-- Arrowhead + shaft (one shape so the gradient flows continuously) -->
 				<polygon
@@ -693,6 +764,7 @@
 					opacity="0.6"
 				/>
 			</g>
+			{/if}
 
 			<!-- Center hub -->
 			<circle
@@ -759,13 +831,17 @@
 			<div
 				class={[
 					"cw-wind-compass__stat",
-					`cw-wind-compass__stat--${beaufort.tone}`,
+					hasSpeed && `cw-wind-compass__stat--${beaufort.tone}`,
 				]}
 			>
 				<dt>{l.statBeaufort}</dt>
-				<dd>{l.statBeaufortValue(beaufort.force, beaufortName)}</dd>
+				<dd>
+					{hasSpeed
+						? l.statBeaufortValue(beaufort.force, beaufortName)
+						: CW_EMPTY_VALUE}
+				</dd>
 			</div>
-			{#if beaufortGuidance}
+			{#if beaufortGuidance && hasSpeed}
 				<div
 					class="cw-wind-compass__stat cw-wind-compass__stat--guidance"
 				>
@@ -830,22 +906,22 @@
 		--cw-wind-readout-value: #ffd866;
 		--cw-wind-readout-unit: color-mix(in srgb, #4cd7ff 88%, #ffffff);
 
+		position: relative;
 		display: grid;
 		gap: var(--cw-space-5);
 		padding: var(--cw-space-5);
-		background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--cw-bg-surface-elevated) 92%, transparent),
-				color-mix(in srgb, var(--cw-bg-surface) 88%, transparent)
-			);
-		border: 1px solid
-			color-mix(in srgb, var(--cw-border-default) 72%, transparent);
-		border-radius: var(--cw-radius-xl, 1.25rem);
+		background: var(--cw-chart-card-bg, var(--cw-bg-surface));
+		border: 1px solid var(--cw-chart-card-border, var(--cw-border-default));
+		border-radius: var(--cw-card-radius, var(--cw-radius-xl));
 		color: var(--cw-text-primary);
-		box-shadow:
-			0 1px 0 color-mix(in srgb, white 6%, transparent) inset,
-			0 18px 30px -22px color-mix(in srgb, #000 50%, transparent);
+		font-family: var(--cw-font-family);
+		box-shadow: var(--cw-chart-card-shadow, var(--cw-shadow-md));
+	}
+
+	@media (max-width: 480px) {
+		.cw-wind-compass {
+			padding: var(--cw-space-3);
+		}
 	}
 
 	/* Light theme tweaks — keep instrument feel but readable. */
@@ -885,11 +961,11 @@
 	}
 
 	.cw-wind-compass__eyebrow {
-		font-size: 0.7rem;
-		letter-spacing: 0.16em;
+		font-size: var(--cw-text-xs);
+		letter-spacing: 0.12em;
 		text-transform: uppercase;
-		color: var(--cw-text-muted);
-		font-weight: 700;
+		color: var(--cw-chart-card-muted, var(--cw-text-muted));
+		font-weight: var(--cw-font-semibold);
 		margin: 0;
 	}
 
@@ -901,10 +977,11 @@
 	}
 
 	.cw-wind-compass__title {
-		font-size: clamp(1.1rem, 1.6vw, 1.35rem);
-		font-weight: var(--cw-font-semibold, 600);
+		font-size: var(--cw-text-lg);
+		font-weight: var(--cw-font-semibold);
+		line-height: var(--cw-leading-tight);
 		margin: 0;
-		color: var(--cw-text-primary);
+		color: var(--cw-chart-card-title, var(--cw-text-primary));
 	}
 
 	.cw-wind-compass__subtitle {
@@ -914,40 +991,50 @@
 		margin: 0;
 	}
 
+	/* Beaufort severity reuses the shared tone tokens so contrast holds in both themes. */
 	.cw-wind-compass__beaufort-pill {
-		font-size: 0.72rem;
+		--pill-tone-bg: var(--cw-tone-secondary-bg-subtle);
+		--pill-tone-text: var(--cw-tone-secondary-text);
+		--pill-tone-border: var(--cw-tone-secondary-border);
+		font-size: var(--cw-text-xs);
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		font-weight: 700;
-		padding: 0.22rem 0.55rem;
-		border-radius: 999px;
-		border: 1px solid currentColor;
-		color: var(--cw-text-secondary);
+		font-weight: var(--cw-font-bold);
+		padding: var(--cw-space-1) var(--cw-space-2);
+		border-radius: var(--cw-radius-full);
+		border: 1px solid var(--pill-tone-border);
+		background: var(--pill-tone-bg);
+		color: var(--pill-tone-text);
 	}
 	.cw-wind-compass__beaufort-pill--calm {
-		color: var(--cw-info-500);
-		background: color-mix(in srgb, var(--cw-info-500) 14%, transparent);
+		--pill-tone-bg: var(--cw-tone-info-bg-subtle);
+		--pill-tone-text: var(--cw-tone-info-text);
+		--pill-tone-border: var(--cw-tone-info-border);
 	}
 	.cw-wind-compass__beaufort-pill--light {
-		color: var(--cw-success-500);
-		background: color-mix(in srgb, var(--cw-success-500) 14%, transparent);
+		--pill-tone-bg: var(--cw-tone-success-bg-subtle);
+		--pill-tone-text: var(--cw-tone-success-text);
+		--pill-tone-border: var(--cw-tone-success-border);
 	}
 	.cw-wind-compass__beaufort-pill--moderate {
-		color: var(--cw-primary-500);
-		background: color-mix(in srgb, var(--cw-primary-500) 14%, transparent);
+		--pill-tone-bg: var(--cw-tone-primary-bg-subtle);
+		--pill-tone-text: var(--cw-tone-primary-text);
+		--pill-tone-border: var(--cw-tone-primary-border);
 	}
 	.cw-wind-compass__beaufort-pill--strong {
-		color: var(--cw-warning-700);
-		background: color-mix(in srgb, var(--cw-warning-500) 18%, transparent);
+		--pill-tone-bg: var(--cw-tone-warning-bg-subtle);
+		--pill-tone-text: var(--cw-tone-warning-text);
+		--pill-tone-border: var(--cw-tone-warning-border);
 	}
 	.cw-wind-compass__beaufort-pill--gale {
-		color: var(--cw-danger-500);
-		background: color-mix(in srgb, var(--cw-danger-500) 16%, transparent);
+		--pill-tone-bg: var(--cw-tone-danger-bg-subtle);
+		--pill-tone-text: var(--cw-tone-danger-text);
+		--pill-tone-border: var(--cw-tone-danger-border);
 	}
 	.cw-wind-compass__beaufort-pill--storm {
-		color: #fff;
-		background: var(--cw-danger-700);
-		border-color: transparent;
+		--pill-tone-bg: var(--cw-tone-danger-solid-bg);
+		--pill-tone-text: var(--cw-tone-danger-solid-text);
+		--pill-tone-border: var(--cw-tone-danger-solid-bg);
 	}
 
 	.cw-wind-compass__reading {
@@ -959,11 +1046,11 @@
 	}
 
 	.cw-wind-compass__reading-label {
-		font-size: 0.7rem;
-		letter-spacing: 0.16em;
+		font-size: var(--cw-text-xs);
+		letter-spacing: 0.12em;
 		text-transform: uppercase;
 		color: var(--cw-text-muted);
-		font-weight: 700;
+		font-weight: var(--cw-font-semibold);
 	}
 
 	.cw-wind-compass__reading-direction {
@@ -1006,7 +1093,6 @@
 	}
 
 	.cw-wind-compass__deg-label {
-		font-size: 12px;
 		font-weight: 600;
 		fill: var(--cw-wind-tick-major);
 		font-variant-numeric: tabular-nums;
@@ -1014,19 +1100,18 @@
 	}
 
 	.cw-wind-compass__cardinal {
-		font-size: 19px;
 		font-weight: 800;
 		fill: var(--cw-wind-tick-cardinal);
 		letter-spacing: 0.08em;
 	}
 
 	.cw-wind-compass__cardinal--north {
-		fill: #ffd866;
+		fill: var(--cw-wind-heading-bug);
 	}
 
 	.cw-wind-compass__arrow {
-		transition: transform var(--cw-duration-medium, 0.4s)
-			var(--cw-ease-default, cubic-bezier(0.4, 0, 0.2, 1));
+		transition: transform var(--cw-duration-medium)
+			var(--cw-ease-default);
 	}
 
 	/* ── Digital readout (LCD-style panel below the dial) ── */
@@ -1069,7 +1154,7 @@
 	}
 
 	.cw-wind-compass__readout-unit {
-		font-size: 0.72rem;
+		font-size: var(--cw-text-xs);
 		font-weight: 700;
 		color: var(--cw-wind-readout-unit);
 		letter-spacing: 0.18em;
@@ -1105,7 +1190,7 @@
 	}
 
 	.cw-wind-compass__readout-secondary-unit {
-		font-size: 0.65rem;
+		font-size: var(--cw-text-xs);
 		font-weight: 700;
 		color: var(--cw-wind-readout-unit);
 		letter-spacing: 0.16em;
@@ -1137,8 +1222,8 @@
 	.cw-wind-compass__stat {
 		display: grid;
 		gap: 0.2rem;
-		padding: 0.7rem 0.85rem;
-		border-radius: var(--cw-radius-lg, 0.75rem);
+		padding: var(--cw-space-3) var(--cw-space-4);
+		border-radius: var(--cw-radius-lg);
 		background: color-mix(
 			in srgb,
 			var(--cw-bg-muted) 60%,
@@ -1149,11 +1234,11 @@
 	}
 
 	.cw-wind-compass__stat dt {
-		font-size: 0.66rem;
-		letter-spacing: 0.16em;
+		font-size: var(--cw-text-xs);
+		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--cw-text-muted);
-		font-weight: 700;
+		font-weight: var(--cw-font-semibold);
 	}
 
 	.cw-wind-compass__stat dd {
@@ -1182,23 +1267,23 @@
 	}
 
 	.cw-wind-compass__stat--calm {
-		border-color: color-mix(in srgb, var(--cw-info-500) 50%, transparent);
+		border-color: var(--cw-tone-info-border);
 	}
 	.cw-wind-compass__stat--light {
-		border-color: color-mix(in srgb, var(--cw-success-500) 50%, transparent);
+		border-color: var(--cw-tone-success-border);
 	}
 	.cw-wind-compass__stat--moderate {
-		border-color: color-mix(in srgb, var(--cw-primary-500) 55%, transparent);
+		border-color: var(--cw-tone-primary-border);
 	}
 	.cw-wind-compass__stat--strong {
-		border-color: color-mix(in srgb, var(--cw-warning-500) 65%, transparent);
+		border-color: var(--cw-tone-warning-border);
 	}
 	.cw-wind-compass__stat--gale {
-		border-color: color-mix(in srgb, var(--cw-danger-500) 65%, transparent);
+		border-color: var(--cw-tone-danger-border);
 	}
 	.cw-wind-compass__stat--storm {
-		border-color: color-mix(in srgb, var(--cw-danger-700) 80%, transparent);
-		background: color-mix(in srgb, var(--cw-danger-700) 14%, var(--cw-bg-muted));
+		border-color: var(--cw-tone-danger-solid-bg);
+		background: var(--cw-tone-danger-bg-subtle);
 	}
 
 	@media (prefers-reduced-motion: reduce) {

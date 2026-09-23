@@ -5,16 +5,16 @@
  *
  * The chart picks its layout from its own measured width. Several of the
  * classes it applies as a result — `.cw-rlc--phone`, `.cw-rlc--phone-land`,
- * `.cw-rlc--xs` — change the element's `padding` (16px at rest, 6px on phone,
- * 4px on xs). `.cw-rlc` is `box-sizing: border-box`, so padding comes out of
+ * `.cw-rlc--xs` — change the element's `padding` (20px at rest, 12px on phone,
+ * 8px on xs). `.cw-rlc` is `box-sizing: border-box`, so padding comes out of
  * the *content* box.
  *
  * Measuring the content box therefore closes a loop: the class the width
  * selects changes the width being measured, which can select a different
- * class, forever. A 390px-wide chart reads 358 of content (xs on), repads to
- * 4px, reads 382 (xs off), repads to 16px, reads 358 … The visible symptom is
- * a chart that vibrates, and it pegs the renderer. The same trap sits at the
- * 520px phone/tablet boundary for the 16px/6px pair.
+ * class, forever. A chart just above the xs threshold reads a content width
+ * below it (xs on), repads smaller, reads a width above it (xs off), repads
+ * larger, and so on. The visible symptom is a chart that vibrates, and it
+ * pegs the renderer. The same trap sits at the 520px phone/tablet boundary.
  *
  * The border-box width does not depend on the element's own padding, so
  * resolving against it breaks the loop at every breakpoint at once. That is

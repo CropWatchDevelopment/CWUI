@@ -158,7 +158,23 @@ Override any CSS variable in your own stylesheet:
 | **Radii** | `--cw-radius-sm` through `--cw-radius-full` |
 | **Shadows** | `--cw-shadow-sm` through `--cw-shadow-xl` |
 | **Motion** | `--cw-duration-fast`, `--cw-duration-normal`, `--cw-duration-slow` |
-| **Z-index** | `--cw-z-dropdown`, `--cw-z-sticky`, `--cw-z-overlay`, `--cw-z-modal`, `--cw-z-toast` |
+| **Z-index** | `--cw-z-inline-overlay`, `--cw-z-dropdown`, `--cw-z-sticky`, `--cw-z-overlay`, `--cw-z-popover`, `--cw-z-modal`, `--cw-z-toast`, `--cw-z-tooltip` |
+| **Controls** | `--cw-control-h-sm/md/lg`, `--cw-control-radius`, `--cw-control-bg`, `--cw-control-border` |
+| **Overlays** | `--cw-popover-bg`, `--cw-overlay-bg`, `--cw-elevation-popover`, `--cw-elevation-modal`, `--cw-scrim` |
+| **Status** | `--cw-status-online`, `--cw-status-warning`, `--cw-status-alarm`, `--cw-status-offline`, `--cw-status-loading` |
+| **Charts** | `--cw-chart-cat-1` through `--cw-chart-cat-8`, `--cw-chart-grid`, `--cw-chart-tooltip-*` |
+
+### Design style guide (PDF)
+
+`static/cropwatch-style-guide.pdf` is the guide for designers: both themes' colour tokens with measured contrast ratios, brand colours, typography, spacing, chart colours, form anatomy and a hand-off checklist. The demo home page links to it.
+
+It is generated from the token files, so rebuild it after changing any token:
+
+```bash
+npm run style-guide
+```
+
+The script renders `scripts/style-guide/style-guide.html` with headless Chromium. It uses `$CHROME_PATH` if set, then the Playwright browser cache, then `google-chrome`/`chromium` on your `PATH`.
 
 ---
 
@@ -493,6 +509,13 @@ git push origin v0.2.0
 ```
 
 The [publish workflow](.github/workflows/publish.yml) will build the library and publish to GitHub Packages.
+
+Notes:
+
+- The workflow only runs for tags shaped like `v<version>`, and the tag must match `version` in `package.json` exactly.
+- Push `main` before the tag so the tag points at a commit GitHub Actions can build.
+- If the tagged version already exists in the registry, the publish step is skipped instead of failing.
+- Wait for the workflow in GitHub Actions to finish before announcing the release.
 
 ---
 

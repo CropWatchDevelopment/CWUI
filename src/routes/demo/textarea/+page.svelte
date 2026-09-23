@@ -11,7 +11,7 @@
 
 	const basicExample = `<CwTextArea
 \tlabel="Field notes"
-\tplaceholder="Log observations, thresholds, or operator context..."
+\tplaceholder="Log observations, thresholds, or operator context…"
 \tbind:value={notes}
 \thint="Use the theme picker in the header to verify light and dark mode."
 \trows={5}
@@ -128,7 +128,7 @@
 		<div class="demo-stack">
 			<CwTextAreaComponent
 				label="Field notes"
-				placeholder="Log observations, thresholds, or operator context..."
+				placeholder="Log observations, thresholds, or operator context…"
 				bind:value={fieldNotes}
 				hint="Use the theme picker in the header to verify both light and dark themes."
 				rows={5}
@@ -153,7 +153,7 @@
 				bind:this={validationField}
 				label="Shift handoff"
 				name="handoff"
-				placeholder="Summarize what changed before the next operator takes over..."
+				placeholder="Summarize what changed before the next operator takes over…"
 				required
 				minlength={10}
 				maxlength={240}
@@ -179,6 +179,21 @@
 	</CwCard>
 </div>
 
+<section class="demo-section demo-section--spaced">
+	<h3>Sizes &amp; states</h3>
+	<div class="demo-grid">
+		<CwTextAreaComponent label="Small" size="sm" rows={2} placeholder="size=&quot;sm&quot;" />
+		<CwTextAreaComponent label="Large" size="lg" rows={2} placeholder="size=&quot;lg&quot;" />
+		<CwTextAreaComponent
+			label="Read-only"
+			rows={2}
+			readonly
+			value="Calibrated on install. Contact support to change."
+		/>
+		<CwTextAreaComponent label="Disabled" rows={2} disabled value="Editing is locked." />
+	</div>
+</section>
+
 <section class="demo-section">
 	<h3>Code Samples</h3>
 	<DemoCodeExample code={basicExample} title="Basic CwTextArea" />
@@ -186,35 +201,16 @@
 </section>
 
 <style>
-	h2 {
-		font-size: var(--cw-text-xl);
-		font-weight: var(--cw-font-bold);
-		margin-bottom: var(--cw-space-2);
-	}
-
-	h3 {
-		font-size: var(--cw-text-base);
-		font-weight: var(--cw-font-semibold);
-		margin-bottom: var(--cw-space-3);
-		color: var(--cw-text-secondary);
-	}
 
 	code {
 		font-family: var(--cw-font-mono);
 		font-size: var(--cw-text-xs);
-		color: var(--cw-accent);
-	}
-
-	.demo-desc {
-		color: var(--cw-text-muted);
-		font-size: var(--cw-text-sm);
-		margin-bottom: var(--cw-space-4);
-		max-width: 48rem;
+		color: var(--cw-accent-text);
 	}
 
 	.demo-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
 		gap: var(--cw-space-4);
 		align-items: start;
 	}
@@ -262,13 +258,12 @@
 		color: var(--cw-tone-success-text);
 	}
 
-	.demo-section {
-		margin-top: var(--cw-space-6);
-	}
-
 	@media (max-width: 40rem) {
 		.demo-grid {
 			grid-template-columns: 1fr;
 		}
+	}
+	.demo-section--spaced {
+		margin-top: var(--cw-space-8);
 	}
 </style>

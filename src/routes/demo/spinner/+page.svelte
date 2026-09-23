@@ -7,7 +7,11 @@
 </script>
 
 <h2>CwSpinner</h2>
-<p class="demo-desc">Reusable loading indicator shared by buttons, tables, and async UI states.</p>
+<p class="demo-desc">
+	Loading indicator shared by buttons, tables and other async states. It is hidden from screen
+	readers unless <code>showLabel</code> is set, so pair a bare spinner with visible or
+	<code>aria-busy</code> context.
+</p>
 
 <section class="demo-section">
 	<h3>Sizes</h3>
@@ -22,8 +26,8 @@
 <section class="demo-section">
 	<h3>With Label</h3>
 	<div class="demo-stack">
-		<CwSpinner size="md" showLabel label="Loading sensor data..." />
-		<CwSpinner size="lg" showLabel label="Syncing greenhouse devices..." />
+		<CwSpinner size="md" showLabel label="Loading sensor data…" />
+		<CwSpinner size="lg" showLabel label="Syncing greenhouse devices…" />
 	</div>
 </section>
 
@@ -33,7 +37,7 @@
 		<CwButton loading>Saving Changes</CwButton>
 		<div class="demo-pill">
 			<CwSpinner size="md" />
-			<span>Refreshing table rows...</span>
+			<span>Refreshing table rows…</span>
 		</div>
 	</div>
 </section>
@@ -41,41 +45,8 @@
 <DemoCodeExample code={spinnerExample} title="CwSpinner example" />
 
 <style>
-	h2 {
-		font-size: var(--cw-text-xl);
-		font-weight: var(--cw-font-bold);
-		margin-bottom: var(--cw-space-2);
-	}
+	code { font-family: var(--cw-font-mono); font-size: var(--cw-text-xs); }
 
-	h3 {
-		font-size: var(--cw-text-base);
-		font-weight: var(--cw-font-semibold);
-		margin-bottom: var(--cw-space-2);
-		color: var(--cw-text-secondary);
-	}
-
-	.demo-desc {
-		color: var(--cw-text-muted);
-		font-size: var(--cw-text-sm);
-		margin-bottom: var(--cw-space-4);
-	}
-
-	.demo-section {
-		margin-bottom: var(--cw-space-6);
-	}
-
-	.demo-row {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--cw-space-4);
-	}
-
-	.demo-stack {
-		display: flex;
-		flex-direction: column;
-		gap: var(--cw-space-3);
-	}
 
 	.demo-pill {
 		display: inline-flex;

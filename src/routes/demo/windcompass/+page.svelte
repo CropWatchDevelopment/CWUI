@@ -325,27 +325,28 @@
 	<DemoCodeExample code={directionExample} title="Standard reading" />
 </section>
 
+<section class="demo-section demo-section--stack">
+	<div class="demo-section__copy">
+		<h3>Loading &amp; missing readings</h3>
+		<p class="demo-copy">
+			A missing direction or speed shows “—” with no arrow and no Beaufort label, instead of a
+			fake 0° / calm reading.
+		</p>
+	</div>
+	<div class="demo-state-row">
+		<CwWindCompass loading size={220} />
+		<CwWindCompass direction={null} speed={4.2} size={220} />
+		<CwWindCompass direction={null} speed={null} size={220} />
+	</div>
+</section>
+
 <style>
-	h2 {
-		font-size: var(--cw-text-xl);
-		font-weight: var(--cw-font-bold);
-		margin-bottom: var(--cw-space-2);
+	.demo-state-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--cw-space-4);
 	}
 
-	h3 {
-		color: var(--cw-text-primary);
-		font-size: clamp(1.2rem, 2vw, 1.45rem);
-		font-weight: var(--cw-font-semibold);
-		margin: 0;
-	}
-
-	.demo-desc {
-		color: var(--cw-text-secondary);
-		font-size: var(--cw-text-sm);
-		line-height: 1.65;
-		margin: 0 0 var(--cw-space-6);
-		max-width: 66ch;
-	}
 
 	.demo-copy {
 		color: var(--cw-text-secondary);
@@ -365,12 +366,6 @@
 			var(--cw-bg-muted) 70%,
 			transparent
 		);
-	}
-
-	.demo-section {
-		display: grid;
-		gap: var(--cw-space-4);
-		margin-bottom: var(--cw-space-8);
 	}
 
 	.demo-section--stack {
@@ -423,11 +418,11 @@
 	}
 
 	.demo-scenario-button--active {
-		background: color-mix(in srgb, #1a5662 14%, var(--cw-bg-surface));
-		border-color: color-mix(in srgb, #1a5662 72%, transparent);
+		background: color-mix(in srgb, var(--cw-accent) 14%, var(--cw-bg-surface));
+		border-color: color-mix(in srgb, var(--cw-accent) 72%, transparent);
 		box-shadow:
-			inset 0 0 0 1px color-mix(in srgb, white 18%, transparent),
-			0 16px 24px color-mix(in srgb, #1a5662 18%, transparent);
+			inset 0 0 0 1px color-mix(in srgb, var(--cw-bg-surface-elevated) 18%, transparent),
+			0 16px 24px color-mix(in srgb, var(--cw-accent) 18%, transparent);
 		transform: translateY(-1px);
 	}
 
@@ -449,7 +444,7 @@
 
 	.demo-slider,
 	.demo-live-card {
-		background: color-mix(in srgb, var(--cw-bg-muted) 44%, white);
+		background: color-mix(in srgb, var(--cw-bg-muted) 44%, var(--cw-bg-surface-elevated));
 		border: 1px solid
 			color-mix(in srgb, var(--cw-border-default) 74%, transparent);
 		border-radius: 1.1rem;
@@ -468,7 +463,7 @@
 	}
 
 	.demo-slider input {
-		accent-color: #1a5662;
+		accent-color: var(--cw-accent);
 		width: 100%;
 	}
 

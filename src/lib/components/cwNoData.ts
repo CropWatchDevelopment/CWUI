@@ -1,6 +1,6 @@
 import type { CwNoDataMessage } from '../types/index.js';
 
-export const CW_DEFAULT_NO_DATA_MESSAGE = 'No Data Available';
+export const CW_DEFAULT_NO_DATA_MESSAGE = 'No data available';
 
 export function hasCwNoData(noData: CwNoDataMessage | undefined): boolean {
 	return noData !== undefined && noData !== false;

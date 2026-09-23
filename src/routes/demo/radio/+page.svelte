@@ -5,6 +5,7 @@
 	let irrigationMode = $state('automatic');
 	let notificationChannel = $state('email');
 	let publishScope = $state('all');
+	let reportFormat = $state('');
 
 	const radioExample = `<script lang="ts">
 \timport { CwRadio } from '@cropwatchdevelopment/cwui';
@@ -103,36 +104,42 @@
 				value="locked"
 				label="Archive scope"
 				description="Disabled example for unavailable rollout targets."
-				group="locked"
+				bind:group={publishScope}
 				disabled
 			/>
 		</div>
 	</fieldset>
 </section>
 
+<section class="demo-section">
+	<h3>Error</h3>
+	<fieldset class="demo-radio-group">
+		<legend class="demo-legend">Report format</legend>
+		<div class="demo-stack">
+			<CwRadio
+				name="report-format"
+				value="pdf"
+				label="PDF"
+				required
+				bind:group={reportFormat}
+				error={reportFormat ? undefined : 'Choose a format to continue'}
+			/>
+			<CwRadio
+				name="report-format"
+				value="csv"
+				label="CSV"
+				required
+				bind:group={reportFormat}
+				error={reportFormat ? undefined : 'Choose a format to continue'}
+			/>
+		</div>
+	</fieldset>
+	<p class="demo-hint">
+		The error text is linked with <code>aria-describedby</code>; picking an option clears it.
+	</p>
+</section>
+
 <style>
-	h2 {
-		font-size: var(--cw-text-xl);
-		font-weight: var(--cw-font-bold);
-		margin-bottom: var(--cw-space-2);
-	}
-
-	h3 {
-		font-size: var(--cw-text-base);
-		font-weight: var(--cw-font-semibold);
-		margin-bottom: var(--cw-space-2);
-		color: var(--cw-text-secondary);
-	}
-
-	.demo-desc {
-		color: var(--cw-text-muted);
-		font-size: var(--cw-text-sm);
-		margin-bottom: var(--cw-space-4);
-	}
-
-	.demo-section {
-		margin-bottom: var(--cw-space-6);
-	}
 
 	.demo-radio-group {
 		display: grid;
@@ -150,11 +157,6 @@
 		color: var(--cw-text-primary);
 	}
 
-	.demo-stack {
-		display: flex;
-		flex-direction: column;
-		gap: var(--cw-space-3);
-	}
 
 	.demo-inline-group {
 		display: flex;
@@ -166,13 +168,7 @@
 		background: var(--cw-bg-elevated);
 	}
 
-	.demo-hint {
-		margin-top: var(--cw-space-2);
-		color: var(--cw-text-muted);
-		font-size: var(--cw-text-xs);
-	}
-
 	.demo-hint strong {
-		color: var(--cw-accent);
+		color: var(--cw-accent-text);
 	}
 </style>

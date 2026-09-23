@@ -7,12 +7,15 @@
 		copied?: string;
 		/** Transient feedback tooltip text shown after a successful copy. Default "Copied!". */
 		copiedFeedback?: string;
+		/** Feedback shown when the browser refuses clipboard access. Default "Copy failed". */
+		failedFeedback?: string;
 	}
 
 	const DEFAULT_LABELS: Required<CwCopyLabels> = {
 		copy: 'Copy to clipboard',
 		copied: 'Copied',
-		copiedFeedback: 'Copied!'
+		copiedFeedback: 'Copied!',
+		failedFeedback: 'Copy failed'
 	};
 </script>
 
@@ -49,37 +52,52 @@
 
 	const l = $derived({ ...DEFAULT_LABELS, ...labels });
 
-	let copied = $state(false);
+	let result = $state<'idle' | 'copied' | 'failed'>('idle');
+	const copied = $derived(result === 'copied');
 	let timer: ReturnType<typeof setTimeout> | undefined;
 
 	onDestroy(() => clearTimeout(timer));
 
+	/** Fallback for insecure contexts / browsers without the async clipboard API. */
+	function legacyCopy(text: string): boolean {
+		const ta = document.createElement('textarea');
+		ta.value = text;
+		ta.setAttribute('readonly', '');
+		ta.style.position = 'fixed';
+		ta.style.opacity = '0';
+		document.body.appendChild(ta);
+		ta.select();
+		let ok = false;
+		try {
+			ok = document.execCommand('copy');
+		} catch {
+			ok = false;
+		}
+		document.body.removeChild(ta);
+		return ok;
+	}
+
 	async function handleCopy() {
+		let ok: boolean;
 		try {
 			await navigator.clipboard.writeText(value);
-			copied = true;
-			onCopy?.(value);
-			clearTimeout(timer);
-			timer = setTimeout(() => (copied = false), feedbackDuration);
+			ok = true;
 		} catch {
-			// Fallback for insecure contexts
-			const ta = document.createElement('textarea');
-			ta.value = value;
-			ta.style.position = 'fixed';
-			ta.style.opacity = '0';
-			document.body.appendChild(ta);
-			ta.select();
-			document.execCommand('copy');
-			document.body.removeChild(ta);
-			copied = true;
-			onCopy?.(value);
-			clearTimeout(timer);
-			timer = setTimeout(() => (copied = false), feedbackDuration);
+			ok = legacyCopy(value);
 		}
+
+		result = ok ? 'copied' : 'failed';
+		if (ok) onCopy?.(value);
+		clearTimeout(timer);
+		timer = setTimeout(() => (result = 'idle'), feedbackDuration);
 	}
 </script>
 
-<span class="cw-copy cw-copy--{size} {className}" class:cw-copy--copied={copied}>
+<span
+	class="cw-copy cw-copy--{size} {className}"
+	class:cw-copy--copied={copied}
+	class:cw-copy--failed={result === 'failed'}
+>
 	{#if children}
 		<span class="cw-copy__content">{@render children()}</span>
 	{/if}
@@ -104,9 +122,16 @@
 		{/if}
 	</button>
 
-	{#if copied}
-		<span class="cw-copy__feedback" role="status">{l.copiedFeedback}</span>
+	{#if result !== 'idle'}
+		<span class="cw-copy__feedback" aria-hidden="true">
+			{copied ? l.copiedFeedback : l.failedFeedback}
+		</span>
 	{/if}
+	<!-- Persistent live region: regions inserted together with their text are
+	     often not announced. -->
+	<span class="cw-copy__sr" role="status">
+		{result === 'copied' ? l.copiedFeedback : result === 'failed' ? l.failedFeedback : ''}
+	</span>
 </span>
 
 <style>
@@ -131,6 +156,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
+		min-width: var(--cw-hit-target-min);
+		min-height: var(--cw-hit-target-min);
 		padding: var(--cw-space-1);
 		border: 1px solid transparent;
 		border-radius: var(--cw-radius-sm);
@@ -153,9 +180,25 @@
 	}
 
 	.cw-copy--copied .cw-copy__button {
-		color: var(--cw-success-500);
-		background-color: color-mix(in srgb, var(--cw-success-500) 12%, transparent);
-		border-color: color-mix(in srgb, var(--cw-success-500) 25%, transparent);
+		color: var(--cw-tone-success-text);
+		background-color: var(--cw-tone-success-bg-subtle);
+		border-color: var(--cw-tone-success-border);
+	}
+
+	.cw-copy--failed .cw-copy__button {
+		color: var(--cw-tone-danger-text);
+		background-color: var(--cw-tone-danger-bg-subtle);
+		border-color: var(--cw-tone-danger-border);
+	}
+
+	.cw-copy__sr {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
 	}
 
 	/* ── Icon ────────────────────────────── */
@@ -164,13 +207,13 @@
 	}
 
 	.cw-copy__icon--check {
-		animation: cw-copy-pop 0.3s var(--cw-ease-default);
+		animation: cw-copy-pop var(--cw-duration-slow) var(--cw-ease-default);
 	}
 
 	/* ── Sizes ───────────────────────────── */
 	.cw-copy--sm .cw-copy__content { font-size: var(--cw-text-xs); }
 	.cw-copy--sm .cw-copy__icon    { width: 0.875rem; height: 0.875rem; }
-	.cw-copy--sm .cw-copy__button  { padding: 0.125rem; }
+	.cw-copy--sm .cw-copy__button  { padding: var(--cw-space-1); }
 
 	.cw-copy--md .cw-copy__content { font-size: var(--cw-text-sm); }
 	.cw-copy--md .cw-copy__icon    { width: 1rem; height: 1rem; }
@@ -182,18 +225,28 @@
 	/* ── Feedback tooltip ────────────────── */
 	.cw-copy__feedback {
 		position: absolute;
-		bottom: calc(100% + 6px);
+		z-index: var(--cw-z-tooltip);
+		bottom: calc(100% + var(--cw-space-2));
 		left: 50%;
 		transform: translateX(-50%);
-		padding: 0.125rem 0.5rem;
-		border-radius: var(--cw-radius-sm);
-		background-color: var(--cw-success-500);
+		padding: var(--cw-space-1) var(--cw-space-2);
+		border-radius: var(--cw-radius-md);
+		background-color: var(--cw-tone-success-solid-bg);
 		color: var(--cw-tone-success-solid-text);
 		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-medium);
 		white-space: nowrap;
 		pointer-events: none;
-		animation: cw-copy-fade 0.25s var(--cw-ease-default);
+		animation: cw-copy-fade var(--cw-duration-normal) var(--cw-ease-default);
+	}
+
+	.cw-copy--failed .cw-copy__feedback {
+		background-color: var(--cw-tone-danger-solid-bg);
+		color: var(--cw-tone-danger-solid-text);
+	}
+
+	.cw-copy--failed .cw-copy__feedback::after {
+		border-top-color: var(--cw-tone-danger-solid-bg);
 	}
 
 	.cw-copy__feedback::after {
@@ -203,7 +256,7 @@
 		left: 50%;
 		transform: translateX(-50%);
 		border: 4px solid transparent;
-		border-top-color: var(--cw-success-500);
+		border-top-color: var(--cw-tone-success-solid-bg);
 	}
 
 	/* ── Animations ──────────────────────── */

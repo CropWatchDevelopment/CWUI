@@ -6,7 +6,8 @@
 	import {
 		aggregateCwSensorStatuses,
 		getCwSensorStatusLabel,
-		getCwSensorTone
+		getCwSensorTone,
+		type CwSensorStatusLabels
 	} from './cwSensorCardStatus.js';
 	import type { CwStatusDotStatus } from '../types/index.js';
 
@@ -21,6 +22,13 @@
 		onNavigate?: (target: string) => void;
 		/** Empty-state label shown when no child snippet is provided. */
 		emptyMessage?: string;
+		/** Heading level for the title (default 3). */
+		headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
+		/** Override display strings for i18n. */
+		labels?: CwSensorStatusLabels & {
+			/** Accessible label for the navigate button. */
+			viewLocation?: string;
+		};
 		/** Additional CSS class for the card root. */
 		class?: string;
 	}
@@ -31,6 +39,8 @@
 		children,
 		onNavigate,
 		emptyMessage = 'No sensors assigned',
+		headingLevel = 3,
+		labels = {},
 		class: className = ''
 	}: Props = $props();
 
@@ -45,7 +55,10 @@
 			: status
 	);
 	const statusTone = $derived(getCwSensorTone(aggregateStatus));
-	const statusLabel = $derived(getCwSensorStatusLabel(aggregateStatus));
+	const statusLabel = $derived(getCwSensorStatusLabel(aggregateStatus, labels));
+	const viewLocationLabel = $derived(
+		labels.viewLocation ?? (title ? `View ${title}` : 'View location')
+	);
 </script>
 
 <div class={['cw-location-card', className, `cw-location-card--${aggregateStatus}`]}>
@@ -57,14 +70,16 @@
 		</div>
 
 		<div class="cw-location-card__title-group">
-			<div class="cw-location-card__title">{title}</div>
+			<svelte:element this={`h${headingLevel}`} class="cw-location-card__title">
+				{title}
+			</svelte:element>
 			<CwChip label={statusLabel} tone={statusTone} variant="soft" size="sm" />
 		</div>
 
 		<button
 			class="cw-location-card__nav-action"
 			type="button"
-			aria-label="View location"
+			aria-label={viewLocationLabel}
 			onclick={() => onNavigate?.('location')}
 		>
 			<svg viewBox="0 0 24 24" aria-hidden="true">
@@ -93,11 +108,12 @@
 <style>
 	.cw-location-card {
 		position: relative;
-		width: min(390px, 100%);
-		border-radius: var(--cw-radius-2xl);
+		width: 100%;
+		max-width: 24.375rem;
+		border-radius: var(--cw-card-radius);
 		background: var(--cw-bg-surface);
 		border: 1px solid var(--cw-border-default);
-		box-shadow: var(--cw-shadow-lg);
+		box-shadow: var(--cw-shadow-sm);
 		color: var(--cw-text-primary);
 		overflow: hidden;
 		font-family: var(--cw-font-family);
@@ -126,16 +142,24 @@
 
 	.cw-location-card__title-group {
 		display: grid;
-		gap: 0.15rem;
+		gap: var(--cw-space-1);
 		flex: 1;
 		min-width: 0;
 	}
 
 	.cw-location-card__title {
+		margin: 0;
 		font-size: var(--cw-text-base);
 		font-weight: var(--cw-font-semibold);
-		line-height: 1.2;
+		line-height: var(--cw-leading-tight);
 		color: var(--cw-text-primary);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.cw-location-card__title-group :global(.cw-chip) {
+		justify-self: start;
 	}
 
 	.cw-location-card__nav-action {
@@ -158,13 +182,8 @@
 
 	.cw-location-card__nav-action:hover {
 		border-color: var(--cw-accent);
-		color: var(--cw-accent);
+		color: var(--cw-accent-text);
 		background: color-mix(in srgb, var(--cw-accent) 12%, transparent);
-	}
-
-	.cw-location-card__nav-action:focus-visible {
-		outline: 2px solid var(--cw-accent);
-		outline-offset: 2px;
 	}
 
 	.cw-location-card__nav-action svg {
@@ -185,7 +204,7 @@
 		gap: var(--cw-space-2);
 		padding: var(--cw-space-5) var(--cw-space-3);
 		border: 1px dashed var(--cw-border-muted);
-		border-radius: var(--cw-radius-xl);
+		border-radius: var(--cw-radius-lg);
 		color: var(--cw-text-muted);
 		background: var(--cw-bg-elevated);
 	}

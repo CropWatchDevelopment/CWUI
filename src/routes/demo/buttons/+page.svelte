@@ -1,9 +1,30 @@
 <script lang="ts">
-	import { CwButton } from '$lib/index.js';
+	import { CwButton, CwDropdown, CwInput } from '$lib/index.js';
 	import moreVertIcon from '$lib/icons/more_vert.svg';
 	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
-	const buttonExample = `<CwButton variant="primary">Save Changes</CwButton>`;
+	const sizes = ['sm', 'md', 'lg'] as const;
+	const siteOptions = [
+		{ value: 'north', label: 'North field' },
+		{ value: 'south', label: 'South field' }
+	];
+
+	let saving = $state(false);
+	let lastEvent = $state('none yet');
+
+	function simulateSave() {
+		saving = true;
+		lastEvent = 'Saving…';
+		setTimeout(() => {
+			saving = false;
+			lastEvent = 'Saved';
+		}, 1500);
+	}
+
+	const buttonExample = `<CwButton variant="primary">Save changes</CwButton>
+
+<!-- Buttons default to type="button"; opt in to form submission explicitly -->
+<CwButton type="submit" variant="primary">Submit</CwButton>`;
 	const iconButtonExample = `<script lang="ts">
 	import moreVertIcon from '$lib/icons/more_vert.svg';
 <\/script>
@@ -31,7 +52,11 @@
 </script>
 
 <h2>CwButton</h2>
-<p class="demo-desc">All variant × size × state combinations.</p>
+<p class="demo-desc">
+	Every variant, size and state. Buttons share the same height scale as inputs and dropdowns, so
+	controls of the same <code>size</code> line up in a toolbar. Buttons default to
+	<code>type="button"</code>; pass <code>type="submit"</code> to submit a form.
+</p>
 
 <section class="demo-section">
 	<h3>Variants</h3>
@@ -54,12 +79,38 @@
 </section>
 
 <section class="demo-section">
+	<h3>Alignment with form controls</h3>
+	<div class="demo-stack">
+		{#each sizes as size (size)}
+			<div class="demo-toolbar">
+				<div class="demo-toolbar__field">
+					<CwInput {size} label="Search ({size})" placeholder="Device name…" />
+				</div>
+				<div class="demo-toolbar__field">
+					<CwDropdown {size} label="Site ({size})" options={siteOptions} placeholder="All sites" />
+				</div>
+				<CwButton {size} variant="secondary">Reset</CwButton>
+				<CwButton {size} variant="primary">Apply</CwButton>
+			</div>
+		{/each}
+	</div>
+	<p class="demo-hint">Each row uses one <code>size</code> value; every control in the row is the same height.</p>
+</section>
+
+<section class="demo-section">
 	<h3>States</h3>
 	<div class="demo-row">
 		<CwButton>Default</CwButton>
 		<CwButton disabled>Disabled</CwButton>
 		<CwButton loading>Loading</CwButton>
-		<CwButton fullWidth>Full Width</CwButton>
+	</div>
+	<div class="demo-row demo-row--spaced">
+		<CwButton variant="primary" loading={saving} onclick={simulateSave}>Save changes</CwButton>
+		<span class="demo-hint">Click it: the button keeps its width while the spinner shows.</span>
+	</div>
+	<p class="demo-event" aria-live="polite">Last event: {lastEvent}</p>
+	<div class="demo-row demo-row--spaced">
+		<CwButton fullWidth>Full width</CwButton>
 	</div>
 	<DemoCodeExample code={buttonExample} title="CwButton example" />
 </section>
@@ -91,9 +142,24 @@
 </section>
 
 <style>
-	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }
-	h3 { font-size: var(--cw-text-base); font-weight: var(--cw-font-semibold); margin-bottom: var(--cw-space-2); color: var(--cw-text-secondary); }
-	.demo-desc { color: var(--cw-text-muted); font-size: var(--cw-text-sm); margin-bottom: var(--cw-space-4); }
-	.demo-section { margin-bottom: var(--cw-space-6); }
-	.demo-row { display: flex; flex-wrap: wrap; gap: var(--cw-space-3); align-items: center; }
+	.demo-toolbar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		gap: var(--cw-space-2);
+	}
+
+	.demo-toolbar__field {
+		flex: 1 1 12rem;
+		min-width: 0;
+	}
+
+	.demo-row--spaced {
+		margin-top: var(--cw-space-3);
+	}
+
+	code {
+		font-family: var(--cw-font-mono);
+		font-size: 0.9em;
+	}
 </style>

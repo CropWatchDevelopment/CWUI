@@ -217,6 +217,27 @@
 	/>
 </div>
 
+<section class="demo-section demo-section--spaced">
+	<h3>Sizes, hint &amp; required</h3>
+	<div class="demo-grid">
+		<CwMultiSelect {options} label="Small" size="sm" placeholder="Choose fruits…" />
+		<CwMultiSelect
+			{options}
+			label="Harvest crops"
+			required
+			hint="Select every crop grown in this block."
+			placeholder="Choose fruits…"
+		/>
+		<CwMultiSelect {options} label="Large" size="lg" placeholder="Choose fruits…" />
+		<CwMultiSelect
+			options={[]}
+			label="Empty options"
+			placeholder="Nothing to pick"
+			labels={{ empty: 'No crops configured for this site' }}
+		/>
+	</div>
+</section>
+
 <div class="demo-output">
 	<h3>Bound value (Default)</h3>
 	<pre>{JSON.stringify(val1, null, 2)}</pre>
@@ -237,22 +258,8 @@
 />
 
 <style>
-	h2 {
-		font-size: var(--cw-text-xl);
-		font-weight: var(--cw-font-bold);
-		margin-bottom: var(--cw-space-2);
-	}
-
-	.demo-desc {
-		color: var(--cw-text-muted);
-		font-size: var(--cw-text-sm);
-		margin-bottom: var(--cw-space-4);
-	}
-
-	.demo-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-		gap: var(--cw-space-4);
+	.demo-section--spaced {
+		margin-top: var(--cw-space-8);
 	}
 
 	.demo-output {

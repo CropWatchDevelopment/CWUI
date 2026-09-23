@@ -148,34 +148,31 @@
 	/>
 </section>
 
+<section class="demo-section">
+	<h3>Loading &amp; missing data</h3>
+	<p class="demo-copy">
+		A missing reading shows “—” with no marker or status; missing targets hide the target band and
+		status instead of treating the target as zero.
+	</p>
+	<div class="demo-state-grid">
+		<CwPPFDChart plant="Tomato" loading />
+		<CwPPFDChart plant="Tomato" current={null} targetMin={700} targetMax={1200} />
+		<CwPPFDChart plant="Unassigned crop" current={640} targetMin={null} targetMax={null} />
+	</div>
+</section>
+
 <style>
-	h2 {
-		font-size: var(--cw-text-xl);
-		font-weight: var(--cw-font-bold);
-		margin-bottom: var(--cw-space-2);
+	.demo-state-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+		gap: var(--cw-space-4);
 	}
 
-	h3 {
-		color: var(--cw-text-secondary);
-		font-size: var(--cw-text-base);
-		font-weight: var(--cw-font-semibold);
-		margin-bottom: var(--cw-space-2);
-	}
-
-	.demo-desc {
-		color: var(--cw-text-muted);
-		font-size: var(--cw-text-sm);
-		margin-bottom: var(--cw-space-6);
-	}
 
 	.demo-copy {
 		color: var(--cw-text-secondary);
 		font-size: var(--cw-text-sm);
 		margin: 0 0 var(--cw-space-4);
-	}
-
-	.demo-section {
-		margin-bottom: var(--cw-space-8);
 	}
 
 	.demo-controls {

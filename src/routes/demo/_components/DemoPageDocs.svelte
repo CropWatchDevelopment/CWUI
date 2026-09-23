@@ -11,11 +11,15 @@
 	let { docs, class: className = '' }: Props = $props();
 </script>
 
-<section class="demo-page-docs {className}" aria-labelledby="demo-page-docs-heading">
+<section
+	id="api-reference"
+	class="demo-page-docs {className}"
+	aria-labelledby="demo-page-docs-heading"
+>
 	<div class="demo-page-docs__intro">
 		<div>
-			<span class="demo-page-docs__eyebrow">Documentation Upgrade</span>
-			<h3 id="demo-page-docs-heading">Start here</h3>
+			<span class="demo-page-docs__eyebrow">API</span>
+			<h3 id="demo-page-docs-heading">Usage and API reference</h3>
 		</div>
 		<p>{docs.summary}</p>
 	</div>
@@ -86,7 +90,7 @@
 		<section class="demo-page-docs__examples" aria-labelledby="demo-page-docs-examples">
 			<div class="demo-page-docs__examples-head">
 				<h4 id="demo-page-docs-examples">Copy-paste examples</h4>
-				<p>These snippets intentionally show the full public API surface the live demo relies on.</p>
+				<p>Each snippet is a complete, working example you can paste into a Svelte 5 component.</p>
 			</div>
 
 			<div class="demo-page-docs__example-list">
@@ -252,11 +256,11 @@
 	.demo-page-docs__api-name span {
 		display: inline-flex;
 		align-items: center;
-		padding: 0.15rem 0.45rem;
+		padding: 0.125rem var(--cw-space-2);
 		border-radius: var(--cw-radius-full);
-		background: color-mix(in srgb, var(--cw-warning-500) 18%, transparent);
-		color: var(--cw-warning-500);
-		font-size: 0.68rem;
+		background: var(--cw-tone-warning-bg-subtle);
+		color: var(--cw-tone-warning-text);
+		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-semibold);
 		text-transform: uppercase;
 		letter-spacing: 0.04em;

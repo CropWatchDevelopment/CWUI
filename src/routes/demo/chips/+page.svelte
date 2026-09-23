@@ -4,17 +4,37 @@
 
 	const tones = ['primary', 'secondary', 'info', 'warning', 'danger', 'success'] as const;
 	const variants = ['solid', 'soft', 'outline'] as const;
-	const chipExample = `<CwChip tone="success" variant="soft" label="Online" dismissible />`;
+	const variantTitles = { solid: 'Solid', soft: 'Soft', outline: 'Outline' } as const;
+
+	let filters = $state(['North field', 'Temperature', 'Last 24 hours', 'Online only']);
+	let lastEvent = $state('none yet');
+
+	function dismiss(filter: string) {
+		filters = filters.filter((item) => item !== filter);
+		lastEvent = `Removed filter "${filter}"`;
+	}
+
+	const chipExample = `<CwChip tone="success" variant="soft" label="Online" />
+
+<CwChip
+\tlabel="North field"
+\tdismissible
+\tdismissLabel="Remove filter: North field"
+\tondismiss={() => removeFilter('north')}
+/>`;
 </script>
 
 <h2>CwChip</h2>
-<p class="demo-desc">Tone × variant × size matrix with dismissible option.</p>
+<p class="demo-desc">
+	Compact labels for status, tags and active filters. Every tone comes in solid, soft and outline
+	variants, and all variants share the same height.
+</p>
 
-{#each variants as variant}
+{#each variants as variant (variant)}
 	<section class="demo-section">
-		<h3>{variant}</h3>
+		<h3>{variantTitles[variant]}</h3>
 		<div class="demo-row">
-			{#each tones as tone}
+			{#each tones as tone (tone)}
 				<CwChip {tone} {variant} label={tone} />
 			{/each}
 		</div>
@@ -22,11 +42,30 @@
 {/each}
 
 <section class="demo-section">
-	<h3>Dismissible</h3>
+	<h3>Dismissible filters</h3>
 	<div class="demo-row">
-		{#each tones as tone}
-			<CwChip {tone} variant="soft" label={tone} dismissible ondismiss={() => alert(`Dismissed ${tone}`)} />
+		{#each filters as filter (filter)}
+			<CwChip
+				tone="info"
+				variant="soft"
+				label={filter}
+				dismissible
+				dismissLabel={`Remove filter: ${filter}`}
+				ondismiss={() => dismiss(filter)}
+			/>
+		{:else}
+			<span class="demo-hint">All filters removed.</span>
 		{/each}
+	</div>
+	<p class="demo-event" aria-live="polite">Last event: {lastEvent}</p>
+</section>
+
+<section class="demo-section">
+	<h3>Disabled</h3>
+	<div class="demo-row">
+		<CwChip tone="primary" label="Disabled" disabled />
+		<CwChip tone="success" variant="outline" label="Disabled outline" disabled />
+		<CwChip tone="danger" label="Disabled dismissible" dismissible disabled />
 	</div>
 </section>
 
@@ -39,11 +78,3 @@
 	</div>
 	<DemoCodeExample code={chipExample} title="CwChip example" />
 </section>
-
-<style>
-	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }
-	h3 { font-size: var(--cw-text-base); font-weight: var(--cw-font-semibold); margin-bottom: var(--cw-space-2); color: var(--cw-text-secondary); text-transform: capitalize; }
-	.demo-desc { color: var(--cw-text-muted); font-size: var(--cw-text-sm); margin-bottom: var(--cw-space-4); }
-	.demo-section { margin-bottom: var(--cw-space-6); }
-	.demo-row { display: flex; flex-wrap: wrap; gap: var(--cw-space-3); align-items: center; }
-</style>

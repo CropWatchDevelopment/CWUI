@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { HTMLTextareaAttributes } from 'svelte/elements';
+	import type { CwSize } from '../types/index.js';
 
 	type ResizeMode = 'none' | 'vertical' | 'horizontal' | 'both';
 
@@ -24,6 +25,8 @@
 		rows?: number;
 		resize?: ResizeMode;
 		showCount?: boolean;
+		/** Control size (padding + font size). Matches CwInput. */
+		size?: CwSize;
 		oninput?: (e: Event) => void;
 		onchange?: (e: Event) => void;
 		onkeydown?: (e: KeyboardEvent) => void;
@@ -43,6 +46,8 @@
 		rows = 5,
 		resize = 'vertical',
 		showCount = false,
+		size = 'md',
+		required = false,
 		disabled = false,
 		readonly: readOnly = false,
 		maxlength,
@@ -130,14 +135,16 @@
 </script>
 
 <div
-	class="cw-textarea {className}"
+	class="cw-textarea cw-textarea--{size} {className}"
 	class:cw-textarea--error={!!error}
 	class:cw-textarea--valid={valid && !error}
 	class:cw-textarea--disabled={disabled}
 	class:cw-textarea--readonly={readOnly}
 >
 	{#if label}
-		<label class="cw-textarea__label" for={textareaId}>{label}</label>
+		<label class="cw-textarea__label" for={textareaId}>
+			{label}{#if required}<span class="cw-textarea__required" aria-hidden="true">&nbsp;*</span>{/if}
+		</label>
 	{/if}
 
 	<div class="cw-textarea__wrapper">
@@ -147,6 +154,7 @@
 			class="cw-textarea__field"
 			class:cw-textarea__field--has-validation={hasValidationIcon}
 			{rows}
+			{required}
 			{disabled}
 			readonly={readOnly}
 			maxlength={maxlength ?? undefined}
@@ -184,14 +192,14 @@
 		<div class="cw-textarea__meta">
 			<div class="cw-textarea__meta-copy">
 				{#if error}
-					<p class="cw-textarea__error" id="{uid}-error" role="alert">{error}</p>
+					<p class="cw-textarea__error" id="{uid}-error">{error}</p>
 				{:else if hint}
 					<p class="cw-textarea__hint" id="{uid}-hint">{hint}</p>
 				{/if}
 			</div>
 
 			{#if showCount}
-				<p class="cw-textarea__count" aria-live="polite">{counterText}</p>
+				<p class="cw-textarea__count">{counterText}</p>
 			{/if}
 		</div>
 	{/if}
@@ -199,6 +207,9 @@
 
 <style>
 	.cw-textarea {
+		--_px: var(--cw-control-px-md);
+		--_py: var(--cw-space-3);
+		--_fs: var(--cw-control-text-md);
 		display: flex;
 		flex-direction: column;
 		gap: var(--cw-space-1);
@@ -206,12 +217,26 @@
 		min-width: 0;
 	}
 
+	.cw-textarea--sm {
+		--_px: var(--cw-control-px-sm);
+		--_py: var(--cw-space-2);
+		--_fs: var(--cw-control-text-sm);
+	}
+
+	.cw-textarea--lg {
+		--_px: var(--cw-control-px-lg);
+		--_py: var(--cw-space-4);
+		--_fs: var(--cw-control-text-lg);
+	}
+
 	.cw-textarea__label {
-		font-size: var(--cw-text-xs);
+		font-size: var(--cw-text-sm);
 		font-weight: var(--cw-font-medium);
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: var(--cw-text-muted);
+		color: var(--cw-text-secondary);
+	}
+
+	.cw-textarea__required {
+		color: var(--cw-tone-danger-text);
 	}
 
 	.cw-textarea__wrapper {
@@ -224,35 +249,29 @@
 		max-width: 100%;
 		min-width: 0;
 		min-height: 7.5rem;
-		padding: 0.875rem var(--cw-space-3);
+		padding: var(--_py) var(--_px);
 		font-family: var(--cw-font-family);
-		font-size: var(--cw-text-sm);
+		font-size: var(--_fs);
 		line-height: var(--cw-leading-relaxed);
-		color: var(--cw-text-primary);
-		background-color: color-mix(in srgb, var(--cw-bg-elevated) 60%, transparent);
-		border: 1px solid var(--cw-border-default);
-		border-radius: var(--cw-radius-xl);
-		outline: none;
+		color: var(--cw-control-text);
+		background-color: var(--cw-control-bg);
+		border: 1px solid var(--cw-control-border);
+		border-radius: var(--cw-control-radius);
 		transition:
 			border-color var(--cw-duration-fast) var(--cw-ease-default),
-			background-color var(--cw-duration-fast) var(--cw-ease-default),
-			box-shadow var(--cw-duration-fast) var(--cw-ease-default);
+			background-color var(--cw-duration-fast) var(--cw-ease-default);
 	}
 
 	.cw-textarea__field::placeholder {
-		color: var(--cw-text-muted);
+		color: var(--cw-control-placeholder);
 	}
 
 	.cw-textarea__field:hover:not(:disabled):not(:read-only) {
-		border-color: color-mix(in srgb, var(--cw-border-default) 75%, var(--cw-info-500));
+		border-color: var(--cw-control-border-hover);
 	}
 
-	.cw-textarea__field:focus,
 	.cw-textarea__field:focus-visible {
-		border-color: var(--cw-info-500);
-		box-shadow:
-			0 0 0 2px color-mix(in srgb, var(--cw-info-500) 40%, transparent),
-			0 0 10px color-mix(in srgb, var(--cw-info-500) 18%, transparent);
+		border-color: var(--cw-focus-ring-color);
 	}
 
 	.cw-textarea__field--has-validation {
@@ -261,7 +280,7 @@
 
 	.cw-textarea__icon-wrap {
 		position: absolute;
-		top: 0.875rem;
+		top: var(--_py);
 		right: var(--cw-space-3);
 		display: flex;
 		align-items: center;
@@ -277,47 +296,36 @@
 	}
 
 	.cw-textarea__icon--error {
-		color: var(--cw-danger-500);
+		color: var(--cw-tone-danger-text);
 	}
 
 	.cw-textarea__icon--valid {
-		color: var(--cw-success-500);
+		color: var(--cw-tone-success-text);
 	}
 
-	.cw-textarea--error .cw-textarea__field {
+	.cw-textarea--error .cw-textarea__field,
+	.cw-textarea--error .cw-textarea__field:hover:not(:disabled):not(:read-only) {
 		border-color: var(--cw-tone-danger-border);
 	}
 
-	.cw-textarea--error .cw-textarea__field:focus,
-	.cw-textarea--error .cw-textarea__field:focus-visible {
-		box-shadow:
-			0 0 0 var(--cw-focus-ring-width) color-mix(in srgb, var(--cw-danger-500) 30%, transparent),
-			0 0 8px color-mix(in srgb, var(--cw-danger-500) 12%, transparent);
-	}
-
-	.cw-textarea--valid .cw-textarea__field {
+	.cw-textarea--valid .cw-textarea__field,
+	.cw-textarea--valid .cw-textarea__field:hover:not(:disabled):not(:read-only) {
 		border-color: var(--cw-tone-success-border);
 	}
 
-	.cw-textarea--valid .cw-textarea__field:focus,
-	.cw-textarea--valid .cw-textarea__field:focus-visible {
-		box-shadow:
-			0 0 0 var(--cw-focus-ring-width) color-mix(in srgb, var(--cw-success-500) 30%, transparent),
-			0 0 8px color-mix(in srgb, var(--cw-success-500) 12%, transparent);
-	}
-
 	.cw-textarea--disabled .cw-textarea__field {
-		opacity: 0.55;
+		color: var(--cw-text-disabled);
 		cursor: not-allowed;
-		background-color: color-mix(in srgb, var(--cw-bg-muted) 80%, transparent);
+		background-color: var(--cw-control-bg-readonly);
+		border-color: var(--cw-border-muted);
 	}
 
 	.cw-textarea--disabled .cw-textarea__label {
-		opacity: 0.5;
+		color: var(--cw-text-disabled);
 	}
 
 	.cw-textarea--readonly .cw-textarea__field {
-		background-color: color-mix(in srgb, var(--cw-bg-muted) 55%, var(--cw-bg-elevated));
+		background-color: var(--cw-control-bg-readonly);
 	}
 
 	.cw-textarea__meta {
@@ -356,11 +364,6 @@
 	@media (max-width: 40rem) {
 		.cw-textarea__field {
 			min-height: 6.75rem;
-			padding: 0.8125rem var(--cw-space-3);
-		}
-
-		.cw-textarea__icon-wrap {
-			top: 0.8125rem;
 		}
 
 		.cw-textarea__meta {

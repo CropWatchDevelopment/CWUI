@@ -60,10 +60,19 @@ export interface CwColumnDef<T> {
 	cell?: (row: T) => string;
 	/** Column width (CSS value) */
 	width?: string;
-	/** Text alignment */
+	/** Text alignment. Overrides the table-level `columnAlign` and the `numeric` default. */
 	align?: 'left' | 'center' | 'right';
 	/** Whether this column should be hidden at small breakpoints */
 	hideBelow?: 'sm' | 'md' | 'lg';
+	/**
+	 * Marks the column as numeric: right-aligned (unless `align` is set), tabular
+	 * figures, and finite number values are locale-formatted via `formatCwNumber`.
+	 */
+	numeric?: boolean;
+	/** Fixed fraction digits for `numeric` columns. Default: up to 2 decimals. */
+	decimals?: number;
+	/** Truncate overflowing cell text on one line with an ellipsis (full value in the tooltip). */
+	truncate?: boolean;
 }
 
 /* ── Chart types ───────────────────────────────────────── */
@@ -244,6 +253,9 @@ export interface CwToastItem {
 	id: string;
 	tone: CwTone;
 	message: string;
+	/** Optional bold heading shown above the message. */
+	title?: string;
+	/** Auto-dismiss delay in ms; `0` keeps the toast until dismissed. */
 	duration: number;
 	dismissible: boolean;
 }
@@ -564,6 +576,8 @@ export interface CwAlertPointsValue {
 export interface CwAlertPointsEditorText {
 	/** Unit dropdown label. */
 	unitFieldLabel?: string;
+	/** Accessible name for the number-line preview region. */
+	previewLabel?: string;
 	/** Base center label before the current unit is appended. */
 	centerFieldLabel?: string;
 	/** Rule name input label. */
@@ -673,8 +687,14 @@ export interface CwStatCardLabels {
 	aboveAvg?: string;
 	belowAvg?: string;
 	atAvg?: string;
+	/** @deprecated Use `showDetails`. */
 	clickToExpand?: string;
+	/** @deprecated Use `hideDetails`. */
 	clickToCollapse?: string;
+	/** Label for the details toggle button when collapsed. */
+	showDetails?: string;
+	/** Label for the details toggle button when expanded. */
+	hideDetails?: string;
 }
 
 export interface CwStatCardData {
@@ -786,4 +806,19 @@ export interface CwAlarmApi {
 	clear(): void;
 	/** Number of active alarms currently scheduled. */
 	readonly size: number;
+}
+
+/** CwTimePicker user-facing strings; override for localisation. */
+export interface CwTimePickerLabels {
+	clock24: string;
+	group: string;
+	hour: string;
+	minute: string;
+	hourInput: string;
+	minuteInput: string;
+	decreaseHour: string;
+	increaseHour: string;
+	decreaseMinute: string;
+	increaseMinute: string;
+	display12: string;
 }

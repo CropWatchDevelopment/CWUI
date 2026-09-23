@@ -3,51 +3,56 @@
 	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	let simulateOffline = $state(false);
+	let retrySucceeds = $state(true);
+	let lastEvent = $state('none yet');
 
-	const offlineExample = `let simulateOffline = $state(false);
+	async function handleRetry() {
+		lastEvent = 'retry started';
+		// Simulate a network check that takes a moment.
+		await new Promise((resolve) => setTimeout(resolve, 1200));
+		if (retrySucceeds) {
+			simulateOffline = false;
+			lastEvent = 'retry succeeded';
+		} else {
+			lastEvent = 'retry failed, still offline';
+		}
+	}
 
-<CwSwitch
-\tlabel="Simulate offline"
-\tbind:checked={simulateOffline}
+	const offlineExample = `<CwOfflineOverlay
+\tforceOffline={simulateOffline}
+\tonRetry={async () => {
+\t\tawait checkConnection();
+\t}}
 />
 
-<CwOfflineOverlay
-\tforceOffline={simulateOffline}
-\tonRetry={() => (simulateOffline = false)}
-/>`;
+<!-- Or let the overlay check the network itself: -->
+<CwOfflineOverlay pingUrl="/api/health" />`;
 </script>
 
 <h2>CwOfflineOverlay</h2>
 <p class="demo-desc">
-	Full-screen offline state with reconnect toast. For demo mode, toggle simulation to force the overlay.
+	Blocking modal shown when the browser loses its connection, with a “back online” notice when it
+	returns. Retry never reloads the page: it calls <code>onRetry</code> (which may return a promise)
+	or re-checks the network, optionally by pinging <code>pingUrl</code>. When a toast context
+	exists, the reconnect notice is shown as a toast.
 </p>
 
-<div class="demo-card">
-	<CwSwitch
-		label="Simulate offline"
-		description="Clicking retry will return to online mode in this demo."
-		bind:checked={simulateOffline}
-	/>
-</div>
+<section class="demo-section">
+	<h3>Simulate</h3>
+	<div class="demo-panel demo-stack">
+		<CwSwitch
+			label="Simulate offline"
+			description="Shows the overlay immediately."
+			bind:checked={simulateOffline}
+		/>
+		<CwSwitch
+			label="Retry succeeds"
+			description="When off, Retry spins for a moment and the overlay stays open."
+			bind:checked={retrySucceeds}
+		/>
+	</div>
+	<p class="demo-event" aria-live="polite">Last event: {lastEvent}</p>
+	<DemoCodeExample code={offlineExample} title="CwOfflineOverlay example" />
+</section>
 
-<DemoCodeExample code={offlineExample} title="CwOfflineOverlay example" />
-
-<CwOfflineOverlay
-	forceOffline={simulateOffline}
-	onRetry={() => (simulateOffline = false)}
-/>
-
-<style>
-	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }
-	.demo-desc { color: var(--cw-text-muted); font-size: var(--cw-text-sm); margin-bottom: var(--cw-space-4); }
-	.demo-card {
-		display: flex;
-		flex-direction: column;
-		gap: var(--cw-space-3);
-		padding: var(--cw-space-4);
-		background: var(--cw-bg-elevated);
-		border: 1px solid var(--cw-border-muted);
-		border-radius: var(--cw-radius-md);
-		margin-bottom: var(--cw-space-4);
-	}
-</style>
+<CwOfflineOverlay forceOffline={simulateOffline} onRetry={handleRetry} />

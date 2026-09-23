@@ -58,8 +58,76 @@
 		grouped: 'demo_datatable_grouped_grid',
 		fillParent: 'demo_datatable_fill_parent_grid',
 		virtual: 'demo_datatable_virtual_grid',
-		rowLoading: 'demo_datatable_row_loading_grid'
+		rowLoading: 'demo_datatable_row_loading_grid',
+		readings: 'demo_datatable_readings_grid',
+		empty: 'demo_datatable_empty_grid',
+		error: 'demo_datatable_error_grid'
 	} as const;
+
+	interface Reading {
+		id: string;
+		device: string;
+		location: string;
+		temperature: number;
+		humidity: number;
+		battery: number;
+	}
+
+	const LOCATIONS = [
+		'North field, row 12, near the east irrigation valve',
+		'Greenhouse 1, bench C',
+		'Orchard block 4',
+		'Packing shed cold room'
+	];
+
+	const readings: Reading[] = Array.from({ length: 40 }, (_, i) => ({
+		id: `reading-${i + 1}`,
+		device: `Sensor ${String(i + 1).padStart(3, '0')}`,
+		location: LOCATIONS[i % LOCATIONS.length],
+		temperature: Math.round((14 + Math.sin(i / 3) * 9) * 100) / 100,
+		humidity: Math.round((55 + Math.cos(i / 4) * 25) * 10) / 10,
+		battery: 100 - ((i * 7) % 60)
+	}));
+
+	const readingColumns: CwColumnDef<Reading>[] = [
+		{ key: 'device', header: 'Device', sortable: true },
+		{ key: 'location', header: 'Location', truncate: true, width: '14rem', align: 'left' },
+		{ key: 'temperature', header: 'Temp (°C)', numeric: true, decimals: 1, sortable: true },
+		{ key: 'humidity', header: 'Humidity (%)', numeric: true, decimals: 1 },
+		{ key: 'battery', header: 'Battery (%)', numeric: true, decimals: 0, hideBelow: 'sm' }
+	];
+
+	async function loadReadings(query: CwTableQuery): Promise<CwTableResult<Reading>> {
+		await delay(300);
+		let items = [...readings];
+		if (query.search) {
+			const term = query.search.toLowerCase();
+			items = items.filter((row) => row.device.toLowerCase().includes(term));
+		}
+		if (query.sort) {
+			const key = query.sort.column as keyof Reading;
+			const dir = query.sort.direction === 'asc' ? 1 : -1;
+			items.sort((a, b) =>
+				typeof a[key] === 'number'
+					? ((a[key] as number) - (b[key] as number)) * dir
+					: String(a[key]).localeCompare(String(b[key])) * dir
+			);
+		}
+		const start = (query.page - 1) * query.pageSize;
+		return { rows: items.slice(start, start + query.pageSize), total: items.length };
+	}
+
+	async function loadNothing(): Promise<CwTableResult<Device>> {
+		await delay(300);
+		return { rows: [], total: 0 };
+	}
+
+	async function loadFailure(): Promise<CwTableResult<Device>> {
+		await delay(300);
+		throw new Error('The device service timed out. Try again in a moment.');
+	}
+
+	let lastEvent = $state('none yet');
 
 	let mainRefreshCount = $state(0);
 
@@ -159,11 +227,11 @@
 	}
 
 	function handleEdit(device: Device) {
-		alert(`Edit: ${device.name}`);
+		lastEvent = `Edit ${device.name}`;
 	}
 
 	function handleDelete(device: Device) {
-		alert(`Delete: ${device.name}`);
+		lastEvent = `Delete ${device.name}`;
 	}
 
 	function handleMainTableRefresh() {
@@ -324,43 +392,97 @@ async function updateRow(row: Device) {
 </script>
 
 <h2>CwDataTable</h2>
-<p class="demo-desc">Async data loading, search, sort, pagination, virtual scrolling, zebra rows, custom cell rendering (e.g. <code>CwDuration</code>), page-size picker, toolbar actions, and per-row action buttons.</p>
-
-<CwDataTable
-	{columns}
-	{loadData}
-	rowKey="id"
-	gridId={demoGridIds.main}
-	rowTextSizeKey="textSize"
-	searchable
-	pageSize={10}
-	onRefresh={handleMainTableRefresh}
-	rowActionsHeader="Actions"
->
-	{#snippet actionsHeader()}
-		<CwButton size="sm" variant="primary">+ Add Device</CwButton>
-		<CwButton size="sm" variant="secondary">Export</CwButton>
-	{/snippet}
-	{#snippet rowActions(row: Device)}
-		<div class="row-actions">
-			<CwButton size="sm" variant="ghost" onclick={() => handleEdit(row)}>Edit</CwButton>
-			<CwButton size="sm" variant="danger" onclick={() => handleDelete(row)}>Delete</CwButton>
-		</div>
-	{/snippet}
-	{#snippet cell(row: Device, col: CwColumnDef<Device>, defaultValue: string)}
-		{#if col.key === 'lastSeen'}
-			<CwDuration from={row.lastSeen} />
-		{:else}
-			{defaultValue}
-		{/if}
-	{/snippet}
-</CwDataTable>
-
-<p class="demo-hint">
-	Built-in menu refresh callback count: {mainRefreshCount}. Column visibility is persisted per grid ID.
+<p class="demo-desc">
+	Async data loading, search, sort, pagination, virtual scrolling, grouping, custom cell rendering
+	(e.g. <code>CwDuration</code>), toolbar actions and per-row action buttons. Loading shows skeleton
+	rows while the toolbar stays in place, and empty and error states explain what happened.
 </p>
 
-<DemoCodeExample code={dataTableExample} title="CwDataTable example" />
+<section class="demo-section">
+	<h3>Full-featured table</h3>
+	<CwDataTable
+		{columns}
+		{loadData}
+		rowKey="id"
+		gridId={demoGridIds.main}
+		rowTextSizeKey="textSize"
+		searchable
+		pageSize={10}
+		onRefresh={handleMainTableRefresh}
+		rowActionsHeader="Actions"
+	>
+		{#snippet actionsHeader()}
+			<CwButton size="sm" variant="primary" onclick={() => (lastEvent = 'Add device')}>+ Add device</CwButton>
+			<CwButton size="sm" variant="secondary" onclick={() => (lastEvent = 'Export')}>Export</CwButton>
+		{/snippet}
+		{#snippet rowActions(row: Device)}
+			<div class="row-actions">
+				<CwButton size="sm" variant="ghost" onclick={() => handleEdit(row)}>Edit</CwButton>
+				<CwButton size="sm" variant="danger" onclick={() => handleDelete(row)}>Delete</CwButton>
+			</div>
+		{/snippet}
+		{#snippet cell(row: Device, col: CwColumnDef<Device>, defaultValue: string)}
+			{#if col.key === 'lastSeen'}
+				<CwDuration from={row.lastSeen} />
+			{:else}
+				{defaultValue}
+			{/if}
+		{/snippet}
+	</CwDataTable>
+
+	<p class="demo-event" aria-live="polite">
+		Last event: {lastEvent} · Refreshed {mainRefreshCount} {mainRefreshCount === 1 ? 'time' : 'times'}
+	</p>
+	<p class="demo-hint">Column visibility is persisted per grid ID.</p>
+
+	<DemoCodeExample code={dataTableExample} title="CwDataTable example" />
+</section>
+
+<section class="demo-section">
+	<h3>Compact density, numeric columns and sticky header</h3>
+	<p class="demo-hint">
+		<code>density="compact"</code> tightens rows. <code>numeric</code> columns right-align with
+		tabular figures and format with <code>decimals</code>; <code>truncate</code> adds an ellipsis
+		with the full value in a tooltip. <code>maxHeight</code> scrolls inside the table so the header
+		stays pinned.
+	</p>
+	<CwDataTable
+		columns={readingColumns}
+		loadData={loadReadings}
+		rowKey="id"
+		gridId={demoGridIds.readings}
+		density="compact"
+		maxHeight="20rem"
+		searchable
+		pageSize={25}
+	/>
+</section>
+
+<section class="demo-section">
+	<h3>Empty and error states</h3>
+	<div class="demo-grid demo-grid--wide">
+		<CwDataTable
+			{columns}
+			loadData={loadNothing}
+			rowKey="id"
+			gridId={demoGridIds.empty}
+			searchable
+			pageSize={5}
+		/>
+		<CwDataTable
+			{columns}
+			loadData={loadFailure}
+			rowKey="id"
+			gridId={demoGridIds.error}
+			pageSize={5}
+		/>
+	</div>
+	<p class="demo-hint">
+		Override the copy with <code>labels</code> (for example <code>errorTitle</code> and
+		<code>emptyDescription</code>) or replace them entirely with the <code>emptyState</code> and
+		<code>errorState</code> snippets.
+	</p>
+</section>
 
 <section class="demo-section">
 	<h3>Grouped Rows</h3>
@@ -410,7 +532,7 @@ async function updateRow(row: Device) {
 					rowActionsHeader="Action"
 				>
 					{#snippet rowActions(row: Device)}
-						<CwButton size="sm" variant="secondary" style="width: 100%;" onclick={() => handleEdit(row)}>View</CwButton>
+						<CwButton size="sm" variant="secondary" fullWidth onclick={() => handleEdit(row)}>View</CwButton>
 					{/snippet}
 					{#snippet cell(row: Device, col: CwColumnDef<Device>, defaultValue: string)}
 						{#if col.key === 'lastSeen'}
@@ -600,12 +722,8 @@ async function updateRow(row: Device) {
 </section>
 
 <style>
-	h2 { font-size: var(--cw-text-xl); font-weight: var(--cw-font-bold); margin-bottom: var(--cw-space-2); }
-	h3 { font-size: var(--cw-text-base); font-weight: var(--cw-font-semibold); margin-bottom: var(--cw-space-2); color: var(--cw-text-secondary); }
 	h4 { font-size: var(--cw-text-sm); font-weight: var(--cw-font-semibold); margin: 0; color: var(--cw-text-primary); }
-	.demo-desc { color: var(--cw-text-muted); font-size: var(--cw-text-sm); margin-bottom: var(--cw-space-4); }
-	.demo-hint { color: var(--cw-text-muted); font-size: var(--cw-text-xs); margin-bottom: var(--cw-space-2); }
-	.demo-section { margin-top: var(--cw-space-6); }
+
 	.demo-phone-preview {
 		display: grid;
 		place-items: center;
@@ -664,9 +782,13 @@ async function updateRow(row: Device) {
 		background: var(--cw-bg-elevated);
 		box-shadow: var(--cw-shadow-sm);
 	}
-	.demo-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cw-space-2); margin-bottom: var(--cw-space-3); }
+
+	.demo-grid--wide {
+		grid-template-columns: repeat(auto-fit, minmax(min(26rem, 100%), 1fr));
+	}
+
 	.demo-list { margin: 0; padding-left: var(--cw-space-4); color: var(--cw-text-secondary); font-size: var(--cw-text-sm); display: grid; gap: var(--cw-space-1); }
-	code { font-family: var(--cw-font-mono); font-size: var(--cw-text-xs); color: var(--cw-accent); }
+	code { font-family: var(--cw-font-mono); font-size: var(--cw-text-xs); color: var(--cw-accent-text); }
 	.row-actions {
 		display: flex;
 		flex-wrap: wrap;
