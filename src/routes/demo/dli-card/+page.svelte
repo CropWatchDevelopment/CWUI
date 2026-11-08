@@ -104,6 +104,15 @@
 		currentDli = cropPresets[crop].value;
 	}
 
+	const outlookExample = `<CwDliCard
+\tvalue={15.06}
+\ttargetMin={20}
+\ttargetMax={30}
+\tcropName="Tomato"
+\tshowStatus={false}
+\tday={{ lightSoFar: 0.918, lightEndsAt: sunset }}
+/>`;
+
 	const dliExample = `<script lang="ts">
 \timport { CwDliCard } from '@cropwatchdevelopment/cwui';
 
@@ -178,6 +187,47 @@
 	/>
 
 	<DemoCodeExample code={dliExample} title="CwDliCard example" />
+</section>
+
+<section class="demo-section">
+	<div class="demo-section__copy">
+		<h3>Today's outlook</h3>
+		<p class="demo-copy">
+			Pass <code>day</code> (the share of today's light that has fallen, from the sun's course,
+			and when the light ends) and the top right shows what is still needed, the light left and
+			where the day's pace leads, until the day's light is over and the final status takes its
+			place.
+		</p>
+	</div>
+
+	<div class="demo-status-grid">
+		<CwDliCard
+			value={15.06}
+			targetMin={20}
+			targetMax={30}
+			cropName="Tomato"
+			showStatus={false}
+			day={{ lightSoFar: 0.918, lightEndsAt: "2026-11-08T08:21:00Z" }}
+		/>
+		<CwDliCard
+			value={12}
+			targetMin={20}
+			targetMax={30}
+			cropName="Tomato"
+			showStatus={false}
+			day={{ lightSoFar: 0.5, lightEndsAt: "2026-11-08T07:00:00Z", assumed: true }}
+		/>
+		<CwDliCard
+			value={22.4}
+			targetMin={20}
+			targetMax={30}
+			cropName="Tomato"
+			showStatus={false}
+			day={{ lightSoFar: 0.7, lightEndsAt: "2026-11-08T08:21:00Z" }}
+		/>
+	</div>
+
+	<DemoCodeExample code={outlookExample} title="Today's outlook" />
 </section>
 
 <section class="demo-section">

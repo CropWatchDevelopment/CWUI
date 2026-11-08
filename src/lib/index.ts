@@ -103,6 +103,14 @@ export type { CwFormatNumberOptions } from './utils/cwFormat.js';
 export { metricColor, normalizeMetric, METRIC_COLORS } from './utils/metricColors.js';
 export type { MetricColor } from './utils/metricColors.js';
 
+// ── DLI card outlook (today's progress against the target) ─
+export { cwDliOutlook, CW_DLI_OUTLOOK_MIN_SHARE } from './components/cwDliOutlook.js';
+export type {
+	CwDliDayProgress,
+	CwDliOutlook,
+	CwDliOutlookStatus
+} from './components/cwDliOutlook.js';
+
 // ── Above & below ground chart (data model + helpers) ─────
 export { judgeCwReading, summarizeCwReadings } from './components/cwAboveBelowChart.js';
 export type {

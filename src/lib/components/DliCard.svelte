@@ -40,6 +40,30 @@
 			range: string,
 			status: string,
 		) => string;
+		/** Today's outlook (with `day`): heading over the light still needed ("Still needed"). */
+		outlookNeeded?: string;
+		/** Today's outlook: heading over the room left inside the target ("Room left"). */
+		outlookRoom?: string;
+		/** Today's outlook: heading over the excess past the target ("Over target"). */
+		outlookOver?: string;
+		/** Today's outlook: the day's pace points below the target ("Falling short"). */
+		outlookBehind?: string;
+		/** Today's outlook: the day's pace reaches the target ("On track"). */
+		outlookOnTrack?: string;
+		/** Today's outlook: inside the target ("Target reached"). */
+		outlookReached?: string;
+		/** Today's outlook: past the target's upper end ("Above target"). */
+		outlookAbove?: string;
+		/** Today's outlook: the light left and the sunset (`(share, time) => "8% of the light left · sunset 17:21"`). */
+		outlookLightLeftUntil?: (share: string, time: string) => string;
+		/** Today's outlook: the light left and the assumed end of the day. */
+		outlookLightLeftUntilAssumed?: (share: string, time: string) => string;
+		/** Today's outlook: the light left without an end time. */
+		outlookLightLeft?: (share: string) => string;
+		/** Today's outlook: where the day ends at its pace (`(value, unit) => "At today's pace ≈ 16.4 mol/m²/day"`). */
+		outlookPace?: (value: string, unit: string) => string;
+		/** Today's outlook: tooltip on an assumed end of the day. */
+		outlookAssumedHint?: string;
 	}
 
 	const DEFAULT_LABELS: Required<DliCardLabels> = {
@@ -60,6 +84,19 @@
 			`DLI today ${value} ${unit}. ${targetText}. Status: ${status}.`,
 		barAriaLabel: (scaleMax, value, unit, range, status) =>
 			`DLI range bar from 0 to ${scaleMax} ${unit}. Current value ${value} ${unit}. Target range ${range}. Status: ${status}.`,
+		outlookNeeded: "Still needed",
+		outlookRoom: "Room left",
+		outlookOver: "Over target",
+		outlookBehind: "Falling short",
+		outlookOnTrack: "On track",
+		outlookReached: "Target reached",
+		outlookAbove: "Above target",
+		outlookLightLeftUntil: (share, time) => `${share} of the light left · sunset ${time}`,
+		outlookLightLeftUntilAssumed: (share, time) =>
+			`${share} of the light left · day assumed to end ${time}`,
+		outlookLightLeft: (share) => `${share} of the light left`,
+		outlookPace: (value, unit) => `At today's pace ≈ ${value} ${unit}`,
+		outlookAssumedHint: "The day's light times are assumed: the location has no coordinates.",
 	};
 </script>
 
@@ -68,6 +105,7 @@
 	import CwNoDataOverlay from "./CwNoDataOverlay.svelte";
 	import { getCwNoDataMessage, hasCwNoData } from "./cwNoData.js";
 	import { CW_EMPTY_VALUE, formatCwNumber, isCwFiniteNumber } from "../utils/cwFormat.js";
+	import { cwDliOutlook, type CwDliDayProgress, type CwDliOutlookStatus } from "./cwDliOutlook.js";
 
 	interface Props {
 		value?: number | null;
@@ -78,6 +116,12 @@
 		title?: string;
 		unit?: string;
 		showStatus?: boolean;
+		/**
+		 * How far through its light the day is. With a target, the card's top
+		 * right shows today's outlook while the day's light lasts: what is still
+		 * needed, the light left and where the day's pace leads.
+		 */
+		day?: CwDliDayProgress | null;
 		history?: DliHistoryPoint[];
 		compact?: boolean;
 		noData?: CwNoDataMessage;
@@ -107,6 +151,7 @@
 		title,
 		unit = "mol/m²/day",
 		showStatus = true,
+		day = null,
 		history,
 		compact = false,
 		noData,
@@ -263,6 +308,45 @@
 	const headingTag = $derived(`h${headingLevel}`);
 	const subHeadingTag = $derived(`h${Math.min(headingLevel + 1, 6)}`);
 
+	// Today's outlook fills the top right while the day's final status is not shown.
+	const outlook = $derived(
+		showStatus && status ? null : cwDliOutlook(value, targetMin, targetMax, day),
+	);
+	const outlookHeading = $derived(
+		outlook?.kind === "over"
+			? l.outlookOver
+			: outlook?.kind === "room"
+				? l.outlookRoom
+				: l.outlookNeeded,
+	);
+	function outlookStatusText(outlookStatus: CwDliOutlookStatus): string {
+		switch (outlookStatus) {
+			case "behind":
+				return l.outlookBehind;
+			case "on_track":
+				return l.outlookOnTrack;
+			case "reached":
+				return l.outlookReached;
+			case "above":
+				return l.outlookAbove;
+		}
+	}
+	const outlookLightText = $derived.by(() => {
+		if (!outlook) return "";
+		const share = new Intl.NumberFormat(locale, {
+			style: "percent",
+			maximumFractionDigits: 0,
+		}).format(outlook.lightLeft);
+		const endsAt = day?.lightEndsAt == null ? null : new Date(day.lightEndsAt);
+		if (!endsAt || Number.isNaN(endsAt.getTime())) return l.outlookLightLeft(share);
+		const time = new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(
+			endsAt,
+		);
+		return day?.assumed
+			? l.outlookLightLeftUntilAssumed(share, time)
+			: l.outlookLightLeftUntil(share, time);
+	});
+
 	const historyItems = $derived.by<DisplayHistoryPoint[]>(() => {
 		if (!history?.length) return [];
 
@@ -310,6 +394,34 @@
 				<span>{l.statusPrefix}</span>
 				<strong>{statusText}</strong>
 			</p>
+		{:else if outlook}
+			<div class="cw-dli-card__outlook">
+				<p class="cw-dli-card__outlook-head">
+					<span class="cw-dli-card__outlook-label">{outlookHeading}</span>
+					{#if outlook.status}
+						<span class="cw-dli-card__outlook-status cw-dli-card__outlook-status--{outlook.status}">
+							{outlookStatusText(outlook.status)}
+						</span>
+					{/if}
+				</p>
+				{#if outlook.amount !== null}
+					<p class="cw-dli-card__outlook-amount">
+						<strong>{formatDli(outlook.amount)}</strong>
+						<span>{unit}</span>
+					</p>
+				{/if}
+				<p
+					class="cw-dli-card__outlook-line"
+					title={day?.assumed ? l.outlookAssumedHint : undefined}
+				>
+					{outlookLightText}
+				</p>
+				{#if outlook.projected !== null}
+					<p class="cw-dli-card__outlook-line">
+						{l.outlookPace(formatDli(outlook.projected), unit)}
+					</p>
+				{/if}
+			</div>
 		{/if}
 	</header>
 
@@ -478,6 +590,77 @@
 
 	.cw-dli-card__status strong {
 		font-weight: var(--cw-font-semibold);
+	}
+
+	/* Today's outlook, in the header's top right while the day's light lasts. */
+	.cw-dli-card__outlook {
+		display: grid;
+		justify-items: end;
+		gap: 0.125rem;
+		min-width: 0;
+		color: var(--cw-chart-card-muted, var(--cw-text-secondary));
+		font-size: var(--cw-text-xs);
+		line-height: 1.35;
+		text-align: right;
+	}
+
+	.cw-dli-card__outlook p {
+		margin: 0;
+	}
+
+	.cw-dli-card__outlook-head {
+		display: inline-flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: flex-end;
+		gap: var(--cw-space-2);
+	}
+
+	.cw-dli-card__outlook-label {
+		font-weight: var(--cw-font-semibold);
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+
+	.cw-dli-card__outlook-status {
+		padding: 0.125rem var(--cw-space-2);
+		border: 1px solid var(--cw-tone-warning-border);
+		border-radius: var(--cw-radius-full);
+		background-color: var(--cw-tone-warning-bg-subtle);
+		color: var(--cw-tone-warning-text);
+		font-weight: var(--cw-font-semibold);
+		white-space: nowrap;
+	}
+
+	.cw-dli-card__outlook-status--on_track,
+	.cw-dli-card__outlook-status--reached {
+		border-color: var(--cw-tone-success-border);
+		background-color: var(--cw-tone-success-bg-subtle);
+		color: var(--cw-tone-success-text);
+	}
+
+	.cw-dli-card__outlook-amount {
+		display: inline-flex;
+		align-items: baseline;
+		gap: var(--cw-space-1);
+	}
+
+	.cw-dli-card__outlook-amount strong {
+		color: var(--cw-chart-card-title, var(--cw-text-primary));
+		font-size: var(--cw-text-xl);
+		font-weight: var(--cw-font-semibold);
+		line-height: 1.2;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.cw-dli-card__outlook-line {
+		font-variant-numeric: tabular-nums;
+	}
+
+	.cw-dli-card__outlook-line[title] {
+		cursor: help;
+		text-decoration: underline dotted;
+		text-underline-offset: 0.2em;
 	}
 
 	.cw-dli-card__value {
@@ -661,6 +844,15 @@
 
 		.cw-dli-card__status {
 			width: fit-content;
+		}
+
+		.cw-dli-card__outlook {
+			justify-items: start;
+			text-align: left;
+		}
+
+		.cw-dli-card__outlook-head {
+			justify-content: flex-start;
 		}
 
 		.cw-dli-card__history-date {

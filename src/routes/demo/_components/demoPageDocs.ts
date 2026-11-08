@@ -3682,6 +3682,12 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			{ name: 'title', type: 'string', description: 'Card title.', defaultValue: "'DLI Today'" },
 			{ name: 'unit', type: 'string', description: 'Unit label displayed with the value and target.', defaultValue: "'mol/m²/day'" },
 			{ name: 'showStatus', type: 'boolean', description: 'Shows the visible status label.', defaultValue: 'true' },
+			{
+				name: 'day',
+				type: 'CwDliDayProgress | null',
+				description:
+					"How far through its light the day is: `lightSoFar` (0–1, from the sun's course), `lightEndsAt` (sunset) and `assumed` (no location). With a target, the top right shows today's outlook (still needed, light left, the day's pace) until the day's light is over or the status shows."
+			},
 			{ name: 'history', type: 'DliHistoryPoint[]', description: 'Optional daily DLI history rendered as bars.' },
 			{ name: 'compact', type: 'boolean', description: 'Reduces card spacing for dense dashboard grids.', defaultValue: 'false' },
 			{
