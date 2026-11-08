@@ -196,7 +196,9 @@
 			Pass <code>day</code> (the share of today's light that has fallen, from the sun's course,
 			and when the light ends) and the top right shows what is still needed, the light left and
 			where the day's pace leads, until the day's light is over and the final status takes its
-			place.
+			place. The card's text is built in for English and Japanese and follows
+			<code>locale</code> (the middle card is <code>locale="ja-JP"</code>); <code>labels</code>
+			still overrides any string.
 		</p>
 	</div>
 
@@ -210,10 +212,11 @@
 			day={{ lightSoFar: 0.918, lightEndsAt: "2026-11-08T08:21:00Z" }}
 		/>
 		<CwDliCard
+			locale="ja-JP"
 			value={12}
 			targetMin={20}
 			targetMax={30}
-			cropName="Tomato"
+			cropName="トマト"
 			showStatus={false}
 			day={{ lightSoFar: 0.5, lightEndsAt: "2026-11-08T07:00:00Z", assumed: true }}
 		/>

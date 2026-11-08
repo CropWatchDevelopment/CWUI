@@ -3705,7 +3705,12 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			{
 				name: "locale",
 				type: "string",
-				description: "BCP 47 locale for number and date formatting. Defaults to the runtime locale."
+				description: "BCP 47 locale for number and date formatting, and for the card's built-in text: English and Japanese (`ja-*`), English otherwise. Defaults to the runtime locale for numbers and English for text."
+			},
+			{
+				name: "labels",
+				type: "DliCardLabels",
+				description: "Overrides any of the built-in strings (see `cwDliCardText(locale)` for the text in use)."
 			},
 			{
 				name: "CwDliCard",

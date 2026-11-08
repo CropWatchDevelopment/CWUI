@@ -103,6 +103,11 @@ export type { CwFormatNumberOptions } from './utils/cwFormat.js';
 export { metricColor, normalizeMetric, METRIC_COLORS } from './utils/metricColors.js';
 export type { MetricColor } from './utils/metricColors.js';
 
+// ── Built-in component text (English, Japanese; English fallback) ─
+export { CW_LANGUAGES, CW_DEFAULT_LANGUAGE, cwLanguageFor, cwTextFor } from './i18n/cwLanguage.js';
+export type { CwLanguage, CwText } from './i18n/cwLanguage.js';
+export { cwDliCardText, DLI_CARD_TEXT } from './components/dliCardText.js';
+
 // ── DLI card outlook (today's progress against the target) ─
 export { cwDliOutlook, CW_DLI_OUTLOOK_MIN_SHARE } from './components/cwDliOutlook.js';
 export type {

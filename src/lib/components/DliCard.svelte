@@ -1,7 +1,8 @@
 <script lang="ts" module>
 	/**
 	 * Override display labels for the DLI card (i18n).
-	 * All fields are optional; omitted fields fall back to English defaults.
+	 * All fields are optional. The card has built-in English and Japanese text
+	 * (picked from `locale`, see dliCardText.ts); omitted fields use it.
 	 */
 	export interface DliCardLabels {
 		/** Fallback card title shown when no `title` prop is provided. */
@@ -30,6 +31,8 @@
 		targetForCrop?: (cropName: string, range: string) => string;
 		/** Builds the target text when no crop name is present (e.g. `(range) => "Target: …"`). */
 		target?: (range: string) => string;
+		/** Adds the share of the target that should have fallen by now, with `day` (`(target, expected) => "… · 19.8–29.7 expected by now"`). */
+		targetExpected?: (target: string, expected: string) => string;
 		/** Builds the accessible label for the value readout. */
 		valueAriaLabel?: (value: string, unit: string, targetText: string, status: string) => string;
 		/** Builds the accessible label for the DLI range bar. */
@@ -65,39 +68,6 @@
 		/** Today's outlook: tooltip on an assumed end of the day. */
 		outlookAssumedHint?: string;
 	}
-
-	const DEFAULT_LABELS: Required<DliCardLabels> = {
-		title: "DLI Today",
-		statusVeryLow: "Very low",
-		statusSlightlyLow: "Slightly low",
-		statusLow: "Low",
-		statusGood: "Good",
-		statusHigh: "High",
-		statusVeryHigh: "Very high",
-		statusPrefix: "Status:",
-		historyTitle: "Daily history",
-		historyListLabel: "Daily DLI history",
-		historyCount: (days) => `${days} days`,
-		targetForCrop: (cropName, range) => `Target for ${cropName}: ${range}`,
-		target: (range) => `Target: ${range}`,
-		valueAriaLabel: (value, unit, targetText, status) =>
-			`DLI today ${value} ${unit}. ${targetText}. Status: ${status}.`,
-		barAriaLabel: (scaleMax, value, unit, range, status) =>
-			`DLI range bar from 0 to ${scaleMax} ${unit}. Current value ${value} ${unit}. Target range ${range}. Status: ${status}.`,
-		outlookNeeded: "Still needed",
-		outlookRoom: "Room left",
-		outlookOver: "Over target",
-		outlookBehind: "Falling short",
-		outlookOnTrack: "On track",
-		outlookReached: "Target reached",
-		outlookAbove: "Above target",
-		outlookLightLeftUntil: (share, time) => `${share} of the light left · sunset ${time}`,
-		outlookLightLeftUntilAssumed: (share, time) =>
-			`${share} of the light left · day assumed to end ${time}`,
-		outlookLightLeft: (share) => `${share} of the light left`,
-		outlookPace: (value, unit) => `At today's pace ≈ ${value} ${unit}`,
-		outlookAssumedHint: "The day's light times are assumed: the location has no coordinates.",
-	};
 </script>
 
 <script lang="ts">
@@ -106,6 +76,7 @@
 	import { getCwNoDataMessage, hasCwNoData } from "./cwNoData.js";
 	import { CW_EMPTY_VALUE, formatCwNumber, isCwFiniteNumber } from "../utils/cwFormat.js";
 	import { cwDliOutlook, type CwDliDayProgress, type CwDliOutlookStatus } from "./cwDliOutlook.js";
+	import { cwDliCardText } from "./dliCardText.js";
 
 	interface Props {
 		value?: number | null;
@@ -161,7 +132,7 @@
 		class: className = "",
 	}: Props = $props();
 
-	const l = $derived({ ...DEFAULT_LABELS, ...labels });
+	const l = $derived({ ...cwDliCardText(locale), ...labels });
 
 	const uid = $props.id();
 	const historyDateFormatter = $derived(
@@ -288,13 +259,22 @@
 		`${formatDli(normalizedTarget.min)}–${formatDli(normalizedTarget.max)} ${unit}`,
 	);
 	const trimmedCropName = $derived(cropName.trim());
-	const targetText = $derived(
-		!hasTarget
-			? ""
-			: trimmedCropName
+	/** How much of the target should have fallen by now, from the day's progress. */
+	const expectedByNow = $derived.by(() => {
+		const share = day && isCwFiniteNumber(day.lightSoFar) ? day.lightSoFar : null;
+		if (!hasTarget || share === null || share <= 0 || share >= 0.999) return "";
+		return [targetMin, targetMax]
+			.filter((bound): bound is number => isCwFiniteNumber(bound))
+			.map((bound) => formatDli(bound * share))
+			.join("–");
+	});
+	const targetText = $derived.by(() => {
+		if (!hasTarget) return "";
+		const text = trimmedCropName
 			? l.targetForCrop(trimmedCropName, formattedTargetRange)
-			: l.target(formattedTargetRange),
-	);
+			: l.target(formattedTargetRange);
+		return expectedByNow ? l.targetExpected(text, expectedByNow) : text;
+	});
 	const valueAriaLabel = $derived(
 		status
 			? l.valueAriaLabel(formattedValue, unit, targetText, statusText)
@@ -546,14 +526,18 @@
 
 	.cw-dli-card__header {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: flex-start;
 		justify-content: space-between;
-		gap: var(--cw-space-4);
+		gap: var(--cw-space-2) var(--cw-space-4);
 		min-width: 0;
 	}
 
+	/* The heading keeps at least 14rem; a top right that does not fit beside it
+	   moves below it. */
 	.cw-dli-card__heading {
 		display: grid;
+		flex: 1 1 14rem;
 		gap: var(--cw-space-1);
 		min-width: 0;
 	}
@@ -596,6 +580,7 @@
 	.cw-dli-card__outlook {
 		display: grid;
 		justify-items: end;
+		margin-left: auto;
 		gap: 0.125rem;
 		min-width: 0;
 		color: var(--cw-chart-card-muted, var(--cw-text-secondary));
@@ -848,6 +833,7 @@
 
 		.cw-dli-card__outlook {
 			justify-items: start;
+			margin-left: 0;
 			text-align: left;
 		}
 
