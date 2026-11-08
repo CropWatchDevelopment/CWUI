@@ -32,6 +32,7 @@ export { default as DliCard } from './components/DliCard.svelte';
 export { default as CwDliCard } from './components/DliCard.svelte';
 export { default as CwPPFDChart } from './components/CwPPFDChart.svelte';
 export { default as CwVPDChart } from './components/CwVPDChart.svelte';
+export { default as CwAboveBelowChart } from './components/CwAboveBelowChart.svelte';
 export { default as CwWindCompass } from './components/CwWindCompass.svelte';
 export { default as CwDateTimeRangePicker } from './components/CwDateTimeRangePicker.svelte';
 export { default as CwThemePicker } from './components/CwThemePicker.svelte';
@@ -101,6 +102,18 @@ export type { CwFormatNumberOptions } from './utils/cwFormat.js';
 // ── Chart color conventions ────────────────────────────────
 export { metricColor, normalizeMetric, METRIC_COLORS } from './utils/metricColors.js';
 export type { MetricColor } from './utils/metricColors.js';
+
+// ── Above & below ground chart (data model + helpers) ─────
+export { judgeCwReading, summarizeCwReadings } from './components/cwAboveBelowChart.js';
+export type {
+	CwAboveBelowIcon,
+	CwAboveBelowLight,
+	CwAboveBelowMetric,
+	CwAboveBelowPoint,
+	CwAboveBelowStatus,
+	CwAboveBelowSummary,
+	CwAboveBelowTarget
+} from './components/cwAboveBelowChart.js';
 
 // ── Types ───────────────────────────────────────────────────
 export type {
@@ -194,6 +207,7 @@ export type { CwResponsiveLineChartLabels } from './components/CwResponsiveLineC
 export type { CwOfflineOverlayLabels } from './components/CwOfflineOverlay.svelte';
 export type { CwDeviceLineChartSectionLabels } from './components/CwDeviceLineChartSection.svelte';
 export type { CwPPFDChartLabels } from './components/CwPPFDChart.svelte';
+export type { CwAboveBelowChartLabels } from './components/CwAboveBelowChart.svelte';
 export type { CwDataTableLabels } from './components/CwDataTable.svelte';
 export type { DliCardLabels } from './components/DliCard.svelte';
 export type { DliCardLabels as CwDliCardLabels } from './components/DliCard.svelte';

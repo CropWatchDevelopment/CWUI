@@ -4179,6 +4179,106 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			}
 		]
 	},
+	'/demo/abovebelowchart': {
+		summary:
+			'CwAboveBelowChart is one panel for an all-in-one soil board: a thin light strip, the air readings above a ground line and the soil readings below it. Each reading shows its current value, a range bar and its low, average and high for the range, plus a status chip and target band when a growing target is given. It fits its container: wide, tablet and phone layouts.',
+		steps: [
+			{
+				title: 'Push the readings as they come',
+				description:
+					'Give each reading its telemetry points in `data`: `{ t, v }` points in any order, or bare numbers. Nulls are skipped. The current value is the newest point; low, average and high are worked out for you. Use `current` or `stats` only to override them.'
+			},
+			{
+				title: 'Name the metric with a CropWatch key',
+				description:
+					'`key` values such as `air_temperature`, `air_humidity`, `co2`, `soil_temperature`, `soil_moisture`, `soil_ec` and `soil_ph` pick the metric colour and icon, so the app does not choose them.'
+			},
+			{
+				title: 'Add targets to judge the readings',
+				description:
+					'`target` takes optional `min`, `optimalMin`, `optimalMax` and `max`. The optimal bounds draw the band and decide Optimal, Low or High; `min` and `max` are stress limits (Too low, Too high). Use `note` instead for a reference that must not be judged, such as a lab-test EC band or "Daytime only".'
+			},
+			{
+				title: 'Translate with labels',
+				description:
+					'English is built in. Pass other languages through `labels`, and set `locale` for number formatting. Reading names, units and notes are data, so pass them already translated.'
+			}
+		],
+		apiRows: [
+			{ name: 'air', type: 'CwAboveBelowMetric[]', description: 'Readings above the ground line (air temperature, humidity, CO₂…).', defaultValue: '[]' },
+			{ name: 'ground', type: 'CwAboveBelowMetric[]', description: 'Readings below the ground line (soil temperature, moisture, EC, pH…).', defaultValue: '[]' },
+			{
+				name: 'light',
+				type: 'CwAboveBelowLight | null',
+				description:
+					'The light strip: `data` (PPFD points; the newest is now, the highest is the peak), `current`, `peak`, `dli` (so far today), `dliTarget` ({ min, max }) and the three units. Leave it out for boards without a light sensor.'
+			},
+			{ name: 'title', type: 'string', description: 'Card title.', defaultValue: "labels.title ('Above & below ground')" },
+			{ name: 'subtitle', type: 'string', description: 'Line under the title, e.g. the range and the time of the latest reading.' },
+			{ name: 'targetName', type: 'string', description: "Whose targets the bands show (usually the crop's name), used in the legend and the light goal." },
+			{ name: 'tinted', type: 'boolean', description: 'Tints the light, air and ground layers.', defaultValue: 'true' },
+			{ name: 'hideEmpty', type: 'boolean', description: 'Leaves out readings that have no value at all, such as pH on a probe without it.', defaultValue: 'true' },
+			{ name: 'loading', type: 'boolean', description: 'Shows a placeholder while the readings load.', defaultValue: 'false' },
+			{
+				name: 'noData',
+				type: 'string | boolean',
+				description:
+					'When present, blurs the panel and shows an overlay. Pass localized text, or use the bare `noData` attribute for "No data available".'
+			},
+			{ name: 'headingLevel', type: '1 | 2 | 3 | 4 | 5', description: 'Heading level for the title; the layer headings use the next level.', defaultValue: '3' },
+			{ name: 'locale', type: 'string', description: 'BCP 47 locale for number formatting. Defaults to the runtime locale.' },
+			{ name: 'labels', type: 'CwAboveBelowChartLabels', description: 'Overrides any display text (i18n). Omitted keys fall back to English.' },
+			{
+				name: 'CwAboveBelowMetric',
+				type: 'type',
+				description:
+					'`key`, `label`, `unit`, `data`, `current`, `stats`, `decimals` (default 1), `target`, `note`, `color` and `icon`. Only `key` and `label` are required.'
+			}
+		],
+		apiNote:
+			'The bar scale covers the readings, the current value and the optimal band, plus 8 % either side, so a band far from today\'s readings is still visible. An open-ended band runs to the edge of the scale.',
+		examples: [
+			{
+				title: 'Soil board with a crop',
+				description: 'Readings go in as raw points; the chart does the rest.',
+				code: `<CwAboveBelowChart
+\tsubtitle="Last 24 Hours · 84 readings · latest 13:52"
+\ttargetName="Tomato"
+\tlight={{ data: ppfd, dli: 14, dliTarget: { min: 20, max: 30 } }}
+\tair={[
+\t\t{ key: 'air_temperature', label: 'Air temperature', unit: '°C', data: airTemperature,
+\t\t\ttarget: { min: 12, optimalMin: 20, optimalMax: 25, max: 35 } },
+\t\t{ key: 'air_humidity', label: 'Air humidity', unit: '%', decimals: 0, data: airHumidity,
+\t\t\ttarget: { optimalMin: 60, optimalMax: 80 } }
+\t]}
+\tground={[
+\t\t{ key: 'soil_moisture', label: 'Soil moisture', unit: '%', data: soilMoisture,
+\t\t\ttarget: { min: 12.5, optimalMin: 19.3, optimalMax: 24.2 } },
+\t\t{ key: 'soil_ec', label: 'EC', unit: 'mS/cm', decimals: 2, data: soilEc,
+\t\t\tnote: '0.2–0.5 mS/cm (lab test, 1:5)' }
+\t]}
+/>`
+			},
+			{
+				title: 'Japanese',
+				description: 'Pass the translated labels and the locale; the readings arrive with translated names.',
+				code: `<CwAboveBelowChart
+\tlocale="ja-JP"
+\tlabels={{ title: '地上と地中', light: '光', air: '空気', ground: '土壌', groundLevel: '地表',
+\t\tlow: '最小', average: '平均', high: '最大', statusOptimal: '適正', statusLow: '低め', statusHigh: '高め' }}
+\ttargetName="トマト"
+\t{air}
+\t{ground}
+\t{light}
+/>`
+			},
+			{
+				title: 'Without a crop or light sensor',
+				description: 'No targets means no bands or chips; no `light` means no light strip.',
+				code: `<CwAboveBelowChart {air} {ground} />`
+			}
+		]
+	},
 	'/demo/vpdchart': {
 		summary:
 			'CwVPDChart is a matrix view of climate strategy rather than a single-value gauge. You can drive it from an explicit `current` VPD reading, or let it derive room VPD from temperature and humidity.',

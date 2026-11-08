@@ -91,6 +91,11 @@
 			soilMoisture.push({ t, v: sm });
 		}
 
+		// The CO₂ sensor was fitted part-way through the week, like a board that
+		// gains a sensor. Hovering before its first reading leaves CO₂ out of the
+		// tooltip instead of showing a value from later in the week.
+		co2.splice(0, Math.floor(n * 0.65));
+
 		const gapMs = 8 * 60 * 1000;
 		// Colors come from the canonical metric→color conventions (metricColor):
 		// temperature = value gradient, soil temp = brown, water = blues, CO₂ = purple,

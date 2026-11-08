@@ -21,6 +21,11 @@
 		CwNoDataMessage
 	} from '../types/index.js';
 	import { formatCwNumber } from '../utils/cwFormat.js';
+	import {
+		CW_RLC_HOVER_SNAP_PX,
+		hoverPoint,
+		nearestPointIndex
+	} from '../utils/lineChartHover.js';
 
 	export type {
 		CwResponsiveLineSeries,
@@ -216,19 +221,6 @@
 
 	function fmtValue(v: number | null | undefined, decimals = 1, locale?: string) {
 		return formatCwNumber(v, { decimals, locale });
-	}
-
-	function nearestIdx(data: CwResponsiveLineDataPoint[], t: number) {
-		if (!data.length) return -1;
-		let lo = 0;
-		let hi = data.length - 1;
-		while (lo < hi) {
-			const mid = (lo + hi) >> 1;
-			if (data[mid].t < t) lo = mid + 1;
-			else hi = mid;
-		}
-		if (lo > 0 && Math.abs(data[lo - 1].t - t) < Math.abs(data[lo].t - t)) return lo - 1;
-		return lo;
 	}
 
 	function seriesStats(
@@ -1087,8 +1079,8 @@
 			const data = s.data;
 			if (!data.length) continue;
 			const gapMs = s.gapMs || 0;
-			let i0 = nearestIdx(data, viewStart);
-			let i1 = nearestIdx(data, viewEnd);
+			let i0 = nearestPointIndex(data, viewStart);
+			let i1 = nearestPointIndex(data, viewEnd);
 			if (data[i0] && data[i0].t > viewStart && i0 > 0) i0--;
 			if (data[i1] && data[i1].t < viewEnd && i1 < data.length - 1) i1++;
 			ctx.lineWidth = s.gradient ? 2.4 : 1.8;
@@ -1244,10 +1236,12 @@
 				col: string;
 			}
 			const readouts: Readout[] = [];
+			// A series whose first reading comes after the cursor is left out:
+			// its nearest point would be a value from the cursor's future.
+			const snapMs = ((viewEnd - viewStart) / plot.w) * CW_RLC_HOVER_SNAP_PX;
 			for (const s of visibleSeries) {
-				const idx = nearestIdx(s.data, t);
-				const dp = s.data[idx];
-				if (!dp || dp.v == null) continue;
+				const dp = hoverPoint(s.data, t, snapMs);
+				if (!dp) continue;
 				const range = rangeByPlacement.get(s.id);
 				if (!range) continue;
 				const yS = (v: number) =>
@@ -1530,9 +1524,10 @@
 
 	function describeAt(t: number): string {
 		const parts = [fmtCrosshairTime(t, locale)];
+		const snapMs = ((viewEnd - viewStart) / plotGeometry().plotW) * CW_RLC_HOVER_SNAP_PX;
 		for (const s of visibleSeries) {
-			const dp = s.data[nearestIdx(s.data, t)];
-			if (!dp || dp.v == null) continue;
+			const dp = hoverPoint(s.data, t, snapMs);
+			if (!dp) continue;
 			parts.push(`${s.label} ${joinCwUnit(fmtValue(dp.v, s.decimals ?? 1, locale), s.unit)}`);
 		}
 		return parts.join(', ');

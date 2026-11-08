@@ -41,6 +41,7 @@ export const demoIcons = {
 	dli: "M2 8h12M4 6v4m6-4v4M9 5.5h3v5H9v-5zM6.5 3v10",
 	ppfd: "M2 11a6 6 0 1112 0H2zm6-3 2.75-2.25M8 6.5v.01",
 	vpd: "M2.5 11a5.5 5.5 0 1111 0h-11zm5.5-4.2v2.7m0 0L6.4 8.1M8 9.5l1.6-1.4",
+	aboveBelow: "M1.5 8h13M4 6V3.5M8 6V2.5M12 6V4.5M4 10v2M8 10v3.5M12 10v1.5",
 	wind: "M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM8 8L11 4M8 8L4 11M8 8a1 1 0 100-2 1 1 0 000 2z",
 	calendar:
 		"M3 4h10a1 1 0 011 1v8a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1zm2-2v3m6-3v3M2 7h12",
@@ -128,6 +129,7 @@ export const demoNavItems: CwSideNavItem[] = [
 	{ id: 'dli-card', label: 'DLI Card', icon: demoIcons.dli, href: '/demo/dli-card', group: 'Charts' },
 	{ id: 'ppfdchart', label: 'PPFD Chart', icon: demoIcons.ppfd, href: '/demo/ppfdchart', group: 'Charts' },
 	{ id: 'vpdchart', label: 'VPD Chart', icon: demoIcons.vpd, href: '/demo/vpdchart', group: 'Charts' },
+	{ id: 'abovebelowchart', label: 'Above & Below Chart', icon: demoIcons.aboveBelow, href: '/demo/abovebelowchart', group: 'Charts' },
 	{ id: 'windcompass', label: 'Wind Compass', icon: demoIcons.wind, href: '/demo/windcompass', group: 'Charts' },
 	// ── Helpers ──
 	{ id: 'copy', label: 'Copy', icon: demoIcons.copy, href: '/demo/copy', group: 'Helpers' },
