@@ -4192,7 +4192,7 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 	},
 	'/demo/abovebelowchart': {
 		summary:
-			'CwAboveBelowChart is one panel for an all-in-one soil board: a thin light strip, the air readings above a ground line and the soil readings below it. Each reading shows its current value, a range bar and its low, average and high for the range, plus a status chip and target band when a growing target is given. It fits its container: wide, tablet and phone layouts.',
+			'CwAboveBelowChart is one panel for an all-in-one soil board: a thin light strip, the air readings above a ground line and the soil readings below it. Each reading shows its current value, a range bar and its low, average and high for the range, plus a status chip and target band when a growing target is given. Pointing at a part of a bar (now, average, low–high or target) names it in a tooltip, and each layer is marked on its top edge (Sky level, Air level, Ground level). It fits its container: wide, tablet and phone layouts.',
 		steps: [
 			{
 				title: 'Push the readings as they come',

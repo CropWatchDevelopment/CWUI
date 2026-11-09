@@ -127,6 +127,9 @@
 	--cw-chart-card-title: #07111d;
 	--cw-chart-card-cell-border: #b8c7d4;
 	--cw-chart-card-cell-bg: color-mix(in srgb, var(--cw-bg-muted) 78%, var(--cw-bg-surface));
+	/* Growing-target bands on chart bars (CwAboveBelowChart); 3:1 on the card. */
+	--cw-chart-target-border: #059669;
+	--cw-chart-target-bg: color-mix(in srgb, #059669 12%, transparent);
 
 	/* ── Line Chart ───────────────────────────────────── */
 	--cw-linechart-grid: rgb(181 195 209);

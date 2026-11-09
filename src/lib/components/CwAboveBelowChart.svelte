@@ -12,6 +12,10 @@
 		air?: string;
 		/** Ground layer heading ("Ground"). */
 		ground?: string;
+		/** Label on the top edge of the light strip ("Sky level"). */
+		skyLevel?: string;
+		/** Label on the line above the air layer ("Air level"). */
+		airLevel?: string;
 		/** Label on the line between the air and ground layers ("Ground level"). */
 		groundLevel?: string;
 		/** Light strip: the current PPFD ("PPFD now"). */
@@ -40,6 +44,8 @@
 		legendRange?: string;
 		/** Legend: the target band; gets `targetName` when there is one ("Tomato target" / "Target"). */
 		legendTarget?: (targetName: string) => string;
+		/** Tooltip on a part of a reading's bar: the part's legend name and its value (`"Now: 21.7°C"`). */
+		tooltip?: (name: string, value: string) => string;
 		/** Status chip past the lower stress limit ("Too low"). */
 		statusTooLow?: string;
 		/** Status chip below the optimal band ("Low"). */
@@ -57,6 +63,8 @@
 		light: 'Light',
 		air: 'Air',
 		ground: 'Ground',
+		skyLevel: 'Sky level',
+		airLevel: 'Air level',
 		groundLevel: 'Ground level',
 		ppfdNow: 'PPFD now',
 		ppfdPeak: 'Peak',
@@ -71,6 +79,7 @@
 		legendAverage: 'Avg',
 		legendRange: 'Low–high',
 		legendTarget: (targetName) => (targetName ? `${targetName} target` : 'Target'),
+		tooltip: (name, value) => `${name}: ${value}`,
 		statusTooLow: 'Too low',
 		statusLow: 'Low',
 		statusOptimal: 'Optimal',
@@ -83,8 +92,9 @@
 	import type { CwNoDataMessage } from '../types/index.js';
 	import CwChip from './CwChip.svelte';
 	import CwNoDataOverlay from './CwNoDataOverlay.svelte';
+	import CwTooltip from './CwTooltip.svelte';
 	import { getCwNoDataMessage, hasCwNoData } from './cwNoData.js';
-	import { formatCwNumber, isCwFiniteNumber } from '../utils/cwFormat.js';
+	import { formatCwNumber, isCwFiniteNumber, joinCwUnit } from '../utils/cwFormat.js';
 	import { metricColor } from '../utils/metricColors.js';
 	import {
 		cwAboveBelowBar,
@@ -161,7 +171,11 @@
 		status: CwAboveBelowStatus | null;
 		statusLabel: string;
 		targetLine: string | null;
+		/** Tooltip text for each part of the bar. */
+		tips: { now: string; average: string; range: string; band: string };
 	}
+
+	type Level = 'sky' | 'air' | 'ground';
 
 	const uid = $props.id();
 	// Layer colours come from the CropWatch metric palette (3:1 on both themes).
@@ -196,6 +210,8 @@
 		const format = (value: number | null) => formatCwNumber(value, { decimals, locale });
 		const status = judgeCwReading(summary.current, metric.target);
 		const range = formatCwTargetRange(metric.target, { decimals, unit: metric.unit, locale });
+		const withUnit = (text: string) => joinCwUnit(text, metric.unit);
+		const [low, average, high] = [summary.min, summary.avg, summary.max].map(format);
 		return {
 			key: metric.key,
 			label: metric.label,
@@ -203,13 +219,19 @@
 			color: cwAboveBelowColorFor(metric),
 			icon: metric.icon ?? cwAboveBelowIconFor(metric.key),
 			current: format(summary.current),
-			low: format(summary.min),
-			average: format(summary.avg),
-			high: format(summary.max),
+			low,
+			average,
+			high,
 			bar: cwAboveBelowBar(summary, metric.target),
 			status,
 			statusLabel: status ? statusText(status) : '',
-			targetLine: metric.note || (range ? l.target(range) : null)
+			targetLine: metric.note || (range ? l.target(range) : null),
+			tips: {
+				now: l.tooltip(l.legendNow, withUnit(format(summary.current))),
+				average: l.tooltip(l.legendAverage, withUnit(average)),
+				range: l.tooltip(l.legendRange, withUnit(`${low}–${high}`)),
+				band: l.tooltip(l.legendTarget(targetName), range ?? '')
+			}
 		};
 	}
 
@@ -242,6 +264,12 @@
 	});
 
 	const hasLayers = $derived(airViews.length > 0 || groundViews.length > 0);
+	// Each layer is marked on its top edge; the first marker sits on the panel's border.
+	const topLevel = $derived<Level>(lightView ? 'sky' : airViews.length > 0 ? 'air' : 'ground');
+
+	function levelText(level: Level): string {
+		return level === 'sky' ? l.skyLevel : level === 'air' ? l.airLevel : l.groundLevel;
+	}
 </script>
 
 {#snippet glyph(name: CwAboveBelowIcon | 'sun' | 'cloud' | 'layers', size: number)}
@@ -288,6 +316,10 @@
 	</svg>
 {/snippet}
 
+{#snippet level(kind: Level)}
+	<div class="cw-ab__level cw-ab__level--{kind}" aria-hidden="true"><span>{levelText(kind)}</span></div>
+{/snippet}
+
 {#snippet layer(kind: 'air' | 'ground', heading: string, views: MetricView[])}
 	<section class="cw-ab__layer cw-ab__layer--{kind}" aria-labelledby="{uid}-{kind}">
 		<div class="cw-ab__layer-label">
@@ -319,27 +351,37 @@
 						<span class="cw-ab__metric-number">{metric.current}</span>
 						{#if metric.unit}<span class="cw-ab__metric-unit">{metric.unit}</span>{/if}
 					</p>
-					<div class="cw-ab__bar" aria-hidden="true">
+					<!-- Pointer-only hints: every value here is also written out as text. -->
+					<div
+						class="cw-ab__bar"
+						aria-hidden="true"
+						style:--cw-ab-band-left="{metric.bar?.band?.left ?? 0}%"
+						style:--cw-ab-band-width="{metric.bar?.band?.width ?? 0}%"
+						style:--cw-ab-span-left="{metric.bar?.span?.left ?? 0}%"
+						style:--cw-ab-span-width="{metric.bar?.span?.width ?? 0}%"
+						style:--cw-ab-avg="{metric.bar?.avg ?? 0}%"
+						style:--cw-ab-now="{metric.bar?.now ?? 0}%"
+					>
 						{#if metric.bar?.band}
-							<span
-								class="cw-ab__bar-band"
-								style:left="{metric.bar.band.left}%"
-								style:width="{metric.bar.band.width}%"
-							></span>
+							<CwTooltip class="cw-ab__part cw-ab__part--band" value={metric.tips.band}>
+								<span class="cw-ab__bar-band"></span>
+							</CwTooltip>
 						{/if}
 						<span class="cw-ab__bar-track"></span>
 						{#if metric.bar?.span}
-							<span
-								class="cw-ab__bar-span"
-								style:left="{metric.bar.span.left}%"
-								style:width="{metric.bar.span.width}%"
-							></span>
+							<CwTooltip class="cw-ab__part cw-ab__part--span" value={metric.tips.range}>
+								<span class="cw-ab__bar-span"></span>
+							</CwTooltip>
 						{/if}
 						{#if metric.bar && metric.bar.avg !== null}
-							<span class="cw-ab__bar-avg" style:left="{metric.bar.avg}%"></span>
+							<CwTooltip class="cw-ab__part cw-ab__part--avg" value={metric.tips.average}>
+								<span class="cw-ab__bar-avg"></span>
+							</CwTooltip>
 						{/if}
 						{#if metric.bar && metric.bar.now !== null}
-							<span class="cw-ab__bar-now" style:left="{metric.bar.now}%"></span>
+							<CwTooltip class="cw-ab__part cw-ab__part--now" value={metric.tips.now}>
+								<span class="cw-ab__bar-now"></span>
+							</CwTooltip>
 						{/if}
 					</div>
 					<div class="cw-ab__metric-foot">
@@ -389,7 +431,8 @@
 	{#if loading}
 		<div class="cw-ab__skeleton" aria-hidden="true"><span></span><span></span></div>
 	{:else if lightView || hasLayers}
-		<div class="cw-ab__layers">
+		<div class="cw-ab__layers cw-ab__layers--{topLevel}">
+			{@render level(topLevel)}
 			{#if lightView}
 				<section class="cw-ab__light" aria-label={l.light}>
 					<p class="cw-ab__light-title">
@@ -434,12 +477,11 @@
 				</section>
 			{/if}
 			{#if airViews.length > 0}
+				{#if topLevel !== 'air'}{@render level('air')}{/if}
 				{@render layer('air', l.air, airViews)}
 			{/if}
-			{#if airViews.length > 0 && groundViews.length > 0}
-				<div class="cw-ab__ground-line" aria-hidden="true"><span>{l.groundLevel}</span></div>
-			{/if}
 			{#if groundViews.length > 0}
+				{#if topLevel !== 'ground'}{@render level('ground')}{/if}
 				{@render layer('ground', l.ground, groundViews)}
 			{/if}
 		</div>
@@ -456,6 +498,8 @@
 		--cw-ab-divider: var(--cw-chart-card-cell-border, var(--cw-border-muted));
 		--cw-ab-muted: var(--cw-chart-card-muted, var(--cw-text-muted));
 		--cw-ab-surface: var(--cw-chart-card-bg, var(--cw-bg-surface));
+		--cw-ab-target-border: var(--cw-chart-target-border, var(--cw-tone-success-border));
+		--cw-ab-target-bg: var(--cw-chart-target-bg, var(--cw-tone-success-bg-subtle));
 		container-type: inline-size;
 		display: grid;
 		gap: var(--cw-space-4);
@@ -551,17 +595,40 @@
 	.cw-ab__key--target {
 		width: 1.125rem;
 		height: 0.75rem;
-		border: 1px dashed var(--cw-tone-success-border);
+		border: 1px dashed var(--cw-ab-target-border);
 		border-radius: 3px;
-		background: var(--cw-tone-success-bg-subtle);
+		background: var(--cw-ab-target-bg);
 	}
 
 	/* ── Layers ─────────────────────────────────────────── */
+	/* Not clipped (the level labels and tooltips reach past the edges), so the
+	   first and last layers round their own corners. */
 	.cw-ab__layers {
+		--cw-ab-level-color: var(--cw-ab-sun);
+		position: relative;
 		min-width: 0;
-		overflow: hidden;
+		margin-top: 0.5rem;
 		border: 1px solid var(--cw-ab-divider);
+		border-top: 2px solid var(--cw-ab-level-color);
 		border-radius: var(--cw-radius-lg);
+	}
+
+	.cw-ab__layers--air {
+		--cw-ab-level-color: var(--cw-ab-sky);
+	}
+
+	.cw-ab__layers--ground {
+		--cw-ab-level-color: var(--cw-ab-earth);
+	}
+
+	.cw-ab__layers > section:first-of-type {
+		border-top-left-radius: calc(var(--cw-radius-lg) - 2px);
+		border-top-right-radius: calc(var(--cw-radius-lg) - 2px);
+	}
+
+	.cw-ab__layers > section:last-of-type {
+		border-bottom-right-radius: calc(var(--cw-radius-lg) - 1px);
+		border-bottom-left-radius: calc(var(--cw-radius-lg) - 1px);
 	}
 
 	.cw-ab__layer-icon {
@@ -593,12 +660,12 @@
 	}
 
 	/* Light strip */
+	/* The top padding clears the "Sky level" label on the edge above. */
 	.cw-ab__light {
 		display: grid;
 		grid-template-columns: 10.5rem minmax(0, 1fr);
 		align-items: center;
-		padding: 0.625rem 0;
-		border-bottom: 1px solid var(--cw-ab-divider);
+		padding: 1rem 0 0.625rem;
 	}
 
 	.cw-ab--tinted .cw-ab__light {
@@ -689,8 +756,8 @@
 		padding: 0 1.25rem;
 	}
 
-	/* Clears the "Ground level" label sitting on the line above. */
-	.cw-ab__layer--ground .cw-ab__layer-label {
+	/* Clears the level label sitting on the line above. */
+	.cw-ab__layer .cw-ab__layer-label {
 		padding-top: var(--cw-space-2);
 	}
 
@@ -702,18 +769,41 @@
 		line-height: var(--cw-leading-tight);
 	}
 
-	.cw-ab__ground-line {
+	/* A level line between two layers, labelled like a surveyor's mark. */
+	.cw-ab__level {
 		position: relative;
 		height: 0;
-		border-top: 2px solid var(--cw-ab-earth);
+		border-top: 2px solid var(--cw-ab-level-color);
 	}
 
-	.cw-ab__ground-line span {
+	.cw-ab__level--sky {
+		--cw-ab-level-color: var(--cw-ab-sun);
+	}
+
+	.cw-ab__level--air {
+		--cw-ab-level-color: var(--cw-ab-sky);
+	}
+
+	.cw-ab__level--ground {
+		--cw-ab-level-color: var(--cw-ab-earth);
+	}
+
+	/* The first level is drawn by the panel's own top border; only its label shows. */
+	.cw-ab__level:first-child {
+		position: absolute;
+		top: -2px;
+		right: 0;
+		left: 0;
+		z-index: 1;
+		border-top-color: transparent;
+	}
+
+	.cw-ab__level span {
 		position: absolute;
 		top: -0.6875rem;
 		left: 1.25rem;
 		padding: 0.125rem 0.5rem;
-		border: 1px solid var(--cw-ab-earth);
+		border: 1px solid var(--cw-ab-level-color);
 		border-radius: var(--cw-radius-full);
 		background: var(--cw-ab-surface);
 		color: var(--cw-ab-muted);
@@ -808,17 +898,51 @@
 		height: 1.25rem;
 	}
 
-	.cw-ab__bar > span {
+	/* Each part sits in a CwTooltip wrapper sized as its hover target (wider than
+	   the thin average tick); the visible mark is drawn inside it. */
+	.cw-ab__bar :global(.cw-ab__part) {
+		position: absolute;
+		top: 0;
+		display: block;
+		height: 100%;
+	}
+
+	.cw-ab__bar :global(.cw-ab__part--band) {
+		left: var(--cw-ab-band-left);
+		width: var(--cw-ab-band-width);
+	}
+
+	/* Shorter than the bar, so the band's edges above and below stay hoverable. */
+	.cw-ab__bar :global(.cw-ab__part--span) {
+		top: 4px;
+		left: var(--cw-ab-span-left);
+		width: var(--cw-ab-span-width);
+		min-width: 6px;
+		height: 12px;
+	}
+
+	.cw-ab__bar :global(.cw-ab__part--avg) {
+		left: var(--cw-ab-avg);
+		width: 12px;
+		margin-left: -6px;
+	}
+
+	.cw-ab__bar :global(.cw-ab__part--now) {
+		left: var(--cw-ab-now);
+		width: 20px;
+		margin-left: -10px;
+	}
+
+	.cw-ab__bar span {
 		position: absolute;
 		box-sizing: border-box;
 	}
 
 	.cw-ab__bar-band {
-		top: 2px;
-		height: 1rem;
-		border: 1px dashed var(--cw-tone-success-border);
+		inset: 2px 0;
+		border: 1px dashed var(--cw-ab-target-border);
 		border-radius: var(--cw-radius-sm);
-		background: var(--cw-tone-success-bg-subtle);
+		background: var(--cw-ab-target-bg);
 	}
 
 	.cw-ab__bar-track {
@@ -828,18 +952,18 @@
 		height: 6px;
 		border-radius: var(--cw-radius-full);
 		background: var(--cw-bg-subtle);
+		pointer-events: none;
 	}
 
 	.cw-ab__bar-span {
-		top: 7px;
-		min-width: 6px;
-		height: 6px;
+		inset: 3px 0;
 		border-radius: var(--cw-radius-full);
 		background: color-mix(in srgb, var(--cw-ab-color) 60%, transparent);
 	}
 
 	.cw-ab__bar-avg {
 		top: 3px;
+		left: 50%;
 		width: 2px;
 		height: 14px;
 		margin-left: -1px;
@@ -849,6 +973,7 @@
 
 	.cw-ab__bar-now {
 		top: 4px;
+		left: 50%;
 		width: 12px;
 		height: 12px;
 		margin-left: -6px;
@@ -936,7 +1061,7 @@
 			display: flex;
 			flex-wrap: wrap;
 			gap: var(--cw-space-1) var(--cw-space-6);
-			padding: 0.625rem var(--cw-space-4);
+			padding: 1rem var(--cw-space-4) 0.625rem;
 		}
 
 		.cw-ab__light-title,
@@ -954,8 +1079,7 @@
 			padding: 0.875rem 0 var(--cw-space-4);
 		}
 
-		.cw-ab__layer-label,
-		.cw-ab__layer--ground .cw-ab__layer-label {
+		.cw-ab__layer .cw-ab__layer-label {
 			flex-direction: row;
 			align-items: center;
 			gap: var(--cw-space-2);
@@ -968,7 +1092,7 @@
 			height: 1.75rem;
 		}
 
-		.cw-ab__ground-line span {
+		.cw-ab__level span {
 			right: var(--cw-space-4);
 			left: auto;
 		}
@@ -990,8 +1114,9 @@
 	@container (max-width: 40rem) {
 		.cw-ab__light {
 			display: grid;
+			grid-template-columns: minmax(0, 1fr);
 			gap: var(--cw-space-1);
-			padding: 0.625rem 0.875rem;
+			padding: 1rem 0.875rem 0.625rem;
 		}
 
 		.cw-ab__light-now {
@@ -1017,12 +1142,11 @@
 			padding: var(--cw-space-3) 0.875rem 0.375rem;
 		}
 
-		.cw-ab__layer-label,
-		.cw-ab__layer--ground .cw-ab__layer-label {
+		.cw-ab__layer .cw-ab__layer-label {
 			padding: 0 0 var(--cw-space-1);
 		}
 
-		.cw-ab__ground-line span {
+		.cw-ab__level span {
 			right: 0.875rem;
 		}
 
