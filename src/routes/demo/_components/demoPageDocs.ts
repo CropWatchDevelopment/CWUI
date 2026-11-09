@@ -2951,6 +2951,11 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				title: 'Choose position and tone only when they add clarity',
 				description:
 					'`top` and `info` are the defaults, so only override them when the surrounding layout or message calls for it.'
+			},
+			{
+				title: 'Use it instead of the `title` attribute',
+				description:
+					'CWUI components never use the browser\'s built-in `title` tooltip: CwTooltip looks the same everywhere and works in both themes. It slides along its trigger to stay on screen and inside any clipping parent (a bar at the edge of a card), and text longer than one line wraps at 20rem (`--cw-tooltip-max-width`).'
 			}
 		],
 		apiRows: [
@@ -2967,7 +2972,14 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				description: 'Tooltip color theme.',
 				defaultValue: 'info'
 			},
-			{ name: 'children', type: 'Snippet', description: 'Wrapped trigger content.', required: true }
+			{ name: 'children', type: 'Snippet', description: 'Wrapped trigger content.', required: true },
+			{
+				name: 'class',
+				type: 'string',
+				description:
+					'Class on the wrapper around the trigger, for laying it out (for example, making a chart column the whole hover area).',
+				defaultValue: "''"
+			}
 		],
 		examples: [
 			{

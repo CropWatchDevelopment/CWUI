@@ -3,8 +3,9 @@
 </script>
 
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import { tick, type Snippet } from 'svelte';
 	import type { CwTone } from '../types/index.js';
+	import { cwTooltipShift, cwVisibleArea } from './cwTooltipPlacement.js';
 
 	interface Props {
 		/** Tooltip text content */
@@ -31,13 +32,26 @@
 		'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
 
 	let wrapper = $state<HTMLSpanElement>();
+	let bubble = $state<HTMLSpanElement>();
 	let visible = $state(false);
+	/* px the bubble slides along the trigger to stay on screen and out of any
+	   clipping ancestor (a trigger at the edge of a card or the page). */
+	let shift = $state(0);
 
-	function show() {
+	async function show() {
 		visible = true;
+		await tick();
+		if (!visible || !wrapper || !bubble) return;
+		shift = cwTooltipShift(
+			position,
+			wrapper.getBoundingClientRect(),
+			{ width: bubble.offsetWidth, height: bubble.offsetHeight },
+			cwVisibleArea(wrapper)
+		);
 	}
 	function hide() {
 		visible = false;
+		shift = 0;
 	}
 
 	/* Link the trigger to the bubble so screen readers announce the tooltip text
@@ -81,9 +95,11 @@
 
 	<!-- Always in the DOM so aria-describedby resolves; only shown while visible. -->
 	<span
+		bind:this={bubble}
 		id={bubbleId}
 		class="cw-tooltip__bubble cw-tooltip__bubble--{position} cw-tooltip__bubble--{tone}"
 		class:cw-tooltip__bubble--visible={visible}
+		style:--cw-tooltip-shift="{shift}px"
 		role="tooltip"
 	>
 		{value}
@@ -107,7 +123,16 @@
 		font-size: var(--cw-text-xs);
 		font-weight: var(--cw-font-medium);
 		line-height: var(--cw-leading-tight);
-		white-space: nowrap;
+		/* One line for short text; long text wraps at the max width. */
+		width: max-content;
+		max-width: min(var(--cw-tooltip-max-width, 20rem), calc(100vw - 2 * var(--cw-space-2)));
+		overflow-wrap: break-word;
+		/* Not inherited from the trigger's surroundings (a right-aligned or
+		   no-wrap line, an uppercase label). */
+		white-space: normal;
+		text-align: start;
+		text-transform: none;
+		letter-spacing: normal;
 		border-radius: var(--cw-radius-md);
 		box-shadow: var(--cw-elevation-popover);
 		display: none;
@@ -141,29 +166,36 @@
 	}
 
 	/* ── Position ────────────────────────── */
+	/* Centred on the trigger, then slid by --cw-tooltip-shift to stay in view. */
 	.cw-tooltip__bubble--top {
 		bottom: calc(100% + var(--cw-tooltip-offset));
 		left: 50%;
-		translate: -50% 0;
+		translate: calc(-50% + var(--cw-tooltip-shift, 0px)) 0;
 	}
 	.cw-tooltip__bubble--bottom {
 		top: calc(100% + var(--cw-tooltip-offset));
 		left: 50%;
-		translate: -50% 0;
+		translate: calc(-50% + var(--cw-tooltip-shift, 0px)) 0;
 	}
 	.cw-tooltip__bubble--left {
 		right: calc(100% + var(--cw-tooltip-offset));
 		top: 50%;
-		translate: 0 -50%;
+		translate: 0 calc(-50% + var(--cw-tooltip-shift, 0px));
 	}
 	.cw-tooltip__bubble--right {
 		left: calc(100% + var(--cw-tooltip-offset));
 		top: 50%;
-		translate: 0 -50%;
+		translate: 0 calc(-50% + var(--cw-tooltip-shift, 0px));
 	}
 
 	/* ── Arrow ───────────────────────────── */
+	/* Stays pointing at the trigger when the bubble slides, inside its corners. */
 	.cw-tooltip__arrow {
+		--cw-tooltip-arrow-at: clamp(
+			var(--cw-tooltip-arrow),
+			50% - var(--cw-tooltip-shift, 0px),
+			100% - var(--cw-tooltip-arrow)
+		);
 		position: absolute;
 		width: var(--cw-tooltip-arrow);
 		height: var(--cw-tooltip-arrow);
@@ -173,22 +205,22 @@
 
 	.cw-tooltip__bubble--top .cw-tooltip__arrow {
 		bottom: calc(var(--cw-tooltip-arrow) / -2);
-		left: 50%;
+		left: var(--cw-tooltip-arrow-at);
 		margin-left: calc(var(--cw-tooltip-arrow) / -2);
 	}
 	.cw-tooltip__bubble--bottom .cw-tooltip__arrow {
 		top: calc(var(--cw-tooltip-arrow) / -2);
-		left: 50%;
+		left: var(--cw-tooltip-arrow-at);
 		margin-left: calc(var(--cw-tooltip-arrow) / -2);
 	}
 	.cw-tooltip__bubble--left .cw-tooltip__arrow {
 		right: calc(var(--cw-tooltip-arrow) / -2);
-		top: 50%;
+		top: var(--cw-tooltip-arrow-at);
 		margin-top: calc(var(--cw-tooltip-arrow) / -2);
 	}
 	.cw-tooltip__bubble--right .cw-tooltip__arrow {
 		left: calc(var(--cw-tooltip-arrow) / -2);
-		top: 50%;
+		top: var(--cw-tooltip-arrow-at);
 		margin-top: calc(var(--cw-tooltip-arrow) / -2);
 	}
 

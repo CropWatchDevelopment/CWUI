@@ -73,6 +73,7 @@
 <script lang="ts">
 	import type { CwNoDataMessage, DliHistoryPoint, DliStatusLabel } from "../types/index.js";
 	import CwNoDataOverlay from "./CwNoDataOverlay.svelte";
+	import CwTooltip from "./CwTooltip.svelte";
 	import { getCwNoDataMessage, hasCwNoData } from "./cwNoData.js";
 	import { CW_EMPTY_VALUE, formatCwNumber, isCwFiniteNumber } from "../utils/cwFormat.js";
 	import { cwDliOutlook, type CwDliDayProgress, type CwDliOutlookStatus } from "./cwDliOutlook.js";
@@ -390,11 +391,14 @@
 						<span>{unit}</span>
 					</p>
 				{/if}
-				<p
-					class="cw-dli-card__outlook-line"
-					title={day?.assumed ? l.outlookAssumedHint : undefined}
-				>
-					{outlookLightText}
+				<p class="cw-dli-card__outlook-line">
+					{#if day?.assumed}
+						<CwTooltip value={l.outlookAssumedHint}>
+							<span class="cw-dli-card__outlook-hint">{outlookLightText}</span>
+						</CwTooltip>
+					{:else}
+						{outlookLightText}
+					{/if}
 				</p>
 				{#if outlook.projected !== null}
 					<p class="cw-dli-card__outlook-line">
@@ -453,19 +457,17 @@
 
 			<ol class="cw-dli-card__history-bars" aria-label={l.historyListLabel}>
 				{#each historyItems as point (point.key)}
-					<li
-						class="cw-dli-card__history-item"
-						title={point.title}
-						aria-label={point.title}
-					>
-						<span
-							class="cw-dli-card__history-bar"
-							style:height="{point.percent}%"
-							aria-hidden="true"
-						></span>
-						<span class="cw-dli-card__history-date" aria-hidden="true">
-							{point.shortDate}
-						</span>
+					<li class="cw-dli-card__history-item" aria-label={point.title}>
+						<CwTooltip class="cw-dli-card__history-tip" value={point.title}>
+							<span
+								class="cw-dli-card__history-bar"
+								style:height="{point.percent}%"
+								aria-hidden="true"
+							></span>
+							<span class="cw-dli-card__history-date" aria-hidden="true">
+								{point.shortDate}
+							</span>
+						</CwTooltip>
 					</li>
 				{/each}
 			</ol>
@@ -642,7 +644,7 @@
 		font-variant-numeric: tabular-nums;
 	}
 
-	.cw-dli-card__outlook-line[title] {
+	.cw-dli-card__outlook-hint {
 		cursor: help;
 		text-decoration: underline dotted;
 		text-underline-offset: 0.2em;
@@ -795,6 +797,13 @@
 	}
 
 	.cw-dli-card__history-item {
+		display: grid;
+		min-width: 0;
+	}
+
+	/* The CwTooltip around a day's bar and date: hovering anywhere in the
+	   column shows that day's value. */
+	.cw-dli-card__history-item :global(.cw-dli-card__history-tip) {
 		display: grid;
 		grid-template-rows: minmax(4.6rem, 1fr) auto;
 		align-items: end;
