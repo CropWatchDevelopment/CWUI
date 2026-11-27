@@ -3581,6 +3581,228 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			}
 		]
 	},
+	'/demo/colored-arrow-timeline': {
+		summary:
+			'CwColoredArrowTimeline draws a slide-style timeline: one thick chevron arrow per step, the date above it joined by a leader line, and a title and description below. Each step gets its own colour from the shared chart palette, and all text comes from your app already formatted and translated.',
+		steps: [
+			{
+				title: 'Pass finished text',
+				description:
+					'`date`, `title` and `description` are shown exactly as given. Format dates for the user\'s locale in your app (for example with `Intl.DateTimeFormat`) and translate titles before passing them in.'
+			},
+			{
+				title: 'Add `datetime` for machine-readable dates',
+				description:
+					'With an ISO value such as `2026-04` or `2026-04-15`, the date renders in a `<time datetime>` element, which screen readers and search engines can read.'
+			},
+			{
+				title: 'Let the palette pick colours',
+				description:
+					'Steps take `--cw-chart-cat-1` to `--cw-chart-cat-8` in order, so neighbours always differ. Set `color` only when a step needs a fixed colour, such as a brand colour or a status.'
+			},
+			{
+				title: 'Text stays readable in both themes',
+				description:
+					'Dates, titles and descriptions use the step colour mixed 55% with the theme text colour, giving at least 4.5:1 contrast on every CWUI background in light and dark themes with the default palette. Check contrast yourself when you pass your own `color`.'
+			},
+			{
+				title: 'Mute steps that have not happened',
+				description:
+					'`muted` greys a step out, like the upcoming steps of a project plan. It is visual only, so put words such as "planned" in the text when the difference matters.'
+			},
+			{
+				title: 'Leave `orientation` on auto',
+				description:
+					'The timeline measures its width and turns vertical, with arrows pointing down, when its columns would be narrower than `minItemWidth`. It renders horizontal on the server and switches after the first measurement.'
+			},
+			{
+				title: 'Add `onItemClick` to make steps clickable',
+				description:
+					'Each step becomes a `<button>` covering its date, arrow, title and description, so it works with mouse, touch, Enter and Space. Screen readers name each button by its date and title and read the description as extra detail.'
+			}
+		],
+		apiRows: [
+			{
+				name: 'items',
+				type: 'CwColoredArrowTimelineItem[]',
+				description: 'The steps, left to right (top to bottom when vertical). Nothing renders when empty.',
+				required: true
+			},
+			{
+				name: 'item.date',
+				type: 'string',
+				description: 'Date shown above the arrow, already formatted ("Apr 2026", "2026年4月", "Q2", "Week 14").',
+				required: true
+			},
+			{
+				name: 'item.datetime',
+				type: 'string',
+				description: 'ISO date for the `datetime` attribute. When set, the date renders in a `<time>` element.'
+			},
+			{
+				name: 'item.title',
+				type: 'string',
+				description: 'Bold heading under the arrow.',
+				required: true
+			},
+			{
+				name: 'item.description',
+				type: 'string',
+				description: 'Optional text under the title.'
+			},
+			{
+				name: 'item.color',
+				type: 'string',
+				description: 'Any CSS colour for the arrow. The step\'s text is mixed from it too.',
+				defaultValue: 'var(--cw-chart-cat-N)'
+			},
+			{
+				name: 'item.muted',
+				type: 'boolean',
+				description: 'Greys the step out. The step keeps its palette slot, so it returns in the same colour when un-muted.',
+				defaultValue: 'false'
+			},
+			{
+				name: 'item.id',
+				type: 'string | number',
+				description: 'Stable key for the list. Set it when steps are added, removed or reordered.',
+				defaultValue: 'index'
+			},
+			{
+				name: 'orientation',
+				type: "'auto' | 'horizontal' | 'vertical'",
+				description: '`horizontal` points the arrows right, `vertical` points them down with the text beside them, `auto` picks one from the measured width.',
+				defaultValue: "'auto'"
+			},
+			{
+				name: 'minItemWidth',
+				type: 'number',
+				description: 'Narrowest column, in pixels, an `auto` timeline keeps before turning vertical.',
+				defaultValue: '160'
+			},
+			{
+				name: 'ariaLabel',
+				type: 'string',
+				description: 'Accessible name for the list, already translated (e.g. "Growing season").'
+			},
+			{
+				name: 'onItemClick',
+				type: '(item: CwColoredArrowTimelineItem, index: number, event: MouseEvent) => void',
+				description:
+					'Makes every step a button and calls this with the clicked step, its index and the event. Keyboard presses (Enter, Space) arrive as clicks. Without it, steps are plain text.'
+			},
+			{
+				name: 'class',
+				type: 'string',
+				description: 'Extra classes on the wrapper element.'
+			},
+			{
+				name: '--cw-colored-arrow-timeline-band',
+				type: 'CSS length',
+				description: 'Arrow thickness.',
+				defaultValue: '2.5rem'
+			},
+			{
+				name: '--cw-colored-arrow-timeline-tip',
+				type: 'CSS length',
+				description: 'Depth of each arrow\'s point and notch. Half the band gives 45° edges.',
+				defaultValue: '1.25rem'
+			},
+			{
+				name: '--cw-colored-arrow-timeline-gap',
+				type: 'CSS length',
+				description: 'Horizontal space between neighbouring arrows. The background shows through it.',
+				defaultValue: '4px'
+			},
+			{
+				name: '--cw-colored-arrow-timeline-leader',
+				type: 'CSS length',
+				description: 'Horizontal run of the leader line between the date and the arrow.',
+				defaultValue: '2.5rem'
+			},
+			{
+				name: '--cw-colored-arrow-timeline-text-mix',
+				type: 'CSS percentage',
+				description: 'How much of the step colour stays in its text; the rest is `--cw-text-primary`. Lower values give more contrast.',
+				defaultValue: '55%'
+			},
+			{
+				name: '--cw-colored-arrow-timeline-muted',
+				type: 'CSS colour',
+				description: 'Arrow colour of muted steps.',
+				defaultValue: 'var(--cw-gray-400)'
+			}
+		],
+		apiNote:
+			'Set the CSS custom properties on the component (`<CwColoredArrowTimeline --cw-colored-arrow-timeline-band="2rem" />`) or on any parent element.',
+		examples: [
+			{
+				title: 'Season plan',
+				description: 'Four steps with dates, titles and descriptions. Colours come from the chart palette.',
+				code: `<script lang="ts">
+\timport { CwColoredArrowTimeline } from '@cropwatchdevelopment/cwui';
+\timport type { CwColoredArrowTimelineItem } from '@cropwatchdevelopment/cwui';
+
+\tconst season: CwColoredArrowTimelineItem[] = [
+\t\t{ date: 'Mar 2026', datetime: '2026-03', title: 'Seeding', description: 'Sow tomato trays in the nursery house.' },
+\t\t{ date: 'Apr 2026', datetime: '2026-04', title: 'Transplant', description: 'Move seedlings into the main greenhouse.' },
+\t\t{ date: 'Jun 2026', datetime: '2026-06', title: 'First harvest' },
+\t\t{ date: 'Oct 2026', datetime: '2026-10', title: 'Season close' }
+\t];
+</script>
+
+<CwColoredArrowTimeline items={season} ariaLabel="Tomato season 2026" />`
+			},
+			{
+				title: 'Dates from your locale',
+				description: 'Format with `Intl.DateTimeFormat` (or your i18n library) and keep the ISO value for `datetime`.',
+				code: `<script lang="ts">
+\tconst format = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short' });
+
+\tconst items = plan.map((step) => ({
+\t\tid: step.id,
+\t\tdate: format.format(new Date(step.date)),
+\t\tdatetime: step.date,
+\t\ttitle: t(step.titleKey),
+\t\tdescription: t(step.descriptionKey),
+\t\tmuted: new Date(step.date) > new Date()
+\t}));
+</script>
+
+<CwColoredArrowTimeline {items} ariaLabel={t('plan.title')} />`
+			},
+			{
+				title: 'Clickable steps',
+				description: 'Each step becomes a button; use the index or the item to decide what to open.',
+				code: `<script lang="ts">
+\tlet selected = $state<number | null>(null);
+</script>
+
+<CwColoredArrowTimeline
+\t{items}
+\tariaLabel="Tomato season 2026"
+\tonItemClick={(item, index) => (selected = index)}
+/>
+
+{#if selected !== null}
+\t<StepDetails step={items[selected]} />
+{/if}`
+			},
+			{
+				title: 'Brand colours, thinner arrows',
+				description: 'Per-step colours and CSS custom properties for the arrow size.',
+				code: `<CwColoredArrowTimeline
+\titems={[
+\t\t{ date: 'Day 0', title: 'Order placed', color: '#006045' },
+\t\t{ date: 'Day 2', title: 'Shipped', color: '#00997a' },
+\t\t{ date: 'Day 5', title: 'Installed', color: '#0284c7' }
+\t]}
+\t--cw-colored-arrow-timeline-band="1.75rem"
+\t--cw-colored-arrow-timeline-tip="0.875rem"
+/>`
+			}
+		]
+	},
 	'/demo/heatmap': {
 		summary:
 			'CwHeatmap turns timestamped numeric readings into a day-by-hour grid. Feed it normalized points, then choose whether the scale should auto-fit the data or stay fixed across screens.',

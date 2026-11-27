@@ -33,6 +33,7 @@ export { default as CwDliCard } from './components/DliCard.svelte';
 export { default as CwPPFDChart } from './components/CwPPFDChart.svelte';
 export { default as CwVPDChart } from './components/CwVPDChart.svelte';
 export { default as CwAboveBelowChart } from './components/CwAboveBelowChart.svelte';
+export { default as CwColoredArrowTimeline } from './components/CwColoredArrowTimeline.svelte';
 export { default as CwWindCompass } from './components/CwWindCompass.svelte';
 export { default as CwDateTimeRangePicker } from './components/CwDateTimeRangePicker.svelte';
 export { default as CwThemePicker } from './components/CwThemePicker.svelte';
@@ -127,6 +128,18 @@ export type {
 	CwAboveBelowSummary,
 	CwAboveBelowTarget
 } from './components/cwAboveBelowChart.js';
+
+// ── Colored arrow timeline (data model + helpers) ─────────
+export {
+	CW_COLORED_ARROW_TIMELINE_MIN_ITEM_WIDTH,
+	CW_COLORED_ARROW_TIMELINE_PALETTE,
+	cwColoredArrowTimelineColor,
+	resolveCwColoredArrowTimelineOrientation
+} from './components/cwColoredArrowTimeline.js';
+export type {
+	CwColoredArrowTimelineItem,
+	CwColoredArrowTimelineOrientation
+} from './components/cwColoredArrowTimeline.js';
 
 // ── Types ───────────────────────────────────────────────────
 export type {

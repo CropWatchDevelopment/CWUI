@@ -85,6 +85,7 @@ export const demoIcons = {
 	datalist: "M5 4h9M5 8h9M5 12h9M2 4h.01M2 8h.01M2 12h.01",
 	statcard:
 		"M3 3h10a1 1 0 011 1v8a1 1 0 01-1 1H3a1 1 0 01-1-1V4a1 1 0 011-1zM4.5 10l2.25-2.25 2 2L11.5 6.5",
+	arrowTimeline: "M1.5 9.5h11l2 2-2 2h-11l2-2zM7.5 9.5l2 2-2 2M2.5 4.5 5 7M7.5 4.5 10 7",
 };
 
 /**
@@ -144,6 +145,7 @@ export const demoNavItems: CwSideNavItem[] = [
 	{ id: 'stackedbarchart', label: 'Stacked Bar Chart', icon: demoIcons.stackedbar, href: '/demo/stackedbarchart', group: 'Charts' },
 	{ id: 'donutchart', label: 'Donut Chart', icon: demoIcons.donut, href: '/demo/donutchart', group: 'Charts' },
 	{ id: 'heatmap', label: 'Heatmap', icon: demoIcons.heatmap, href: '/demo/heatmap', group: 'Charts' },
+	{ id: 'colored-arrow-timeline', label: 'Colored Arrow Timeline', icon: demoIcons.arrowTimeline, href: '/demo/colored-arrow-timeline', group: 'Charts' },
 	{ id: 'dli-card', label: 'DLI Card', icon: demoIcons.dli, href: '/demo/dli-card', group: 'Charts' },
 	{ id: 'ppfdchart', label: 'PPFD Chart', icon: demoIcons.ppfd, href: '/demo/ppfdchart', group: 'Charts' },
 	{ id: 'vpdchart', label: 'VPD Chart', icon: demoIcons.vpd, href: '/demo/vpdchart', group: 'Charts' },
