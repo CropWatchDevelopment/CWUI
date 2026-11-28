@@ -290,6 +290,10 @@
 	--cw-chart-cat-8: #e66767;
 	--cw-chart-grid: color-mix(in srgb, var(--cw-border-default) 55%, transparent);
 	--cw-chart-axis: var(--cw-linechart-axis);
+	/* Rule example: the alert line and the reset line. Checked as a pair for
+	   colour-blind separation and contrast on this surface. */
+	--cw-rule-alert: var(--cw-status-alarm);
+	--cw-rule-reset: var(--cw-info-500);
 	--cw-chart-tick: var(--cw-linechart-tick);
 	--cw-chart-crosshair: var(--cw-linechart-crosshair);
 	--cw-chart-threshold: var(--cw-linechart-threshold);

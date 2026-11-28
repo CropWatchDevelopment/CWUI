@@ -223,6 +223,9 @@ The script renders `scripts/style-guide/style-guide.html` with headless Chromium
 |---|---|
 | **`CwDialog`** | Modal dialog — focus trap, backdrop/escape close, title + action snippets |
 | **`CwTooltip`** | Hover tooltip — `top`/`bottom`/`left`/`right` position, 6 tone colors, arrow pointer |
+| **`CwHelp`** | Help link — a small raised question mark at the top right of a label or title; opens the page explaining it in a new tab, at the right `#section` |
+| **`CwRuleCondition`** | One condition of an alert rule — alert value, reset value with a suggested safe value, a sentence and an example chart that explain the rule, English and Japanese built in |
+| **`CwAlertLevels`** | Named, coloured levels for a reading (report highlights) — one row per level, a scale that fits itself to the numbers, English and Japanese built in |
 | **`CwToastContainer`** | Toast notification system — context-based, auto-dismiss, 6 tones |
 | **`CwProfileMenu`** | User profile dropdown — avatar (image or initials), menu items with separators and danger styling |
 | **`CwThemePicker`** | Theme switcher — dark/light/system toggle, applies `data-theme` to `<html>` |

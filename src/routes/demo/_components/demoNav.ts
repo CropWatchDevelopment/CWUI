@@ -72,6 +72,7 @@ export const demoIcons = {
 	tooltip:
 		"M3 2.5h10a1 1 0 011 1V10a1 1 0 01-1 1H9.75L8 13l-1.75-2H3a1 1 0 01-1-1V3.5a1 1 0 011-1zM5 5.5h6M5 8h4",
 	copy: "M7 6h6a1 1 0 011 1v6a1 1 0 01-1 1H7a1 1 0 01-1-1V7a1 1 0 011-1zM3 10a1 1 0 01-1-1V3a1 1 0 011-1h6a1 1 0 011 1",
+	help: "M8 14A6 6 0 108 2a6 6 0 000 12zM6.25 6.4a1.75 1.75 0 113 1.2c-.6.55-1.25.9-1.25 1.65M8 11.4v.1",
 	expand: "M3 3h10a1 1 0 011 1v8a1 1 0 01-1 1H3a1 1 0 01-1-1V4a1 1 0 011-1zm1 3h8M6 9l2 2 2-2",
 	heatmap:
 		"M2.5 3.5a1 1 0 112 0 1 1 0 01-2 0zM8 3.5h.01M12.5 3.5h.01M2.5 8a1 1 0 112 0 1 1 0 01-2 0zM7 8a1 1 0 112 0 1 1 0 01-2 0zM12.5 8h.01M3.5 12.5h.01M7 12.5a1 1 0 112 0 1 1 0 01-2 0zM11.5 12.5a1 1 0 112 0 1 1 0 01-2 0z",
@@ -121,6 +122,8 @@ export const demoNavItems: CwSideNavItem[] = [
 	{ id: 'calendar', label: 'Calendar', icon: demoIcons.calendar, href: '/demo/calendar', group: 'Form Controls' },
 	{ id: 'calendar-scroll', label: 'Calendar Scroll', icon: demoIcons.calendarScroll, href: '/demo/calendar-scroll', group: 'Form Controls' },
 	{ id: 'alert-points', label: 'Alert Points', icon: demoIcons.alertPoints, href: '/demo/alert-points', group: 'Form Controls' },
+	{ id: 'rule-condition', label: 'Rule Condition', icon: demoIcons.alertPoints, href: '/demo/rule-condition', group: 'Form Controls' },
+	{ id: 'alert-levels', label: 'Alert Levels', icon: demoIcons.alertPoints, href: '/demo/alert-levels', group: 'Form Controls' },
 	// ── Data Display ──
 	{ id: 'chips', label: 'Chip', icon: demoIcons.chip, href: '/demo/chips', group: 'Data Display' },
 	{ id: 'badge', label: 'Badge', icon: demoIcons.badge, href: '/demo/badge', group: 'Data Display' },
@@ -153,6 +156,7 @@ export const demoNavItems: CwSideNavItem[] = [
 	{ id: 'windcompass', label: 'Wind Compass', icon: demoIcons.wind, href: '/demo/windcompass', group: 'Charts' },
 	// ── Helpers ──
 	{ id: 'copy', label: 'Copy', icon: demoIcons.copy, href: '/demo/copy', group: 'Helpers' },
+	{ id: 'help', label: 'Help', icon: demoIcons.help, href: '/demo/help', group: 'Helpers' },
 	{ id: 'duration', label: 'Duration', icon: demoIcons.duration, href: '/demo/duration', group: 'Helpers' },
 	{ id: 'alarm', label: 'Alarm Scheduler', icon: demoIcons.alarm, href: '/demo/alarm', group: 'Helpers' },
 	{ id: 'themepicker', label: 'Theme Picker', icon: demoIcons.theme, href: '/demo/themepicker', group: 'Helpers' },

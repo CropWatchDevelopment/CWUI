@@ -46,6 +46,9 @@ export { default as CwTooltip } from './components/CwTooltip.svelte';
 export { default as CwCalendar } from './components/CwCalendar.svelte';
 export { default as CwCalendarScroll } from './components/CwCalendarScroll.svelte';
 export { default as CwCopy } from './components/CwCopy.svelte';
+export { default as CwHelp } from './components/CwHelp.svelte';
+export { default as CwRuleCondition } from './components/CwRuleCondition.svelte';
+export { default as CwAlertLevels } from './components/CwAlertLevels.svelte';
 export { default as CwExpandPanel } from './components/CwExpandPanel.svelte';
 export { default as CwHeatmap } from './components/CwHeatmap.svelte';
 export { default as CwLocationCard } from './components/CwLocationCard.svelte';
@@ -108,6 +111,36 @@ export type { MetricColor } from './utils/metricColors.js';
 export { CW_LANGUAGES, CW_DEFAULT_LANGUAGE, cwLanguageFor, cwTextFor } from './i18n/cwLanguage.js';
 export type { CwLanguage, CwText } from './i18n/cwLanguage.js';
 export { cwDliCardText, DLI_CARD_TEXT } from './components/dliCardText.js';
+export { cwRuleConditionText, RULE_CONDITION_TEXT } from './components/cwRuleConditionText.js';
+export { cwAlertLevelsText, ALERT_LEVELS_TEXT } from './components/cwAlertLevelsText.js';
+export type { CwAlertLevelsLabels } from './components/cwAlertLevelsText.js';
+export {
+	alertLevelOverlaps,
+	alertLevelProblems,
+	areAlertLevelsValid,
+	CW_ALERT_LEVEL_COLORS,
+	CW_ALERT_LEVEL_CONDITIONS
+} from './components/cwAlertLevels.js';
+export type {
+	CwAlertLevelField,
+	CwAlertLevelProblem,
+	CwAlertLevelProblemKind
+} from './components/cwAlertLevels.js';
+export type { CwRuleConditionLabels } from './components/cwRuleConditionText.js';
+export {
+	CW_RULE_CONDITIONS,
+	isRuleConditionValid,
+	isRuleResetOnSafeSide,
+	ruleDirection,
+	ruleLimitProblems,
+	suggestedRuleReset
+} from './components/cwRuleCondition.js';
+export type {
+	CwRuleDirection,
+	CwRuleProblem,
+	CwRuleProblemKind,
+	CwRuleUnit
+} from './components/cwRuleCondition.js';
 
 // ── DLI card outlook (today's progress against the target) ─
 export { cwDliOutlook, CW_DLI_OUTLOOK_MIN_SHARE } from './components/cwDliOutlook.js';
@@ -259,6 +292,7 @@ export type { CwHeatmapLabels } from './components/CwHeatmap.svelte';
 export type { CwCalendarScrollLabels } from './components/CwCalendarScroll.svelte';
 export type { CwDateTimeRangePickerLabels } from './components/CwDateTimeRangePicker.svelte';
 export type { CwCopyLabels } from './components/CwCopy.svelte';
+export type { CwHelpLabels } from './components/CwHelp.svelte';
 export type { CwSpinnerSize } from './components/CwSpinner.svelte';
 export type { CwTooltipPosition } from './components/CwTooltip.svelte';
 export type { CwDonutChartLabels } from './components/CwDonutChart.svelte';

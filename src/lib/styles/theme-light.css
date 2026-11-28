@@ -260,6 +260,9 @@
 	--cw-chart-cat-8: #e34948;
 	--cw-chart-grid: color-mix(in srgb, var(--cw-border-default) 70%, transparent);
 	--cw-chart-axis: var(--cw-linechart-axis);
+	/* Rule example: the alert line and the reset line (see theme-dark.css). */
+	--cw-rule-alert: var(--cw-status-alarm);
+	--cw-rule-reset: var(--cw-info-600);
 	--cw-chart-tick: var(--cw-linechart-tick);
 	--cw-chart-crosshair: var(--cw-linechart-crosshair);
 	--cw-chart-threshold: var(--cw-linechart-threshold);

@@ -3033,6 +3033,156 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			}
 		]
 	},
+	'/demo/alert-levels': {
+		summary:
+			'CwAlertLevels edits named, coloured levels for a reading, as a report uses them to mark values. Each level is one row, and a scale shows how readings will be marked.',
+		steps: [
+			{
+				title: 'Bind the same value CwAlertPointsEditor uses',
+				description:
+					'`value` is a `CwAlertPointsValue`: one point per level with a name, a colour, a condition and its numbers as text.'
+			},
+			{
+				title: 'Say whether it is a temperature',
+				description:
+					'A temperature gets the °C / °F switch and is stored in °C. For anything else set `temperature={false}` and its `unit`.'
+			},
+			{
+				title: 'Check before saving',
+				description:
+					'`areAlertLevelsValid(value.points)` is true when every level has a name and its numbers. Overlapping levels are pointed out but not refused.'
+			}
+		],
+		apiRows: [
+			{ name: 'value', type: 'CwAlertPointsValue', description: 'The levels. Bind it.' },
+			{ name: 'onchange', type: '(value: CwAlertPointsValue) => void', description: 'Called with every change.' },
+			{ name: 'temperature', type: 'boolean', description: 'Show the °C / °F switch. Turn it off for any reading that is not a temperature.', defaultValue: 'true' },
+			{ name: 'unit', type: 'string', description: 'Unit of a reading that is not a temperature ("%", "ppm").' },
+			{ name: 'locale', type: 'string', description: 'Picks the built-in English or Japanese text and the number format.' },
+			{ name: 'labels', type: 'Partial<CwAlertLevelsLabels>', description: 'Overrides any built-in string.' }
+		],
+		examples: [
+			{
+				title: 'Levels for a temperature',
+				description: 'The scale fits itself to the numbers: there is no centre or range to set.',
+				code: `<CwAlertLevels bind:value={levels} />`
+			},
+			{
+				title: 'Another reading, in Japanese',
+				description: 'The unit is shown beside each number.',
+				code: `<CwAlertLevels bind:value={levels} temperature={false} unit="%" locale="ja" />`
+			}
+		]
+	},
+	'/demo/rule-condition': {
+		summary:
+			'CwRuleCondition edits one condition of an alert rule: when a reading should set off the alert, and the reset value it has to come back past before the rule can alert again. It explains the rule in a sentence and an example, and keeps the reset on the safe side.',
+		steps: [
+			{
+				title: 'Bind the same value CwAlertPointsEditor uses',
+				description:
+					'`value` is a `CwAlertPointsValue`: one point per limit, numbers as text, temperatures stored in °C whatever unit is shown.'
+			},
+			{
+				title: 'Say what the reading is',
+				description:
+					'Pass `readingName` for the sentence. A temperature gets the °C / °F switch and a suggested reset; for anything else set `temperature={false}` and its `unit`.'
+			},
+			{
+				title: 'Let it decide what can be saved',
+				description:
+					'`isRuleConditionValid(value)` is the same check the control shows: complete values, a reset on the safe side, and limits that do not overlap.'
+			}
+		],
+		apiRows: [
+			{ name: 'value', type: 'CwAlertPointsValue', description: 'The limits of this condition. Bind it. Two limits on one reading are alternatives: either one sends the alert.' },
+			{ name: 'onchange', type: '(value: CwAlertPointsValue) => void', description: 'Called with every change.' },
+			{ name: 'readingName', type: 'string', description: 'The reading as the sentence names it ("Temperature").' },
+			{ name: 'reading', type: 'Snippet', description: 'The control that picks the reading, shown as the first field.' },
+			{ name: 'temperature', type: 'boolean', description: 'Show the °C / °F switch and suggest a reset. Turn it off for any reading that is not a temperature.', defaultValue: 'true' },
+			{ name: 'unit', type: 'string', description: 'Unit of a reading that is not a temperature ("%", "ppm").' },
+			{ name: 'suggestedGap', type: 'number | null', description: 'Distance of the suggested reset from the alert value, in the unit shown. Left out: 2 °C or 4 °F for a temperature, none otherwise.' },
+			{ name: 'helpHref', type: 'string', description: 'The article that explains resets. Adds a CwHelp mark to "Reset value".' },
+			{ name: 'example', type: 'boolean', description: 'Draw the example chart under the fields.', defaultValue: 'true' },
+			{ name: 'locale', type: 'string', description: 'Picks the built-in English or Japanese text and the number format.' },
+			{ name: 'labels', type: 'Partial<CwRuleConditionLabels>', description: 'Overrides any built-in string.' }
+		],
+		examples: [
+			{
+				title: 'A temperature condition',
+				description: 'The reading picker is yours; the control places it first in the row.',
+				code: `<CwRuleCondition
+\tbind:value={condition}
+\treadingName="Temperature"
+\thelpHref="https://kb.cropwatch.io/en/software/setting-up-alert-rules#trigger-and-reset"
+>
+\t{#snippet reading()}
+\t\t<CwDropdown label="Reading" options={readings} bind:value={subject} />
+\t{/snippet}
+</CwRuleCondition>`
+			},
+			{
+				title: 'A reading that is not a temperature',
+				description: 'Its unit is shown and the numbers are stored as typed.',
+				code: `<CwRuleCondition bind:value={condition} readingName="Humidity" temperature={false} unit="%" />`
+			}
+		]
+	},
+	'/demo/help': {
+		summary:
+			'CwHelp is a small raised question mark at the top right of the thing it explains. It opens the page explaining that field or word in a new tab, so the form behind it keeps what was typed.',
+		steps: [
+			{
+				title: 'Wrap the thing people ask about',
+				description:
+					'Put the label, title or word inside it: the mark sits raised at its top right, like a footnote number. One per idea: a form covered in question marks helps nobody.'
+			},
+			{
+				title: 'Link to the exact section',
+				description:
+					'Give `href` the full address with its `#section`. The browser opens the article and scrolls to that part.'
+			},
+			{
+				title: 'Say what it explains',
+				description:
+					'`label` is the tooltip and what screen readers hear, for example "Why a reset is needed".'
+			}
+		],
+		apiRows: [
+			{ name: 'href', type: 'string', description: 'The page that explains it, with its `#section` when the answer is one part of an article.', required: true },
+			{ name: 'label', type: 'string', description: 'What the page explains, in a few words. The tooltip, and part of the accessible name.', required: true },
+			{ name: 'children', type: 'Snippet', description: 'The thing being explained. The mark sits at its top right. Without it the mark is raised on its own, to follow any text.' },
+			{
+				name: 'size',
+				type: "'sm' | 'md' | 'lg'",
+				description: 'Diameter of the mark: 12, 14 or 16 px. The area that takes a tap is 32 px.',
+				defaultValue: "'md'"
+			},
+			{
+				name: 'tooltipPosition',
+				type: "'top' | 'bottom' | 'left' | 'right'",
+				description: 'Where the tooltip opens.',
+				defaultValue: "'top'"
+			},
+			{
+				name: 'labels',
+				type: '{ help?, newTab? }',
+				description: 'Translations for the accessible name: "Help" and "opens in a new tab".'
+			}
+		],
+		examples: [
+			{
+				title: 'At the top right of a field label',
+				description: 'The usual place: wrap the label.',
+				code: `<CwHelp
+\tlabel="Why a reset is needed"
+\thref="https://kb.cropwatch.io/en/software/setting-up-alert-rules#trigger-and-reset"
+>
+\t<label for="reset">Reset value</label>
+</CwHelp>`
+			}
+		]
+	},
 	'/demo/copy': {
 		summary:
 			'CwCopy handles the clipboard action and temporary copied feedback. You choose the string to copy, and optionally render visible content next to the button.',
