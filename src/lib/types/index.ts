@@ -13,6 +13,23 @@ export type CwButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'in
 /** Component size scale */
 export type CwSize = 'sm' | 'md' | 'lg';
 
+/** An icon for a button: an image URL, an imported image module, or a snippet (for inline SVG that follows the theme). */
+export type CwIconSource = string | { src: string } | { default: string } | Snippet;
+
+/**
+ * A small icon button shown inside a CwDropdown or CwMultiSelect box, just
+ * left of its arrow (edit, delete, copy, …).
+ */
+export interface CwSelectAction {
+	/** What the button does. Its accessible name, and its tooltip. */
+	label: string;
+	icon: CwIconSource;
+	onclick: (event: MouseEvent) => void;
+	disabled?: boolean;
+	/** CwButton variant. Defaults to `ghost`. */
+	variant?: CwButtonVariant;
+}
+
 /** Shared responsive size buckets derived from component or viewport width */
 export type CwViewSize = 'phone' | 'tablet' | 'desktop';
 

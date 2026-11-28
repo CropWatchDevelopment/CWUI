@@ -1280,8 +1280,30 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 			},
 			{
 				name: "labels",
-				type: "{ empty? }",
-				description: "Text shown when `options` is empty."
+				type: "{ empty?, search? }",
+				description: "Text shown when `options` is empty, and the accessible label of the search field."
+			},
+			{
+				name: "searchable",
+				type: "boolean",
+				description: "Shows a search field at the top of the open list that filters the options by their label. Typing on the closed field starts a search too.",
+				defaultValue: "false"
+			},
+			{
+				name: "searchPlaceholder / noResultsLabel",
+				type: "string",
+				description: "Placeholder of the search field, and the text shown when the search finds nothing.",
+				defaultValue: "'Search…' / 'No matches'"
+			},
+			{
+				name: "actions",
+				type: "CwSelectAction[]",
+				description: "Icon buttons inside the box, just left of the arrow: `{ label, icon, onclick, disabled?, variant? }`. The label is the accessible name and the tooltip."
+			},
+			{
+				name: "rightSlot",
+				type: "Snippet",
+				description: "Any other content inside the box, left of the arrow and after `actions`: a CwCopy, a CwButton, an icon."
 			}
 		],
 		examples: [
@@ -1440,6 +1462,16 @@ export const demoRouteDocs: Record<string, DemoRouteDocs> = {
 				name: "labels",
 				type: "CwMultiSelect labels",
 				description: "Strings for remove buttons, \"+N more\", group actions, search and the empty state."
+			},
+			{
+				name: "actions",
+				type: "CwSelectAction[]",
+				description: "Icon buttons inside the box, just left of the arrow: `{ label, icon, onclick, disabled?, variant? }`. The label is the accessible name and the tooltip."
+			},
+			{
+				name: "rightSlot",
+				type: "Snippet",
+				description: "Any other content inside the box, left of the arrow and after `actions`: a CwCopy, a CwButton, an icon."
 			}
 		],
 		examples: [

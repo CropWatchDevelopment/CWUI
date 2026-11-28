@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CwMultiSelect } from '$lib/index.js';
+	import { CwButton, CwMultiSelect } from '$lib/index.js';
 	import DemoCodeExample from '../_components/DemoCodeExample.svelte';
 
 	const options = [
@@ -65,6 +65,27 @@
 	let sensorVal = $state<{ id: string; label: string }[]>([]);
 	let tallSensorVal = $state<{ id: string; label: string }[]>([]);
 	let noSearchVal = $state<{ id: string; label: string }[]>([]);
+	let actionVal = $state<{ id: string; label: string }[]>([{ id: 'apple', label: 'Apple' }]);
+	let slotVal = $state<{ id: string; label: string }[]>([]);
+	let lastAction = $state('none yet');
+
+	const actionsExample = `<!-- Icon buttons: a label (also the tooltip), an icon and what to do. -->
+<CwMultiSelect
+	{options}
+	label="Crops"
+	bind:value={selected}
+	actions={[
+		{ label: 'Edit the list', icon: editIcon, onclick: () => editList() },
+		{ label: 'Add a crop', icon: addIcon, onclick: () => addCrop() }
+	]}
+/>
+
+<!-- Or any components: they sit just left of the arrow. -->
+<CwMultiSelect {options} label="Crops" bind:value={selected}>
+	{#snippet rightSlot()}
+		<CwButton variant="secondary" size="sm" onclick={() => save(selected)}>Save</CwButton>
+	{/snippet}
+</CwMultiSelect>`;
 
 	const multiSelectExample = `<script lang="ts">
 \timport { CwMultiSelect } from '@cropwatchdevelopment/cwui';
@@ -216,6 +237,52 @@
 		bind:value={noSearchVal}
 	/>
 </div>
+
+<!-- Inline SVG follows the theme's text colour; an image file would not. -->
+{#snippet editIcon()}
+	<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+		<path d="M11 2.5l2.5 2.5L5.5 13H3v-2.5L11 2.5z" />
+	</svg>
+{/snippet}
+
+{#snippet addIcon()}
+	<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+		<path d="M8 3.5v9M3.5 8h9" />
+	</svg>
+{/snippet}
+
+<section class="demo-section demo-section--spaced">
+	<h3>Actions inside the box</h3>
+	<div class="demo-grid">
+		<CwMultiSelect
+			{options}
+			label="Crops (action buttons)"
+			placeholder="Choose crops…"
+			bind:value={actionVal}
+			actions={[
+				{ label: 'Edit the list', icon: editIcon, onclick: () => (lastAction = 'Edit the list') },
+				{ label: 'Add a crop', icon: addIcon, onclick: () => (lastAction = 'Add a crop') }
+			]}
+		/>
+		<CwMultiSelect {options} label="Crops (any components)" placeholder="Choose crops…" bind:value={slotVal}>
+			{#snippet rightSlot()}
+				<CwButton
+					variant="secondary"
+					size="sm"
+					disabled={slotVal.length === 0}
+					onclick={() => (lastAction = `Save ${slotVal.map((item) => item.label).join(', ')}`)}
+				>
+					Save
+				</CwButton>
+			{/snippet}
+		</CwMultiSelect>
+	</div>
+	<p class="demo-event" aria-live="polite">Last action: {lastAction}</p>
+	<p class="demo-hint">
+		The actions sit just left of the arrow. Pressing one never opens the list.
+	</p>
+	<DemoCodeExample code={actionsExample} title="Actions and other components in the box" />
+</section>
 
 <section class="demo-section demo-section--spaced">
 	<h3>Sizes, hint &amp; required</h3>

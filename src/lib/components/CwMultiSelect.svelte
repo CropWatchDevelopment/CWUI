@@ -1,6 +1,9 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import type { HTMLInputAttributes } from 'svelte/elements';
-	import type { CwSize } from '../types/index.js';
+	import type { CwSelectAction, CwSize } from '../types/index.js';
+	import CwSelectActions from './CwSelectActions.svelte';
+	import { matchesSearch } from './cwSelectSearch.js';
 
 	type GroupKey = string | number;
 
@@ -73,6 +76,13 @@
 		searchPlaceholder?: string;
 		/** Text shown inside the dropdown when the search query yields no matches. */
 		noResultsLabel?: string;
+		/**
+		 * Icon buttons shown inside the box, just left of the arrow (edit, delete, copy, …).
+		 * They stay usable when the select itself is `disabled`: disable them one by one.
+		 */
+		actions?: CwSelectAction[];
+		/** Anything else to show inside the box, left of the arrow and after `actions`: a CwCopy, a CwButton, an icon. */
+		rightSlot?: Snippet;
 		onchange?: (value: SelectedItem[]) => void;
 		class?: string;
 	}
@@ -100,6 +110,8 @@
 		searchable = true,
 		searchPlaceholder = 'Search…',
 		noResultsLabel = 'No matches',
+		actions,
+		rightSlot,
 		onchange,
 		class: className = ''
 	}: Props = $props();
@@ -147,8 +159,8 @@
 	const displayBuild = $derived.by(() => {
 		const items: DisplayItem[] = [];
 		const flat: Option[] = [];
-		const q = query.trim().toLowerCase();
-		const matches = (text: string) => !q || text.toLowerCase().includes(q);
+		const q = query.trim();
+		const matches = (text: string) => matchesSearch(text, q);
 
 		if (!groups || groups.length === 0) {
 			for (const opt of options) {
@@ -167,7 +179,7 @@
 			// Reserve every option whose group is known so we don't leak it into the ungrouped tail when filtered out.
 			for (const o of groupOpts) seen.add(o.value);
 
-			const groupHeaderMatches = q.length > 0 && group.label.toLowerCase().includes(q);
+			const groupHeaderMatches = q.length > 0 && matchesSearch(group.label, q);
 			const optsToShow = groupHeaderMatches
 				? groupOpts
 				: groupOpts.filter((o) => matches(o.label));
@@ -580,6 +592,7 @@
 				{/if}
 			</span>
 		{/if}
+		<CwSelectActions {actions} content={rightSlot} {size} onengage={() => closeListbox()} />
 		<svg class="cw-multiselect__chevron" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 			<path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
 		</svg>

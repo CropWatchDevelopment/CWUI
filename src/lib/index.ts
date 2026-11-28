@@ -149,6 +149,8 @@ export type {
 	CwSwitchLabelPosition,
 	CwStatusDotStatus,
 	CwSize,
+	CwIconSource,
+	CwSelectAction,
 	CwViewSize,
 	CwRadioValue,
 	CwChipVariant,

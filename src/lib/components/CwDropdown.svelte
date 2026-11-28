@@ -1,6 +1,9 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import type { HTMLInputAttributes } from 'svelte/elements';
-	import type { CwSize } from '../types/index.js';
+	import type { CwSelectAction, CwSize } from '../types/index.js';
+	import CwSelectActions from './CwSelectActions.svelte';
+	import { activeIndexFor, filterBySearch, firstEnabledIndex } from './cwSelectSearch.js';
 
 	interface Option {
 		label: string;
@@ -11,6 +14,8 @@
 	interface CwDropdownLabels {
 		/** Shown in the list when `options` is empty. */
 		empty: string;
+		/** Accessible label for the search field. Defaults to `searchPlaceholder`. */
+		search: string;
 	}
 
 	interface Props {
@@ -33,6 +38,18 @@
 		size?: CwSize;
 		/** Override built-in English strings. */
 		labels?: Partial<CwDropdownLabels>;
+		/** Show a search field at the top of the open list that filters the options by their label. */
+		searchable?: boolean;
+		searchPlaceholder?: string;
+		/** Shown in the list when the search finds nothing. */
+		noResultsLabel?: string;
+		/**
+		 * Icon buttons shown inside the box, just left of the arrow (edit, delete, copy, …).
+		 * They stay usable when the dropdown itself is `disabled`: disable them one by one.
+		 */
+		actions?: CwSelectAction[];
+		/** Anything else to show inside the box, left of the arrow and after `actions`: a CwCopy, a CwButton, an icon. */
+		rightSlot?: Snippet;
 		onchange?: (value: string) => void;
 		class?: string;
 	}
@@ -52,47 +69,62 @@
 		ariaLabel,
 		size = 'md',
 		labels,
+		searchable = false,
+		searchPlaceholder = 'Search…',
+		noResultsLabel = 'No matches',
+		actions,
+		rightSlot,
 		onchange,
 		class: className = ''
 	}: Props = $props();
 
 	const uid = $props.id();
 	const triggerId = $derived(id ?? `${uid}-trigger`);
-	const text = $derived({ empty: 'No options', ...labels });
+	const text = $derived({ empty: 'No options', search: searchPlaceholder, ...labels });
 	const describedBy = $derived(error ? `${uid}-error` : hint ? `${uid}-hint` : undefined);
 
 	let open = $state(false);
 	let rootRef = $state<HTMLDivElement | null>(null);
+	let popoverRef = $state<HTMLDivElement | null>(null);
 	let listboxRef = $state<HTMLUListElement | null>(null);
 	let triggerRef = $state<HTMLButtonElement | null>(null);
+	let searchInputRef = $state<HTMLInputElement | null>(null);
 	let activeIndex = $state(-1);
 	let listboxStyle = $state('');
+	let query = $state('');
+	// The actions sit on top of the trigger; this much room is kept free for them.
+	let actionsWidth = $state(0);
 	let typeahead = '';
 	let typeaheadTimer: ReturnType<typeof setTimeout> | undefined;
 
 	const selectedOption = $derived(options.find((o) => o.value === value));
 	const displayText = $derived(selectedOption?.label ?? placeholder);
+	/** The options in the open list: all of them, or the ones the search finds. */
+	const visibleOptions = $derived(searchable ? filterBySearch(options, query) : options);
+	const hasActions = $derived((actions?.length ?? 0) > 0 || !!rightSlot);
 	const activeId = $derived(
-		open && activeIndex >= 0 && activeIndex < options.length ? `${uid}-option-${activeIndex}` : undefined
+		open && activeIndex >= 0 && activeIndex < visibleOptions.length ? `${uid}-option-${activeIndex}` : undefined
 	);
 
-	function firstEnabledFrom(start: number, step: 1 | -1): number {
-		for (let i = start; i >= 0 && i < options.length; i += step) {
-			if (!options[i]?.disabled) return i;
-		}
-		return -1;
-	}
-
-	function openList() {
+	/** Opens the list. With a search field, `initialQuery` is what the user already typed on the trigger. */
+	function openList(initialQuery = '') {
 		if (disabled || open) return;
+		query = searchable ? initialQuery : '';
 		open = true;
-		const selected = options.findIndex((o) => o.value === value && !o.disabled);
-		activeIndex = selected >= 0 ? selected : firstEnabledFrom(0, 1);
+		activeIndex = activeIndexFor(visibleOptions, value);
 	}
 
 	function close(returnFocus = false) {
 		open = false;
+		query = '';
 		if (returnFocus) triggerRef?.focus();
+	}
+
+	function search(nextQuery: string) {
+		query = nextQuery;
+		activeIndex = activeIndexFor(visibleOptions, value);
+		// The list just changed height: it may now fit below, or need to move up.
+		requestAnimationFrame(updateListboxPosition);
 	}
 
 	function toggle() {
@@ -108,8 +140,13 @@
 	}
 
 	function move(step: 1 | -1) {
-		const next = firstEnabledFrom(activeIndex + step, step);
+		const next = firstEnabledIndex(visibleOptions, activeIndex + step, step);
 		if (next >= 0) activeIndex = next;
+	}
+
+	function selectActive() {
+		const active = visibleOptions[activeIndex];
+		if (activeIndex >= 0 && active) select(active);
 	}
 
 	function handleTypeahead(key: string) {
@@ -143,21 +180,18 @@
 			case 'Home':
 				if (!open) return;
 				e.preventDefault();
-				activeIndex = firstEnabledFrom(0, 1);
+				activeIndex = firstEnabledIndex(visibleOptions);
 				break;
 			case 'End':
 				if (!open) return;
 				e.preventDefault();
-				activeIndex = firstEnabledFrom(options.length - 1, -1);
+				activeIndex = firstEnabledIndex(visibleOptions, visibleOptions.length - 1, -1);
 				break;
 			case 'Enter':
 			case ' ':
 				e.preventDefault();
-				if (!open) {
-					openList();
-				} else if (activeIndex >= 0 && options[activeIndex]) {
-					select(options[activeIndex]);
-				}
+				if (!open) openList();
+				else selectActive();
 				break;
 			case 'Escape':
 				if (!open) return;
@@ -169,8 +203,48 @@
 				break;
 			default:
 				if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-					handleTypeahead(e.key);
+					if (!searchable) {
+						handleTypeahead(e.key);
+					} else {
+						// Typing on the trigger starts a search with that character.
+						e.preventDefault();
+						if (open) search(query + e.key);
+						else openList(e.key);
+					}
 				}
+		}
+	}
+
+	/** Keys in the search field. Space and the other characters stay text. */
+	function handleSearchKeydown(e: KeyboardEvent) {
+		switch (e.key) {
+			case 'ArrowDown':
+				e.preventDefault();
+				move(1);
+				break;
+			case 'ArrowUp':
+				e.preventDefault();
+				move(-1);
+				break;
+			case 'Home':
+				e.preventDefault();
+				activeIndex = firstEnabledIndex(visibleOptions);
+				break;
+			case 'End':
+				e.preventDefault();
+				activeIndex = firstEnabledIndex(visibleOptions, visibleOptions.length - 1, -1);
+				break;
+			case 'Enter':
+				e.preventDefault();
+				selectActive();
+				break;
+			case 'Escape':
+				e.preventDefault();
+				close(true);
+				break;
+			case 'Tab':
+				close();
+				break;
 		}
 	}
 
@@ -181,7 +255,7 @@
 		const margin = 8;
 		const spacing = 6;
 		const listWidth = Math.round(rect.width);
-		const listHeight = listboxRef?.offsetHeight ?? 0;
+		const listHeight = popoverRef?.offsetHeight ?? 0;
 		const viewportWidth = window.innerWidth;
 		const viewportHeight = window.innerHeight;
 
@@ -205,9 +279,18 @@
 	}
 
 	$effect(() => {
-		if (!open || !listboxRef) return;
+		if (!open || !popoverRef) return;
 
-		const raf = requestAnimationFrame(updateListboxPosition);
+		const raf = requestAnimationFrame(() => {
+			updateListboxPosition();
+			// With a search field, typing goes there; the trigger keeps focus otherwise.
+			if (searchable && searchInputRef) {
+				searchInputRef.focus();
+				// After a character typed on the trigger, go on typing behind it.
+				const end = searchInputRef.value.length;
+				searchInputRef.setSelectionRange(end, end);
+			}
+		});
 
 		const handleViewportChange = () => updateListboxPosition();
 		// Close on outside pointerdown without swallowing the click, so the
@@ -215,15 +298,23 @@
 		const handlePointerDown = (event: PointerEvent) => {
 			if (rootRef && !rootRef.contains(event.target as Node)) close();
 		};
+		// Close when focus leaves the component (e.g. Tab out of the search field).
+		const handleFocusOut = (event: FocusEvent) => {
+			const next = event.relatedTarget as Node | null;
+			if (next && rootRef && !rootRef.contains(next)) close();
+		};
+		const root = rootRef;
 		window.addEventListener('resize', handleViewportChange);
 		window.addEventListener('scroll', handleViewportChange, true);
 		document.addEventListener('pointerdown', handlePointerDown, true);
+		root?.addEventListener('focusout', handleFocusOut);
 
 		return () => {
 			cancelAnimationFrame(raf);
 			window.removeEventListener('resize', handleViewportChange);
 			window.removeEventListener('scroll', handleViewportChange, true);
 			document.removeEventListener('pointerdown', handlePointerDown, true);
+			root?.removeEventListener('focusout', handleFocusOut);
 		};
 	});
 
@@ -263,71 +354,106 @@
 		/>
 	{/if}
 
-	<button
-		bind:this={triggerRef}
-		id={triggerId}
-		type="button"
-		class="cw-dropdown__trigger"
-		class:cw-dropdown__trigger--open={open}
-		class:cw-dropdown__trigger--placeholder={!selectedOption}
-		{disabled}
-		role="combobox"
-		aria-expanded={open}
-		aria-haspopup="listbox"
-		aria-controls="{uid}-listbox"
-		aria-activedescendant={activeId}
-		aria-labelledby={label ? `${uid}-label ${triggerId}` : undefined}
-		aria-label={label ? undefined : ariaLabel}
-		aria-required={required || undefined}
-		aria-invalid={error ? 'true' : undefined}
-		aria-describedby={describedBy}
-		onclick={toggle}
-		onkeydown={handleKeydown}
-	>
-		<span class="cw-dropdown__text">{displayText}</span>
-		<svg class="cw-dropdown__chevron" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-			<path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-		</svg>
-	</button>
+	<div class="cw-dropdown__control">
+		<button
+			bind:this={triggerRef}
+			id={triggerId}
+			type="button"
+			class="cw-dropdown__trigger"
+			class:cw-dropdown__trigger--open={open}
+			class:cw-dropdown__trigger--placeholder={!selectedOption}
+			{disabled}
+			role="combobox"
+			aria-expanded={open}
+			aria-haspopup="listbox"
+			aria-controls="{uid}-listbox"
+			aria-activedescendant={searchable ? undefined : activeId}
+			aria-labelledby={label ? `${uid}-label ${triggerId}` : undefined}
+			aria-label={label ? undefined : ariaLabel}
+			aria-required={required || undefined}
+			aria-invalid={error ? 'true' : undefined}
+			aria-describedby={describedBy}
+			onclick={toggle}
+			onkeydown={handleKeydown}
+		>
+			<span class="cw-dropdown__text">{displayText}</span>
+			{#if hasActions}
+				<!-- Room for the actions, which lie on top of the trigger: a button cannot contain buttons. -->
+				<span class="cw-dropdown__actions-space" style:width="{actionsWidth}px" aria-hidden="true"></span>
+			{/if}
+			<svg class="cw-dropdown__chevron" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+				<path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+			</svg>
+		</button>
+		{#if hasActions}
+			<span class="cw-dropdown__actions" bind:offsetWidth={actionsWidth}>
+				<CwSelectActions {actions} content={rightSlot} {size} onengage={() => close()} />
+			</span>
+		{/if}
+	</div>
 
 	{#if open}
-		<ul
-			bind:this={listboxRef}
-			id="{uid}-listbox"
-			class="cw-dropdown__listbox"
-			style={listboxStyle}
-			role="listbox"
-			aria-labelledby={label ? `${uid}-label` : undefined}
-			aria-label={label ? undefined : ariaLabel}
-		>
-			{#each options as opt, i (opt.value)}
-				<!-- Focus stays on the trigger (aria-activedescendant); options are pointer targets only. -->
-				<!-- svelte-ignore a11y_click_events_have_key_events -->
-				<li
-					id="{uid}-option-{i}"
-					role="option"
-					class="cw-dropdown__option"
-					class:cw-dropdown__option--active={i === activeIndex}
-					class:cw-dropdown__option--selected={opt.value === value}
-					class:cw-dropdown__option--disabled={opt.disabled}
-					aria-selected={opt.value === value}
-					aria-disabled={opt.disabled || undefined}
-					onclick={() => select(opt)}
-					onpointermove={() => {
-						if (!opt.disabled) activeIndex = i;
-					}}
-				>
-					<span class="cw-dropdown__option-label">{opt.label}</span>
-					{#if opt.value === value}
-						<svg class="cw-dropdown__check" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-							<path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-						</svg>
-					{/if}
-				</li>
-			{:else}
-				<li class="cw-dropdown__empty" role="presentation">{text.empty}</li>
-			{/each}
-		</ul>
+		<div bind:this={popoverRef} class="cw-dropdown__popover" style={listboxStyle}>
+			{#if searchable}
+				<div class="cw-dropdown__search-wrap">
+					<input
+						bind:this={searchInputRef}
+						value={query}
+						type="text"
+						class="cw-dropdown__search"
+						placeholder={searchPlaceholder}
+						aria-label={text.search}
+						role="combobox"
+						aria-expanded="true"
+						aria-controls="{uid}-listbox"
+						aria-autocomplete="list"
+						aria-activedescendant={activeId}
+						autocomplete="off"
+						spellcheck="false"
+						oninput={(event) => search(event.currentTarget.value)}
+						onkeydown={handleSearchKeydown}
+					/>
+				</div>
+			{/if}
+			<ul
+				bind:this={listboxRef}
+				id="{uid}-listbox"
+				class="cw-dropdown__listbox"
+				role="listbox"
+				aria-labelledby={label ? `${uid}-label` : undefined}
+				aria-label={label ? undefined : ariaLabel}
+			>
+				{#each visibleOptions as opt, i (opt.value)}
+					<!-- Focus stays on the trigger, or on the search field (aria-activedescendant); options are pointer targets only. -->
+					<!-- svelte-ignore a11y_click_events_have_key_events -->
+					<li
+						id="{uid}-option-{i}"
+						role="option"
+						class="cw-dropdown__option"
+						class:cw-dropdown__option--active={i === activeIndex}
+						class:cw-dropdown__option--selected={opt.value === value}
+						class:cw-dropdown__option--disabled={opt.disabled}
+						aria-selected={opt.value === value}
+						aria-disabled={opt.disabled || undefined}
+						onclick={() => select(opt)}
+						onpointermove={() => {
+							if (!opt.disabled) activeIndex = i;
+						}}
+					>
+						<span class="cw-dropdown__option-label">{opt.label}</span>
+						{#if opt.value === value}
+							<svg class="cw-dropdown__check" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+								<path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+							</svg>
+						{/if}
+					</li>
+				{:else}
+					<li class="cw-dropdown__empty" role="presentation">
+						{options.length === 0 ? text.empty : noResultsLabel}
+					</li>
+				{/each}
+			</ul>
+		</div>
 	{/if}
 
 	{#if error}
@@ -382,6 +508,11 @@
 		border: 0;
 	}
 
+	.cw-dropdown__control {
+		position: relative;
+		display: flex;
+	}
+
 	.cw-dropdown__trigger {
 		display: flex;
 		align-items: center;
@@ -433,17 +564,70 @@
 		transform: rotate(180deg);
 	}
 
-	/* ── Listbox ─────────────────────────── */
-	.cw-dropdown__listbox {
+	/* ── Actions inside the box ──────────── */
+	.cw-dropdown__actions-space {
+		flex-shrink: 0;
+	}
+
+	/* On top of the trigger, between the text and the arrow. */
+	.cw-dropdown__actions {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		/* Trigger border + padding + arrow + gap: exactly over the room kept for them. */
+		right: calc(1px + var(--_px) + 1rem + var(--cw-space-2));
+		display: flex;
+		align-items: center;
+	}
+
+	/* ── Popover: optional search, then the list ── */
+	.cw-dropdown__popover {
 		position: fixed;
 		z-index: var(--cw-z-popover);
-		padding: var(--cw-space-1);
-		list-style: none;
+		display: flex;
+		flex-direction: column;
+		max-height: 15rem;
 		background-color: var(--cw-popover-bg);
 		border: 1px solid var(--cw-popover-border);
 		border-radius: var(--cw-popover-radius);
 		box-shadow: var(--cw-elevation-popover);
-		max-height: 15rem;
+		overflow: hidden;
+	}
+
+	.cw-dropdown__search-wrap {
+		flex-shrink: 0;
+		padding: var(--cw-space-1);
+		border-bottom: 1px solid var(--cw-border-muted);
+	}
+
+	.cw-dropdown__search {
+		width: 100%;
+		box-sizing: border-box;
+		min-height: var(--cw-control-h-sm);
+		padding: 0 var(--cw-space-3);
+		font-family: var(--cw-font-family);
+		font-size: var(--cw-text-sm);
+		color: var(--cw-control-text);
+		background-color: var(--cw-control-bg);
+		border: 1px solid var(--cw-control-border);
+		border-radius: var(--cw-radius-md);
+		caret-color: var(--cw-focus-ring-color, currentColor);
+	}
+
+	.cw-dropdown__search::placeholder {
+		color: var(--cw-control-placeholder);
+	}
+
+	.cw-dropdown__search:focus-visible {
+		border-color: var(--cw-focus-ring-color);
+	}
+
+	.cw-dropdown__listbox {
+		flex: 1;
+		min-height: 0;
+		margin: 0;
+		padding: var(--cw-space-1);
+		list-style: none;
 		overflow-y: auto;
 	}
 

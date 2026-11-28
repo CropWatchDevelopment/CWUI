@@ -188,7 +188,7 @@ The script renders `scripts/style-guide/style-guide.html` with headless Chromium
 | **`CwInput`** | Text input — supports `text`, `numeric`, `email`, `password`, `devEui` types. Left/right icon slots, automatic validation icons (✓/✗), error/valid/disabled states |
 | **`CwCheckbox`** | Checkbox input — native checked state with explicit `name` support, optional helper text, and standard form behavior |
 | **`CwRadio`** | Radio input — native single-choice behavior with shared `bind:group`, optional helper text, and form-friendly grouping via `name` |
-| **`CwDropdown`** | Custom select — keyboard-navigable ARIA combobox with search, error state, and label |
+| **`CwDropdown`** | Custom select — keyboard-navigable ARIA combobox with optional search (`searchable`), buttons or other components inside the box (`actions`, `rightSlot`), error state, and label |
 | **`CwSearchInput`** | Autocomplete search — async suggestions with debounce, keyboard nav, and abort signal |
 | **`CwDateTimeRangePicker`** | Calendar picker — single or range mode, optional time fields, year/month/day granularity |
 | **`CwTimePicker`** | Time-only picker — 24-hour editing with stepper controls and a built-in 12-hour reference display |
